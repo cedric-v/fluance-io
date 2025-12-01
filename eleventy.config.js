@@ -2,8 +2,8 @@
 const i18n = require("eleventy-plugin-i18n");
 const htmlmin = require("html-minifier-next"); // Le paquet sécurisé
 
-// PathPrefix pour GitHub Pages
-const PATH_PREFIX = "/fluance-io";
+// PathPrefix conditionnel : vide en dev, /fluance-io en prod (GitHub Pages)
+const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "/fluance-io" : "";
 
 module.exports = function(eleventyConfig) {
   

@@ -2,7 +2,7 @@
   <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
     <a href="{{ '/' | url }}" class="flex flex-col items-start gap-1">
       {% image "assets/img/logo.png", "Fluance", "h-10 w-auto" %}
-      <span class="text-xs text-[#ffce2d]/80 italic">Le mouvement qui apaise</span>
+      <span class="text-xs text-[#ffce2d]/80 italic">Le mouvement qui éveil et apaise</span>
     </a>
 
     <button class="md:hidden text-[#ffce2d]" data-menu-toggle aria-label="Open menu">
@@ -15,21 +15,91 @@
       <a href="{{ '/' | url }}" class="hover:opacity-80 transition">
         {% if locale == 'fr' %}Accueil{% else %}Home{% endif %}
       </a>
-      <a href="{{ '/#presentiel' | url }}" class="hover:opacity-80 transition">
-        {% if locale == 'fr' %}Présentiel{% else %}In-person{% endif %}
-      </a>
-      <a href="{{ '/#approche' | url }}" class="hover:opacity-80 transition">
-        {% if locale == 'fr' %}En ligne{% else %}Online{% endif %}
-      </a>
-      <a href="{{ '/#founder' | url }}" class="hover:opacity-80 transition">
-        {% if locale == 'fr' %}A propos{% else %}About{% endif %}
-      </a>
-      <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="hover:opacity-80 transition">
-        {% if locale == 'fr' %}Entrepreneur ?{% else %}Entrepreneur?{% endif %}
-      </a>
+      
+      <!-- A propos dropdown -->
+      <div class="relative group">
+        <button class="hover:opacity-80 transition flex items-center gap-1">
+          {% if locale == 'fr' %}A propos{% else %}About{% endif %}
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="absolute top-full left-0 mt-2 w-56 bg-[#82153e] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-[#ffce2d]/20">
+          <div class="py-2">
+            <a href="{{ '/a-propos/mission/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
+              {% if locale == 'fr' %}Mission{% else %}Mission{% endif %}
+            </a>
+            <a href="{{ '/a-propos/approche-fluance/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
+              {% if locale == 'fr' %}Approche Fluance{% else %}Fluance Approach{% endif %}
+            </a>
+            <a href="{{ '/a-propos/histoire-cedric/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
+              {% if locale == 'fr' %}L'histoire de Cédric{% else %}Cédric's Story{% endif %}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cours en ligne dropdown -->
+      <div class="relative group">
+        <button class="hover:opacity-80 transition flex items-center gap-1">
+          {% if locale == 'fr' %}Cours en ligne{% else %}Online Courses{% endif %}
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="absolute top-full left-0 mt-2 w-64 bg-[#82153e] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-[#ffce2d]/20">
+          <div class="py-2">
+            <a href="{{ '/cours-en-ligne/30-jours-mouvement/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
+              {% if locale == 'fr' %}30 jours pour remettre du mouvement{% else %}30 Days to Get Moving{% endif %}
+            </a>
+            <a href="{{ '/cours-en-ligne/approche-fluance-complete/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
+              {% if locale == 'fr' %}Approche Fluance complète et régulière{% else %}Complete and Regular Fluance Approach{% endif %}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Présentiel dropdown -->
+      <div class="relative group">
+        <button class="hover:opacity-80 transition flex items-center gap-1">
+          {% if locale == 'fr' %}Présentiel{% else %}In-person{% endif %}
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="absolute top-full left-0 mt-2 w-56 bg-[#82153e] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-[#ffce2d]/20">
+          <div class="py-2">
+            <a href="{{ '/presentiel/cours-hebdomadaires/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
+              {% if locale == 'fr' %}Cours hebdomadaires{% else %}Weekly Classes{% endif %}
+            </a>
+            <a href="{{ '/presentiel/prochains-stages/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
+              {% if locale == 'fr' %}Prochains stages{% else %}Upcoming Workshops{% endif %}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accompagnements Individuels dropdown -->
+      <div class="relative group">
+        <button class="hover:opacity-80 transition flex items-center gap-1">
+          {% if locale == 'fr' %}Accompagnements Individuels{% else %}Individual Coaching{% endif %}
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="absolute top-full left-0 mt-2 w-72 bg-[#82153e] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-[#ffce2d]/20">
+          <div class="py-2">
+            <a href="{{ '/accompagnements-individuels/entrepreneurs-independants/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
+              {% if locale == 'fr' %}Pour entrepreneurs/indépendants{% else %}For Entrepreneurs/Independents{% endif %}
+            </a>
+          </div>
+        </div>
+      </div>
+
       <a href="{{ '/#contact' | url }}" class="hover:opacity-80 transition">
         {% if locale == 'fr' %}Contact{% else %}Contact{% endif %}
       </a>
+      
       {% if locale == 'fr' %}
         <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="cta-pill bg-[#ffce2d] text-[#82153e] hover:bg-[#ffd84d] transition">
           EN
@@ -42,25 +112,68 @@
     </nav>
   </div>
 
+  <!-- Mobile menu -->
   <nav class="md:hidden hidden flex-col gap-4 px-4 pb-6 font-medium bg-[#82153e] text-[#ffce2d]" data-menu-mobile>
     <a href="{{ '/' | url }}" class="py-2 border-b border-[#ffce2d]/20">
       {% if locale == 'fr' %}Accueil{% else %}Home{% endif %}
     </a>
-    <a href="{{ '/#presentiel' | url }}" class="py-2 border-b border-[#ffce2d]/20">
-      {% if locale == 'fr' %}Présentiel{% else %}In-person{% endif %}
-    </a>
-    <a href="{{ '/#approche' | url }}" class="py-2 border-b border-[#ffce2d]/20">
-      {% if locale == 'fr' %}En ligne{% else %}Online{% endif %}
-    </a>
-    <a href="{{ '/#founder' | url }}" class="py-2 border-b border-[#ffce2d]/20">
-      {% if locale == 'fr' %}A propos{% else %}About{% endif %}
-    </a>
-    <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="py-2 border-b border-[#ffce2d]/20">
-      {% if locale == 'fr' %}Entrepreneur ?{% else %}Entrepreneur?{% endif %}
-    </a>
+    
+    <div class="border-b border-[#ffce2d]/20">
+      <button class="w-full text-left py-2 flex items-center justify-between" data-mobile-dropdown="a-propos">
+        {% if locale == 'fr' %}A propos{% else %}About{% endif %}
+        <svg class="w-4 h-4 transition-transform" data-arrow="a-propos" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div class="hidden pl-4 pb-2" data-dropdown-content="a-propos">
+        <a href="{{ '/a-propos/mission/' | url }}" class="block py-2">Mission</a>
+        <a href="{{ '/a-propos/approche-fluance/' | url }}" class="block py-2">Approche Fluance</a>
+        <a href="{{ '/a-propos/histoire-cedric/' | url }}" class="block py-2">L'histoire de Cédric</a>
+      </div>
+    </div>
+
+    <div class="border-b border-[#ffce2d]/20">
+      <button class="w-full text-left py-2 flex items-center justify-between" data-mobile-dropdown="cours-en-ligne">
+        {% if locale == 'fr' %}Cours en ligne{% else %}Online Courses{% endif %}
+        <svg class="w-4 h-4 transition-transform" data-arrow="cours-en-ligne" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div class="hidden pl-4 pb-2" data-dropdown-content="cours-en-ligne">
+        <a href="{{ '/cours-en-ligne/30-jours-mouvement/' | url }}" class="block py-2">30 jours pour remettre du mouvement</a>
+        <a href="{{ '/cours-en-ligne/approche-fluance-complete/' | url }}" class="block py-2">Approche Fluance complète et régulière</a>
+      </div>
+    </div>
+
+    <div class="border-b border-[#ffce2d]/20">
+      <button class="w-full text-left py-2 flex items-center justify-between" data-mobile-dropdown="presentiel">
+        {% if locale == 'fr' %}Présentiel{% else %}In-person{% endif %}
+        <svg class="w-4 h-4 transition-transform" data-arrow="presentiel" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div class="hidden pl-4 pb-2" data-dropdown-content="presentiel">
+        <a href="{{ '/presentiel/cours-hebdomadaires/' | url }}" class="block py-2">Cours hebdomadaires</a>
+        <a href="{{ '/presentiel/prochains-stages/' | url }}" class="block py-2">Prochains stages</a>
+      </div>
+    </div>
+
+    <div class="border-b border-[#ffce2d]/20">
+      <button class="w-full text-left py-2 flex items-center justify-between" data-mobile-dropdown="accompagnements">
+        {% if locale == 'fr' %}Accompagnements Individuels{% else %}Individual Coaching{% endif %}
+        <svg class="w-4 h-4 transition-transform" data-arrow="accompagnements" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div class="hidden pl-4 pb-2" data-dropdown-content="accompagnements">
+        <a href="{{ '/accompagnements-individuels/entrepreneurs-independants/' | url }}" class="block py-2">Pour entrepreneurs/indépendants</a>
+      </div>
+    </div>
+
     <a href="{{ '/#contact' | url }}" class="py-2 border-b border-[#ffce2d]/20">
       {% if locale == 'fr' %}Contact{% else %}Contact{% endif %}
     </a>
+    
     {% if locale == 'fr' %}
       <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="btn-primary text-center bg-[#ffce2d] text-[#82153e] mt-2">EN</a>
     {% else %}

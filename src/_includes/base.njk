@@ -48,6 +48,20 @@
       mobileMenu.classList.toggle('hidden');
     });
   }
+
+  // Gestion des dropdowns mobiles
+  document.querySelectorAll('[data-mobile-dropdown]').forEach(button => {
+    button.addEventListener('click', () => {
+      const dropdownId = button.getAttribute('data-mobile-dropdown');
+      const content = document.querySelector(`[data-dropdown-content="${dropdownId}"]`);
+      const arrow = document.querySelector(`[data-arrow="${dropdownId}"]`);
+      
+      if (content && arrow) {
+        content.classList.toggle('hidden');
+        arrow.classList.toggle('rotate-180');
+      }
+    });
+  });
 </script>
 </body>
 </html>

@@ -5,7 +5,7 @@
   "scripts": {
     "start": "npm-run-all --parallel dev:*",
     "dev:11ty": "cross-env ELEVENTY_ENV=dev eleventy --serve",
-    "dev:css": "npx tailwindcss -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --watch",
+    "dev:css": "mkdir -p _site/assets/css && npx tailwindcss -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --watch",
     "build": "cross-env ELEVENTY_ENV=prod npm-run-all build:css build:11ty",
     "build:11ty": "eleventy",
     "build:css": "npx tailwindcss -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --minify"

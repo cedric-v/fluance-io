@@ -8,7 +8,6 @@ locale: fr
 <section id="hero" class="hero-gradient rounded-[32px] max-w-6xl mx-auto px-6 md:px-12 py-16 text-white">
   <div class="grid md:grid-cols-2 gap-10 items-center">
     <div class="space-y-6">
-      <p class="uppercase tracking-[0.4em] text-xs text-white/70">Le mouvement qui apaise</p>
       <h1 class="text-4xl md:text-5xl font-semibold leading-tight">Libérez-vous de la surcharge<br>et retrouvez clarté & sérénité</h1>
       <p class="text-lg text-white/85">Deux chemins complémentaires pour alléger la charge mentale, retrouver la fluidité dans votre corps et clarifier votre activité.</p>
       <div class="flex flex-wrap gap-4">
