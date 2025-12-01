@@ -11,7 +11,7 @@ permalink: /
     <p class="text-lg text-gray-600">
       Vous êtes redirigé vers la version française du site...
     </p>
-    <a href="/fr/" class="inline-block px-6 py-3 bg-fluance text-white rounded-lg hover:bg-fluance/90 transition">
+    <a href="{{ '/fr/' | url }}" class="inline-block px-6 py-3 bg-fluance text-white rounded-lg hover:bg-fluance/90 transition">
       Accéder au site
     </a>
   </div>
@@ -19,7 +19,7 @@ permalink: /
 
 <script>
   // Redirection douce côté client
-  window.location.replace('/fr/');
+  window.location.replace('{{ "/fr/" | url }}');
 </script>
 
 

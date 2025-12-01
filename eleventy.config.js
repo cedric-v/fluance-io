@@ -2,12 +2,16 @@
 const i18n = require("eleventy-plugin-i18n");
 const htmlmin = require("html-minifier-next"); // Le paquet sécurisé
 
+// PathPrefix pour GitHub Pages
+const PATH_PREFIX = "/fluance-io";
+
 module.exports = function(eleventyConfig) {
   
   // 1. Gestion des Images (local, servies depuis GitHub Pages ou tout autre hébergeur statique)
   eleventyConfig.addShortcode("image", function(src, alt, cls = "") {
     const cleanSrc = src.startsWith('/') ? src : `/${src}`;
-    return `<img src="${cleanSrc}" alt="${alt}" class="${cls}" loading="lazy">`;
+    const fullSrc = PATH_PREFIX + cleanSrc;
+    return `<img src="${fullSrc}" alt="${alt}" class="${cls}" loading="lazy">`;
   });
 
   // 2. Configuration i18n
@@ -47,6 +51,7 @@ module.exports = function(eleventyConfig) {
   return {
     dir: { input: "src", output: "_site" },
     markdownTemplateEngine: "njk",
-    htmlTemplateEngine: "njk"
+    htmlTemplateEngine: "njk",
+    pathPrefix: PATH_PREFIX + "/"
   };
 };

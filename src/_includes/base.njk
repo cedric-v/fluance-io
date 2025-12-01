@@ -24,7 +24,7 @@
     <link rel="alternate" hreflang="fr" href="https://fluance.io{% if canonicalUrl.startsWith('/en/') %}{{ canonicalUrl | replace('/en/', '/fr/') }}{% else %}{{ canonicalUrl }}{% endif %}">
     <link rel="alternate" hreflang="en" href="https://fluance.io{% if canonicalUrl.startsWith('/fr/') %}{{ canonicalUrl | replace('/fr/', '/en/') }}{% else %}{{ canonicalUrl }}{% endif %}">
     
-    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="{{ '/assets/css/styles.css' | url }}">
     
     <link rel="icon" type="image/x-icon" href="https://fluance.io/favicon.ico">
 </head>
