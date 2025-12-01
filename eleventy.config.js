@@ -7,9 +7,11 @@ module.exports = function(eleventyConfig) {
   // 1. Gestion des Images (Local vs S3)
   eleventyConfig.addShortcode("image", function(src, alt, cls = "") {
     const isProd = process.env.ELEVENTY_ENV === 'prod';
-    // En prod, on pointe vers le S3 via S3_PUBLIC_URL défini dans l'Action GH
-    const baseUrl = isProd ? process.env.S3_PUBLIC_URL : ''; 
-    return `<img src="${baseUrl}${src}" alt="${alt}" class="${cls}" loading="lazy">`;
+    // En prod, on pointe vers le S3 via S3_PUBLIC_URL défini dans l'Action GH / hébergeur
+    const rawBase = isProd ? (process.env.S3_PUBLIC_URL || '') : '';
+    const baseUrl = rawBase && !rawBase.endsWith('/') ? rawBase + '/' : rawBase;
+    const cleanSrc = src.startsWith('/') ? src.slice(1) : src;
+    return `<img src="${baseUrl}${cleanSrc}" alt="${alt}" class="${cls}" loading="lazy">`;
   });
 
   // 2. Configuration i18n
@@ -42,8 +44,8 @@ module.exports = function(eleventyConfig) {
     return content;
   });
 
-  // 4. Copie des assets statiques (Tailwind CSS, images)
-  eleventyConfig.addPassthroughCopy("src/assets");
+  // 4. Copie des assets statiques (images, etc.) — le CSS est généré dans _site par Tailwind
+  eleventyConfig.addPassthroughCopy({ "src/assets/img": "assets/img" });
   eleventyConfig.addPassthroughCopy("src/robots.txt");
   
   return {

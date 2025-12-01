@@ -1,17 +1,56 @@
-<header class="bg-white shadow-md">
-    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <a href="/">
-            {% image "assets/img/logo.png", "Logo Fluance", "h-10" %}
+<header class="nav-blur fixed inset-x-0 top-0 z-50">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-3">
+      {% image "assets/img/logo.png", "Logo Fluance", "h-10 w-auto" %}
+      <span class="text-lg font-semibold tracking-wide text-[#82153e]">Fluance</span>
+    </a>
+
+    <button class="md:hidden text-[#82153e]" data-menu-toggle aria-label="Open menu">
+      <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" />
+      </svg>
+    </button>
+
+    <nav class="hidden md:flex items-center gap-6 font-medium text-[#0f172a]" data-menu>
+      <a href="#hero" class="hover:text-[#82153e] transition">Accueil</a>
+      <a href="#chemins" class="hover:text-[#82153e] transition">
+        {% if locale == 'fr' %}Chemins{% else %}Paths{% endif %}
+      </a>
+      <a href="#approche" class="hover:text-[#82153e] transition">
+        {% if locale == 'fr' %}Approche{% else %}Approach{% endif %}
+      </a>
+      <a href="#founder" class="hover:text-[#82153e] transition">
+        {% if locale == 'fr' %}Fondateur{% else %}Founder{% endif %}
+      </a>
+      <a href="#contact" class="hover:text-[#82153e] transition">Contact</a>
+      {% if locale == 'fr' %}
+        <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="cta-pill bg-[#82153e] text-white">
+          EN
         </a>
-        
-        <nav class="space-x-4 hidden md:block">
-            <a href="{{ '/agenda/' | url }}" class="text-fluance hover:text-gray-900">Agenda</a>
-            <a href="{{ '/a-propos/' | url }}" class="text-fluance hover:text-gray-900">À propos</a>
-            {% if locale == 'fr' %}
-                <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="text-gray-500 hover:text-fluance border-l pl-4">EN</a>
-            {% else %}
-                <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="text-gray-500 hover:text-fluance border-l pl-4">FR</a>
-            {% endif %}
-        </nav>
-    </div>
+      {% else %}
+        <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="cta-pill bg-[#82153e] text-white">
+          FR
+        </a>
+      {% endif %}
+    </nav>
+  </div>
+
+  <nav class="md:hidden hidden flex-col gap-4 px-4 pb-6 font-medium text-[#0f172a]" data-menu-mobile>
+    <a href="#hero" class="py-2 border-b border-gray-200">Accueil</a>
+    <a href="#chemins" class="py-2 border-b border-gray-200">
+      {% if locale == 'fr' %}Chemins{% else %}Paths{% endif %}
+    </a>
+    <a href="#approche" class="py-2 border-b border-gray-200">
+      {% if locale == 'fr' %}Approche{% else %}Approach{% endif %}
+    </a>
+    <a href="#founder" class="py-2 border-b border-gray-200">
+      {% if locale == 'fr' %}Fondateur{% else %}Founder{% endif %}
+    </a>
+    <a href="#contact" class="py-2 border-b border-gray-200">Contact</a>
+    {% if locale == 'fr' %}
+      <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="btn-primary text-center">EN</a>
+    {% else %}
+      <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="btn-primary text-center">FR</a>
+    {% endif %}
+  </nav>
 </header>

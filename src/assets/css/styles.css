@@ -1,3 +1,72 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --fluance-bordeaux: #82153e;
+  --fluance-gold: #ffce2d;
+  --fluance-leaf: #8bc34a;
+  --fluance-ink: #0f172a;
+  --fluance-cream: #fdfaf6;
+}
+
+body {
+  background: var(--fluance-cream);
+  color: #1f1f1f;
+}
+
+.hero-gradient {
+  background: radial-gradient(circle at top, rgba(255, 206, 45, 0.25), transparent),
+    linear-gradient(135deg, rgba(130, 21, 62, 0.85), rgba(15, 23, 42, 0.9));
+}
+
+.section-card {
+  border-radius: 1.5rem;
+  border: 1px solid rgba(130, 21, 62, 0.15);
+  background: white;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+}
+
+.cta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.35rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: var(--fluance-gold);
+  color: var(--fluance-ink);
+  border-radius: 9999px;
+  padding: 0.85rem 1.75rem;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 15px 30px rgba(255, 206, 45, 0.35);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 25px 40px rgba(255, 206, 45, 0.45);
+}
+
+.btn-secondary {
+  border-radius: 9999px;
+  padding: 0.85rem 1.5rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+}
+
+.quote-card {
+  border-left: 4px solid var(--fluance-bordeaux);
+  padding-left: 1.5rem;
+}
+
+.nav-blur {
+  backdrop-filter: blur(14px);
+  background: rgba(253, 250, 246, 0.8);
+  border-bottom: 1px solid rgba(130, 21, 62, 0.1);
+}

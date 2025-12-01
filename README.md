@@ -146,6 +146,45 @@ In production, images can optionally be served from S3 if `S3_PUBLIC_URL` is set
 
 You can deploy the content of `_site/` **as a static website**. Typical options:
 
+#### Infomaniak (FTP + Object Storage S3)
+
+Use the provided script to build and deploy in one command:
+
+1. Create a `.env` file with your Infomaniak credentials:
+
+```env
+# FTP (web hosting)
+FTP_HOST=your-ftp-host.infomaniak.com
+FTP_USER=your-ftp-username
+FTP_PASSWORD=your-ftp-password
+FTP_REMOTE_DIR=/ # or /www, /web, etc. depending on your hosting
+FTP_SECURE=false # or true if you use FTPS
+
+# Object Storage (S3-compatible)
+S3_ENDPOINT=https://s3.your-infomaniak-endpoint.com
+S3_REGION=auto
+S3_BUCKET=your-bucket-name
+S3_ACCESS_KEY_ID=your-access-key
+S3_SECRET_ACCESS_KEY=your-secret-key
+
+# Public URL for images (base URL of your bucket)
+S3_PUBLIC_URL=https://your-bucket-public-url
+```
+
+2. Run the deployment script:
+
+```bash
+npm run deploy:infomaniak
+```
+
+This will:
+
+- Run a production build (`npm run build`) with `ELEVENTY_ENV=prod` and `S3_PUBLIC_URL`.
+- Upload the contents of `_site/` to your Infomaniak hosting via FTP.
+- Upload images from `src/assets/img/` to your Object Storage bucket under `assets/img/...`.
+
+> Note: the `image` shortcode uses `S3_PUBLIC_URL` in production so that `<img>` tags in the generated HTML point directly to your Object Storage URLs.
+
 #### GitHub Pages (via GitHub Actions)
 
 Recommended: automatically build and deploy the site on each push to `main` using GitHub Actions.

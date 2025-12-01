@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     {% if title %}
     <title>{{ title }} | Fluance</title>
     {% else %}
@@ -25,15 +28,26 @@
     
     <link rel="icon" type="image/x-icon" href="https://fluance.io/favicon.ico">
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+<body class="font-[Inter] bg-[#fdfaf6] text-[#1f1f1f] antialiased">
 
     {% include "header.njk" %}
-    
-    <main class="min-h-screen">
+
+    <main class="min-h-screen pt-28">
         {{ content | safe }}
     </main>
     
     {% include "footer.njk" %}
 
+<script>
+  const toggle = document.querySelector('[data-menu-toggle]');
+  const menu = document.querySelector('[data-menu]');
+  const mobileMenu = document.querySelector('[data-menu-mobile]');
+  if (toggle && menu && mobileMenu) {
+    toggle.addEventListener('click', () => {
+      menu.classList.toggle('hidden');
+      mobileMenu.classList.toggle('hidden');
+    });
+  }
+</script>
 </body>
 </html>
