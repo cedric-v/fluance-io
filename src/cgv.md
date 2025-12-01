@@ -10,10 +10,6 @@ permalink: /cgv/
   <header class="space-y-2 text-center">
     <p class="cta-pill bg-[#82153e]/10 text-[#82153e] inline-flex">Information légale</p>
     <h1 class="text-3xl font-semibold text-[#0f172a]">Conditions générales de vente</h1>
-    <p class="text-[#0f172a]/70">
-      Contenu reproduit depuis
-      <a class="underline" href="https://fluance.io/cgv" target="_blank" rel="noopener">fluance.io</a>.
-    </p>
   </header>
 
   <article class="legal-text space-y-4 text-[#1f1f1f]">
