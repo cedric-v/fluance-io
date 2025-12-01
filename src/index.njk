@@ -1,0 +1,25 @@
+---
+layout: base.njk
+title: Accueil
+description: Le développement au service des entrepreneurs.
+locale: fr
+permalink: /
+---
+
+<div class="flex items-center justify-center min-h-[60vh]">
+  <div class="text-center space-y-4">
+    <p class="text-lg text-gray-600">
+      Vous êtes redirigé vers la version française du site...
+    </p>
+    <a href="/fr/" class="inline-block px-6 py-3 bg-fluance text-white rounded-lg hover:bg-fluance/90 transition">
+      Accéder au site
+    </a>
+  </div>
+</div>
+
+<script>
+  // Redirection douce côté client
+  window.location.replace('/fr/');
+</script>
+
+

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    {% if title %}
+    <title>{{ title }} | Fluance</title>
+    {% else %}
+    {% if locale == 'fr' %}
+    <title>Accueil | Fluance</title>
+    {% else %}
+    <title>Home | Fluance</title>
+    {% endif %}
+    {% endif %}
+    <meta name="description" content="{{ description or 'Accompagnement professionnel et développement personnel.' }}">
+    
+    {% set canonicalUrl = fullUrl | url %}
+    <link rel="canonical" href="https://fluance.io{{ canonicalUrl }}">
+    
+    <link rel="alternate" hreflang="fr" href="https://fluance.io{% if canonicalUrl.startsWith('/en/') %}{{ canonicalUrl | replace('/en/', '/fr/') }}{% else %}{{ canonicalUrl }}{% endif %}">
+    <link rel="alternate" hreflang="en" href="https://fluance.io{% if canonicalUrl.startsWith('/fr/') %}{{ canonicalUrl | replace('/fr/', '/en/') }}{% else %}{{ canonicalUrl }}{% endif %}">
+    
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    
+    <link rel="icon" type="image/x-icon" href="https://fluance.io/favicon.ico">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    {% include "header.njk" %}
+    
+    <main class="min-h-screen">
+        {{ content | safe }}
+    </main>
+    
+    {% include "footer.njk" %}
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+<header class="bg-white shadow-md">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <a href="/">
+            {% image "assets/img/logo.png", "Logo Fluance", "h-10" %}
+        </a>
+        
+        <nav class="space-x-4 hidden md:block">
+            <a href="{{ '/agenda/' | url }}" class="text-fluance hover:text-gray-900">Agenda</a>
+            <a href="{{ '/a-propos/' | url }}" class="text-fluance hover:text-gray-900">À propos</a>
+            {% if locale == 'fr' %}
+                <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="text-gray-500 hover:text-fluance border-l pl-4">EN</a>
+            {% else %}
+                <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="text-gray-500 hover:text-fluance border-l pl-4">FR</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
