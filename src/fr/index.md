@@ -5,44 +5,40 @@ description: Le développement au service des entrepreneurs.
 locale: fr
 ---
 
-<section id="hero" class="hero-gradient rounded-[32px] max-w-6xl mx-auto px-6 md:px-12 py-16 text-white">
-  <div class="grid md:grid-cols-2 gap-10 items-center">
-    <div class="space-y-6">
-      <h1 class="text-4xl md:text-5xl font-semibold leading-tight">Libérez-vous de la surcharge<br>et retrouvez clarté & sérénité</h1>
-      <p class="text-lg text-white/85">Deux chemins complémentaires pour alléger la charge mentale, retrouver la fluidité dans votre corps et clarifier votre activité.</p>
-      <div class="flex flex-wrap gap-4">
-        <a href="#chemins" class="btn-primary text-[#0f172a] bg-[#ffce2d]">Découvrir les chemins</a>
-        <a href="#contact" class="btn-secondary border-white/60">Parler à Fluance</a>
-      </div>
+<section id="hero" class="relative min-h-[70vh] flex items-center justify-end max-w-7xl mx-auto px-6 md:px-12 py-20 mt-4 rounded-[32px] overflow-hidden">
+  <div class="absolute inset-0 z-0">
+    {% image "assets/img/hero-cedric.jpg", "Cédric Vonlanthen au bord du lac", "w-full h-full object-cover" %}
+    <div class="absolute inset-0 bg-gradient-to-r from-[#82153e]/90 via-[#82153e]/70 to-transparent"></div>
+  </div>
+  <div class="relative z-10 max-w-2xl text-white space-y-8">
+    <div class="space-y-4">
+      <h1 class="text-4xl md:text-6xl font-semibold leading-tight">
+        Relâcher les tensions.<br>
+        Libérer le trop-plein émotionnel.<br>
+        Détendre et fortifier votre corps.
+      </h1>
+      <p class="text-lg md:text-xl text-white/90">
+        Rejoignez un mouvement transformateur constitué d'une approche simple et libératrice. Aucun équipement nécessaire. Aucune expérience préalable.
+      </p>
     </div>
-    <div class="section-card bg-white/95 text-[#0f172a]">
-      <div class="p-6 space-y-5">
-        <p class="text-sm font-semibold text-[#82153e] uppercase tracking-[0.3em]">Offerts</p>
-        <div class="space-y-4">
-          <div>
-            <p class="text-sm font-medium text-[#0f172a]/70">Particuliers</p>
-            <p class="text-lg font-semibold">Recevez 2 pratiques libératrices</p>
-          </div>
-          <div>
-            <p class="text-sm font-medium text-[#0f172a]/70">Entrepreneurs & indépendants</p>
-            <p class="text-lg font-semibold">Recevez l'exercice de la journée idéale</p>
-          </div>
-        </div>
-        <div class="flex gap-4">
-          <a href="#chemins" class="w-full text-center btn-primary">Choisir mon approche</a>
-        </div>
-      </div>
+    <div class="flex flex-col sm:flex-row gap-4">
+      <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+        Essayer 2 pratiques libératrices
+      </a>
+      <a href="{{ '/cours-en-ligne/30-jours-mouvement/' | url }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
+        Challenge de 30 jours pour remettre du mouvement
+      </a>
     </div>
   </div>
 </section>
 
 <section id="chemins" class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-10">
   <div class="text-center space-y-4">
-    <p class="cta-pill bg-[#ffce2d]/20 text-[#82153e] mx-auto">2 chemins complémentaires</p>
+    <p class="cta-pill bg-[#ffce2d]/20 text-[#82153e] mx-auto">Approche libératrice</p>
     <h2 class="text-3xl font-semibold text-[#82153e]">Pour apaiser le corps, clarifier l'esprit</h2>
-    <p class="text-lg text-[#0f172a]/70">Fluance accompagne les particuliers et les entrepreneurs à sortir des tensions, du flou et de la surcharge.</p>
+    <p class="text-lg text-[#0f172a]/70">Fluance accompagne les particuliers à sortir des tensions, du flou et de la surcharge.</p>
   </div>
-  <div class="grid md:grid-cols-2 gap-8">
+  <div class="max-w-2xl mx-auto">
     <article id="presentiel" class="section-card p-8 space-y-5 bg-white">
       <p class="text-sm font-semibold text-[#82153e] uppercase">Particuliers</p>
       <h3 class="text-2xl font-semibold text-[#0f172a]">Retrouver un corps souple et un esprit apaisé</h3>
@@ -58,23 +54,6 @@ locale: fr
         </div>
       </div>
       <a href="#contact" class="btn-primary inline-flex items-center justify-center">Recevoir les pratiques</a>
-    </article>
-
-    <article id="entrepreneurs" class="section-card p-8 space-y-5 bg-white">
-      <p class="text-sm font-semibold text-[#82153e] uppercase">Entrepreneurs & indépendants</p>
-      <h3 class="text-2xl font-semibold text-[#0f172a]">Sortir du flou, alléger la charge mentale</h3>
-      <p class="text-[#0f172a]/75">Clarifier votre vision, structurer votre activité et avancer avec fluidité dans vos décisions et vos relations professionnelles.</p>
-      <div class="space-y-4">
-        <div class="quote-card">
-          <p class="italic text-[#0f172a]/80">« Cédric perçoit pleinement l’essence de ce que je souhaite transmettre. »</p>
-          <p class="text-sm text-[#0f172a]/60 mt-2">— Nathalie Varlet</p>
-        </div>
-        <div class="quote-card">
-          <p class="italic text-[#0f172a]/80">« Ses conseils me permettent d’avoir une nouvelle vision avec des résultats rapides. »</p>
-          <p class="text-sm text-[#0f172a]/60 mt-2">— Alain Cordey</p>
-        </div>
-      </div>
-      <a href="#contact" class="btn-primary inline-flex items-center justify-center">Explorer l’approche</a>
     </article>
   </div>
 </section>

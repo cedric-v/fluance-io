@@ -88,3 +88,12 @@ body {
 .legal-text h4 {
   font-size: 1.1rem;
 }
+
+/* Dropdown menu fixes */
+header nav {
+  position: relative;
+}
+
+header .group:hover .absolute {
+  pointer-events: auto;
+}

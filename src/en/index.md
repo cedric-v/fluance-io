@@ -5,44 +5,40 @@ description: Development at the service of entrepreneurs.
 locale: en
 ---
 
-<section id="hero" class="hero-gradient rounded-[32px] max-w-6xl mx-auto px-6 md:px-12 py-16 text-white">
-  <div class="grid md:grid-cols-2 gap-10 items-center">
-    <div class="space-y-6">
-      <h1 class="text-4xl md:text-5xl font-semibold leading-tight">Release overload and rediscover clarity & serenity</h1>
-      <p class="text-lg text-white/85">Two complementary paths to lighten mental load, restore fluidity in the body, and move forward with focus in your business.</p>
-      <div class="flex flex-wrap gap-4">
-        <a href="#chemins" class="btn-primary text-[#0f172a] bg-[#ffce2d]">Explore the paths</a>
-        <a href="#contact" class="btn-secondary border-white/60">Talk with Fluance</a>
-      </div>
+<section id="hero" class="relative min-h-[70vh] flex items-center justify-end max-w-7xl mx-auto px-6 md:px-12 py-20 mt-4 rounded-[32px] overflow-hidden">
+  <div class="absolute inset-0 z-0">
+    {% image "assets/img/hero-cedric.jpg", "Cédric Vonlanthen by the lake", "w-full h-full object-cover" %}
+    <div class="absolute inset-0 bg-gradient-to-r from-[#82153e]/90 via-[#82153e]/70 to-transparent"></div>
+  </div>
+  <div class="relative z-10 max-w-2xl text-white space-y-8">
+    <div class="space-y-4">
+      <h1 class="text-4xl md:text-6xl font-semibold leading-tight">
+        Release tension.<br>
+        Free emotional overflow.<br>
+        Relax and strengthen your body.
+      </h1>
+      <p class="text-lg md:text-xl text-white/90">
+        Join a transformative movement made up of a simple and liberating approach. No equipment needed. No prior experience.
+      </p>
     </div>
-    <div class="section-card bg-white/95 text-[#0f172a]">
-      <div class="p-6 space-y-5">
-        <p class="text-sm font-semibold text-[#82153e] uppercase tracking-[0.3em]">Complimentary</p>
-        <div class="space-y-4">
-          <div>
-            <p class="text-sm font-medium text-[#0f172a]/70">Individuals</p>
-            <p class="text-lg font-semibold">Receive 2 liberating practices</p>
-          </div>
-          <div>
-            <p class="text-sm font-medium text-[#0f172a]/70">Entrepreneurs & independents</p>
-            <p class="text-lg font-semibold">Receive the ideal-day exercise</p>
-          </div>
-        </div>
-        <div class="flex gap-4">
-          <a href="#chemins" class="w-full text-center btn-primary">Choose my approach</a>
-        </div>
-      </div>
+    <div class="flex flex-col sm:flex-row gap-4">
+      <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+        Try 2 liberating practices
+      </a>
+      <a href="{{ '/cours-en-ligne/30-jours-mouvement/' | url }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
+        30-day challenge to get moving
+      </a>
     </div>
   </div>
 </section>
 
 <section id="chemins" class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-10">
   <div class="text-center space-y-4">
-    <p class="cta-pill bg-[#ffce2d]/20 text-[#82153e] mx-auto">Two complementary paths</p>
+    <p class="cta-pill bg-[#ffce2d]/20 text-[#82153e] mx-auto">Liberating approach</p>
     <h2 class="text-3xl font-semibold text-[#82153e]">Soothe the body, clarify the mind</h2>
-    <p class="text-lg text-[#0f172a]/70">Fluance guides individuals and entrepreneurs out of tension, fog, and overload so they can move with ease.</p>
+    <p class="text-lg text-[#0f172a]/70">Fluance guides individuals out of tension, fog, and overload so they can move with ease.</p>
   </div>
-  <div class="grid md:grid-cols-2 gap-8">
+  <div class="max-w-2xl mx-auto">
     <article id="presentiel" class="section-card p-8 space-y-5 bg-white">
       <p class="text-sm font-semibold text-[#82153e] uppercase">Individuals</p>
       <h3 class="text-2xl font-semibold text-[#0f172a]">A supple body & serene mind</h3>
@@ -58,23 +54,6 @@ locale: en
         </div>
       </div>
       <a href="#contact" class="btn-primary inline-flex items-center justify-center">Receive the practices</a>
-    </article>
-
-    <article id="entrepreneurs" class="section-card p-8 space-y-5 bg-white">
-      <p class="text-sm font-semibold text-[#82153e] uppercase">Entrepreneurs & independents</p>
-      <h3 class="text-2xl font-semibold text-[#0f172a]">Leave the fog, lighten the mental load</h3>
-      <p class="text-[#0f172a]/75">Clarify your vision, structure your activity, and make decisions with fluidity in your business and relationships.</p>
-      <div class="space-y-4">
-        <div class="quote-card">
-          <p class="italic text-[#0f172a]/80">“Cédric fully grasps the essence of what I want to share.”</p>
-          <p class="text-sm text-[#0f172a]/60 mt-2">— Nathalie Varlet</p>
-        </div>
-        <div class="quote-card">
-          <p class="italic text-[#0f172a]/80">“His advice brings a new vision with rapid results.”</p>
-          <p class="text-sm text-[#0f172a]/60 mt-2">— Alain Cordey</p>
-        </div>
-      </div>
-      <a href="#contact" class="btn-primary inline-flex items-center justify-center">Explore the approach</a>
     </article>
   </div>
 </section>
