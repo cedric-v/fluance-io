@@ -11,7 +11,6 @@ It is designed to be simple to develop locally, deploy on static hosting (GitHub
 - **Nunjucks** templates
 - **Tailwind CSS 3** for styling
 - **Node.js / npm** for tooling
-- Optional: **Gemini API** helper script for content generation
 
 ---
 
@@ -67,7 +66,6 @@ Stop the dev server with `Ctrl + C`.
 - `_site/` – generated static site (ignored by git)
 - `eleventy.config.js` – Eleventy configuration (i18n, filters, transforms)
 - `tailwind.config.js` – Tailwind configuration
-- `scripts/gemini-assist.js` – helper script to generate content using Gemini
 
 ---
 
@@ -118,10 +116,6 @@ From `package.json`:
   ```bash
   npx tailwindcss -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --minify
   ```
-
-- **`npm run ask-gemini "your prompt here"`**
-
-  Uses the Gemini API to generate content (see “Using Gemini assistant” below).
 
 ---
 
@@ -235,38 +229,6 @@ This project uses environment variables for:
   - `dev` for local development (`npm start`)
   - `prod` for production builds (`npm run build`)
 
-- **`GEMINI_API_KEY`** (optional, for Gemini assistant script)
-  - API key for Google Gemini, used by `scripts/gemini-assist.js`.
-  - Must be stored in a local `.env` file (not committed) or in your CI/CD secrets.
-
-Example `.env` (not committed to git):
-
-```env
-GEMINI_API_KEY=your-secret-key-here
-```
-
----
-
-### Using the Gemini assistant (optional)
-
-The script `scripts/gemini-assist.js` helps generate content (Markdown, copy, etc.) with Gemini.
-
-1. Create a `.env` file at the project root:
-
-```env
-GEMINI_API_KEY=your-gemini-api-key
-```
-
-2. Run the script with a prompt:
-
-```bash
-npm run ask-gemini "Write a French blog post outline about leadership in Markdown"
-```
-
-3. The output will be written to `gemini_output.md` and a preview will be printed in the terminal.
-
-> Note: `gemini_output.md` is ignored by git.
-
 ---
 
 ### Maintenance
@@ -302,8 +264,7 @@ To keep the project healthy over time:
 ### Security and secrets
 
 - No API keys or secrets are committed to the repository.
-- Use `.env` files or CI/CD secret stores (GitHub Actions secrets) to keep:
-  - `GEMINI_API_KEY`
+- Use `.env` files or CI/CD secret stores (GitHub Actions secrets) if you add external APIs later.
 - The `.gitignore` file excludes `.env` and other sensitive or generated files.
 
 

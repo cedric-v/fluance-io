@@ -1,56 +1,70 @@
-<header class="nav-blur fixed inset-x-0 top-0 z-50">
+<header class="bg-[#82153e] fixed inset-x-0 top-0 z-50 shadow-md">
   <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-    <a href="/" class="flex items-center gap-3">
-      {% image "assets/img/logo.png", "Logo Fluance", "h-10 w-auto" %}
-      <span class="text-lg font-semibold tracking-wide text-[#82153e]">Fluance</span>
+    <a href="/" class="flex flex-col items-start gap-1">
+      {% image "assets/img/logo.png", "Fluance", "h-10 w-auto" %}
+      <span class="text-xs text-[#ffce2d]/80 italic">Le mouvement qui apaise</span>
     </a>
 
-    <button class="md:hidden text-[#82153e]" data-menu-toggle aria-label="Open menu">
+    <button class="md:hidden text-[#ffce2d]" data-menu-toggle aria-label="Open menu">
       <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" />
       </svg>
     </button>
 
-    <nav class="hidden md:flex items-center gap-6 font-medium text-[#0f172a]" data-menu>
-      <a href="#hero" class="hover:text-[#82153e] transition">Accueil</a>
-      <a href="#chemins" class="hover:text-[#82153e] transition">
-        {% if locale == 'fr' %}Chemins{% else %}Paths{% endif %}
+    <nav class="hidden md:flex items-center gap-6 font-medium text-[#ffce2d]" data-menu>
+      <a href="{{ '/' | url }}" class="hover:opacity-80 transition">
+        {% if locale == 'fr' %}Accueil{% else %}Home{% endif %}
       </a>
-      <a href="#approche" class="hover:text-[#82153e] transition">
-        {% if locale == 'fr' %}Approche{% else %}Approach{% endif %}
+      <a href="{{ '/#presentiel' | url }}" class="hover:opacity-80 transition">
+        {% if locale == 'fr' %}Présentiel{% else %}In-person{% endif %}
       </a>
-      <a href="#founder" class="hover:text-[#82153e] transition">
-        {% if locale == 'fr' %}Fondateur{% else %}Founder{% endif %}
+      <a href="{{ '/#approche' | url }}" class="hover:opacity-80 transition">
+        {% if locale == 'fr' %}En ligne{% else %}Online{% endif %}
       </a>
-      <a href="#contact" class="hover:text-[#82153e] transition">Contact</a>
+      <a href="{{ '/#founder' | url }}" class="hover:opacity-80 transition">
+        {% if locale == 'fr' %}A propos{% else %}About{% endif %}
+      </a>
+      <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="hover:opacity-80 transition">
+        {% if locale == 'fr' %}Entrepreneur ?{% else %}Entrepreneur?{% endif %}
+      </a>
+      <a href="{{ '/#contact' | url }}" class="hover:opacity-80 transition">
+        {% if locale == 'fr' %}Contact{% else %}Contact{% endif %}
+      </a>
       {% if locale == 'fr' %}
-        <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="cta-pill bg-[#82153e] text-white">
+        <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="cta-pill bg-[#ffce2d] text-[#82153e] hover:bg-[#ffd84d] transition">
           EN
         </a>
       {% else %}
-        <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="cta-pill bg-[#82153e] text-white">
+        <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="cta-pill bg-[#ffce2d] text-[#82153e] hover:bg-[#ffd84d] transition">
           FR
         </a>
       {% endif %}
     </nav>
   </div>
 
-  <nav class="md:hidden hidden flex-col gap-4 px-4 pb-6 font-medium text-[#0f172a]" data-menu-mobile>
-    <a href="#hero" class="py-2 border-b border-gray-200">Accueil</a>
-    <a href="#chemins" class="py-2 border-b border-gray-200">
-      {% if locale == 'fr' %}Chemins{% else %}Paths{% endif %}
+  <nav class="md:hidden hidden flex-col gap-4 px-4 pb-6 font-medium bg-[#82153e] text-[#ffce2d]" data-menu-mobile>
+    <a href="{{ '/' | url }}" class="py-2 border-b border-[#ffce2d]/20">
+      {% if locale == 'fr' %}Accueil{% else %}Home{% endif %}
     </a>
-    <a href="#approche" class="py-2 border-b border-gray-200">
-      {% if locale == 'fr' %}Approche{% else %}Approach{% endif %}
+    <a href="{{ '/#presentiel' | url }}" class="py-2 border-b border-[#ffce2d]/20">
+      {% if locale == 'fr' %}Présentiel{% else %}In-person{% endif %}
     </a>
-    <a href="#founder" class="py-2 border-b border-gray-200">
-      {% if locale == 'fr' %}Fondateur{% else %}Founder{% endif %}
+    <a href="{{ '/#approche' | url }}" class="py-2 border-b border-[#ffce2d]/20">
+      {% if locale == 'fr' %}En ligne{% else %}Online{% endif %}
     </a>
-    <a href="#contact" class="py-2 border-b border-gray-200">Contact</a>
+    <a href="{{ '/#founder' | url }}" class="py-2 border-b border-[#ffce2d]/20">
+      {% if locale == 'fr' %}A propos{% else %}About{% endif %}
+    </a>
+    <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="py-2 border-b border-[#ffce2d]/20">
+      {% if locale == 'fr' %}Entrepreneur ?{% else %}Entrepreneur?{% endif %}
+    </a>
+    <a href="{{ '/#contact' | url }}" class="py-2 border-b border-[#ffce2d]/20">
+      {% if locale == 'fr' %}Contact{% else %}Contact{% endif %}
+    </a>
     {% if locale == 'fr' %}
-      <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="btn-primary text-center">EN</a>
+      <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="btn-primary text-center bg-[#ffce2d] text-[#82153e] mt-2">EN</a>
     {% else %}
-      <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="btn-primary text-center">FR</a>
+      <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="btn-primary text-center bg-[#ffce2d] text-[#82153e] mt-2">FR</a>
     {% endif %}
   </nav>
 </header>

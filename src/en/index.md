@@ -44,7 +44,7 @@ locale: en
     <p class="text-lg text-[#0f172a]/70">Fluance guides individuals and entrepreneurs out of tension, fog, and overload so they can move with ease.</p>
   </div>
   <div class="grid md:grid-cols-2 gap-8">
-    <article class="section-card p-8 space-y-5 bg-white">
+    <article id="presentiel" class="section-card p-8 space-y-5 bg-white">
       <p class="text-sm font-semibold text-[#82153e] uppercase">Individuals</p>
       <h3 class="text-2xl font-semibold text-[#0f172a]">A supple body & serene mind</h3>
       <p class="text-[#0f172a]/75">Short, effective practices to release tension, free your breathing, and reinstall calm throughout the day.</p>
@@ -61,7 +61,7 @@ locale: en
       <a href="#contact" class="btn-primary inline-flex items-center justify-center">Receive the practices</a>
     </article>
 
-    <article class="section-card p-8 space-y-5 bg-white">
+    <article id="entrepreneurs" class="section-card p-8 space-y-5 bg-white">
       <p class="text-sm font-semibold text-[#82153e] uppercase">Entrepreneurs & independents</p>
       <h3 class="text-2xl font-semibold text-[#0f172a]">Leave the fog, lighten the mental load</h3>
       <p class="text-[#0f172a]/75">Clarify your vision, structure your activity, and make decisions with fluidity in your business and relationships.</p>
@@ -101,7 +101,7 @@ locale: en
     </ul>
   </div>
   <div class="section-card overflow-hidden">
-    {% image "assets/img/hero.jpg", "Fluance practice", "w-full h-full object-cover" %}
+    {% image "assets/img/parcours-fluance.jpg", "Fluance practice", "w-full h-full object-cover" %}
   </div>
 </section>
 

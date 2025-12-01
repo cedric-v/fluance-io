@@ -44,7 +44,7 @@ locale: fr
     <p class="text-lg text-[#0f172a]/70">Fluance accompagne les particuliers et les entrepreneurs à sortir des tensions, du flou et de la surcharge.</p>
   </div>
   <div class="grid md:grid-cols-2 gap-8">
-    <article class="section-card p-8 space-y-5 bg-white">
+    <article id="presentiel" class="section-card p-8 space-y-5 bg-white">
       <p class="text-sm font-semibold text-[#82153e] uppercase">Particuliers</p>
       <h3 class="text-2xl font-semibold text-[#0f172a]">Retrouver un corps souple et un esprit apaisé</h3>
       <p class="text-[#0f172a]/75">Pratiques courtes et efficaces pour relâcher les tensions, libérer la respiration et réinstaller la sérénité au quotidien.</p>
@@ -61,7 +61,7 @@ locale: fr
       <a href="#contact" class="btn-primary inline-flex items-center justify-center">Recevoir les pratiques</a>
     </article>
 
-    <article class="section-card p-8 space-y-5 bg-white">
+    <article id="entrepreneurs" class="section-card p-8 space-y-5 bg-white">
       <p class="text-sm font-semibold text-[#82153e] uppercase">Entrepreneurs & indépendants</p>
       <h3 class="text-2xl font-semibold text-[#0f172a]">Sortir du flou, alléger la charge mentale</h3>
       <p class="text-[#0f172a]/75">Clarifier votre vision, structurer votre activité et avancer avec fluidité dans vos décisions et vos relations professionnelles.</p>
@@ -101,7 +101,7 @@ locale: fr
     </ul>
   </div>
   <div class="section-card overflow-hidden">
-    {% image "assets/img/hero.jpg", "Pratique Fluance", "w-full h-full object-cover" %}
+    {% image "assets/img/parcours-fluance.jpg", "Pratique Fluance", "w-full h-full object-cover" %}
   </div>
 </section>
 
