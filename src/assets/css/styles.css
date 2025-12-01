@@ -70,3 +70,21 @@ body {
   background: rgba(253, 250, 246, 0.8);
   border-bottom: 1px solid rgba(130, 21, 62, 0.1);
 }
+
+/* Legal pages typography */
+.legal-text h2,
+.legal-text h3,
+.legal-text h4 {
+  font-weight: 600;
+  color: #0f172a;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.legal-text h3 {
+  font-size: 1.25rem; /* ~text-xl */
+}
+
+.legal-text h4 {
+  font-size: 1.1rem;
+}
