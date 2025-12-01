@@ -4,14 +4,10 @@ const htmlmin = require("html-minifier-next"); // Le paquet sécurisé
 
 module.exports = function(eleventyConfig) {
   
-  // 1. Gestion des Images (Local vs S3)
+  // 1. Gestion des Images (local, servies depuis GitHub Pages ou tout autre hébergeur statique)
   eleventyConfig.addShortcode("image", function(src, alt, cls = "") {
-    const isProd = process.env.ELEVENTY_ENV === 'prod';
-    // En prod, on pointe vers le S3 via S3_PUBLIC_URL défini dans l'Action GH / hébergeur
-    const rawBase = isProd ? (process.env.S3_PUBLIC_URL || '') : '';
-    const baseUrl = rawBase && !rawBase.endsWith('/') ? rawBase + '/' : rawBase;
-    const cleanSrc = src.startsWith('/') ? src.slice(1) : src;
-    return `<img src="${baseUrl}${cleanSrc}" alt="${alt}" class="${cls}" loading="lazy">`;
+    const cleanSrc = src.startsWith('/') ? src : `/${src}`;
+    return `<img src="${cleanSrc}" alt="${alt}" class="${cls}" loading="lazy">`;
   });
 
   // 2. Configuration i18n

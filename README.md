@@ -1,7 +1,7 @@
 ## Fluance.io
 
 Fluance.io is a multilingual (FR/EN) static website built with [Eleventy](https://www.11ty.dev/) and [Tailwind CSS](https://tailwindcss.com/).  
-It is designed to be simple to develop locally, deploy on static hosting (GitHub Pages, Netlify, S3+CloudFront, etc.), and easy to maintain over time.
+It is designed to be simple to develop locally, deploy on static hosting (GitHub Pages, Netlify, etc.), and easy to maintain over time.
 
 ---
 
@@ -9,7 +9,7 @@ It is designed to be simple to develop locally, deploy on static hosting (GitHub
 
 - **Eleventy 3** as static site generator
 - **Nunjucks** templates
-- **Tailwind CSS 4** for styling
+- **Tailwind CSS 3** for styling
 - **Node.js / npm** for tooling
 - Optional: **Gemini API** helper script for content generation
 
@@ -96,7 +96,7 @@ From `package.json`:
   Tailwind CSS in watch mode:
 
   ```bash
-  npx @tailwindcss/cli -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --watch
+  npx tailwindcss -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --watch
   ```
 
 - **`npm run build`**
@@ -116,7 +116,7 @@ From `package.json`:
 - **`npm run build:css`**
 
   ```bash
-  npx @tailwindcss/cli -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --minify
+  npx tailwindcss -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --minify
   ```
 
 - **`npm run ask-gemini "your prompt here"`**
@@ -138,52 +138,11 @@ Output:
 - Static files are written to the `_site/` directory.
 - This folder can be served by any static hosting provider (GitHub Pages, Netlify, S3, etc.).
 
-In production, images can optionally be served from S3 if `S3_PUBLIC_URL` is set (see below).
-
 ---
 
 ### Deployment
 
-You can deploy the content of `_site/` **as a static website**. Typical options:
-
-#### Infomaniak (FTP + Object Storage S3)
-
-Use the provided script to build and deploy in one command:
-
-1. Create a `.env` file with your Infomaniak credentials:
-
-```env
-# FTP (web hosting)
-FTP_HOST=your-ftp-host.infomaniak.com
-FTP_USER=your-ftp-username
-FTP_PASSWORD=your-ftp-password
-FTP_REMOTE_DIR=/ # or /www, /web, etc. depending on your hosting
-FTP_SECURE=false # or true if you use FTPS
-
-# Object Storage (S3-compatible)
-S3_ENDPOINT=https://s3.your-infomaniak-endpoint.com
-S3_REGION=auto
-S3_BUCKET=your-bucket-name
-S3_ACCESS_KEY_ID=your-access-key
-S3_SECRET_ACCESS_KEY=your-secret-key
-
-# Public URL for images (base URL of your bucket)
-S3_PUBLIC_URL=https://your-bucket-public-url
-```
-
-2. Run the deployment script:
-
-```bash
-npm run deploy:infomaniak
-```
-
-This will:
-
-- Run a production build (`npm run build`) with `ELEVENTY_ENV=prod` and `S3_PUBLIC_URL`.
-- Upload the contents of `_site/` to your Infomaniak hosting via FTP.
-- Upload images from `src/assets/img/` to your Object Storage bucket under `assets/img/...`.
-
-> Note: the `image` shortcode uses `S3_PUBLIC_URL` in production so that `<img>` tags in the generated HTML point directly to your Object Storage URLs.
+You can deploy the content of `_site/` **as a static website**. The project is configured to use **GitHub Pages** via GitHub Actions.
 
 #### GitHub Pages (via GitHub Actions)
 
@@ -223,13 +182,11 @@ jobs:
           node-version: 'lts/*'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build site
         env:
           ELEVENTY_ENV: prod
-          # Optional: if you host images on S3
-          # S3_PUBLIC_URL: https://your-bucket.s3.amazonaws.com
         run: npm run build
 
       - name: Upload artifact
@@ -266,7 +223,7 @@ On each push to `main`, GitHub will:
    npm run build
    ```
 
-2. Deploy the contents of `_site/` to your static host (e.g. upload to S3, connect Netlify to the repo with build command `npm run build` and publish directory `_site`, etc.).
+2. Deploy the contents of `_site/` to your static host (e.g. connect Netlify to the repo with build command `npm run build` and publish directory `_site`, etc.).
 
 ---
 
@@ -278,10 +235,6 @@ This project uses environment variables for:
   - `dev` for local development (`npm start`)
   - `prod` for production builds (`npm run build`)
 
-- **`S3_PUBLIC_URL`** (optional)
-  - Base URL for images in production, e.g. `https://your-bucket.s3.amazonaws.com`
-  - Used by the `image` shortcode to generate `<img src="...">` tags.
-
 - **`GEMINI_API_KEY`** (optional, for Gemini assistant script)
   - API key for Google Gemini, used by `scripts/gemini-assist.js`.
   - Must be stored in a local `.env` file (not committed) or in your CI/CD secrets.
@@ -290,7 +243,6 @@ Example `.env` (not committed to git):
 
 ```env
 GEMINI_API_KEY=your-secret-key-here
-S3_PUBLIC_URL=https://your-bucket.s3.amazonaws.com
 ```
 
 ---
@@ -350,9 +302,8 @@ To keep the project healthy over time:
 ### Security and secrets
 
 - No API keys or secrets are committed to the repository.
-- Use `.env` files or CI/CD secret stores to keep:
+- Use `.env` files or CI/CD secret stores (GitHub Actions secrets) to keep:
   - `GEMINI_API_KEY`
-  - `S3_PUBLIC_URL` (if needed)
 - The `.gitignore` file excludes `.env` and other sensitive or generated files.
 
 
