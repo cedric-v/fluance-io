@@ -18,7 +18,9 @@ locale: en
         Relax and strengthen your body.
       </h1>
       <p class="text-lg md:text-xl text-white/90">
-        Join a transformative movement made up of a simple and liberating approach. No equipment needed. No prior experience.
+        Join a transformative movement based on a simple, playful, natural and liberating approach.<br><br>
+        No equipment needed.<br><br>
+        No prerequisites.
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">

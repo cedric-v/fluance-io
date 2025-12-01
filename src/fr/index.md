@@ -18,7 +18,9 @@ locale: fr
         Détendre et fortifier votre corps.
       </h1>
       <p class="text-lg md:text-xl text-white/90">
-        Rejoignez un mouvement transformateur constitué d'une approche simple et libératrice. Aucun équipement nécessaire. Aucune expérience préalable.
+        Rejoignez un mouvement transformateur basé sur une approche simple, ludique, naturelle et libératrice.<br><br>
+        Aucun équipement nécessaire.<br><br>
+        Aucun prérequis.
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
