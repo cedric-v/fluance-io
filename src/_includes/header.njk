@@ -178,10 +178,18 @@
       {% if locale == 'fr' %}Contact{% else %}Contact{% endif %}
     </a>
     
-    {% if locale == 'fr' %}
-      <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="btn-primary text-center bg-[#ffce2d] text-[#82153e] mt-2">EN</a>
-    {% else %}
-      <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="btn-primary text-center bg-[#ffce2d] text-[#82153e] mt-2">FR</a>
-    {% endif %}
+    <div class="pt-3 mt-2 border-t border-[#ffce2d]/20">
+      {% if locale == 'fr' %}
+        <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="py-2 text-sm text-[#ffce2d]/80 hover:text-[#ffce2d] transition-colors flex items-center gap-2">
+          <span>English</span>
+          <span class="text-xs">EN</span>
+        </a>
+      {% else %}
+        <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="py-2 text-sm text-[#ffce2d]/80 hover:text-[#ffce2d] transition-colors flex items-center gap-2">
+          <span>Français</span>
+          <span class="text-xs">FR</span>
+        </a>
+      {% endif %}
+    </div>
   </nav>
 </header>

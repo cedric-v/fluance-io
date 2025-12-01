@@ -28,12 +28,29 @@
     
     <link rel="icon" type="image/x-icon" href="{{ '/assets/img/favicon.ico' | url }}">
     
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-FVTMPVN2');</script>
+    <!-- Google Tag Manager - chargé uniquement après consentement -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      
+      // Fonction pour charger GTM après consentement
+      window.loadGTM = function() {
+        // Vérifier si GTM n'est pas déjà chargé
+        if (document.querySelector('script[src*="googletagmanager.com/gtm.js"]')) {
+          return;
+        }
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-FVTMPVN2');
+      };
+      
+      // Charger GTM si le consentement a déjà été donné
+      if (localStorage.getItem('cookieConsent') === 'accepted') {
+        window.loadGTM();
+      }
+    </script>
     <!-- End Google Tag Manager -->
 </head>
 <body class="font-[Inter] bg-[#fdfaf6] text-[#1f1f1f] antialiased">
@@ -49,6 +66,35 @@
     </main>
     
     {% include "footer.njk" %}
+
+    <!-- Cookie Consent Banner -->
+    <div id="cookie-banner" class="fixed bottom-0 left-0 right-0 z-50 hidden bg-[#82153e] text-white shadow-2xl border-t-2 border-[#ffce2d]/30">
+      <div class="max-w-6xl mx-auto px-4 md:px-8 py-4 md:py-5">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="flex-1 space-y-2">
+            <p class="font-semibold text-base md:text-lg">Gestion des cookies</p>
+            <p class="text-sm md:text-base text-white/90">
+              {% if locale == 'fr' %}
+              Nous utilisons des cookies pour améliorer votre expérience et analyser l'utilisation du site. En acceptant, vous autorisez l'utilisation de cookies analytiques (Google Analytics).
+              {% else %}
+              We use cookies to improve your experience and analyze site usage. By accepting, you authorize the use of analytical cookies (Google Analytics).
+              {% endif %}
+            </p>
+            <a href="{{ '/mentions-legales/' | url }}" class="text-sm text-[#ffce2d] hover:underline">
+              {% if locale == 'fr' %}En savoir plus{% else %}Learn more{% endif %}
+            </a>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <button id="accept-cookies" class="px-6 py-2.5 bg-[#ffce2d] text-[#82153e] font-semibold rounded-full hover:bg-[#ffd84d] transition-colors">
+              {% if locale == 'fr' %}Accepter{% else %}Accept{% endif %}
+            </button>
+            <button id="reject-cookies" class="px-6 py-2.5 bg-transparent border-2 border-white/60 text-white font-semibold rounded-full hover:bg-white/10 transition-colors">
+              {% if locale == 'fr' %}Refuser{% else %}Reject{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
 <script>
   const toggle = document.querySelector('[data-menu-toggle]');
@@ -80,6 +126,43 @@
       }
     });
   });
+
+  // Gestion du consentement aux cookies
+  (function() {
+    const cookieBanner = document.getElementById('cookie-banner');
+    const acceptBtn = document.getElementById('accept-cookies');
+    const rejectBtn = document.getElementById('reject-cookies');
+    
+    // Vérifier si le consentement a déjà été donné
+    const consent = localStorage.getItem('cookieConsent');
+    
+    if (!consent) {
+      // Afficher le bandeau après un court délai pour une meilleure UX
+      setTimeout(() => {
+        cookieBanner.classList.remove('hidden');
+        cookieBanner.classList.add('animate-slide-up');
+      }, 500);
+    }
+    
+    // Gérer l'acceptation
+    acceptBtn.addEventListener('click', () => {
+      localStorage.setItem('cookieConsent', 'accepted');
+      cookieBanner.classList.add('hidden');
+      
+      // Charger GTM si pas déjà chargé
+      if (!window.dataLayer || !window.dataLayer.find(e => e.event === 'gtm.js')) {
+        if (typeof loadGTM === 'function') {
+          loadGTM();
+        }
+      }
+    });
+    
+    // Gérer le refus
+    rejectBtn.addEventListener('click', () => {
+      localStorage.setItem('cookieConsent', 'rejected');
+      cookieBanner.classList.add('hidden');
+    });
+  })();
 </script>
 </body>
 </html>
