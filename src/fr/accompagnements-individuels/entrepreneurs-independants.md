@@ -39,7 +39,7 @@ permalink: /accompagnements-individuels/entrepreneurs-independants/
     </div>
 
     <div class="text-center pt-6">
-      <a href="{{ '/#contact' | url }}" class="btn-primary inline-flex">Demander un accompagnement</a>
+      <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="btn-primary inline-flex">En savoir plus</a>
     </div>
   </article>
 </section>
