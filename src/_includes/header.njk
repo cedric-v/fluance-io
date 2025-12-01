@@ -180,14 +180,12 @@
     
     <div class="pt-3 mt-2 border-t border-[#ffce2d]/20">
       {% if locale == 'fr' %}
-        <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="py-2 text-sm text-[#ffce2d]/80 hover:text-[#ffce2d] transition-colors flex items-center gap-2">
-          <span>English</span>
-          <span class="text-xs">EN</span>
+        <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d]/20 border border-[#ffce2d]/40 rounded-lg hover:bg-[#ffce2d]/30 hover:border-[#ffce2d]/60 transition-colors">
+          English (EN)
         </a>
       {% else %}
-        <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="py-2 text-sm text-[#ffce2d]/80 hover:text-[#ffce2d] transition-colors flex items-center gap-2">
-          <span>Français</span>
-          <span class="text-xs">FR</span>
+        <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d]/20 border border-[#ffce2d]/40 rounded-lg hover:bg-[#ffce2d]/30 hover:border-[#ffce2d]/60 transition-colors">
+          Français (FR)
         </a>
       {% endif %}
     </div>
