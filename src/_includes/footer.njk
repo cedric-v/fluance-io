@@ -3,28 +3,28 @@
     <div class="space-y-8 border-b border-[#ffce2d]/20 pb-6 mb-6">
       <div class="flex flex-col md:flex-row justify-between items-start gap-8">
         <div class="space-y-3">
-          <h3 class="text-lg font-bold">Navigation</h3>
+          <h3 class="text-lg font-bold">{% if locale == 'fr' %}Navigation{% else %}Navigation{% endif %}</h3>
           <ul class="space-y-2 text-sm text-[#ffce2d]/80">
-            <li><a href="{{ '/' | url }}" class="hover:text-[#ffce2d]">Accueil</a></li>
-            <li><a href="{{ '/a-propos/mission/' | url }}" class="hover:text-[#ffce2d]">A propos</a></li>
-            <li><a href="{{ '/cours-en-ligne/30-jours-mouvement/' | url }}" class="hover:text-[#ffce2d]">Cours en ligne</a></li>
-            <li><a href="{{ '/presentiel/cours-hebdomadaires/' | url }}" class="hover:text-[#ffce2d]">Présentiel</a></li>
-            <li><a href="{{ '/accompagnements-individuels/entrepreneurs-independants/' | url }}" class="hover:text-[#ffce2d]">Accompagnement 1:1</a></li>
-            <li><a href="{{ '/#contact' | url }}" class="hover:text-[#ffce2d]">Contact</a></li>
+            <li><a href="{{ '/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Accueil{% else %}Home{% endif %}</a></li>
+            <li><a href="{{ '/a-propos/mission/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}A propos{% else %}About{% endif %}</a></li>
+            <li><a href="{{ '/cours-en-ligne/30-jours-mouvement/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Cours en ligne{% else %}Online Courses{% endif %}</a></li>
+            <li><a href="{{ '/presentiel/cours-hebdomadaires/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Présentiel{% else %}In-person{% endif %}</a></li>
+            <li><a href="{{ '/accompagnements-individuels/entrepreneurs-independants/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Accompagnement 1:1{% else %}1:1 Coaching{% endif %}</a></li>
+            <li><a href="{{ '/#contact' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Contact{% else %}Contact{% endif %}</a></li>
           </ul>
         </div>
 
         <div class="space-y-3 md:text-right">
-          <h3 class="text-lg font-bold">Légal</h3>
+          <h3 class="text-lg font-bold">{% if locale == 'fr' %}Légal{% else %}Legal{% endif %}</h3>
           <ul class="space-y-2 text-sm text-[#ffce2d]/80">
-            <li><a href="{{ '/mentions-legales/' | url }}" class="hover:text-[#ffce2d]">Mentions légales &amp; Confidentialité</a></li>
-            <li><a href="{{ '/cgv/' | url }}" class="hover:text-[#ffce2d]">Conditions générales de vente</a></li>
+            <li><a href="{{ '/mentions-legales/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Mentions légales &amp; Confidentialité{% else %}Legal Notice &amp; Privacy{% endif %}</a></li>
+            <li><a href="{{ '/cgv/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Conditions générales de vente{% else %}Terms &amp; Conditions{% endif %}</a></li>
           </ul>
         </div>
       </div>
 
       <div class="space-y-4 text-center">
-        <h3 class="text-lg font-bold">Retrouvez Fluance sur les réseaux sociaux</h3>
+        <h3 class="text-lg font-bold">{% if locale == 'fr' %}Retrouvez Fluance sur les réseaux sociaux{% else %}Find Fluance on social media{% endif %}</h3>
         <div class="flex flex-wrap gap-4 items-center justify-center">
           <a href="https://www.youtube.com/@fluanceio" target="_blank" rel="noreferrer" aria-label="YouTube Fluance" class="hover:opacity-80">
             <img src="https://optassets.ontraport.com/opt_assets/images/iconsets_v3/monochromatic/youtube.png" alt="YouTube" class="w-12 h-12">
@@ -46,19 +46,19 @@
           </a>
         </div>
         <p class="text-sm text-[#ffce2d]/80">
-          Société Instants Zen Sàrl<br>
-          Tel : <a href="tel:+33972133388" class="hover:text-[#ffce2d]">+33 (0)9 72 13 33 88</a>
+          {% if locale == 'fr' %}Société Instants Zen Sàrl{% else %}Instants Zen Sàrl{% endif %}<br>
+          {% if locale == 'fr' %}Tel :{% else %}Tel:{% endif %} <a href="tel:+33972133388" class="hover:text-[#ffce2d]">+33 (0)9 72 13 33 88</a>
         </p>
       </div>
     </div>
 
     <div class="text-center text-sm pt-2 text-[#ffce2d]/70">
-      &copy; {{ "now" | date('yyyy') }} Fluance. Tous droits réservés.
+      &copy; {{ "now" | date('yyyy') }} Fluance. {% if locale == 'fr' %}Tous droits réservés.{% else %}All rights reserved.{% endif %}
     </div>
   </div>
 
   <a href="https://fluance.io/#form" target="_blank" rel="noreferrer"
      class="fixed right-4 bottom-4 z-40 bg-[#82153e] text-white px-4 py-3 rounded-full shadow-lg text-sm font-semibold flex items-center gap-2 hover:bg-fluance/90">
-    Aide ?
+    {% if locale == 'fr' %}Aide ?{% else %}Help?{% endif %}
   </a>
 </footer>
