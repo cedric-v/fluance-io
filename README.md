@@ -51,6 +51,7 @@ The main pages are:
 
 - Root (redirects to FR): `http://localhost:8080/`
 - French homepage: `http://localhost:8080/fr/`
+- English homepage: `http://localhost:8080/en/`
 
 Stop the dev server with `Ctrl + C`.
 
@@ -60,10 +61,13 @@ Stop the dev server with `Ctrl + C`.
 
 - `src/` – source content and templates
   - `_includes/` – base layout, header, footer
-  - `fr/` – French content (e.g. `index.md`)
+  - `fr/` – French content (e.g. `index.md`, `a-propos/philosophie.md`)
+  - `en/` – English content (e.g. `index.md`)
   - `index.njk` – root index, redirects to `/fr/`
+  - `sitemap.njk` – sitemap.xml generator template
   - `assets/css/styles.css` – Tailwind input CSS
 - `_site/` – generated static site (ignored by git)
+  - `sitemap.xml` – automatically generated sitemap
 - `eleventy.config.js` – Eleventy configuration (i18n, filters, transforms)
 - `tailwind.config.js` – Tailwind configuration
 
@@ -253,7 +257,7 @@ The `validation-reports` artifact contains:
 **W3C HTML Validation reports:**
 - `w3c/` directory containing validation reports for up to 10 HTML pages
   - Each page has both HTML and JSON format reports
-  - Files are named based on the page path (e.g., `index.html`, `fr_index.html`, `a-propos_mission_index.html`)
+  - Files are named based on the page path (e.g., `index.html`, `fr_index.html`, `a-propos_philosophie_index.html`)
 
 **Summary:**
 - `summary.md` - Overview of available reports and how to use them
@@ -322,8 +326,20 @@ To keep the project healthy over time:
   - Shared layouts/partials under `src/_includes/`.
 
 - **Internationalization (i18n):**
+  - The site supports **French (FR)** and **English (EN)** languages.
   - Basic i18n is configured via `eleventy-plugin-i18n` in `eleventy.config.js`.
+  - French content is located in `src/fr/`, English content in `src/en/`.
+  - Language switching is handled in the header navigation.
+  - Each page includes `hreflang` tags for proper SEO and language targeting.
   - You can extend the `translations` object and add new languages as needed.
+
+- **Sitemap:**
+  - A `sitemap.xml` is automatically generated during the build process.
+  - The sitemap includes all pages (excluding JSON files and 404 pages).
+  - Pages are prioritized: homepage (1.0), "À propos" pages (0.8), others (0.6).
+  - Multilingual pages include `hreflang` tags for proper language targeting.
+  - The sitemap is accessible at `https://fluance.io/sitemap.xml` after deployment.
+  - You can submit it to Google Search Console for better indexing.
 
 - **Static assets:**
   - Add images, icons, etc. under `src/assets/`.

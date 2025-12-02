@@ -1,0 +1,76 @@
+---
+permalink: /sitemap.xml
+eleventyExcludeFromCollections: true
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+{%- for page in collections.all -%}
+  {%- if page.url -%}
+    {%- if page.url != "/sitemap.xml" -%}
+      {%- if page.url != "/404.html" -%}
+        {%- set hasJson = false -%}
+        {%- if ".json" in page.url -%}
+          {%- set hasJson = true -%}
+        {%- endif -%}
+        {%- if not hasJson -%}
+          {%- set cleanUrl = page.url | replace("/fluance-io", "") -%}
+          {%- set fullUrl = "https://fluance.io" + cleanUrl -%}
+          {%- if page.date -%}
+            {%- set lastmod = page.date | date("YYYY-MM-DD") -%}
+          {%- else -%}
+            {%- set lastmod = "now" | date("YYYY-MM-DD") -%}
+          {%- endif -%}
+          {%- set changefreq = "monthly" -%}
+          {%- if cleanUrl == "/" -%}
+            {%- set changefreq = "weekly" -%}
+          {%- endif -%}
+          {%- if cleanUrl == "/fr/" -%}
+            {%- set changefreq = "weekly" -%}
+          {%- endif -%}
+          {%- if cleanUrl == "/en/" -%}
+            {%- set changefreq = "weekly" -%}
+          {%- endif -%}
+          {%- set priority = "0.6" -%}
+          {%- if cleanUrl == "/" -%}
+            {%- set priority = "1.0" -%}
+          {%- endif -%}
+          {%- if cleanUrl == "/fr/" -%}
+            {%- set priority = "1.0" -%}
+          {%- endif -%}
+          {%- if cleanUrl == "/en/" -%}
+            {%- set priority = "1.0" -%}
+          {%- endif -%}
+          {%- if "/a-propos/" in cleanUrl -%}
+            {%- set priority = "0.8" -%}
+          {%- endif -%}
+  <url>
+    <loc>{{ fullUrl }}</loc>
+    <lastmod>{{ lastmod }}</lastmod>
+    <changefreq>{{ changefreq }}</changefreq>
+    <priority>{{ priority }}</priority>
+    {%- if page.locale == "fr" -%}
+      {%- set enUrl = cleanUrl | replace("/fr/", "/en/") -%}
+      {%- if enUrl != cleanUrl -%}
+        {%- if enUrl != "/en/" -%}
+    <xhtml:link rel="alternate" hreflang="fr" href="{{ fullUrl }}" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://fluance.io{{ enUrl }}" />
+        {%- endif -%}
+      {%- endif -%}
+    {%- endif -%}
+    {%- if page.locale == "en" -%}
+      {%- set frUrl = cleanUrl | replace("/en/", "/fr/") -%}
+      {%- if frUrl != cleanUrl -%}
+        {%- if frUrl != "/fr/" -%}
+    <xhtml:link rel="alternate" hreflang="en" href="{{ fullUrl }}" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://fluance.io{{ frUrl }}" />
+        {%- endif -%}
+      {%- endif -%}
+    {%- endif -%}
+  </url>
+        {%- endif -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endif -%}
+{%- endfor -%}
+</urlset>
