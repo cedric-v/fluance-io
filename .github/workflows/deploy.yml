@@ -40,6 +40,103 @@ jobs:
         with:
           path: _site
 
+  validate:
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        env:
+          ELEVENTY_ENV: prod
+        run: npm run build
+
+      - name: Install validation tools
+        run: |
+          npm install -g lighthouse@latest w3c-html-validator@latest
+
+      - name: Start local server
+        run: |
+          cd _site
+          npx -y http-server -p 8080 --silent &
+          echo $! > /tmp/http-server.pid
+          sleep 5
+          curl -f http://localhost:8080/ || exit 1
+
+      - name: Run Lighthouse audit
+        run: |
+          mkdir -p reports
+          lighthouse http://localhost:8080/ --output=html --output-path=./reports/lighthouse-home.html --chrome-flags="--headless --no-sandbox"
+          lighthouse http://localhost:8080/fr/ --output=html --output-path=./reports/lighthouse-fr.html --chrome-flags="--headless --no-sandbox"
+          lighthouse http://localhost:8080/en/ --output=html --output-path=./reports/lighthouse-en.html --chrome-flags="--headless --no-sandbox" || true
+          
+          # Generate JSON reports for summary
+          lighthouse http://localhost:8080/ --output=json --output-path=./reports/lighthouse-home.json --chrome-flags="--headless --no-sandbox"
+          lighthouse http://localhost:8080/fr/ --output=json --output-path=./reports/lighthouse-fr.json --chrome-flags="--headless --no-sandbox"
+
+      - name: Validate HTML with W3C
+        run: |
+          mkdir -p reports/w3c
+          find _site -name "*.html" -type f | head -10 | while read file; do
+            filename=$(basename "$file" .html)
+            path=$(echo "$file" | sed 's|_site/||' | sed 's|/|_|g')
+            w3c-html-validator "$file" --format=html --output=./reports/w3c/"${path}.html" || true
+            w3c-html-validator "$file" --format=json --output=./reports/w3c/"${path}.json" || true
+          done
+
+      - name: Generate validation summary
+        run: |
+          cat > reports/summary.md << 'EOF'
+          # Rapport de validation du site
+          
+          ## Google Lighthouse
+          
+          Les rapports Lighthouse sont disponibles dans les fichiers HTML :
+          - `lighthouse-home.html` - Page d'accueil
+          - `lighthouse-fr.html` - Page française
+          - `lighthouse-en.html` - Page anglaise (si disponible)
+          
+          ## Validateur W3C
+          
+          Les rapports de validation HTML sont disponibles dans le dossier `w3c/`.
+          
+          ## Comment consulter les rapports
+          
+          1. Allez dans l'onglet "Actions" de votre repository GitHub
+          2. Cliquez sur le workflow qui vient de s'exécuter
+          3. Cliquez sur le job "validate"
+          4. Dans la section "Artifacts", téléchargez le fichier "validation-reports"
+          5. Décompressez le fichier pour accéder aux rapports HTML
+          
+          EOF
+          cat reports/summary.md
+
+      - name: Stop local server
+        if: always()
+        run: |
+          if [ -f /tmp/http-server.pid ]; then
+            kill $(cat /tmp/http-server.pid) || true
+          fi
+
+      - name: Upload validation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-reports
+          path: reports/
+          retention-days: 30
+
   deploy:
     needs: build
     runs-on: ubuntu-latest

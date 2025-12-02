@@ -12,10 +12,6 @@
     </button>
 
     <nav class="hidden md:flex items-center gap-6 font-medium text-[#ffce2d]" data-menu>
-      <a href="{{ '/' | url }}" class="hover:opacity-80 transition">
-        {% if locale == 'fr' %}Accueil{% else %}Home{% endif %}
-      </a>
-      
       <!-- A propos dropdown -->
       <div class="relative group z-50">
         <button class="hover:opacity-80 transition flex items-center gap-1">
@@ -103,6 +99,10 @@
         {% if locale == 'fr' %}Contact{% else %}Contact{% endif %}
       </a>
       
+      <a href="/connexion" class="cta-pill bg-[#ffce2d] text-[#82153e] hover:bg-[#ffd84d] transition">
+        {% if locale == 'fr' %}Connexion{% else %}Login{% endif %}
+      </a>
+      
             {% if locale == 'fr' %}
         <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="cta-pill bg-[#ffce2d] text-[#82153e] hover:bg-[#ffd84d] transition">
           EN
@@ -117,10 +117,6 @@
 
   <!-- Mobile menu -->
   <nav class="md:hidden hidden absolute top-full left-0 right-0 bg-[#82153e] flex-col gap-0 px-4 pb-6 font-medium text-[#ffce2d] shadow-lg" data-menu-mobile>
-    <a href="{{ '/' | url }}" class="py-2 border-b border-[#ffce2d]/20">
-      {% if locale == 'fr' %}Accueil{% else %}Home{% endif %}
-    </a>
-    
     <div class="border-b border-[#ffce2d]/20">
       <button class="w-full text-left py-2 flex items-center justify-between" data-mobile-dropdown="a-propos">
         {% if locale == 'fr' %}A propos{% else %}About{% endif %}
@@ -178,7 +174,10 @@
       {% if locale == 'fr' %}Contact{% else %}Contact{% endif %}
     </a>
     
-    <div class="pt-3 mt-2 border-t border-[#ffce2d]/20">
+    <div class="pt-3 mt-2 border-t border-[#ffce2d]/20 space-y-3">
+      <a href="/connexion" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d] border border-[#ffce2d] rounded-lg hover:bg-[#ffd84d] hover:border-[#ffd84d] transition-colors">
+        {% if locale == 'fr' %}Connexion{% else %}Login{% endif %}
+      </a>
       {% if locale == 'fr' %}
         <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d]/20 border border-[#ffce2d]/40 rounded-lg hover:bg-[#ffce2d]/30 hover:border-[#ffce2d]/60 transition-colors">
           English (EN)
