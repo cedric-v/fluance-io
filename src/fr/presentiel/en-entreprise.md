@@ -26,7 +26,7 @@ permalink: /presentiel/en-entreprise/
     </p>
 
     <div class="text-center pt-6">
-      <a href="{{ '/contact/' | url }}" class="btn-primary inline-flex">Faire une demande</a>
+      <a href="{{ '/contact/' | relativeUrl }}" class="btn-primary inline-flex">Faire une demande</a>
     </div>
   </article>
 </section>

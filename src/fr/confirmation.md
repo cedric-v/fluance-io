@@ -41,7 +41,7 @@ eleventyExcludeFromCollections: true
           Pour l'obtenir, il vous suffit de cliquer sur le lien ci-dessous :
         </p>
         <div class="pt-4">
-          <a href="{{ '/cadeau/' | url }}" class="btn-primary inline-flex text-center">
+          <a href="{{ '/cadeau/' | relativeUrl }}" class="btn-primary inline-flex text-center">
             Accéder à mon cadeau de bienvenue : quelques moments ressourçant en nature
           </a>
         </div>
@@ -84,7 +84,7 @@ eleventyExcludeFromCollections: true
           Contactez-nous au <a href="tel:+33972133388" class="text-[#82153e] font-semibold hover:underline">+33 (0)9 72 13 33 88</a> de 9h à 11h du lundi au vendredi
         </p>
         <p>
-          ou 24 h / 24 h via <a href="mailto:support@fluance.io" class="text-[#82153e] font-semibold hover:underline">support@fluance.io</a> ou <a href="{{ '/#contact' | url }}" class="text-[#82153e] font-semibold hover:underline">ce formulaire de contact</a>.
+          ou 24 h / 24 h via <a href="mailto:support@fluance.io" class="text-[#82153e] font-semibold hover:underline">support@fluance.io</a> ou <a href="{{ '/contact/' | relativeUrl }}" class="text-[#82153e] font-semibold hover:underline">ce formulaire de contact</a>.
         </p>
       </div>
     </div>

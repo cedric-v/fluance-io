@@ -41,7 +41,7 @@ eleventyExcludeFromCollections: true
           To receive it, simply click on the link below:
         </p>
         <div class="pt-4">
-          <a href="{{ '/en/cadeau/' | url }}" class="btn-primary inline-flex text-center">
+          <a href="{{ '/en/cadeau/' | relativeUrl }}" class="btn-primary inline-flex text-center">
             Access my welcome gift: some refreshing moments in nature
           </a>
         </div>
@@ -84,7 +84,7 @@ eleventyExcludeFromCollections: true
           Contact us at <a href="tel:+33972133388" class="text-[#82153e] font-semibold hover:underline">+33 (0)9 72 13 33 88</a> from 9am to 11am Monday to Friday
         </p>
         <p>
-          or 24/7 via <a href="mailto:support@fluance.io" class="text-[#82153e] font-semibold hover:underline">support@fluance.io</a> or <a href="{{ '/#contact' | url }}" class="text-[#82153e] font-semibold hover:underline">this contact form</a>.
+          or 24/7 via <a href="mailto:support@fluance.io" class="text-[#82153e] font-semibold hover:underline">support@fluance.io</a> or <a href="{{ '/en/contact/' | relativeUrl }}" class="text-[#82153e] font-semibold hover:underline">this contact form</a>.
         </p>
       </div>
     </div>

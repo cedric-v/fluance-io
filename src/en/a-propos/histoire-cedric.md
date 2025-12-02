@@ -91,13 +91,13 @@ permalink: /en/a-propos/histoire-cedric/
 
   <div class="pt-8 mt-8 border-t border-[#82153e]/20">
     <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-      <a href="{{ '/en/a-propos/philosophie/' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      <a href="{{ '/en/a-propos/philosophie/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Philosophy
       </a>
-      <a href="{{ '/en/a-propos/approche-fluance/' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      <a href="{{ '/en/a-propos/approche-fluance/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Fluance Approach
       </a>
-      <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Receive a practice
       </a>
     </div>

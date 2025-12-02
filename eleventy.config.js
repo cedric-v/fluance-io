@@ -31,6 +31,14 @@ module.exports = function(eleventyConfig) {
     return date.toISOString();
   });
 
+  // 2c. Filtre pour ajouter le pathPrefix de manière relative (sans domaine)
+  eleventyConfig.addFilter("relativeUrl", function(url) {
+    // Nettoyer l'URL pour commencer par /
+    const cleanUrl = url.startsWith('/') ? url : '/' + url;
+    // Ajouter le pathPrefix seulement s'il existe
+    return PATH_PREFIX ? PATH_PREFIX + cleanUrl : cleanUrl;
+  });
+
   // 3. Minification HTML sécurisée
   eleventyConfig.addTransform("htmlmin", function(content, outputPath) {
     if (process.env.ELEVENTY_ENV === 'prod' && outputPath && outputPath.endsWith(".html")) {

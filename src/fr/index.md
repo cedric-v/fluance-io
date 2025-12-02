@@ -27,7 +27,7 @@ locale: fr
       <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Essayer 2 pratiques libératrices
       </a>
-      <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
+      <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | relativeUrl }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
         Challenge de 21 jours pour remettre du mouvement
       </a>
     </div>
@@ -42,7 +42,7 @@ locale: fr
       Grâce à des mouvements en conscience et son aspect ludique, elle rééquilibre progressivement votre système nerveux, amène de la clarté mentale et procure de la vitalité.
     </p>
   </div>
-  <a href="{{ '/a-propos/approche-fluance/' | url }}" class="section-card overflow-hidden max-w-xs mx-auto md:mx-0 block hover:opacity-90 transition-opacity">
+  <a href="{{ '/a-propos/approche-fluance/' | relativeUrl }}" class="section-card overflow-hidden max-w-xs mx-auto md:mx-0 block hover:opacity-90 transition-opacity">
     {% image "assets/img/approche-fluance.png", "Schéma de l'approche Fluance", "w-full h-auto object-contain" %}
   </a>
 </section>
@@ -101,7 +101,7 @@ locale: fr
     <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
       Essayer 2 pratiques libératrices
     </a>
-    <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="inline-flex items-center justify-center rounded-full border-[3px] border-[#82153e] text-[#82153e] bg-white hover:bg-[#82153e] hover:text-white px-6 py-3 font-bold shadow-lg transition-all duration-200">
+    <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | relativeUrl }}" class="inline-flex items-center justify-center rounded-full border-[3px] border-[#82153e] text-[#82153e] bg-white hover:bg-[#82153e] hover:text-white px-6 py-3 font-bold shadow-lg transition-all duration-200">
       Challenge de 21 jours pour remettre du mouvement
     </a>
   </div>

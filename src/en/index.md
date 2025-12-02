@@ -24,10 +24,10 @@ locale: en
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Try 2 liberating practices
       </a>
-      <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
+      <a href="{{ '/en/cours-en-ligne/21-jours-mouvement/' | relativeUrl }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
         21-day challenge to get moving
       </a>
     </div>
@@ -42,7 +42,7 @@ locale: en
       Through conscious movement and its playful aspect, it gradually rebalances your nervous system, brings mental clarity and provides vitality.
     </p>
   </div>
-  <a href="{{ '/a-propos/approche-fluance/' | url }}" class="section-card overflow-hidden max-w-xs mx-auto md:mx-0 block hover:opacity-90 transition-opacity">
+  <a href="{{ '/en/a-propos/approche-fluance/' | relativeUrl }}" class="section-card overflow-hidden max-w-xs mx-auto md:mx-0 block hover:opacity-90 transition-opacity">
     {% image "assets/img/approche-fluance.png", "Fluance approach diagram", "w-full h-auto object-contain" %}
   </a>
 </section>
@@ -98,10 +98,10 @@ locale: en
     <h2 class="text-3xl font-semibold text-[#82153e]">Join the movement</h2>
   </div>
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+    <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
       Try 2 liberating practices
     </a>
-    <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="btn-secondary border-[3px] border-[#82153e] text-[#0f172a] bg-gray-50 hover:bg-[#82153e] hover:text-white text-center font-bold shadow-lg">
+    <a href="{{ '/en/cours-en-ligne/21-jours-mouvement/' | relativeUrl }}" class="btn-secondary border-[3px] border-[#82153e] text-[#0f172a] bg-gray-50 hover:bg-[#82153e] hover:text-white text-center font-bold shadow-lg">
       21-day challenge to get moving
     </a>
   </div>

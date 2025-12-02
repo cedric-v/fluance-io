@@ -34,7 +34,7 @@ permalink: /en/presentiel/prochains-stages/
     </div>
 
     <div class="text-center pt-6">
-      <a href="{{ '/en/contact/' | url }}" class="btn-primary inline-flex">Write to be added to the waiting list</a>
+      <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary inline-flex">Write to be added to the waiting list</a>
     </div>
   </article>
 </section>
