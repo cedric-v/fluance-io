@@ -9,7 +9,7 @@ permalink: /en/accompagnements-individuels/entrepreneurs-independants/
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="space-y-4 text-center">
     <p class="cta-pill bg-[#82153e]/10 text-[#82153e] inline-flex">Individual Coaching</p>
-    <h1 class="text-4xl font-semibold text-[#0f172a]">For Entrepreneurs/Independents</h1>
+    <h1 class="text-2xl md:text-4xl font-semibold text-[#0f172a] leading-tight">For Entrepreneurs<br class="md:hidden" />/Independents</h1>
   </header>
 
   <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
