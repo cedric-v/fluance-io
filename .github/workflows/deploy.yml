@@ -44,6 +44,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     continue-on-error: true
+    env:
+      # URL de production du site (peut être modifiée dans les variables du repository)
+      PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://fluance.io' }}
     
     steps:
       - name: Checkout repository
@@ -99,60 +102,73 @@ jobs:
             exit 0
           fi
           
-          BASE_URL="http://localhost:8080"
-          COUNT=0
-          
-          echo "$HTML_FILES" | while read file; do
+          while read file; do
             if [ -f "$file" ]; then
-              # Convertir le chemin du fichier en URL relative
+              # Créer un nom de fichier pour le rapport basé sur le chemin relatif
               REL_PATH=$(echo "$file" | sed 's|^_site/||' | sed 's|^/||')
-              if [ "$REL_PATH" = "index.html" ]; then
-                URL="${BASE_URL}/"
-              else
-                URL="${BASE_URL}/${REL_PATH}"
-              fi
-              
-              # Créer un nom de fichier pour le rapport
-              REPORT_NAME=$(echo "$REL_PATH" | sed 's|/|_|g' | sed 's|\.html$||' | sed 's|^_||')
-              if [ -z "$REPORT_NAME" ] || [ "$REPORT_NAME" = "index" ]; then
+              REPORT_NAME=$(echo "$REL_PATH" | sed 's|/|_|g' | sed 's|\.html$||' | sed 's|^_||' | sed 's|_index$||')
+              if [ -z "$REPORT_NAME" ]; then
                 REPORT_NAME="index"
               fi
               
               echo ""
               echo "✅ Validation de: $file"
-              echo "   URL: $URL"
               echo "   Rapport: reports/w3c/${REPORT_NAME}"
               
-              # Validation via URL (plus fiable)
-              if w3c-html-validator "$URL" --format=html --output=./reports/w3c/"${REPORT_NAME}.html" 2>&1; then
-                echo "  ✓ Rapport HTML créé: reports/w3c/${REPORT_NAME}.html"
-                COUNT=$((COUNT + 1))
+              # Utiliser directement l'API W3C Nu Validator (plus fiable)
+              # Construire l'URL de production pour remplacer localhost dans les rapports
+              # L'URL de production est définie via la variable d'environnement PRODUCTION_URL
+              PROD_URL="${PRODUCTION_URL:-https://fluance.io}"
+              if [ "$REL_PATH" = "index.html" ]; then
+                DOC_URL="${PROD_URL}/"
+              elif echo "$REL_PATH" | grep -q "index.html$"; then
+                # Cas comme "fr/index.html" -> "https://fluance.io/fr/"
+                DIR_PATH=$(dirname "$REL_PATH")
+                DOC_URL="${PROD_URL}/${DIR_PATH}/"
               else
-                echo "  ⚠️ Tentative avec le fichier local..."
-                # Fallback: validation via fichier local
-                if w3c-html-validator --file "$file" --format=html --output=./reports/w3c/"${REPORT_NAME}.html" 2>&1; then
-                  echo "  ✓ Rapport HTML créé (via fichier): reports/w3c/${REPORT_NAME}.html"
-                  COUNT=$((COUNT + 1))
-                else
-                  echo "  ✗ Erreur lors de la validation"
-                  echo "<html><body><h1>Erreur lors de la validation W3C</h1><p>Fichier: $file</p><p>URL: $URL</p></body></html>" > ./reports/w3c/"${REPORT_NAME}.html"
+                DIR_PATH=$(dirname "$REL_PATH")
+                DOC_URL="${PROD_URL}/${DIR_PATH}/"
+              fi
+              
+              # Format HTML
+              API_URL_HTML="https://validator.w3.org/nu/?out=html"
+              HTTP_CODE=$(curl -s -o ./reports/w3c/"${REPORT_NAME}.html" -w "%{http_code}" -X POST \
+                -H "Content-Type: text/html; charset=utf-8" \
+                --data-binary "@$file" \
+                "$API_URL_HTML" 2>&1)
+              
+              if [ "$HTTP_CODE" = "200" ] && [ -s ./reports/w3c/"${REPORT_NAME}.html" ]; then
+                # Post-traiter le rapport pour remplacer toutes les références à localhost
+                # Utiliser perl pour la compatibilité cross-platform (Linux et macOS)
+                perl -i -pe "s|http://localhost:8080[^\s\"']*|${DOC_URL}|g" ./reports/w3c/"${REPORT_NAME}.html" 2>/dev/null || \
+                sed -i.bak "s|http://localhost:8080[^[:space:]\"']*|${DOC_URL}|g" ./reports/w3c/"${REPORT_NAME}.html" 2>/dev/null && rm -f ./reports/w3c/"${REPORT_NAME}.html.bak" || true
+                echo "  ✓ Rapport HTML créé: reports/w3c/${REPORT_NAME}.html (URLs mises à jour)"
+              else
+                echo "  ⚠️ Erreur HTTP $HTTP_CODE lors de la validation HTML"
+                # Afficher les premières lignes du fichier pour debug
+                if [ -s ./reports/w3c/"${REPORT_NAME}.html" ]; then
+                  echo "  Contenu du rapport (premières lignes):"
+                  head -3 ./reports/w3c/"${REPORT_NAME}.html"
                 fi
               fi
               
-              # Validation JSON
-              if w3c-html-validator "$URL" --format=json --output=./reports/w3c/"${REPORT_NAME}.json" 2>&1; then
-                echo "  ✓ Rapport JSON créé: reports/w3c/${REPORT_NAME}.json"
+              # Format JSON
+              API_URL_JSON="https://validator.w3.org/nu/?out=json"
+              HTTP_CODE_JSON=$(curl -s -o ./reports/w3c/"${REPORT_NAME}.json" -w "%{http_code}" -X POST \
+                -H "Content-Type: text/html; charset=utf-8" \
+                --data-binary "@$file" \
+                "$API_URL_JSON" 2>&1)
+              
+              if [ "$HTTP_CODE_JSON" = "200" ] && [ -s ./reports/w3c/"${REPORT_NAME}.json" ]; then
+                # Post-traiter le JSON pour remplacer toutes les références à localhost
+                perl -i -pe "s|http://localhost:8080[^\s\"']*|${DOC_URL}|g" ./reports/w3c/"${REPORT_NAME}.json" 2>/dev/null || \
+                sed -i.bak "s|http://localhost:8080[^[:space:]\"']*|${DOC_URL}|g" ./reports/w3c/"${REPORT_NAME}.json" 2>/dev/null && rm -f ./reports/w3c/"${REPORT_NAME}.json.bak" || true
+                echo "  ✓ Rapport JSON créé: reports/w3c/${REPORT_NAME}.json (URLs mises à jour)"
               else
-                # Fallback: validation via fichier local
-                if w3c-html-validator --file "$file" --format=json --output=./reports/w3c/"${REPORT_NAME}.json" 2>&1; then
-                  echo "  ✓ Rapport JSON créé (via fichier): reports/w3c/${REPORT_NAME}.json"
-                else
-                  echo "  ✗ Erreur lors de la création du rapport JSON"
-                  echo '{"errors": [], "warnings": [], "info": "Erreur lors de la validation"}' > ./reports/w3c/"${REPORT_NAME}.json"
-                fi
+                echo "  ⚠️ Erreur HTTP $HTTP_CODE_JSON lors de la validation JSON"
               fi
             fi
-          done
+          done <<< "$HTML_FILES"
           
           echo ""
           echo "📊 Résumé des rapports W3C générés:"
