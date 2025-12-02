@@ -179,11 +179,11 @@
         {% if locale == 'fr' %}Connexion{% else %}Login{% endif %}
       </a>
       {% if locale == 'fr' %}
-        <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d]/20 border border-[#ffce2d]/40 rounded-lg hover:bg-[#ffce2d]/30 hover:border-[#ffce2d]/60 transition-colors">
+        <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d] border border-[#ffce2d] rounded-lg hover:bg-[#ffd84d] hover:border-[#ffd84d] transition-colors">
           English (EN)
         </a>
       {% else %}
-        <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d]/20 border border-[#ffce2d]/40 rounded-lg hover:bg-[#ffce2d]/30 hover:border-[#ffce2d]/60 transition-colors">
+        <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d] border border-[#ffce2d] rounded-lg hover:bg-[#ffd84d] hover:border-[#ffd84d] transition-colors">
           Français (FR)
         </a>
       {% endif %}

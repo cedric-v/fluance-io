@@ -88,12 +88,81 @@ jobs:
       - name: Validate HTML with W3C
         run: |
           mkdir -p reports/w3c
-          find _site -name "*.html" -type f | head -10 | while read file; do
-            filename=$(basename "$file" .html)
-            path=$(echo "$file" | sed 's|_site/||' | sed 's|/|_|g')
-            w3c-html-validator "$file" --format=html --output=./reports/w3c/"${path}.html" || true
-            w3c-html-validator "$file" --format=json --output=./reports/w3c/"${path}.json" || true
+          echo "🔍 Recherche des fichiers HTML..."
+          HTML_FILES=$(find _site -name "*.html" -type f | head -10)
+          echo "📄 Fichiers trouvés:"
+          echo "$HTML_FILES"
+          
+          if [ -z "$HTML_FILES" ]; then
+            echo "⚠️ Aucun fichier HTML trouvé dans _site/"
+            echo "Aucun fichier HTML trouvé" > reports/w3c/README.txt
+            exit 0
+          fi
+          
+          BASE_URL="http://localhost:8080"
+          COUNT=0
+          
+          echo "$HTML_FILES" | while read file; do
+            if [ -f "$file" ]; then
+              # Convertir le chemin du fichier en URL relative
+              REL_PATH=$(echo "$file" | sed 's|^_site/||' | sed 's|^/||')
+              if [ "$REL_PATH" = "index.html" ]; then
+                URL="${BASE_URL}/"
+              else
+                URL="${BASE_URL}/${REL_PATH}"
+              fi
+              
+              # Créer un nom de fichier pour le rapport
+              REPORT_NAME=$(echo "$REL_PATH" | sed 's|/|_|g' | sed 's|\.html$||' | sed 's|^_||')
+              if [ -z "$REPORT_NAME" ] || [ "$REPORT_NAME" = "index" ]; then
+                REPORT_NAME="index"
+              fi
+              
+              echo ""
+              echo "✅ Validation de: $file"
+              echo "   URL: $URL"
+              echo "   Rapport: reports/w3c/${REPORT_NAME}"
+              
+              # Validation via URL (plus fiable)
+              if w3c-html-validator "$URL" --format=html --output=./reports/w3c/"${REPORT_NAME}.html" 2>&1; then
+                echo "  ✓ Rapport HTML créé: reports/w3c/${REPORT_NAME}.html"
+                COUNT=$((COUNT + 1))
+              else
+                echo "  ⚠️ Tentative avec le fichier local..."
+                # Fallback: validation via fichier local
+                if w3c-html-validator --file "$file" --format=html --output=./reports/w3c/"${REPORT_NAME}.html" 2>&1; then
+                  echo "  ✓ Rapport HTML créé (via fichier): reports/w3c/${REPORT_NAME}.html"
+                  COUNT=$((COUNT + 1))
+                else
+                  echo "  ✗ Erreur lors de la validation"
+                  echo "<html><body><h1>Erreur lors de la validation W3C</h1><p>Fichier: $file</p><p>URL: $URL</p></body></html>" > ./reports/w3c/"${REPORT_NAME}.html"
+                fi
+              fi
+              
+              # Validation JSON
+              if w3c-html-validator "$URL" --format=json --output=./reports/w3c/"${REPORT_NAME}.json" 2>&1; then
+                echo "  ✓ Rapport JSON créé: reports/w3c/${REPORT_NAME}.json"
+              else
+                # Fallback: validation via fichier local
+                if w3c-html-validator --file "$file" --format=json --output=./reports/w3c/"${REPORT_NAME}.json" 2>&1; then
+                  echo "  ✓ Rapport JSON créé (via fichier): reports/w3c/${REPORT_NAME}.json"
+                else
+                  echo "  ✗ Erreur lors de la création du rapport JSON"
+                  echo '{"errors": [], "warnings": [], "info": "Erreur lors de la validation"}' > ./reports/w3c/"${REPORT_NAME}.json"
+                fi
+              fi
+            fi
           done
+          
+          echo ""
+          echo "📊 Résumé des rapports W3C générés:"
+          ls -lah reports/w3c/ || echo "⚠️ Le dossier reports/w3c est vide"
+          
+          # Créer un fichier README si le dossier est vide
+          if [ ! "$(ls -A reports/w3c 2>/dev/null)" ]; then
+            echo "⚠️ Aucun rapport W3C généré. Création d'un fichier README."
+            echo "Aucun rapport W3C n'a pu être généré lors de cette exécution." > reports/w3c/README.txt
+          fi
 
       - name: Generate validation summary
         run: |
@@ -136,6 +205,19 @@ jobs:
           name: validation-reports
           path: reports/
           retention-days: 30
+          if-no-files-found: warn
+      
+      - name: List uploaded artifacts
+        if: always()
+        run: |
+          echo "✅ Les rapports ont été uploadés dans l'artifact 'validation-reports'"
+          echo "📥 Pour télécharger :"
+          echo "   1. Faites défiler jusqu'en bas de cette page"
+          echo "   2. Cherchez la section 'Artifacts'"
+          echo "   3. Cliquez sur 'validation-reports' pour télécharger le ZIP"
+          echo ""
+          echo "📊 Contenu de l'artifact :"
+          ls -lah reports/ || echo "Dossier reports non trouvé"
 
   deploy:
     needs: build
