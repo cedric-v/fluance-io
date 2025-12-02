@@ -7,8 +7,8 @@ locale: fr
 
 <section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 py-20 overflow-hidden -mt-28">
   <div class="absolute inset-0 z-0">
-    {% image "assets/img/hero-cedric.jpg", "Cédric Vonlanthen au bord du lac", "w-full h-full object-cover" %}
-    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#82153e]/70 to-[#82153e]/90"></div>
+    {% image "assets/img/fond-cedric.jpg", "Cédric Vonlanthen au bord du lac", "w-full h-full object-cover" %}
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
   </div>
   <div class="relative z-10 max-w-2xl text-white space-y-8">
     <div class="space-y-4">
