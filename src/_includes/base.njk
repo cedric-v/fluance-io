@@ -127,6 +127,48 @@
     });
   });
 
+  // Effet de menu iOS au scroll (desktop uniquement)
+  (function() {
+    const header = document.getElementById('main-header');
+    if (!header) return;
+    
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+    
+    function updateHeader() {
+      const scrollY = window.scrollY;
+      const isScrolled = scrollY > 50;
+      
+      // Appliquer l'effet uniquement sur desktop (md et plus)
+      if (window.innerWidth >= 768) {
+        if (isScrolled) {
+          header.classList.add('header-scrolled');
+        } else {
+          header.classList.remove('header-scrolled');
+        }
+      } else {
+        // Sur mobile, garder le style original
+        header.classList.remove('header-scrolled');
+      }
+      
+      lastScrollY = scrollY;
+      ticking = false;
+    }
+    
+    function onScroll() {
+      if (!ticking) {
+        window.requestAnimationFrame(updateHeader);
+        ticking = true;
+      }
+    }
+    
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', updateHeader);
+    
+    // Initialiser au chargement
+    updateHeader();
+  })();
+
   // Gestion du consentement aux cookies
   (function() {
     const cookieBanner = document.getElementById('cookie-banner');

@@ -16,8 +16,8 @@ permalink: /a-propos/histoire-cedric/
     <!-- Section 1: Photo à gauche -->
     <div class="flex flex-col md:flex-row gap-8 items-start">
       <div class="w-full md:w-1/2 md:order-1">
-        <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center">
-          <span class="text-gray-400 text-sm">Photo 1 - Une enfance à contre-courant</span>
+        <div class="aspect-[4/3] rounded-lg overflow-hidden">
+          {% image "assets/img/cedric-karate-small.jpeg", "Cédric pratiquant les arts martiaux", "w-full h-full object-cover" %}
         </div>
       </div>
       <div class="w-full md:w-1/2 md:order-2 space-y-4">
@@ -31,8 +31,8 @@ permalink: /a-propos/histoire-cedric/
     <!-- Section 2: Photo à droite -->
     <div class="flex flex-col md:flex-row gap-8 items-start">
       <div class="w-full md:w-1/2 md:order-2">
-        <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center">
-          <span class="text-gray-400 text-sm">Photo 2 - L'appel du large et la transformation</span>
+        <div class="aspect-[4/3] rounded-lg overflow-hidden">
+          {% image "assets/img/cedric-inde-small.jpeg", "Cédric en voyage en Inde", "w-full h-full object-cover object-top" %}
         </div>
       </div>
       <div class="w-full md:w-1/2 md:order-1 space-y-4">
@@ -46,8 +46,8 @@ permalink: /a-propos/histoire-cedric/
     <!-- Section 3: Photo à gauche -->
     <div class="flex flex-col md:flex-row gap-8 items-start">
       <div class="w-full md:w-1/2 md:order-1">
-        <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center">
-          <span class="text-gray-400 text-sm">Photo 3 - La traversée et la construction</span>
+        <div class="aspect-[4/3] rounded-lg overflow-hidden">
+          <img src="/assets/img/cedric-enfant-2012.jpg" alt="Cédric avec ses enfants" class="w-full h-full object-cover" style="object-position: center 33%;">
         </div>
       </div>
       <div class="w-full md:w-1/2 md:order-2 space-y-4">
@@ -61,8 +61,8 @@ permalink: /a-propos/histoire-cedric/
     <!-- Section 4: Photo à droite -->
     <div class="flex flex-col md:flex-row gap-8 items-start">
       <div class="w-full md:w-1/2 md:order-2">
-        <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center">
-          <span class="text-gray-400 text-sm">Photo 4 - Le piège de la complexité</span>
+        <div class="aspect-[4/3] rounded-lg overflow-hidden">
+          {% image "assets/img/cedric-conferiencer-2018.jpg", "Cédric en conférence", "w-full h-full object-cover object-center" %}
         </div>
       </div>
       <div class="w-full md:w-1/2 md:order-1 space-y-4">
@@ -76,8 +76,8 @@ permalink: /a-propos/histoire-cedric/
     <!-- Section 5: Photo à gauche -->
     <div class="flex flex-col md:flex-row gap-8 items-start">
       <div class="w-full md:w-1/2 md:order-1">
-        <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center">
-          <span class="text-gray-400 text-sm">Photo 5 - Le retour à la simplicité</span>
+        <div class="aspect-[3/4] rounded-lg overflow-hidden">
+          <img src="/assets/img/cedric-fluance-particuliers.jpg" alt="Cédric - Le retour à la simplicité" class="w-full h-full object-cover object-center" style="object-position: center top;" loading="lazy">
         </div>
       </div>
       <div class="w-full md:w-1/2 md:order-2 space-y-4">
