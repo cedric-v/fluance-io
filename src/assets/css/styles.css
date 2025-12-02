@@ -143,11 +143,11 @@ header .group:hover .absolute {
 
 /* Ajustement du positionnement des images d'en-tête pour mobile */
 .object-position-mobile {
-  object-position: center 50%;
+  object-position: center 30%;
 }
 
 @media (min-width: 768px) {
   .object-position-mobile {
-    object-position: center 20%;
+    object-position: center 25%;
   }
 }

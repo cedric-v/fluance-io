@@ -27,8 +27,8 @@ locale: fr
       <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Essayer 2 pratiques libératrices
       </a>
-      <a href="{{ '/cours-en-ligne/30-jours-mouvement/' | url }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
-        Challenge de 30 jours pour remettre du mouvement
+      <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
+        Challenge de 21 jours pour remettre du mouvement
       </a>
     </div>
   </div>

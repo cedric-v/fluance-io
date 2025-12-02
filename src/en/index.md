@@ -27,8 +27,8 @@ locale: en
       <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Try 2 liberating practices
       </a>
-      <a href="{{ '/cours-en-ligne/30-jours-mouvement/' | url }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
-        30-day challenge to get moving
+      <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
+        21-day challenge to get moving
       </a>
     </div>
   </div>
