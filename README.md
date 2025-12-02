@@ -221,6 +221,76 @@ On each push to `main`, GitHub will:
 
 ---
 
+### Quality assurance and validation reports
+
+The project includes automated quality checks using **Google Lighthouse** and **W3C HTML Validator**. These reports are generated automatically on each deployment via GitHub Actions.
+
+#### Accessing the reports
+
+After each deployment, validation reports are generated and uploaded as GitHub Actions artifacts:
+
+1. Go to your repository on GitHub
+2. Click on the **"Actions"** tab
+3. Click on the latest workflow run **"Deploy site to GitHub Pages"**
+4. Click on the **"validate"** job
+5. Scroll down to the **"Artifacts"** section at the bottom of the page
+6. Click on **"validation-reports"** to download the ZIP file
+7. Extract the ZIP file to access the reports
+
+**Note:** Artifacts are retained for 30 days. After this period, they are automatically deleted.
+
+#### Report contents
+
+The `validation-reports` artifact contains:
+
+**Google Lighthouse reports:**
+- `lighthouse-home.html` - Full Lighthouse report for the homepage (HTML format)
+- `lighthouse-fr.html` - Full Lighthouse report for the French homepage (HTML format)
+- `lighthouse-en.html` - Full Lighthouse report for the English homepage (HTML format, if available)
+- `lighthouse-home.json` - Lighthouse data for the homepage (JSON format)
+- `lighthouse-fr.json` - Lighthouse data for the French homepage (JSON format)
+
+**W3C HTML Validation reports:**
+- `w3c/` directory containing validation reports for up to 10 HTML pages
+  - Each page has both HTML and JSON format reports
+  - Files are named based on the page path (e.g., `index.html`, `fr_index.html`, `a-propos_mission_index.html`)
+
+**Summary:**
+- `summary.md` - Overview of available reports and how to use them
+
+#### Using the reports
+
+**Lighthouse reports:**
+- Open the HTML files in your browser for a visual, interactive report
+- Lighthouse evaluates:
+  - **Performance** - Page load speed and optimization
+  - **Accessibility** - WCAG compliance and screen reader support
+  - **Best Practices** - Security, modern web standards
+  - **SEO** - Search engine optimization
+- Use the JSON files for programmatic analysis or integration with CI/CD tools
+- Aim for scores above 90 in each category for optimal results
+
+**W3C Validation reports:**
+- Open the HTML reports to see detailed validation errors and warnings
+- The JSON format is useful for automated parsing and error detection
+- Fix any errors (marked in red) and review warnings (marked in yellow)
+- Valid HTML ensures better browser compatibility and accessibility
+
+#### Troubleshooting
+
+If you don't see the "Artifacts" section:
+- Wait a few seconds after the workflow completes (upload may take time)
+- Refresh the page
+- Check the "Upload validation reports" step logs to verify the upload succeeded
+- Ensure the "validate" job completed (it may show warnings but should still generate reports)
+
+If W3C reports are missing:
+- Check the workflow logs for the "Validate HTML with W3C" step
+- The reports use the local server URLs, so ensure the server started successfully
+- Some validation errors won't prevent report generation
+
+---
+
 ### Environment variables
 
 This project uses environment variables for:

@@ -99,19 +99,23 @@
         {% if locale == 'fr' %}Contact{% else %}Contact{% endif %}
       </a>
       
-      <a href="/connexion" class="cta-pill bg-[#ffce2d] text-[#82153e] hover:bg-[#ffd84d] transition">
+      <a href="/connexion" class="hover:opacity-80 transition">
         {% if locale == 'fr' %}Connexion{% else %}Login{% endif %}
       </a>
       
-            {% if locale == 'fr' %}
-        <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="cta-pill bg-[#ffce2d] text-[#82153e] hover:bg-[#ffd84d] transition">
-          EN
-        </a>
-            {% else %}
-        <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="cta-pill bg-[#ffce2d] text-[#82153e] hover:bg-[#ffd84d] transition">
-          FR
-        </a>
-            {% endif %}
+      <div class="flex items-center gap-2 ml-2 pl-4 border-l border-[#ffce2d]/30">
+        {% if locale == 'fr' %}
+          <span class="font-bold text-[#ffce2d]">FR</span>
+          <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="text-[#ffce2d]/60 hover:text-[#ffce2d] hover:opacity-100 transition">
+            EN
+          </a>
+        {% else %}
+          <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="text-[#ffce2d]/60 hover:text-[#ffce2d] hover:opacity-100 transition">
+            FR
+          </a>
+          <span class="font-bold text-[#ffce2d]">EN</span>
+        {% endif %}
+      </div>
         </nav>
   </div>
 
@@ -174,19 +178,26 @@
       {% if locale == 'fr' %}Contact{% else %}Contact{% endif %}
     </a>
     
-    <div class="pt-3 mt-2 border-t border-[#ffce2d]/20 space-y-3">
-      <a href="/connexion" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d] border border-[#ffce2d] rounded-lg hover:bg-[#ffd84d] hover:border-[#ffd84d] transition-colors">
-        {% if locale == 'fr' %}Connexion{% else %}Login{% endif %}
-      </a>
-      {% if locale == 'fr' %}
-        <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d] border border-[#ffce2d] rounded-lg hover:bg-[#ffd84d] hover:border-[#ffd84d] transition-colors">
-          English (EN)
-        </a>
-      {% else %}
-        <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="block py-2.5 px-4 text-center text-sm font-semibold text-[#82153e] bg-[#ffce2d] border border-[#ffce2d] rounded-lg hover:bg-[#ffd84d] hover:border-[#ffd84d] transition-colors">
-          Français (FR)
-        </a>
-      {% endif %}
+    <a href="/connexion" class="py-2 border-b border-[#ffce2d]/20">
+      {% if locale == 'fr' %}Connexion{% else %}Login{% endif %}
+    </a>
+    
+    <div class="pt-3 mt-2 border-t border-[#ffce2d]/20">
+      <div class="flex items-center gap-3 py-2">
+        <div class="flex items-center gap-2">
+          {% if locale == 'fr' %}
+            <span class="font-bold text-[#ffce2d]">FR</span>
+            <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="text-[#ffce2d]/60 hover:text-[#ffce2d] hover:opacity-100 transition">
+              EN
+            </a>
+          {% else %}
+            <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="text-[#ffce2d]/60 hover:text-[#ffce2d] hover:opacity-100 transition">
+              FR
+            </a>
+            <span class="font-bold text-[#ffce2d]">EN</span>
+          {% endif %}
+        </div>
+      </div>
     </div>
   </nav>
 </header>
