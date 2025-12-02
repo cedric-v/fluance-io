@@ -83,7 +83,7 @@ permalink: /presentiel/cours-hebdomadaires/
         </div>
         <div>
           <h3 class="text-xl font-semibold text-[#82153e] mb-2">Comment puis-je régler ?</h3>
-          <p class="text-[#0f172a]/80">En liquide, via TWINT ou carte bancaire, directement sur place avant le début du cours ou à la fin.</p>
+          <p class="text-[#0f172a]/80">En liquide, via TWINT, carte bancaire ou paiement bancaire instantané, directement sur place avant le début du cours ou à la fin.</p>
         </div>
       </div>
     </div>

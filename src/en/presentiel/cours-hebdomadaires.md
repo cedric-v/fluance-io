@@ -83,7 +83,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
         </div>
         <div>
           <h3 class="text-xl font-semibold text-[#82153e] mb-2">How can I pay?</h3>
-          <p class="text-[#0f172a]/80">Cash, via TWINT or bank card, directly on site before the start of the class or at the end.</p>
+          <p class="text-[#0f172a]/80">Cash, via TWINT, bank card or instant bank payment, directly on site before the start of the class or at the end.</p>
         </div>
       </div>
     </div>
