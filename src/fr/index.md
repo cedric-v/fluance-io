@@ -34,84 +34,75 @@ locale: fr
   </div>
 </section>
 
-<section id="chemins" class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-10">
-  <div class="text-center space-y-4">
-    <p class="cta-pill bg-[#ffce2d]/20 text-[#82153e] mx-auto">Approche libératrice</p>
-    <h2 class="text-3xl font-semibold text-[#82153e]">Pour apaiser le corps, clarifier l'esprit</h2>
-    <p class="text-lg text-[#0f172a]/70">Fluance accompagne les particuliers à sortir des tensions, du flou et de la surcharge.</p>
+<section class="max-w-6xl mx-auto px-6 md:px-12 py-16 grid md:grid-cols-[2fr_1fr] gap-8 items-center">
+  <div class="text-left space-y-4">
+    <h2 class="text-3xl md:text-4xl font-semibold text-[#0f172a]">Qu'est-ce que Fluance ?</h2>
+    <p class="text-lg md:text-xl text-[#0f172a]/75">
+      Fluance est une approche nouvelle de lien au corps et ses tensions.<br><br>
+      Grâce à des mouvements en conscience et son aspect ludique, elle rééquilibre progressivement votre système nerveux, amène de la clarté mentale et procure de la vitalité.
+    </p>
   </div>
-  <div class="max-w-2xl mx-auto">
-    <article id="presentiel" class="section-card p-8 space-y-5 bg-white">
-      <p class="text-sm font-semibold text-[#82153e] uppercase">Particuliers</p>
-      <h3 class="text-2xl font-semibold text-[#0f172a]">Retrouver un corps souple et un esprit apaisé</h3>
-      <p class="text-[#0f172a]/75">Pratiques courtes et efficaces pour relâcher les tensions, libérer la respiration et réinstaller la sérénité au quotidien.</p>
-      <div class="space-y-4">
-        <div class="quote-card">
-          <p class="italic text-[#0f172a]/80">« Cela me fait un bien fou ! »</p>
-          <p class="text-sm text-[#0f172a]/60 mt-2">— Sylvie Danielle</p>
-        </div>
-        <div class="quote-card">
-          <p class="italic text-[#0f172a]/80">« Cette semaine les douleurs ont vraiment diminué. »</p>
-          <p class="text-sm text-[#0f172a]/60 mt-2">— Monique</p>
-        </div>
-      </div>
-      <a href="#contact" class="btn-primary inline-flex items-center justify-center">Recevoir les pratiques</a>
-    </article>
-  </div>
+  <a href="{{ '/a-propos/approche-fluance/' | url }}" class="section-card overflow-hidden max-w-xs mx-auto md:mx-0 block hover:opacity-90 transition-opacity">
+    {% image "assets/img/approche-fluance.png", "Schéma de l'approche Fluance", "w-full h-auto object-contain" %}
+  </a>
 </section>
 
-<section id="approche" class="max-w-6xl mx-auto px-6 md:px-12 py-16 grid md:grid-cols-2 gap-12 items-center">
-  <div class="space-y-6">
-    <p class="cta-pill bg-[#82153e]/10 text-[#82153e]">Approche globale</p>
-    <h2 class="text-3xl font-semibold text-[#0f172a]">Fluidité corps & esprit</h2>
-    <p class="text-lg text-[#0f172a]/75">Fluance réunit mouvement, respiration, méditation et accompagnement stratégique pour réinstaller la cohérence dans votre vie personnelle et professionnelle.</p>
-    <ul class="space-y-4 text-[#0f172a]/80">
-      <li class="flex gap-3">
-        <span class="w-2 h-2 mt-2 rounded-full bg-[#ffce2d]"></span>
-        Reconnecter le corps pour libérer la charge mentale et écouter l’intuition.
-      </li>
-      <li class="flex gap-3">
-        <span class="w-2 h-2 mt-2 rounded-full bg-[#ffce2d]"></span>
-        Clarifier les priorités pour retrouver la cohérence dans vos choix.
-      </li>
-      <li class="flex gap-3">
-        <span class="w-2 h-2 mt-2 rounded-full bg-[#ffce2d]"></span>
-        Avancer avec fluidité grâce à des pratiques simples et répétables.
-      </li>
-    </ul>
+<section class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-12">
+  <div class="text-left space-y-4">
+    <h3 class="text-2xl md:text-3xl font-semibold text-[#0f172a]">Une synthèse fluide des sagesses ancestrales</h3>
+    <p class="text-lg text-[#0f172a]/75">
+       Fluance puise son inspiration aux racines des arts martiaux, du Chi Gong, du Tai-Chi et du Yoga, mais s'affranchit des formes rigides et des chorégraphies imposées.<br /><br />
+       Ici, la discipline s'efface au profit de l'écoute : le mouvement devient organique, intuitif et entièrement personnalisé. Il ne s'agit pas de contraindre votre corps dans une posture, mais de laisser le mouvement s'adapter à votre anatomie et à vos ressentis de l'instant.
+    </p>
   </div>
-  <div class="section-card overflow-hidden">
-    {% image "assets/img/parcours-fluance.jpg", "Pratique Fluance", "w-full h-full object-cover" %}
-  </div>
-</section>
-
-<section id="founder" class="max-w-5xl mx-auto px-6 md:px-12 py-16 grid md:grid-cols-2 gap-10">
-  <div class="space-y-4">
-    <p class="cta-pill bg-[#8bc34a]/20 text-[#0f172a]">Qui suis-je ?</p>
-    <h2 class="text-3xl font-semibold text-[#82153e]">Cédric Vonlanthen</h2>
-    <p class="text-[#0f172a]/75">Fondateur de Fluance, accompagnant d’entrepreneurs, mari et papa de deux enfants. Après 10 ans dans l’industrie (développeur, chef de produit puis chef de projet), Cédric s’est reconverti comme formateur en méditation pour retrouver du sens et transmettre la fluidité qu’il a expérimentée.</p>
-    <p class="text-[#0f172a]/75">Instants Zen Sàrl a diffusé des dizaines de milliers d’accompagnements dans plus de 35 pays, avec 541 webinaires animés.</p>
-    <div class="flex flex-wrap gap-4">
-      <a href="#contact" class="btn-primary">Entrer en contact</a>
-      <a href="tel:+33972133388" class="btn-secondary text-[#82153e] border-[#82153e]">+33 (0)9 72 13 33 88</a>
+  <div class="grid md:grid-cols-[1fr_2fr] gap-8 items-center">
+    <div class="section-card overflow-hidden max-w-xs mx-auto md:mx-0">
+      {% image "assets/img/parcours-fluance.jpg", "Parcours Fluance", "w-full h-auto object-cover" %}
+    </div>
+    <div class="text-left space-y-4">
+      <h3 class="text-2xl md:text-3xl font-semibold text-[#0f172a]">L'accès direct au calme pour les esprits agités</h3>
+      <p class="text-lg text-[#0f172a]/75">
+        C'est souvent la "porte dérobée" idéale pour ceux qui trouvent la méditation assise difficile ou frustrante.<br /><br />
+        En passant par le corps plutôt que par le mental, Fluance court-circuite l'agitation intérieure. Après seulement quelques pratiques, on constate des résultats surprenants : même sans expérience préalable, il devient possible de goûter à un état d'ancrage profond, de présence absolue et de calme, là où l'immobilité seule avait échoué.
+      </p>
     </div>
   </div>
-  <div class="section-card p-8 space-y-6 bg-white">
-    <h3 class="text-xl font-semibold text-[#0f172a]">Ce que vous ressentirez</h3>
-    <ul class="space-y-4 text-[#0f172a]/80">
-      <li>• Un mental apaisé qui laisse davantage de place à votre intuition.</li>
-      <li>• Un corps souple qui absorbe moins de tensions au quotidien.</li>
-      <li>• Des décisions prises avec clarté, cohérence et fluidité.</li>
-    </ul>
+</section>
+
+<section class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-10">
+  <div class="text-center space-y-4">
+    <h2 class="text-3xl font-semibold text-[#82153e]">Ce qu'ils en disent</h2>
+  </div>
+  <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="quote-card">
+      <p class="italic text-[#0f172a]/80">« Cela me fait un bien fou ! »</p>
+      <p class="text-sm text-[#0f172a]/60 mt-2">— Sylvie Danielle</p>
+    </div>
+    <div class="quote-card">
+      <p class="italic text-[#0f172a]/80">« Cette semaine les douleurs ont vraiment diminué. »</p>
+      <p class="text-sm text-[#0f172a]/60 mt-2">— Monique</p>
+    </div>
+    <div class="quote-card">
+      <p class="italic text-[#0f172a]/80">"Ta méthode est tellement simple et fluide. C'est agréable et on n'a pas le sentiment d'avoir un effort à faire."</p>
+      <p class="text-sm text-[#0f172a]/60 mt-2">— Isabelle</p>
+    </div>
+    <div class="quote-card">
+      <p class="italic text-[#0f172a]/80">"J'ai du plaisir à recontacter mon corps."</p>
+      <p class="text-sm text-[#0f172a]/60 mt-2">— Claire</p>
+    </div>
   </div>
 </section>
 
-<section id="contact" class="max-w-5xl mx-auto px-6 md:px-12 py-16 text-center space-y-6">
-  <p class="cta-pill mx-auto bg-[#ffce2d]/30 text-[#0f172a]">Prêt·e à alléger votre charge mentale ?</p>
-  <h2 class="text-3xl font-semibold text-[#0f172a]">Choisissez l’approche Fluance qui vous correspond</h2>
-  <p class="text-lg text-[#0f172a]/70 max-w-3xl mx-auto">Remplissez le formulaire, recevez les pratiques offertes ou l’exercice de la journée idéale, et commençons à installer la fluidité dans votre quotidien.</p>
-  <div class="flex flex-col md:flex-row gap-4 justify-center">
-    <a href="mailto:contact@fluance.io" class="btn-primary inline-flex justify-center">Envoyer un message</a>
-    <a href="https://fluance.io/#form" target="_blank" rel="noreferrer" class="btn-secondary inline-flex justify-center border-[#0f172a] text-[#0f172a]">Accéder au formulaire</a>
+<section class="max-w-6xl mx-auto px-6 md:px-12 py-16">
+  <div class="text-center space-y-4 mb-12">
+    <h2 class="text-3xl font-semibold text-[#82153e]">Rejoignez le mouvement</h2>
+  </div>
+  <div class="flex flex-col sm:flex-row gap-4 justify-center">
+    <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      Essayer 2 pratiques libératrices
+    </a>
+    <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="btn-secondary border-[3px] border-[#82153e] text-[#0f172a] bg-gray-50 hover:bg-[#82153e] hover:text-white text-center font-bold shadow-lg">
+      Challenge de 21 jours pour remettre du mouvement
+    </a>
   </div>
 </section>

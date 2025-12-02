@@ -1,8 +1,12 @@
 <header id="main-header" class="bg-[#82153e] fixed inset-x-0 top-0 z-50 shadow-md overflow-visible transition-all duration-300">
   <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between relative">
+    {% if locale == 'en' %}
+    <a href="{{ '/en/' | url }}" class="flex flex-col items-start gap-1">
+    {% else %}
     <a href="{{ '/' | url }}" class="flex flex-col items-start gap-1">
+    {% endif %}
       {% image "assets/img/logo.png", "Fluance", "h-10 w-auto" %}
-      <span class="text-xs text-[#ffce2d]/80 italic">Le mouvement qui éveil et apaise</span>
+      <span class="text-xs text-[#ffce2d]/80 italic">{% if locale == 'fr' %}Le mouvement qui éveil et apaise{% else %}The movement that awakens and soothes{% endif %}</span>
     </a>
 
     <button class="md:hidden text-[#ffce2d] z-50 relative" data-menu-toggle aria-label="Open menu">
@@ -22,15 +26,15 @@
         </button>
         <div class="absolute top-full left-0 mt-2 w-56 bg-[#82153e] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-[#ffce2d]/20 z-[60]">
           <div class="py-2">
-            <a href="{{ '/a-propos/philosophie/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
-              {% if locale == 'fr' %}Philosophie{% else %}Philosophy{% endif %}
-            </a>
-            <a href="{{ '/a-propos/approche-fluance/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
-              {% if locale == 'fr' %}Approche Fluance{% else %}Fluance Approach{% endif %}
-            </a>
-            <a href="{{ '/a-propos/histoire-cedric/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
-              {% if locale == 'fr' %}L'histoire de Cédric{% else %}Cédric's Story{% endif %}
-            </a>
+            {% if locale == 'en' %}
+            <a href="{{ '/en/a-propos/philosophie/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">Philosophy</a>
+            <a href="{{ '/en/a-propos/approche-fluance/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">Fluance Approach</a>
+            <a href="{{ '/en/a-propos/histoire-cedric/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">Cédric's Story</a>
+            {% else %}
+            <a href="{{ '/a-propos/philosophie/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">Philosophie</a>
+            <a href="{{ '/a-propos/approche-fluance/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">Approche Fluance</a>
+            <a href="{{ '/a-propos/histoire-cedric/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">L'histoire de Cédric</a>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -45,12 +49,13 @@
         </button>
         <div class="absolute top-full left-0 mt-2 w-64 bg-[#82153e] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-[#ffce2d]/20 z-[60]">
           <div class="py-2">
-            <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
-              {% if locale == 'fr' %}21 jours pour remettre du mouvement{% else %}21 Days to Get Moving{% endif %}
-            </a>
-            <a href="{{ '/cours-en-ligne/approche-fluance-complete/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">
-              {% if locale == 'fr' %}Approche Fluance complète et régulière{% else %}Complete and Regular Fluance Approach{% endif %}
-            </a>
+            {% if locale == 'en' %}
+            <a href="{{ '/en/cours-en-ligne/21-jours-mouvement/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">21 Days to Get Moving</a>
+            <a href="{{ '/en/cours-en-ligne/approche-fluance-complete/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">Complete and Regular Fluance Approach</a>
+            {% else %}
+            <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">21 jours pour remettre du mouvement</a>
+            <a href="{{ '/cours-en-ligne/approche-fluance-complete/' | url }}" class="block px-4 py-2 hover:bg-[#ffce2d]/10 transition">Approche Fluance complète et régulière</a>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -129,9 +134,15 @@
         </svg>
       </button>
       <div class="hidden pl-4 pb-2" data-dropdown-content="a-propos">
+        {% if locale == 'en' %}
+        <a href="{{ '/en/a-propos/philosophie/' | url }}" class="block py-2">Philosophy</a>
+        <a href="{{ '/en/a-propos/approche-fluance/' | url }}" class="block py-2">Fluance Approach</a>
+        <a href="{{ '/en/a-propos/histoire-cedric/' | url }}" class="block py-2">Cédric's Story</a>
+        {% else %}
         <a href="{{ '/a-propos/philosophie/' | url }}" class="block py-2">Philosophie</a>
         <a href="{{ '/a-propos/approche-fluance/' | url }}" class="block py-2">Approche Fluance</a>
         <a href="{{ '/a-propos/histoire-cedric/' | url }}" class="block py-2">L'histoire de Cédric</a>
+        {% endif %}
       </div>
     </div>
 
@@ -143,8 +154,13 @@
         </svg>
       </button>
       <div class="hidden pl-4 pb-2" data-dropdown-content="cours-en-ligne">
+        {% if locale == 'en' %}
+        <a href="{{ '/en/cours-en-ligne/21-jours-mouvement/' | url }}" class="block py-2">21 Days to Get Moving</a>
+        <a href="{{ '/en/cours-en-ligne/approche-fluance-complete/' | url }}" class="block py-2">Complete and Regular Fluance Approach</a>
+        {% else %}
         <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="block py-2">21 jours pour remettre du mouvement</a>
         <a href="{{ '/cours-en-ligne/approche-fluance-complete/' | url }}" class="block py-2">Approche Fluance complète et régulière</a>
+        {% endif %}
       </div>
     </div>
 
