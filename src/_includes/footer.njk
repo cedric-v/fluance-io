@@ -10,7 +10,7 @@
             <li><a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Cours en ligne{% else %}Online Courses{% endif %}</a></li>
             <li><a href="{{ '/presentiel/cours-hebdomadaires/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Présentiel{% else %}In-person{% endif %}</a></li>
             <li><a href="{{ '/accompagnements-individuels/entrepreneurs-independants/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Accompagnement 1:1{% else %}1:1 Coaching{% endif %}</a></li>
-            <li><a href="{{ '/#contact' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Contact{% else %}Contact{% endif %}</a></li>
+            <li><a href="{{ '/contact/' | url }}" class="hover:text-[#ffce2d]">{% if locale == 'fr' %}Contact{% else %}Contact{% endif %}</a></li>
           </ul>
         </div>
 
@@ -47,8 +47,21 @@
         </div>
         <p class="text-sm text-[#ffce2d]/80">
           {% if locale == 'fr' %}Société Instants Zen Sàrl{% else %}Instants Zen Sàrl{% endif %}<br>
-          {% if locale == 'fr' %}Tel :{% else %}Tel:{% endif %} <a href="tel:+33972133388" class="hover:text-[#ffce2d]">+33 (0)9 72 13 33 88</a>
+          {% if locale == 'fr' %}Tel :{% else %}Tel:{% endif %} <a href="tel:+33972133388" class="hover:text-[#ffce2d]">+33 (0)9 72 13 33 88</a><br>
+          {% if locale == 'fr' %}Email :{% else %}Email:{% endif %} <a href="#" id="support-email-link" class="hover:text-[#ffce2d]"></a>
         </p>
+        <script>
+          // Protection anti-spam : construction dynamique de l'email
+          (function() {
+            const emailParts = ['support', 'fluance', 'io'];
+            const email = emailParts[0] + '@' + emailParts[1] + '.' + emailParts[2];
+            const emailLink = document.getElementById('support-email-link');
+            if (emailLink) {
+              emailLink.href = 'mailto:' + email;
+              emailLink.textContent = email;
+            }
+          })();
+        </script>
       </div>
     </div>
 
@@ -57,8 +70,206 @@
     </div>
   </div>
 
-  <a href="https://fluance.io/#form" target="_blank" rel="noreferrer"
-     class="fixed right-4 bottom-4 z-40 bg-[#82153e] text-white px-4 py-3 rounded-full shadow-lg text-sm font-semibold flex items-center gap-2 hover:bg-fluance/90">
-    {% if locale == 'fr' %}Aide ?{% else %}Help?{% endif %}
-  </a>
+  <!-- 👉 Bouton flottant "Aide ?" -->
+  <style>
+    #helpBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #82153e;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 9999;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+
+    #helpBtn:hover {
+      background-color: #6b1232;
+    }
+
+    #supportFormContainer {
+      display: none;
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 320px;
+      background: white;
+      border: 2px solid #82153e;
+      border-radius: 12px;
+      padding: 20px;
+      z-index: 9999;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    #supportForm input,
+    #supportForm textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 16px;
+      font-family: inherit;
+    }
+
+    #supportForm textarea {
+      height: 150px;
+      resize: vertical;
+    }
+
+    #supportForm button {
+      background-color: #82153e;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      width: 100%;
+      transition: background-color 0.3s ease;
+    }
+
+    #supportForm button:hover {
+      background-color: #6b1232;
+    }
+
+    .message {
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      word-wrap: break-word;
+      white-space: normal;
+      line-height: 1.4;
+      font-size: 14px;
+    }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    #supportFormContainer h3 {
+      font-size: 18px;
+      font-weight: normal;
+      margin-bottom: 15px;
+      color: #333;
+    }
+  </style>
+
+  <!-- 👉 Formulaire de contact -->
+  <div id="supportFormContainer">
+    <!-- Titre du formulaire -->
+    <h3>{% if locale == 'fr' %}Veuillez remplir ce formulaire et poser votre question.{% else %}Please fill out this form and ask your question.{% endif %}</h3>
+
+    <div id="formSuccessMsg" class="message success" style="display: none;"></div>
+    <div id="formErrorMsg" class="message error" style="display: none;"></div>
+
+    <form id="supportForm" action="https://script.google.com/macros/s/AKfycbxifphmYM7trm1uo453PagbAjAhF64hvLXQ5ErQzjEjbY9stSdrOg1jHvVHrPE2Imlhmg/exec" method="POST">
+      <input type="hidden" name="pageUrl" id="pageUrl">
+      <div class="form-group">
+        <input type="text" name="name" placeholder="{% if locale == 'fr' %}Prénom{% else %}First name{% endif %}" required>
+      </div>
+      <div class="form-group">
+        <input type="email" name="email" placeholder="{% if locale == 'fr' %}Email{% else %}Email{% endif %}" required>
+      </div>
+      <div class="form-group">
+        <input type="text" name="subject" placeholder="{% if locale == 'fr' %}Sujet{% else %}Subject{% endif %}" required>
+      </div>
+      <div class="form-group">
+        <textarea name="message" rows="6" placeholder="{% if locale == 'fr' %}Message{% else %}Message{% endif %}" required></textarea>
+      </div>
+
+      <!-- reCAPTCHA v2 -->
+      <div class="g-recaptcha" data-sitekey="6Lc44DArAAAAADGQxzkPBZs4rR_jH5WVgWMD9Q-4"></div>
+
+      <button type="submit">{% if locale == 'fr' %}Envoyer{% else %}Send{% endif %}</button>
+    </form>
+  </div>
+
+  <!-- 👉 Bouton flottant -->
+  <button id="helpBtn">{% if locale == 'fr' %}Aide ?{% else %}Help?{% endif %}</button>
+
+  <!-- 👉 Scripts -->
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <script>
+    const form = document.getElementById('supportForm');
+    const formContainer = document.getElementById('supportFormContainer');
+    const successBox = document.getElementById('formSuccessMsg');
+    const errorBox = document.getElementById('formErrorMsg');
+
+    // Ajouter l'URL de la page au chargement
+    if (document.getElementById('pageUrl')) {
+      document.getElementById('pageUrl').value = window.location.href;
+    }
+
+    const helpBtn = document.getElementById('helpBtn');
+    if (helpBtn) {
+      helpBtn.addEventListener('click', () => {
+        formContainer.style.display = (formContainer.style.display === 'block') ? 'none' : 'block';
+        if (successBox) successBox.style.display = 'none';
+        if (errorBox) errorBox.style.display = 'none';
+      });
+    }
+
+    if (form) {
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+
+        // Réinitialiser les messages
+        if (successBox) {
+          successBox.style.display = 'none';
+        }
+        if (errorBox) {
+          errorBox.style.display = 'none';
+        }
+
+        try {
+          const formData = new FormData(form);
+          const response = await fetch(form.action, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: formData,
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+
+          // Comme nous utilisons no-cors, nous ne pouvons pas lire la réponse directement
+          // Nous supposons que l'envoi a réussi si nous n'avons pas d'erreur
+          if (successBox) {
+            successBox.textContent = "{% if locale == 'fr' %}✅ Merci ! Votre message a été envoyé.{% else %}✅ Thank you! Your message has been sent.{% endif %}";
+            successBox.style.display = "block";
+          }
+          form.reset();
+          if (typeof grecaptcha !== 'undefined') {
+            grecaptcha.reset();
+          }
+        } catch (error) {
+          if (errorBox) {
+            errorBox.textContent = "{% if locale == 'fr' %}❌ Une erreur est survenue lors de l'envoi.{% else %}❌ An error occurred while sending.{% endif %}";
+            errorBox.style.display = "block";
+          }
+          console.error("Erreur :", error);
+        }
+      });
+    }
+  </script>
 </footer>

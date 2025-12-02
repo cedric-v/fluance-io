@@ -1,6 +1,6 @@
 ---
 layout: base.njk
-title: L'histoire de Cédric
+title: L'histoire de Cédric Vonlanthen
 description: Découvrez le parcours de Cédric Vonlanthen, fondateur de Fluance.
 locale: fr
 permalink: /a-propos/histoire-cedric/
@@ -9,7 +9,7 @@ permalink: /a-propos/histoire-cedric/
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="space-y-4 text-center">
     <p class="cta-pill bg-[#82153e]/10 text-[#82153e] inline-flex">A propos</p>
-    <h1 class="text-4xl font-semibold text-[#0f172a]">L'histoire de Cédric</h1>
+    <h1 class="text-4xl font-semibold text-[#0f172a]">L'histoire de Cédric Vonlanthen</h1>
   </header>
 
   <article class="max-w-none space-y-12 text-[#1f1f1f]">

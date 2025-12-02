@@ -22,16 +22,19 @@ permalink: /presentiel/prochains-stages/
       <p class="text-[#0f172a]/70 mb-4">
         Les dates des prochains stages seront bientôt annoncées. Inscrivez-vous à notre liste d'attente pour être informé en priorité.
       </p>
-      <ul class="space-y-3 text-[#0f172a]/80">
+      <ul class="space-y-3 text-[#0f172a]/80 mb-4">
         <li>• Stages d'une journée ou d'un weekend</li>
         <li>• Approfondissement des pratiques Fluance</li>
         <li>• Temps d'échange et de partage</li>
         <li>• Groupe limité pour une expérience privilégiée</li>
       </ul>
+      <p class="text-[#0f172a]/80 mt-4">
+        Les stages peuvent avoir lieu en <strong>Suisse</strong>, en <strong>France</strong>, en <strong>Belgique</strong> ou même ailleurs selon les demandes.
+      </p>
     </div>
 
     <div class="text-center pt-6">
-      <a href="{{ '/#contact' | url }}" class="btn-primary inline-flex">S'inscrire à la liste d'attente</a>
+      <a href="{{ '/contact/' | url }}" class="btn-primary inline-flex">Ecrire pour être mis sur la liste d'attente</a>
     </div>
   </article>
 </section>
