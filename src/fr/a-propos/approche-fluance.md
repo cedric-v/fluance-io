@@ -9,7 +9,7 @@ permalink: /a-propos/approche-fluance/
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] -mt-28 mb-8 overflow-hidden" style="height: 300px;">
     <div class="absolute inset-0 z-0">
-      <img src="/assets/img/cedric-chapeau-montagne-reduit.jpg" alt="Cédric en montagne" class="w-full h-full object-cover" style="object-position: center 20%;" loading="lazy">
+      <img src="{{ '/assets/img/cedric-chapeau-montagne-reduit.jpg' | url }}" alt="Cédric en montagne" class="w-full h-full object-cover object-position-mobile" loading="lazy">
       <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
     </div>
     <div class="relative z-10 h-full flex flex-col items-center justify-center px-6 md:px-12 text-center">

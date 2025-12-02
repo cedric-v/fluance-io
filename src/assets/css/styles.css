@@ -140,3 +140,14 @@ header .group:hover .absolute {
     background: rgba(130, 21, 62, 0.95);
   }
 }
+
+/* Ajustement du positionnement des images d'en-tête pour mobile */
+.object-position-mobile {
+  object-position: center 50%;
+}
+
+@media (min-width: 768px) {
+  .object-position-mobile {
+    object-position: center 20%;
+  }
+}

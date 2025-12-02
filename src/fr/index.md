@@ -19,7 +19,7 @@ locale: fr
       </h1>
       <p class="text-lg md:text-xl text-white/90">
         Rejoignez un mouvement transformateur basé sur une approche simple, ludique, naturelle et libératrice.<br><br>
-        Aucun équipement nécessaire.<br><br>
+        Aucun équipement nécessaire.<br>
         Aucun prérequis.
       </p>
     </div>
