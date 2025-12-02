@@ -21,7 +21,7 @@ permalink: /cours-en-ligne/21-jours-mouvement/
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      <a href="https://fluance.io/par/bdc" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Démarrer le challenge de 21 jours pour 19 CHF / équivalent €
       </a>
     </div>
@@ -32,13 +32,13 @@ permalink: /cours-en-ligne/21-jours-mouvement/
 
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
     <div class="text-center space-y-4">
-      <p class="text-lg text-[#0f172a]/75">
+      <p class="text-lg text-[#0f172a]/80">
         Vous avez déjà essayé le yoga, le tai chi, le qi gong… mais rien ne vous a <em>vraiment</em> convenu ?
       </p>
-      <p class="text-lg text-[#0f172a]/75">
+      <p class="text-lg text-[#0f172a]/80">
         Fluance s'adresse à celles et ceux qui ont déjà essayé de nombreuses approches, sans jamais trouver de méthode qui s'adapte vraiment à votre corps, à votre énergie, à votre rythme.
       </p>
-      <p class="text-sm text-[#0f172a]/60 italic">
+      <p class="text-lg text-[#0f172a]/80 italic">
         Pas besoin d'être souple, motivé·e ou sportif·ve : ici, c'est votre corps qui guide, pas une méthode à suivre coûte que coûte.
       </p>
     </div>
@@ -101,7 +101,7 @@ permalink: /cours-en-ligne/21-jours-mouvement/
       </ul>
       <p class="text-lg font-semibold text-[#82153e] pt-4">➡️ Vous n'êtes pas seul·e.</p>
       <p class="text-lg text-[#0f172a]/80">
-        Après 45 ans, notre corps change, et nous avons besoin d'approches adaptées : plus douces, plus respectueuses… mais tout aussi efficaces.
+        Notre corps change, et nous avons besoin d'approches adaptées : plus douces, plus respectueuses… mais tout aussi efficaces.
       </p>
       <p class="text-lg text-[#0f172a]/80">
         <strong>Fluance</strong> naît justement de cette envie : celle d'une <strong>pratique qui s'adapte à vous</strong>, à vos besoins, à vos sensations, à votre rythme du jour.
@@ -253,12 +253,19 @@ permalink: /cours-en-ligne/21-jours-mouvement/
       </ul>
     </div>
 
+    <div class="pt-4 flex justify-center">
+        <a href="https://fluance.io/par/bdc" class="btn-primary inline-flex flex-col items-center text-center">
+          <span>Je rejoins ce challenge vers un chemin vers un corps libre de tensions</span>
+          <span class="text-sm font-normal opacity-90">19 CHF / équivalent €</span>
+        </a>
+    </div>
+
     <div class="section-card p-8 bg-white space-y-6">
       <h2 class="text-2xl font-semibold text-[#82153e]">Questions fréquentes</h2>
       <div class="space-y-6">
         <div>
           <h3 class="text-lg font-semibold text-[#0f172a] mb-2">Puis-je rejoindre maintenant et commencer plus tard ?</h3>
-          <p class="text-[#0f172a]/80">Oui, vous recevez votre accès et en bénéficiez quand bon vous semble.</p>
+          <p class="text-[#0f172a]/80">Oui, vous recevez votre accès immédiatement et en bénéficiez quand bon vous semble.</p>
         </div>
         <div>
           <h3 class="text-lg font-semibold text-[#0f172a] mb-2">Puis-je prendre plus de 21 jours pour en profiter ?</h3>
@@ -280,6 +287,10 @@ permalink: /cours-en-ligne/21-jours-mouvement/
           <h3 class="text-lg font-semibold text-[#0f172a] mb-2">Je n'aime pas la technique ?</h3>
           <p class="text-[#0f172a]/80">Tout se fait en ligne, en un clic, facilement, depuis votre ordinateur, tablette ou smartphone.</p>
         </div>
+        <div>
+          <h3 class="text-lg font-semibold text-[#0f172a] mb-2">Et si je souhaite continuer ensuite ?</h3>
+          <p class="text-[#0f172a]/80">Vous pourrez rejoindre le cours hebdomadaire en ligne ou en présentiel et participer aux stages.</p>
+        </div>
       </div>
     </div>
 
@@ -297,9 +308,12 @@ permalink: /cours-en-ligne/21-jours-mouvement/
       <p class="text-lg text-[#0f172a]/75">
         Une <strong>manière simple, douce et vivante de retrouver fluidité et apaisement</strong>, sans chercher à rentrer dans un cadre.
       </p>
-      <div class="pt-4">
-        <a href="{{ '/#contact' | url }}" class="btn-primary inline-flex text-center">Je rejoins et continue le chemin vers un corps libre de tensions</a>
-      </div>
+      <div class="pt-4 flex justify-center">
+        <a href="https://fluance.io/par/bdc" class="btn-primary inline-flex flex-col items-center text-center">
+          <span>Je rejoins ce challenge vers un chemin vers un corps libre de tensions</span>
+          <span class="text-sm font-normal opacity-90">19 CHF / équivalent €</span>
+        </a>
+    </div>
     </div>
   </article>
 </section>
