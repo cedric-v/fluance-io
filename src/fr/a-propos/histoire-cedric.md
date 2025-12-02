@@ -91,8 +91,8 @@ permalink: /a-propos/histoire-cedric/
 
   <div class="pt-8 mt-8 border-t border-[#82153e]/20">
     <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-      <a href="{{ '/a-propos/mission/' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
-        Mission
+      <a href="{{ '/a-propos/philosophie/' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+        Philosophie
       </a>
       <a href="{{ '/a-propos/approche-fluance/' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Approche Fluance

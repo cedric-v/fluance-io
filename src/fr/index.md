@@ -5,7 +5,7 @@ description: Le développement au service des entrepreneurs.
 locale: fr
 ---
 
-<section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 py-20 overflow-hidden -mt-28">
+<section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">
   <div class="absolute inset-0 z-0">
     {% image "assets/img/fond-cedric.jpg", "Cédric Vonlanthen au bord du lac", "w-full h-full object-cover" %}
     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
