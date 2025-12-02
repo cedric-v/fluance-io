@@ -24,7 +24,7 @@ locale: fr
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Essayer 2 pratiques libératrices
       </a>
       <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
@@ -98,11 +98,13 @@ locale: fr
     <h2 class="text-3xl font-semibold text-[#82153e]">Rejoignez le mouvement</h2>
   </div>
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+    <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
       Essayer 2 pratiques libératrices
     </a>
-    <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="btn-secondary border-[3px] border-[#82153e] text-[#0f172a] bg-gray-50 hover:bg-[#82153e] hover:text-white text-center font-bold shadow-lg">
+    <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="inline-flex items-center justify-center rounded-full border-[3px] border-[#82153e] text-[#82153e] bg-white hover:bg-[#82153e] hover:text-white px-6 py-3 font-bold shadow-lg transition-all duration-200">
       Challenge de 21 jours pour remettre du mouvement
     </a>
   </div>
 </section>
+
+<script type="text/javascript" async="true" src="https://app.ontraport.com/js/ontraport/opt_assets/drivers/opf.js" data-opf-uid="p2c27119f1412" data-opf-params="borderColor=#8bc34a&borderSize=5px&formHeight=466&formWidth=40%&popPosition=mc&instance=n1809873346"></script>

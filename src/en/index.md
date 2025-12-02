@@ -94,11 +94,14 @@ locale: en
 </section>
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16">
+  <div class="text-center space-y-4 mb-12">
+    <h2 class="text-3xl font-semibold text-[#82153e]">Join the movement</h2>
+  </div>
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
     <a href="{{ '/#contact' | url }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
       Try 2 liberating practices
     </a>
-    <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="btn-secondary border-2 border-[#82153e] text-[#0f172a] bg-white hover:bg-[#82153e]/5 text-center font-semibold">
+    <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | url }}" class="btn-secondary border-[3px] border-[#82153e] text-[#0f172a] bg-gray-50 hover:bg-[#82153e] hover:text-white text-center font-bold shadow-lg">
       21-day challenge to get moving
     </a>
   </div>

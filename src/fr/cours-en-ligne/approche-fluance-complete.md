@@ -6,31 +6,27 @@ locale: fr
 permalink: /cours-en-ligne/approche-fluance-complete/
 ---
 
-<section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
-  <header class="space-y-4 text-center">
-    <p class="cta-pill bg-[#ffce2d]/20 text-[#82153e] inline-flex">Cours en ligne</p>
-    <h1 class="text-4xl font-semibold text-[#0f172a]">Approche Fluance complète et régulière</h1>
-  </header>
-
-  <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
-    <p class="text-lg text-[#0f172a]/75">
-      Un programme complet et régulier qui réunit mouvement, respiration, méditation et accompagnement stratégique pour réinstaller la cohérence dans votre vie personnelle et professionnelle.
-    </p>
-
-    <div class="section-card p-8 bg-white">
-      <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Contenu du programme</h2>
-      <ul class="space-y-3 text-[#0f172a]/80">
-        <li>• Pratiques de mouvement régulières pour reconnecter votre corps</li>
-        <li>• Exercices de respiration et méditation pour apaiser l'esprit</li>
-        <li>• Accompagnement stratégique pour clarifier vos priorités</li>
-        <li>• Accès continu à la plateforme et aux ressources</li>
-        <li>• Sessions de suivi régulières</li>
-      </ul>
+<section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">
+  <div class="absolute inset-0 z-0">
+    {% image "assets/img/cedric-bord-mer.jpg", "Cédric au bord de la mer", "w-full h-full object-cover" %}
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
+  </div>
+  <div class="relative z-10 max-w-2xl text-white space-y-8">
+    <div class="space-y-4">
+      <h1 class="text-3xl md:text-5xl font-semibold leading-relaxed">
+        Augmentez votre énergie<br />
+        Diminuez les tensions<br />
+        Restez joyeux et en pleine forme<br />
+      </h1>
+      <p class="text-lg md:text-xl text-white/90">
+        en seulement 2 à 5 minutes par jour, grâce à un élan continu et fluide vers vous-même.
+      </p>
     </div>
-
-    <div class="text-center pt-6">
-      <a href="{{ '/#contact' | url }}" class="btn-primary inline-flex">Rejoindre le programme</a>
+    <div class="flex flex-col sm:flex-row gap-4">
+      <a href="https://fluance.io/par/bdc-abo" class="btn-primary inline-flex flex-col items-center text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]">
+        <span>De la fluidité chaque semaine pour 30 CHF / équivalent € par mois</span>
+        <span class="text-sm font-normal opacity-90">Les 14 premiers jours sont offerts</span>
+      </a>
     </div>
-  </article>
+  </div>
 </section>
-
