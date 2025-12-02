@@ -13,6 +13,7 @@
   "keywords": [],
   "author": "Instants Zen Sàrl / Fluance",
   "license": "UNLICENSED",
+  "private": true,
   "description": "",
   "dependencies": {
     "@11ty/eleventy": "^3.1.2",
