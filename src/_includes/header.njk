@@ -174,29 +174,29 @@
       </div>
     </div>
 
-    <a href="{{ '/#contact' | url }}" class="py-2 border-b border-[#ffce2d]/20">
+    <a href="{{ '/#contact' | url }}" class="block py-2 border-b border-[#ffce2d]/20">
       {% if locale == 'fr' %}Contact{% else %}Contact{% endif %}
     </a>
     
-    <a href="/connexion" class="py-2 border-b border-[#ffce2d]/20">
+    <a href="/connexion" class="block py-2 border-b border-[#ffce2d]/20">
       {% if locale == 'fr' %}Connexion{% else %}Login{% endif %}
     </a>
     
     <div class="pt-3 mt-2 border-t border-[#ffce2d]/20">
-      <div class="flex items-center gap-3 py-2">
-        <div class="flex items-center gap-2">
-          {% if locale == 'fr' %}
-            <span class="font-bold text-[#ffce2d]">FR</span>
-            <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="text-[#ffce2d]/60 hover:text-[#ffce2d] hover:opacity-100 transition">
-              EN
-            </a>
-          {% else %}
-            <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="text-[#ffce2d]/60 hover:text-[#ffce2d] hover:opacity-100 transition">
-              FR
-            </a>
-            <span class="font-bold text-[#ffce2d]">EN</span>
-          {% endif %}
-        </div>
+      <div class="flex items-center justify-center gap-2 py-2">
+        {% if locale == 'fr' %}
+          <span class="font-bold text-[#ffce2d]">FR</span>
+          <span class="text-[#ffce2d]/40">|</span>
+          <a href="{{ page.url | url | replace('/fr/', '/en/') }}" class="text-[#ffce2d]/60 hover:text-[#ffce2d] hover:opacity-100 transition">
+            EN
+          </a>
+        {% else %}
+          <a href="{{ page.url | url | replace('/en/', '/fr/') }}" class="text-[#ffce2d]/60 hover:text-[#ffce2d] hover:opacity-100 transition">
+            FR
+          </a>
+          <span class="text-[#ffce2d]/40">|</span>
+          <span class="font-bold text-[#ffce2d]">EN</span>
+        {% endif %}
       </div>
     </div>
   </nav>

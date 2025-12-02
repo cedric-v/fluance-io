@@ -12,26 +12,80 @@ permalink: /a-propos/histoire-cedric/
     <h1 class="text-4xl font-semibold text-[#0f172a]">L'histoire de Cédric</h1>
   </header>
 
-  <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
-    <p class="text-lg text-[#0f172a]/75">
-      Fondateur de Fluance, accompagnant d'entrepreneurs, mari et papa de deux enfants.
-    </p>
+  <article class="max-w-none space-y-12 text-[#1f1f1f]">
+    <!-- Section 1: Photo à gauche -->
+    <div class="flex flex-col md:flex-row gap-8 items-start">
+      <div class="w-full md:w-1/2 md:order-1">
+        <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center">
+          <span class="text-gray-400 text-sm">Photo 1 - Une enfance à contre-courant</span>
+        </div>
+      </div>
+      <div class="w-full md:w-1/2 md:order-2 space-y-4">
+        <h2 class="text-2xl font-semibold text-[#82153e]">1. Une enfance à contre-courant</h2>
+        <p class="text-lg leading-relaxed text-[#0f172a]/80">
+          Dès son plus jeune âge, Cédric se sent en décalage avec le cadre rigide de l'école traditionnelle. De nature plutôt frêle, il cherche instinctivement un moyen de préserver son intégrité physique et de s'affirmer. C'est dans les arts martiaux qu'il trouve ce refuge, mais il y découvre bien plus qu'une simple méthode de défense. Au-delà du mouvement, c'est la profondeur de la pratique qui le captive, l'amenant très tôt à s'initier à la méditation Zen assise (zazen). Une graine de spiritualité et de recherche intérieure est alors plantée.
+        </p>
+      </div>
+    </div>
 
-    <p>
-      Après 10 ans dans l'industrie (développeur, chef de produit puis chef de projet), Cédric s'est reconverti comme formateur en méditation pour retrouver du sens et transmettre la fluidité qu'il a expérimentée.
-    </p>
+    <!-- Section 2: Photo à droite -->
+    <div class="flex flex-col md:flex-row gap-8 items-start">
+      <div class="w-full md:w-1/2 md:order-2">
+        <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center">
+          <span class="text-gray-400 text-sm">Photo 2 - L'appel du large et la transformation</span>
+        </div>
+      </div>
+      <div class="w-full md:w-1/2 md:order-1 space-y-4">
+        <h2 class="text-2xl font-semibold text-[#82153e]">2. L'appel du large et la transformation</h2>
+        <p class="text-lg leading-relaxed text-[#0f172a]/80">
+          Après une formation dans l'informatique lui permettant de structurer ses pensées et de financer ses rêves, Cédric décide de tout quitter pour répondre à l'appel de l'Asie. Sac au dos, il part une année entière sur les routes, embrassant une vie de lâcher-prise radical. Des montagnes de Wudang en Chine pour le Tai-Chi aux terres du Kerala en Inde pour le Yoga, en passant par la méditation à Dharamsala au désert de Gobi, il se nourrit de chaque expérience et de la beauté des grands espaces. Il revient de ce voyage initiatique transformé et avec trois certitudes pour son avenir : épouser celle qui a partagé cette aventure, fonder une famille et créer sa propre activité.
+        </p>
+      </div>
+    </div>
 
-    <p>
-      Instants Zen Sàrl a diffusé des dizaines de milliers d'accompagnements dans plus de 35 pays, avec 541 webinaires animés.
-    </p>
+    <!-- Section 3: Photo à gauche -->
+    <div class="flex flex-col md:flex-row gap-8 items-start">
+      <div class="w-full md:w-1/2 md:order-1">
+        <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center">
+          <span class="text-gray-400 text-sm">Photo 3 - La traversée et la construction</span>
+        </div>
+      </div>
+      <div class="w-full md:w-1/2 md:order-2 space-y-4">
+        <h2 class="text-2xl font-semibold text-[#82153e]">3. La traversée et la construction</h2>
+        <p class="text-lg leading-relaxed text-[#0f172a]/80">
+          Le retour est synonyme d'une intensité rare. Cédric mène tout de front : le mariage, l'arrivée de deux enfants, la construction de sa maison et le maintien d'un emploi salarié. En parallèle, animé par une volonté farouche, il bâtit son indépendance. Le chemin est long : après deux années de formation et quatre années d'expérimentations et d'ajustements de modèles d'affaires, sa persévérance paie. Il parvient enfin à créer une activité solide et viable en Suisse romande, concrétisant la vision qu'il avait eue lors de son voyage.
+        </p>
+      </div>
+    </div>
 
-    <div class="section-card p-8 bg-white mt-8">
-      <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Ce que vous ressentirez</h2>
-      <ul class="space-y-3 text-[#0f172a]/80">
-        <li>• Un mental apaisé qui laisse davantage de place à votre intuition.</li>
-        <li>• Un corps souple qui absorbe moins de tensions au quotidien.</li>
-        <li>• Des décisions prises avec clarté, cohérence et fluidité.</li>
-      </ul>
+    <!-- Section 4: Photo à droite -->
+    <div class="flex flex-col md:flex-row gap-8 items-start">
+      <div class="w-full md:w-1/2 md:order-2">
+        <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center">
+          <span class="text-gray-400 text-sm">Photo 4 - Le piège de la complexité</span>
+        </div>
+      </div>
+      <div class="w-full md:w-1/2 md:order-1 space-y-4">
+        <h2 class="text-2xl font-semibold text-[#82153e]">4. Le piège de la complexité</h2>
+        <p class="text-lg leading-relaxed text-[#0f172a]/80">
+          Pourtant, la réussite professionnelle ne comble pas sa soif d'absolu. Animé par l'envie de contribuer toujours plus, Cédric tombe insidieusement dans le piège de la surenchère. Il complexifie son activité, ajoutant des strates qui, au lieu de l'élever, finissent par l'alourdir. Cette course au "toujours plus" crée un déséquilibre et génère des tensions familiales palpables. C'est ce signal d'alarme qui lui fait réaliser qu'il s'est éloigné de l'essentiel et qu'il doit impérativement trouver une autre voie pour ne pas tout perdre.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 5: Photo à gauche -->
+    <div class="flex flex-col md:flex-row gap-8 items-start">
+      <div class="w-full md:w-1/2 md:order-1">
+        <div class="aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center">
+          <span class="text-gray-400 text-sm">Photo 5 - Le retour à la simplicité</span>
+        </div>
+      </div>
+      <div class="w-full md:w-1/2 md:order-2 space-y-4">
+        <h2 class="text-2xl font-semibold text-[#82153e]">5. Le retour à la simplicité</h2>
+        <p class="text-lg leading-relaxed text-[#0f172a]/80">
+          C'est dans l'épure que Cédric trouve finalement sa réponse. Il décide de déconstruire ce qui est superflu pour revenir à l'essence même de son action : la fluidité. En simplifiant radicalement ses processus et son approche, il retrouve non seulement l'harmonie familiale, mais découvre aussi une puissance d'action inédite. C'est de ce parcours, fait de montées, de détours et de retours à l'essentiel, qu'est née la philosophie de Fluance : avancer avec clarté, sans forcer, là où le mouvement est le plus juste.
+        </p>
+      </div>
     </div>
   </article>
 </section>
