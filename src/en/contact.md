@@ -12,14 +12,11 @@ permalink: /en/contact/
     <p class="text-lg text-[#0f172a]/80">
       Have a question? A request? Write to one of the addresses mentioned
     </p>
-    <button onclick="document.getElementById('helpBtn')?.click()" class="btn-primary inline-flex">
-      Ask a question
-    </button>
   </div>
 
   <div class="section-card p-8 bg-white space-y-6">
     <div>
-      <h2 class="text-xl font-semibold text-[#82153e] mb-3">Messaging</h2>
+      <h2 class="text-xl font-semibold text-[#82153e] mb-3">Instant messaging</h2>
       <p class="text-[#0f172a]/80 mb-4">
         Text or voice messages (no calls)
       </p>

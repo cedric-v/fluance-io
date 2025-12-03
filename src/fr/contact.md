@@ -12,14 +12,11 @@ permalink: /contact/
     <p class="text-lg text-[#0f172a]/80">
       Une question ? Une demande ? Écrivez à l'une des adresses mentionnées
     </p>
-    <button onclick="document.getElementById('helpBtn')?.click()" class="btn-primary inline-flex">
-      Poser une question
-    </button>
   </div>
 
   <div class="section-card p-8 bg-white space-y-6">
     <div>
-      <h2 class="text-xl font-semibold text-[#82153e] mb-3">Messagerie</h2>
+      <h2 class="text-xl font-semibold text-[#82153e] mb-3">Messagerie instantanée</h2>
       <p class="text-[#0f172a]/80 mb-4">
         Message textuels ou vocaux (pas d'appel)
       </p>
@@ -40,7 +37,7 @@ permalink: /contact/
     </div>
 
     <div class="pt-6 border-t border-[#82153e]/20">
-      <h2 class="text-xl font-semibold text-[#82153e] mb-3">Email</h2>
+      <h2 class="text-xl font-semibold text-[#82153e] mb-3">E-mail</h2>
       <p class="text-[#0f172a]/80">
         <a href="#" id="contact-email-link" class="text-[#82153e] hover:underline"></a>
       </p>
