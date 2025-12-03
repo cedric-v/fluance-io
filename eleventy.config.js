@@ -26,8 +26,12 @@ module.exports = function(eleventyConfig) {
       const webpFullSrc = PATH_PREFIX + webpSrc;
       
       // Utiliser <picture> avec fallback - le navigateur choisira automatiquement WebP s'il le supporte
+      // Les dimensions doivent être sur le <source> aussi pour éviter le CLS
+      const sourceWidthAttr = width ? `width="${width}"` : '';
+      const sourceHeightAttr = height ? `height="${height}"` : '';
+      
       return `<picture>
-        <source srcset="${webpFullSrc}" type="image/webp">
+        <source srcset="${webpFullSrc}" type="image/webp" ${sourceWidthAttr} ${sourceHeightAttr}>
         <img src="${fullSrc}" alt="${alt}" class="${cls}" ${loadingAttr} ${fetchpriorityAttr} ${widthAttr} ${heightAttr}>
       </picture>`;
     }

@@ -6,8 +6,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://app.ontraport.com" crossorigin>
-    <!-- Charger les fonts avec font-display: swap pour réduire le CLS -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Charger les fonts avec font-display: optional pour éviter complètement le CLS -->
+    <!-- font-display: optional évite le changement de font après le chargement initial -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=optional" rel="stylesheet">
 
     {% if title %}
     <title>{{ title }} | Fluance</title>
