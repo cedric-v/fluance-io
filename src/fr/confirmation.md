@@ -79,15 +79,23 @@ eleventyExcludeFromCollections: true
 
     <div class="section-card p-8 bg-[#82153e]/5 border-l-4 border-[#82153e] rounded-r-lg space-y-4">
       <h2 class="text-xl font-semibold text-[#82153e]">Besoin d'aide ?</h2>
-      <div class="space-y-3 text-[#0f172a]/80">
-        <p>
-          Contactez-nous au <a href="tel:+33972133388" class="text-[#82153e] font-semibold hover:underline">+33 (0)9 72 13 33 88</a> de 9h à 11h du lundi au vendredi
-        </p>
-        <p>
-          ou 24 h / 24 h via <a href="mailto:support@fluance.io" class="text-[#82153e] font-semibold hover:underline">support@fluance.io</a> ou <a href="{{ '/contact/' | relativeUrl }}" class="text-[#82153e] font-semibold hover:underline">ce formulaire de contact</a>.
-        </p>
-      </div>
+      <p class="text-[#0f172a]/80">
+        Contactez-moi via <a href="#" id="confirmation-email-link" class="text-[#82153e] font-semibold hover:underline"></a> ou <a href="{{ '/contact/' | relativeUrl }}" class="text-[#82153e] font-semibold hover:underline">cette page</a>.
+      </p>
     </div>
   </article>
 </section>
+
+<script>
+  // Protection anti-spam : construction dynamique de l'email
+  (function() {
+    const emailParts = ['support', 'fluance', 'io'];
+    const email = emailParts[0] + '@' + emailParts[1] + '.' + emailParts[2];
+    const emailLink = document.getElementById('confirmation-email-link');
+    if (emailLink) {
+      emailLink.href = 'mailto:' + email;
+      emailLink.textContent = email;
+    }
+  })();
+</script>
 
