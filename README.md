@@ -14,6 +14,45 @@ It is designed to be simple to develop locally, deploy on static hosting (GitHub
 
 ---
 
+### Performance optimizations
+
+The site includes several performance optimizations to ensure fast loading and smooth user experience:
+
+#### Image optimization
+
+- **WebP support with automatic fallback**: Images are automatically served in WebP format when available, with fallback to original formats (JPG/PNG) for compatibility
+- **Explicit dimensions**: All images include `width` and `height` attributes to prevent Cumulative Layout Shift (CLS)
+- **Lazy loading**: Images below the fold use `loading="lazy"` for faster initial page load
+- **Eager loading for LCP**: Hero images and critical images use `loading="eager"` and `fetchpriority="high"` for optimal Largest Contentful Paint (LCP)
+- **Responsive positioning**: Hero images use responsive `object-position` (centered on mobile, right-aligned on desktop)
+
+#### Navigation optimization
+
+- **Link prefetching**: Menu links are prefetched on hover (with 100ms delay) to accelerate page transitions
+- **Smooth transitions**: CSS transitions reduce visual flicker during navigation
+- **Optimized event listeners**: Uses `passive: true` for better scroll performance
+
+#### Font loading
+
+- **Preconnect**: Early connection to Google Fonts and external resources
+- **Preload**: Critical Inter font is preloaded for faster rendering
+- **Font-display**: Uses `font-display: optional` to prevent layout shifts
+
+#### CSS and resource loading
+
+- **CSS preload**: Critical CSS is preloaded asynchronously
+- **Minification**: Production builds include minified HTML, CSS, and JavaScript
+- **Will-change optimization**: Applied only during active transitions to avoid unnecessary layer creation
+
+#### Core Web Vitals
+
+The site is optimized for Google's Core Web Vitals:
+- **LCP (Largest Contentful Paint)**: Optimized with eager loading and preconnect hints
+- **FID/INP (First Input Delay / Interaction to Next Paint)**: Reduced with passive event listeners and optimized JavaScript
+- **CLS (Cumulative Layout Shift)**: Minimized with explicit image dimensions and stable font loading
+
+---
+
 ### Prerequisites
 
 - **Node.js** (recommended: latest LTS)
@@ -342,8 +381,10 @@ To keep the project healthy over time:
   - You can submit it to Google Search Console for better indexing.
 
 - **Static assets:**
-  - Add images, icons, etc. under `src/assets/`.
-  - They are copied to `_site/assets/` via `eleventyConfig.addPassthroughCopy`.
+  - Add images, icons, etc. under `src/assets/img/`.
+  - They are copied to `_site/assets/img/` via `eleventyConfig.addPassthroughCopy`.
+  - **WebP optimization**: For better performance, convert images to WebP format and place them alongside the original files (e.g., `image.jpg` and `image.webp`). The `image` shortcode automatically serves WebP when available, with fallback to the original format.
+  - **Image shortcode usage**: Use `{% image "assets/img/filename.jpg", "alt text", "classes", "loading", "fetchpriority", "width", "height" %}` in templates. Always provide width and height to prevent layout shifts.
 
 ---
 
