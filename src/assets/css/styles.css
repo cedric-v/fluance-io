@@ -14,13 +14,8 @@ body {
   background: var(--fluance-cream);
   color: #1f1f1f;
   transition: opacity 0.1s ease-in-out;
-  /* Font fallback pour éviter le CLS - utilise une font système similaire à Inter */
-  /* Override Tailwind font-[Inter] avec fallback système */
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-}
-
-/* Appliquer Inter une fois chargée (avec fallback système) */
-body.font-loaded {
+  /* Font avec fallback système pour éviter le CLS - Inter s'affichera avec swap une fois chargée */
+  /* Override Tailwind font-[Inter] avec fallback système pour éviter le shift */
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 }
 

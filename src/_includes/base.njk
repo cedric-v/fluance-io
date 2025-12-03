@@ -214,27 +214,6 @@
     });
   })();
 
-  // Détecter le chargement de la font Inter pour réduire le CLS
-  (function() {
-    if ('fonts' in document) {
-      // Utiliser l'API Font Loading pour détecter quand Inter est chargée
-      document.fonts.ready.then(function() {
-        document.body.classList.add('font-loaded');
-      });
-      
-      // Fallback : ajouter la classe après un délai si l'API ne fonctionne pas
-      setTimeout(function() {
-        if (!document.body.classList.contains('font-loaded')) {
-          document.body.classList.add('font-loaded');
-        }
-      }, 3000);
-    } else {
-      // Fallback pour les navigateurs qui ne supportent pas l'API Font Loading
-      setTimeout(function() {
-        document.body.classList.add('font-loaded');
-      }, 1000);
-    }
-  })();
 
   // Amélioration de la navigation : préchargement et transition (optimisé pour les performances)
   (function() {
