@@ -13,6 +13,13 @@
 body {
   background: var(--fluance-cream);
   color: #1f1f1f;
+  transition: opacity 0.1s ease-in-out;
+}
+
+/* Réduire le clignotement lors de la navigation */
+body.page-transitioning {
+  opacity: 0.98;
+  will-change: opacity; /* Optimisation uniquement pendant la transition */
 }
 
 .hero-gradient {
@@ -150,4 +157,9 @@ header .group:hover .absolute {
   .object-position-mobile {
     object-position: center 25%;
   }
+}
+
+/* Transition douce pour le contenu principal */
+main {
+  transition: opacity 0.1s ease-in-out;
 }

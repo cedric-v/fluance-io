@@ -213,6 +213,57 @@
       cookieBanner.classList.add('hidden');
     });
   })();
+
+  // Amélioration de la navigation : préchargement et transition (optimisé pour les performances)
+  (function() {
+    // Précharger uniquement les liens du menu principal (pas tous les liens de la page)
+    const menuNav = document.querySelector('nav[data-menu]');
+    if (!menuNav) return;
+    
+    const menuLinks = menuNav.querySelectorAll('a[href^="/"], a[href^="/en/"], a[href^="/fr/"]');
+    const prefetchedUrls = new Set();
+    let prefetchTimeout = null;
+    
+    menuLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      if (!href || prefetchedUrls.has(href)) return;
+      
+      // Précharger au survol avec un léger délai pour éviter les prefetch inutiles
+      link.addEventListener('mouseenter', () => {
+        // Annuler le timeout précédent si l'utilisateur survole rapidement plusieurs liens
+        if (prefetchTimeout) {
+          clearTimeout(prefetchTimeout);
+        }
+        
+        prefetchTimeout = setTimeout(() => {
+          if (!prefetchedUrls.has(href)) {
+            const linkElement = document.createElement('link');
+            linkElement.rel = 'prefetch';
+            linkElement.href = href;
+            document.head.appendChild(linkElement);
+            prefetchedUrls.add(href);
+          }
+        }, 100); // Délai de 100ms avant le prefetch
+      }, { passive: true });
+      
+      // Transition douce lors du clic sur un lien interne
+      link.addEventListener('click', (e) => {
+        const href = link.getAttribute('href');
+        // Ne pas appliquer la transition pour les liens externes ou avec target="_blank"
+        if (link.target === '_blank' || href.startsWith('http') || href.startsWith('javascript:')) {
+          return;
+        }
+        
+        // Ajouter une classe de transition très courte (utilise will-change pour optimisation)
+        document.body.classList.add('page-transitioning');
+        
+        // Retirer la classe après un court délai (au cas où la navigation serait annulée)
+        setTimeout(() => {
+          document.body.classList.remove('page-transitioning');
+        }, 100);
+      }, { passive: true });
+    });
+  })();
 </script>
 </body>
 </html>
