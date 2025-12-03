@@ -28,7 +28,9 @@ module.exports = function(eleventyConfig) {
       const webpFullSrc = PATH_PREFIX + webpSrc;
       
       // Vérifier si le fichier WebP existe dans src/assets/img
-      const srcPath = cleanSrc.replace(/^\/assets\/img\//, 'src/assets/img/');
+      // Utiliser path.resolve pour obtenir le chemin absolu depuis le répertoire du projet
+      const projectRoot = path.resolve(__dirname);
+      const srcPath = path.join(projectRoot, 'src', cleanSrc.replace(/^\//, ''));
       const webpPath = srcPath.replace(/\.(jpg|jpeg|png)$/i, '.webp');
       const webpExists = fs.existsSync(webpPath);
       
