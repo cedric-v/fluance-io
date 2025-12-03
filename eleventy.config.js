@@ -1,6 +1,8 @@
 // eleventy.config.js
 const i18n = require("eleventy-plugin-i18n");
 const htmlmin = require("html-minifier-next"); // Le paquet sécurisé
+const fs = require("fs");
+const path = require("path");
 
 // PathPrefix conditionnel : vide en dev, /fluance-io en prod (GitHub Pages), vide en prod (fluance.io)
 const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "" : "";
@@ -25,18 +27,24 @@ module.exports = function(eleventyConfig) {
       const webpSrc = cleanSrc.replace(/\.(jpg|jpeg|png)$/i, '.webp');
       const webpFullSrc = PATH_PREFIX + webpSrc;
       
-      // Utiliser <picture> avec fallback - le navigateur choisira automatiquement WebP s'il le supporte
-      // Les dimensions doivent être sur le <source> aussi pour éviter le CLS
-      const sourceWidthAttr = width ? `width="${width}"` : '';
-      const sourceHeightAttr = height ? `height="${height}"` : '';
+      // Vérifier si le fichier WebP existe dans src/assets/img
+      const srcPath = cleanSrc.replace(/^\/assets\/img\//, 'src/assets/img/');
+      const webpPath = srcPath.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+      const webpExists = fs.existsSync(webpPath);
       
-      return `<picture>
-        <source srcset="${webpFullSrc}" type="image/webp" ${sourceWidthAttr} ${sourceHeightAttr}>
-        <img src="${fullSrc}" alt="${alt}" class="${cls}" ${loadingAttr} ${fetchpriorityAttr} ${widthAttr} ${heightAttr}>
-      </picture>`;
+      // Utiliser <picture> avec fallback seulement si le fichier WebP existe
+      if (webpExists) {
+        const sourceWidthAttr = width ? `width="${width}"` : '';
+        const sourceHeightAttr = height ? `height="${height}"` : '';
+        
+        return `<picture>
+          <source srcset="${webpFullSrc}" type="image/webp" ${sourceWidthAttr} ${sourceHeightAttr}>
+          <img src="${fullSrc}" alt="${alt}" class="${cls}" ${loadingAttr} ${fetchpriorityAttr} ${widthAttr} ${heightAttr}>
+        </picture>`;
+      }
     }
     
-    // Pour les autres formats (gif, svg, etc.), utiliser <img> simple
+    // Pour les autres formats ou si WebP n'existe pas, utiliser <img> simple
     return `<img src="${fullSrc}" alt="${alt}" class="${cls}" ${loadingAttr} ${fetchpriorityAttr} ${widthAttr} ${heightAttr}>`;
   });
 
