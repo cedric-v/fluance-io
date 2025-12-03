@@ -24,7 +24,7 @@ permalink: /presentiel/cours-hebdomadaires/
       <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Informations pratiques</h2>
       <ul class="space-y-3 text-[#0f172a]/80 mb-6">
         <li>• Cours réguliers chaque semaine</li>
-        <li>• Petits groupes pour un accompagnement de qualité</li>
+        <li>• Groupes de 15 personnes maximum pour un accompagnement de qualité</li>
         <li>• Pratiques adaptées à tous les niveaux</li>
         <li>• Ambiance bienveillante et conviviale</li>
       </ul>
@@ -50,10 +50,9 @@ permalink: /presentiel/cours-hebdomadaires/
         <p class="text-[#0f172a]/80">Vous souhaitez un autre moment ? <a href="{{ '/contact/' | relativeUrl }}" class="text-[#82153e] hover:underline">Faites la demande</a>. S'il y a assez de demandes, un nouveau créneau sera ouvert.</p>
       </div>
       <div class="mt-6 pt-6 border-t border-[#82153e]/20">
-        <h3 class="text-xl font-semibold text-[#82153e] mb-3">Rejoignez notre groupe WhatsApp</h3>
-        <p class="text-[#0f172a]/80 mb-3">Restez connecté avec la communauté et recevez les dernières informations sur les cours.</p>
-        <a href="https://chat.whatsapp.com/DUDkFnpLdw0DyhSdhH1zDN" target="_blank" rel="noopener noreferrer" class="text-[#82153e] hover:text-[#82153e]/80 underline inline-flex items-center">
-          Rejoindre le groupe WhatsApp →
+        <h3 class="text-xl font-semibold text-[#82153e] mb-3">Inscription obligatoire</h3>
+        <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex">
+          Regarder le planning des prochains cours et m'inscrire →
         </a>
       </div>
       <div class="mt-6 pt-6 border-t border-[#82153e]/20">
@@ -71,7 +70,7 @@ permalink: /presentiel/cours-hebdomadaires/
             <h4 class="text-lg font-semibold text-[#82153e] mb-2">Le Flow Pass : 200 CHF</h4>
             <p class="text-[#0f172a]/80">Pour une pratique régulière, profitez de 10 séances + 1 offerte.</p>
             <p class="text-[#0f172a]/80 mt-2">
-              Votre carte est valable durant 16 semaines (4 mois) pour vous laisser le temps de pratiquer à votre rythme.
+              Votre carte est valable durant 12 mois pour vous laisser le temps de pratiquer à votre rythme.
             </p>
           </div>
         </div>
@@ -87,13 +86,20 @@ permalink: /presentiel/cours-hebdomadaires/
         </div>
         <div>
           <h3 class="text-xl font-semibold text-[#82153e] mb-2">Comment puis-je régler ?</h3>
-          <p class="text-[#0f172a]/80">En liquide, via TWINT, carte bancaire ou paiement bancaire instantané, directement sur place avant le début du cours ou à la fin.</p>
+          <p class="text-[#0f172a]/80 mb-4">Par carte bancaire ou TWINT lors de la réservation en ligne, ou en liquide sur place avant le début du cours.</p>
+          <div class="flex flex-wrap items-center gap-4">
+            <img src="{{ '/assets/img/payment-logos/twint.svg' | relativeUrl }}" alt="TWINT" class="h-8 object-contain" loading="lazy">
+            <img src="{{ '/assets/img/payment-logos/visa.svg' | relativeUrl }}" alt="VISA" class="h-8 object-contain" loading="lazy">
+            <img src="{{ '/assets/img/payment-logos/mastercard.svg' | relativeUrl }}" alt="Mastercard" class="h-8 object-contain" loading="lazy">
+            <img src="{{ '/assets/img/payment-logos/google-pay.svg' | relativeUrl }}" alt="Google Pay" class="h-8 object-contain" loading="lazy">
+            <img src="{{ '/assets/img/payment-logos/apple-pay.svg' | relativeUrl }}" alt="Apple Pay" class="h-8 object-contain" loading="lazy">
+          </div>
         </div>
       </div>
     </div>
 
     <div class="text-center pt-6">
-      <a href="https://chat.whatsapp.com/DUDkFnpLdw0DyhSdhH1zDN" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex">Rejoindre le groupe WhatsApp</a>
+      <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex">Je regarde le planning et m'inscris à un cours</a>
     </div>
   </article>
 </section>
