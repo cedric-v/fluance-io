@@ -8,6 +8,7 @@ const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "" : "";
 module.exports = function(eleventyConfig) {
   
   // 1. Gestion des Images (local, servies depuis GitHub Pages ou tout autre hébergeur statique)
+  // Support WebP avec fallback automatique pour jpg/jpeg/png
   eleventyConfig.addShortcode("image", function(src, alt, cls = "", loading = "lazy", fetchpriority = "", width = "", height = "") {
     const cleanSrc = src.startsWith('/') ? src : `/${src}`;
     const fullSrc = PATH_PREFIX + cleanSrc;
@@ -15,6 +16,23 @@ module.exports = function(eleventyConfig) {
     const fetchpriorityAttr = fetchpriority ? `fetchpriority="${fetchpriority}"` : '';
     const widthAttr = width ? `width="${width}"` : '';
     const heightAttr = height ? `height="${height}"` : '';
+    
+    // Vérifier si c'est une image jpg/jpeg/png (pour laquelle on peut avoir une version WebP)
+    const isConvertibleImage = /\.(jpg|jpeg|png)$/i.test(cleanSrc);
+    
+    if (isConvertibleImage) {
+      // Générer le chemin WebP correspondant
+      const webpSrc = cleanSrc.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+      const webpFullSrc = PATH_PREFIX + webpSrc;
+      
+      // Utiliser <picture> avec fallback - le navigateur choisira automatiquement WebP s'il le supporte
+      return `<picture>
+        <source srcset="${webpFullSrc}" type="image/webp">
+        <img src="${fullSrc}" alt="${alt}" class="${cls}" ${loadingAttr} ${fetchpriorityAttr} ${widthAttr} ${heightAttr}>
+      </picture>`;
+    }
+    
+    // Pour les autres formats (gif, svg, etc.), utiliser <img> simple
     return `<img src="${fullSrc}" alt="${alt}" class="${cls}" ${loadingAttr} ${fetchpriorityAttr} ${widthAttr} ${heightAttr}>`;
   });
 

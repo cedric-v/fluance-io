@@ -6,8 +6,8 @@ locale: en
 ---
 
 <section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">
-  <div class="absolute inset-0 z-0">
-    {% image "assets/img/fond-cedric.jpg", "Cédric Vonlanthen by the lake", "w-full h-full object-cover", "eager", "high" %}
+  <div class="absolute inset-0 z-0" style="aspect-ratio: 4/3;">
+    {% image "assets/img/fond-cedric.jpg", "Cédric Vonlanthen by the lake", "w-full h-full object-cover", "eager", "high", "1280", "960" %}
     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
   </div>
   <div class="relative z-10 max-w-2xl text-white space-y-8">

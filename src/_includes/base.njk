@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Précharger les fonts critiques pour éviter le CLS -->
-    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2" as="font" type="font/woff2" crossorigin>
-    <!-- Charger les fonts avec font-display: optional pour éviter le FOUT -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=optional" rel="stylesheet">
+    <link rel="preconnect" href="https://app.ontraport.com" crossorigin>
+    <!-- Charger les fonts avec font-display: swap pour réduire le CLS -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     {% if title %}
     <title>{{ title }} | Fluance</title>
