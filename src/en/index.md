@@ -24,11 +24,13 @@ locale: en
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
-        Try 2 liberating practices
+      <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col">
+        <span>Try 2 liberating practices</span>
+        <span class="text-sm font-normal opacity-90">online</span>
       </a>
-      <a href="{{ '/en/cours-en-ligne/21-jours-mouvement/' | relativeUrl }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
-        21-day challenge to get moving
+      <a href="{{ '/en/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center flex flex-col">
+        <span>Classes in Fribourg (Switzerland)</span>
+        <span class="text-sm font-normal opacity-90">in-person</span>
       </a>
     </div>
   </div>
@@ -98,11 +100,13 @@ locale: en
     <h2 class="text-3xl font-semibold text-[#82153e]">Join the movement</h2>
   </div>
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
-      Try 2 liberating practices
+    <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col">
+      <span>Try 2 liberating practices</span>
+      <span class="text-sm font-normal opacity-90">online</span>
     </a>
-    <a href="{{ '/en/cours-en-ligne/21-jours-mouvement/' | relativeUrl }}" class="btn-secondary border-[3px] border-[#82153e] text-[#0f172a] bg-gray-50 hover:bg-[#82153e] hover:text-white text-center font-bold shadow-lg">
-      21-day challenge to get moving
+    <a href="{{ '/en/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-secondary border-[3px] border-[#82153e] text-[#0f172a] bg-gray-50 hover:bg-[#82153e] hover:text-white text-center font-bold shadow-lg flex flex-col">
+      <span>Classes in Fribourg (Switzerland)</span>
+      <span class="text-sm font-normal opacity-90">in-person</span>
     </a>
   </div>
 </section>

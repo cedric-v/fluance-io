@@ -30,7 +30,7 @@ permalink: /presentiel/cours-hebdomadaires/
       </ul>
       <div class="mt-6 pt-6 border-t border-[#82153e]/20">
         <h3 class="text-xl font-semibold text-[#82153e] mb-3">Lieu à Fribourg (Suisse)</h3>
-        <p class="text-[#0f172a]/80 mb-3">Fribourg (lieu exact à venir)</p>
+        <p class="text-[#0f172a]/80 mb-3">Lieu exact communiqué prochainement.</p>
         <!--
         <p class="text-lg font-semibold text-[#0f172a] mb-2">Arsen'Alt</p>
         <p class="text-[#0f172a]/80 mb-3">
@@ -46,7 +46,8 @@ permalink: /presentiel/cours-hebdomadaires/
       <div class="mt-6 pt-6 border-t border-[#82153e]/20">
         <h3 class="text-xl font-semibold text-[#82153e] mb-3">Horaires</h3>
         <p class="text-[#0f172a]/80 mb-2">Les jeudis de 12h15 à 13h</p>
-        <p class="text-[#0f172a]/80">Vous souhaitez un autre moment ? Écrivez-moi. Si j'ai assez de demandes, j'ouvre un nouveau cours.</p>
+        <p class="text-[#0f172a]/80 mb-2">Les mardis de 18h à 18h45</p>
+        <p class="text-[#0f172a]/80">Vous souhaitez un autre moment ? Faites la demande. S'il y a assez de demandes, un nouveau créneau sera ouvert.</p>
       </div>
       <div class="mt-6 pt-6 border-t border-[#82153e]/20">
         <h3 class="text-xl font-semibold text-[#82153e] mb-3">Rejoignez notre groupe WhatsApp</h3>

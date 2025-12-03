@@ -24,11 +24,13 @@ locale: fr
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
-        Essayer 2 pratiques libératrices
+      <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col">
+        <span>Essayer 2 pratiques libératrices</span>
+        <span class="text-sm font-normal opacity-90">en ligne</span>
       </a>
-      <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | relativeUrl }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
-        Challenge de 21 jours pour remettre du mouvement
+      <a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center flex flex-col">
+        <span>Cours à Fribourg (Suisse)</span>
+        <span class="text-sm font-normal opacity-90">présentiel</span>
       </a>
     </div>
   </div>
@@ -98,11 +100,13 @@ locale: fr
     <h2 class="text-3xl font-semibold text-[#82153e]">Rejoignez le mouvement</h2>
   </div>
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
-      Essayer 2 pratiques libératrices
+    <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col">
+      <span>Essayer 2 pratiques libératrices</span>
+      <span class="text-sm font-normal opacity-90">en ligne</span>
     </a>
-    <a href="{{ '/cours-en-ligne/21-jours-mouvement/' | relativeUrl }}" class="inline-flex items-center justify-center rounded-full border-[3px] border-[#82153e] text-[#82153e] bg-white hover:bg-[#82153e] hover:text-white px-6 py-3 font-bold shadow-lg transition-all duration-200">
-      Challenge de 21 jours pour remettre du mouvement
+    <a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="inline-flex flex-col items-center justify-center rounded-full border-[3px] border-[#82153e] text-[#82153e] bg-white hover:bg-[#82153e] hover:text-white px-6 py-3 font-bold shadow-lg transition-all duration-200">
+      <span>Cours à Fribourg (Suisse)</span>
+      <span class="text-sm font-normal opacity-90">présentiel</span>
     </a>
   </div>
 </section>

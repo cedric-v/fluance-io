@@ -92,7 +92,7 @@
       padding: 12px 20px;
       font-size: 16px;
       cursor: pointer;
-      z-index: 9999;
+      z-index: 99998;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
       font-weight: 600;
       transition: background-color 0.3s ease;
@@ -112,12 +112,17 @@
       border: 2px solid #82153e;
       border-radius: 12px;
       padding: 20px;
-      z-index: 9999;
+      z-index: 99999;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      pointer-events: auto;
     }
 
     .form-group {
       margin-bottom: 15px;
+    }
+
+    #supportForm {
+      pointer-events: auto;
     }
 
     #supportForm input,
@@ -129,6 +134,24 @@
       box-sizing: border-box;
       font-size: 16px;
       font-family: inherit;
+      pointer-events: auto;
+      -webkit-appearance: none;
+      appearance: none;
+      color: #0f172a;
+      background-color: white;
+    }
+
+    #supportForm input::placeholder,
+    #supportForm textarea::placeholder {
+      color: #999;
+      opacity: 1;
+    }
+
+    #supportForm input:focus,
+    #supportForm textarea:focus {
+      outline: 2px solid #82153e;
+      outline-offset: 2px;
+      border-color: #82153e;
     }
 
     #supportForm textarea {
