@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Charger les fonts de manière asynchrone pour ne pas bloquer le rendu -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 
     {% if title %}
     <title>{{ title }} | Fluance</title>
@@ -24,7 +26,9 @@
     <link rel="alternate" hreflang="fr" href="https://fluance.io{% if canonicalUrl.startsWith('/en/') %}{{ canonicalUrl | replace('/en/', '/fr/') }}{% else %}{{ canonicalUrl }}{% endif %}">
     <link rel="alternate" hreflang="en" href="https://fluance.io{% if canonicalUrl.startsWith('/fr/') %}{{ canonicalUrl | replace('/fr/', '/en/') }}{% else %}{{ canonicalUrl }}{% endif %}">
     
-    <link rel="stylesheet" href="{{ '/assets/css/styles.css' | url }}">
+    <!-- Précharger le CSS pour améliorer le FCP (chargement asynchrone) -->
+    <link rel="preload" href="{{ '/assets/css/styles.css' | url }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ '/assets/css/styles.css' | url }}"></noscript>
     
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/x-icon" href="{{ '/assets/img/favicon.ico' | url }}">
