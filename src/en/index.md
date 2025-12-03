@@ -45,7 +45,7 @@ locale: en
     </p>
   </div>
   <a href="{{ '/en/a-propos/approche-fluance/' | relativeUrl }}" class="section-card overflow-hidden max-w-xs mx-auto md:mx-0 block hover:opacity-90 transition-opacity">
-    {% image "assets/img/approche-fluance.png", "Fluance approach diagram", "w-full h-auto object-contain" %}
+    {% image "assets/img/approche-fluance.png", "Fluance approach diagram", "w-full h-auto object-contain", "lazy", "", "400", "400" %}
   </a>
 </section>
 

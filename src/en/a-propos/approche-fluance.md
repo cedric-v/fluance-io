@@ -26,7 +26,7 @@ permalink: /en/a-propos/approche-fluance/
       
       <div class="flex justify-center my-8">
         <div class="max-w-md w-full">
-          {% image "assets/img/approche-fluance.png", "The tripod of vitality: Movement, Breath, Play", "w-full h-auto rounded-lg" %}
+          {% image "assets/img/approche-fluance.png", "The tripod of vitality: Movement, Breath, Play", "w-full h-auto rounded-lg", "lazy", "", "400", "400" %}
         </div>
       </div>
       

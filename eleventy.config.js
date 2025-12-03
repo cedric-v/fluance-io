@@ -8,12 +8,14 @@ const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "" : "";
 module.exports = function(eleventyConfig) {
   
   // 1. Gestion des Images (local, servies depuis GitHub Pages ou tout autre hébergeur statique)
-  eleventyConfig.addShortcode("image", function(src, alt, cls = "", loading = "lazy", fetchpriority = "") {
+  eleventyConfig.addShortcode("image", function(src, alt, cls = "", loading = "lazy", fetchpriority = "", width = "", height = "") {
     const cleanSrc = src.startsWith('/') ? src : `/${src}`;
     const fullSrc = PATH_PREFIX + cleanSrc;
     const loadingAttr = loading ? `loading="${loading}"` : '';
     const fetchpriorityAttr = fetchpriority ? `fetchpriority="${fetchpriority}"` : '';
-    return `<img src="${fullSrc}" alt="${alt}" class="${cls}" ${loadingAttr} ${fetchpriorityAttr}>`;
+    const widthAttr = width ? `width="${width}"` : '';
+    const heightAttr = height ? `height="${height}"` : '';
+    return `<img src="${fullSrc}" alt="${alt}" class="${cls}" ${loadingAttr} ${fetchpriorityAttr} ${widthAttr} ${heightAttr}>`;
   });
 
   // 2. Configuration i18n

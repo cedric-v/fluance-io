@@ -26,7 +26,7 @@ permalink: /a-propos/approche-fluance/
       
       <div class="flex justify-center my-8">
         <div class="max-w-md w-full">
-          {% image "assets/img/approche-fluance.png", "Le trépied de la vitalité : Mouvement, Souffle, Jeu", "w-full h-auto rounded-lg" %}
+          {% image "assets/img/approche-fluance.png", "Le trépied de la vitalité : Mouvement, Souffle, Jeu", "w-full h-auto rounded-lg", "lazy", "", "400", "400" %}
         </div>
       </div>
       
