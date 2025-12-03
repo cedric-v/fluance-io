@@ -30,6 +30,8 @@ permalink: /presentiel/cours-hebdomadaires/
       </ul>
       <div class="mt-6 pt-6 border-t border-[#82153e]/20">
         <h3 class="text-xl font-semibold text-[#82153e] mb-3">Lieu à Fribourg (Suisse)</h3>
+        <p class="text-[#0f172a]/80 mb-3">Fribourg (lieu exact à venir)</p>
+        <!--
         <p class="text-lg font-semibold text-[#0f172a] mb-2">Arsen'Alt</p>
         <p class="text-[#0f172a]/80 mb-3">
           Association du Quartier d'Alt<br>
@@ -39,6 +41,7 @@ permalink: /presentiel/cours-hebdomadaires/
         <a href="https://www.google.com/maps/search/?api=1&query=Derrière-les-Remparts+12,+1700+Fribourg,+Suisse" target="_blank" rel="noopener noreferrer" class="text-[#82153e] hover:text-[#82153e]/80 underline inline-flex items-center">
           Voir sur Google Maps →
         </a>
+        -->
       </div>
       <div class="mt-6 pt-6 border-t border-[#82153e]/20">
         <h3 class="text-xl font-semibold text-[#82153e] mb-3">Horaires</h3>
