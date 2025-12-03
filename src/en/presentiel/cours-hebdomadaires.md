@@ -46,7 +46,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
       <div class="mt-6 pt-6 border-t border-[#82153e]/20">
         <h3 class="text-xl font-semibold text-[#82153e] mb-3">Schedule</h3>
         <p class="text-[#0f172a]/80 mb-2">Thursdays from 12:15 PM to 1:00 PM</p>
-        <p class="text-[#0f172a]/80 mb-2">Tuesdays from 6:00 PM to 6:45 PM</p>
+        <p class="text-[#0f172a]/80 mb-2">Wednesdays from 6:00 PM to 6:45 PM</p>
         <p class="text-[#0f172a]/80">Would you like a different time? Make a request. If there are enough requests, a new time slot will be opened.</p>
       </div>
       <div class="mt-6 pt-6 border-t border-[#82153e]/20">

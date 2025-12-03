@@ -30,7 +30,7 @@ permalink: /en/contact/
           </svg>
           <span style="color: white; font-weight: 600;">WhatsApp</span>
         </a>
-        <a href="https://signal.me/#p/41793768173" id="signal-link-en" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#3A76F0] text-white rounded-full font-semibold hover:bg-[#2E5FD9] transition-colors shadow-md no-underline cursor-pointer" style="background-color: #3A76F0; color: white; text-decoration: none;">
+        <a href="https://signal.me/#eu/xJQdfsTZioqF54CH5kkWjalIeXP2O_C4MN-KOKN2h-2cgpfxcCNGWqDPoSNND9Bp" id="signal-link-en" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#3A76F0] text-white rounded-full font-semibold hover:bg-[#2E5FD9] transition-colors shadow-md no-underline cursor-pointer" style="background-color: #3A76F0; color: white; text-decoration: none;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" style="display: inline-block; vertical-align: middle;">
             <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221c-.169 0-.349.018-.538.038v-.038c0-1.275-.96-2.32-2.16-2.32h-.04c-.6 0-1.14.24-1.54.64-.4-.4-.94-.64-1.54-.64h-.04c-1.2 0-2.16 1.045-2.16 2.32v.038c-.189-.02-.369-.038-.538-.038-1.275 0-2.32 1.045-2.32 2.32 0 1.275 1.045 2.32 2.32 2.32.169 0 .349-.018.538-.038v.038c0 1.275.96 2.32 2.16 2.32h.04c.6 0 1.14-.24 1.54-.64.4.4.94.64 1.54.64h.04c1.2 0 2.16-1.045 2.16-2.32v-.038c.189.02.369.038.538.038 1.275 0 2.32-1.045 2.32-2.32 0-1.275-1.045-2.32-2.32-2.32zm-5.894 7.68c-1.275 0-2.32-1.045-2.32-2.32s1.045-2.32 2.32-2.32 2.32 1.045 2.32 2.32-1.045 2.32-2.32 2.32z"/>
           </svg>
@@ -82,9 +82,11 @@ permalink: /en/contact/
         whatsappLink.href = 'https://wa.me/' + phoneNumber;
       }
       
+      // Signal utilise maintenant un lien personnalisé sécurisé (sans numéro de téléphone visible)
       const signalLink = document.getElementById('signal-link-en');
       if (signalLink && signalLink.href.includes('signal.me')) {
-        signalLink.href = 'https://signal.me/#p/' + phoneNumber;
+        const signalIdParts = ['eu', 'xJQdfsTZioqF54CH5kkWjalIeXP2O_C4MN-KOKN2h-2cgpfxcCNGWqDPoSNND9Bp'];
+        signalLink.href = 'https://signal.me/#' + signalIdParts[0] + '/' + signalIdParts[1];
       }
     }
     
