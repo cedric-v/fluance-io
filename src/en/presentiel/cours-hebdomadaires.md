@@ -99,7 +99,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
     </div>
 
     <div class="text-center pt-6">
-      <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex">View the schedule and register for a class</a>
+      <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex">View the schedule and register for a session →</a>
     </div>
   </article>
 </section>
