@@ -1,6 +1,6 @@
 ---
 layout: base.njk
-title: Clarté et fluidité pour ton activité
+title: Fluidité pour ton activité professionnelle
 description: "Cédric peut t'aider à retrouver de la fluidité et de l'harmonie au niveau de la structure de ton activité professionnelle."
 locale: fr
 permalink: /accompagnements-individuels/entrepreneurs-independants/
@@ -8,7 +8,7 @@ permalink: /accompagnements-individuels/entrepreneurs-independants/
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="space-y-4 text-center">
-    <h1 class="text-4xl font-semibold text-[#0f172a]">Clarté et fluidité pour ton activité</h1>
+    <h1 class="text-4xl font-semibold text-[#0f172a]">Fluidité pour ton activité professionnelle</h1>
   </header>
 
   <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
@@ -30,7 +30,7 @@ permalink: /accompagnements-individuels/entrepreneurs-independants/
     </p>
 
     <div class="text-center pt-6">
-      <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="btn-primary inline-flex">En savoir plus</a>
+      <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="btn-primary inline-flex items-center gap-2">En savoir plus <span>→</span></a>
     </div>
   </article>
 </section>

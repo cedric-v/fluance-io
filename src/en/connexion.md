@@ -20,7 +20,7 @@ permalink: /en/connexion/
           Access your online training space to follow your courses and practices.
         </p>
         <div class="text-center">
-          <a href="https://espace.fluance.io/" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex">Login</a>
+          <a href="https://espace.fluance.io/" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex items-center gap-2">Login <span>→</span></a>
         </div>
       </div>
 
@@ -31,7 +31,7 @@ permalink: /en/connexion/
           View the schedule of upcoming classes and register for a session.
         </p>
         <div class="text-center">
-          <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex">View the schedule and register for a session</a>
+          <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex items-center gap-2">View the schedule and register for a session <span>→</span></a>
         </div>
       </div>
     </div>

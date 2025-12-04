@@ -77,19 +77,19 @@ locale: en
   </div>
   <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">"It does me so much good!"</p>
+      <p class="italic text-[#0f172a]/80">"It does me <strong>so much good</strong>!"</p>
       <p class="text-sm text-[#0f172a]/60 mt-2">— Sylvie Danielle</p>
     </div>
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">"This week the pain really decreased."</p>
+      <p class="italic text-[#0f172a]/80">"This week the <strong>pain really decreased</strong>."</p>
       <p class="text-sm text-[#0f172a]/60 mt-2">— Monique</p>
     </div>
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">"Your method is so simple and fluid. It's pleasant and you don't feel like you have to make an effort."</p>
+      <p class="italic text-[#0f172a]/80">"Your method is so simple and fluid. It's <strong>pleasant</strong> and you <strong>don't feel like you have to make an effort</strong>."</p>
       <p class="text-sm text-[#0f172a]/60 mt-2">— Isabelle</p>
     </div>
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">"I enjoy reconnecting with my body."</p>
+      <p class="italic text-[#0f172a]/80">"I <strong>enjoy</strong> <strong>reconnecting with my body</strong>."</p>
       <p class="text-sm text-[#0f172a]/60 mt-2">— Claire</p>
     </div>
   </div>

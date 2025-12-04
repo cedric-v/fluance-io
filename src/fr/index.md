@@ -77,19 +77,19 @@ locale: fr
   </div>
   <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">« Cela me fait un bien fou ! »</p>
+      <p class="italic text-[#0f172a]/80">« Cela me fait <strong>un bien fou</strong> ! »</p>
       <p class="text-sm text-[#0f172a]/60 mt-2">— Sylvie Danielle</p>
     </div>
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">« Cette semaine les douleurs ont vraiment diminué. »</p>
+      <p class="italic text-[#0f172a]/80">« Cette semaine les <strong>douleurs ont vraiment diminué</strong>. »</p>
       <p class="text-sm text-[#0f172a]/60 mt-2">— Monique</p>
     </div>
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">"Ta méthode est tellement simple et fluide. C'est agréable et on n'a pas le sentiment d'avoir un effort à faire."</p>
+      <p class="italic text-[#0f172a]/80">"Ta méthode est tellement simple et fluide. C'est <strong>agréable</strong> et on n'a <strong>pas le sentiment d'avoir un effort à faire</strong>."</p>
       <p class="text-sm text-[#0f172a]/60 mt-2">— Isabelle</p>
     </div>
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">"J'ai du plaisir à recontacter mon corps."</p>
+      <p class="italic text-[#0f172a]/80">"J'ai du <strong>plaisir</strong> à <strong>recontacter mon corps</strong>."</p>
       <p class="text-sm text-[#0f172a]/60 mt-2">— Claire</p>
     </div>
   </div>
