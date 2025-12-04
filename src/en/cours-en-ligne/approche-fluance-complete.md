@@ -51,11 +51,11 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#0f172a]/80 text-center mb-6">
             <strong class="text-[#82153e]">The first 14 days are free</strong>
           </p>
-          <a href="https://espace.fluance.io/par/abo/bdc/mens" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-3">
+          <a href="https://espace.fluance.io/par/abo/bdc/mens" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
             <span>Subscribe monthly</span>
             <span>→</span>
           </a>
-          <p class="text-sm text-[#0f172a]/70 text-center">
+          <p class="text-sm text-[#0f172a]/70 text-center mt-2">
             Cancelable at any time with a simple email to <a href="#" id="cancel-email-link-en-1" class="text-[#82153e] hover:underline"></a>
           </p>
         </div>
@@ -78,11 +78,11 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#0f172a]/80 text-center mb-6">
             <strong class="text-[#82153e]">The first 14 days are free</strong>
           </p>
-          <a href="https://espace.fluance.io/par/abo/bdc/tri" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-3">
+          <a href="https://espace.fluance.io/par/abo/bdc/tri" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
             <span>Subscribe quarterly</span>
             <span>→</span>
           </a>
-          <p class="text-sm text-[#0f172a]/70 text-center">
+          <p class="text-sm text-[#0f172a]/70 text-center mt-2">
             Cancelable at any time with a simple email to <a href="#" id="cancel-email-link-en-2" class="text-[#82153e] hover:underline"></a>
           </p>
         </div>
