@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Accueil
-description: Le développement au service des entrepreneurs.
+description: "Fluance : libérez votre corps des tensions et retrouvez fluidité, mobilité et sérénité grâce à une approche simple basée sur le mouvement, le souffle et le jeu."
 locale: fr
 ---
 

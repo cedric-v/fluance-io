@@ -75,6 +75,21 @@ module.exports = function(eleventyConfig) {
     return PATH_PREFIX ? PATH_PREFIX + cleanUrl : cleanUrl;
   });
 
+  // 2d. Filtre pour construire l'URL complète de l'image OG
+  eleventyConfig.addFilter("buildOgImageUrl", function(imagePath) {
+    if (!imagePath) imagePath = 'assets/img/fond-cedric.jpg';
+    
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    if (imagePath.startsWith('/')) {
+      return 'https://fluance.io' + imagePath;
+    }
+    
+    return 'https://fluance.io/' + imagePath;
+  });
+
   // 3. Minification HTML sécurisée
   eleventyConfig.addTransform("htmlmin", function(content, outputPath) {
     if (process.env.ELEVENTY_ENV === 'prod' && outputPath && outputPath.endsWith(".html")) {

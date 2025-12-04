@@ -4,6 +4,7 @@ title: 21 Days to Get Moving
 description: A 21-day journey of simple and liberating mini-practices to regain lightness, mobility and serenity.
 locale: en
 permalink: /en/cours-en-ligne/21-jours-mouvement/
+ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
 ---
 
 <section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">

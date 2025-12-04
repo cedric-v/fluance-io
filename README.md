@@ -380,6 +380,38 @@ To keep the project healthy over time:
   - The sitemap is accessible at `https://fluance.io/sitemap.xml` after deployment.
   - You can submit it to Google Search Console for better indexing.
 
+- **Open Graph (OG) Tags:**
+  - Open Graph meta tags are automatically generated for all pages to optimize social media sharing (Facebook, Twitter, LinkedIn, etc.).
+  - All OG tags are included in the base template (`src/_includes/base.njk`).
+  - **Default description**: If a page doesn't have a `description` in its frontmatter, it uses:
+    - **FR**: "Fluance : le mouvement qui éveille et apaise. Libérez votre corps des tensions grâce à une approche simple basée sur le mouvement, le souffle et le jeu."
+    - **EN**: "Fluance: the movement that awakens and soothes. Release tension from your body through a simple approach based on movement, breath and play."
+  - **Custom OG image**: To use a specific image for social media sharing, add `ogImage` to the page frontmatter:
+    ```yaml
+    ---
+    layout: base.njk
+    title: My Page
+    description: My page description
+    ogImage: assets/img/my-hero-image.jpg
+    ---
+    ```
+  - **Default OG image**: If `ogImage` is not specified, the default image `assets/img/fond-cedric.jpg` (homepage hero image) is used.
+  - **OG tags included**:
+    - `og:type` - Always set to "website"
+    - `og:url` - Canonical URL of the page
+    - `og:title` - Page title + "| Fluance"
+    - `og:description` - Page description (or default)
+    - `og:image` - Full URL to the OG image (1200x630 recommended)
+    - `og:image:width` and `og:image:height` - Image dimensions
+    - `og:locale` - Language locale (fr_FR or en_US)
+    - `og:locale:alternate` - Alternate language version
+    - `og:site_name` - "Fluance"
+  - **Twitter Card tags** are also included for optimal Twitter sharing:
+    - `twitter:card` - Set to "summary_large_image"
+    - `twitter:url`, `twitter:title`, `twitter:description`, `twitter:image`
+  - **Image URL generation**: The `buildOgImageUrl` filter automatically converts relative image paths to full URLs (`https://fluance.io/...`).
+  - **Testing**: Use Facebook's [Sharing Debugger](https://developers.facebook.com/tools/debug/) or Twitter's [Card Validator](https://cards-dev.twitter.com/validator) to preview how your pages appear when shared.
+
 - **Static assets:**
   - Add images, icons, etc. under `src/assets/img/`.
   - They are copied to `_site/assets/img/` via `eleventyConfig.addPassthroughCopy`.

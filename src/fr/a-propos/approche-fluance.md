@@ -4,6 +4,7 @@ title: Approche Fluance
 description: Découvrez l'approche globale de Fluance pour la fluidité corps et esprit.
 locale: fr
 permalink: /a-propos/approche-fluance/
+ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
 ---
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">

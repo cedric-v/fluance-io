@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Contact
-description: Contact us for any questions or help.
+description: Contact Fluance for questions about our courses, workshops, or to learn more about our approach to body and mind fluidity.
 locale: en
 permalink: /en/contact/
 ---

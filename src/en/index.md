@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Home
-description: Development at the service of entrepreneurs.
+description: "Fluance: release tension, regain fluidity, mobility and serenity through a simple, natural approach based on movement, breath and play."
 locale: en
 ---
 

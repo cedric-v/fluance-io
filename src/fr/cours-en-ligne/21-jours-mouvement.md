@@ -4,6 +4,7 @@ title: 21 jours pour remettre du mouvement
 description: Parcours de 21 mini-séries de pratiques simples et libératrices pour retrouver légèreté, mobilité et sérénité.
 locale: fr
 permalink: /cours-en-ligne/21-jours-mouvement/
+ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
 ---
 
 <section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">

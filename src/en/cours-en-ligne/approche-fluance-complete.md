@@ -4,6 +4,7 @@ title: Complete and Regular Fluance Approach
 description: Complete and regular program to integrate the Fluance approach into your life.
 locale: en
 permalink: /en/cours-en-ligne/approche-fluance-complete/
+ogImage: assets/img/cedric-bord-mer.jpg
 ---
 
 <section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">

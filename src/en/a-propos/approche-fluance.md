@@ -4,6 +4,7 @@ title: Fluance Approach
 description: Discover Fluance's holistic approach for body and mind fluidity.
 locale: en
 permalink: /en/a-propos/approche-fluance/
+ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
 ---
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
