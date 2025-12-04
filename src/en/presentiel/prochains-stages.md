@@ -14,27 +14,27 @@ permalink: /en/presentiel/prochains-stages/
 
   <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
     <p class="text-lg text-[#0f172a]/75">
-      Discover our upcoming in-person workshops to deepen your practice and experience an immersive Fluance approach.
+      Discover our upcoming in-person events to deepen your practice and experience an <strong>immersive</strong> Fluance approach.
     </p>
 
     <div class="section-card p-8 bg-white">
-      <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Upcoming Workshops</h2>
+      <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Upcoming Events</h2>
       <p class="text-[#0f172a]/70 mb-4">
         The dates for upcoming workshops will be announced soon. Sign up for our waiting list to be informed first.
       </p>
       <ul class="space-y-3 text-[#0f172a]/80 mb-4">
-        <li>• One-day or weekend workshops</li>
+        <li>• One-day or weekend workshops and immersive retreats</li>
         <li>• Deepening of Fluance practices</li>
         <li>• Time for exchange and sharing</li>
         <li>• Limited group for a privileged experience</li>
       </ul>
       <p class="text-[#0f172a]/80 mt-4">
-        Workshops can take place in <strong>Switzerland</strong>, <strong>France</strong>, <strong>Belgium</strong> or elsewhere depending on requests.
+        Events can take place in <strong>Switzerland</strong>, <strong>France</strong>, <strong>Belgium</strong> or elsewhere depending on requests.
       </p>
     </div>
 
     <div class="text-center pt-6">
-      <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary inline-flex">Write to be added to the waiting list</a>
+      <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary inline-flex items-center gap-2">Write to be added to the waiting list <span>→</span></a>
     </div>
   </article>
 </section>

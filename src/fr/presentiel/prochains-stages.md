@@ -14,27 +14,27 @@ permalink: /presentiel/prochains-stages/
 
   <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
     <p class="text-lg text-[#0f172a]/75">
-      Découvrez nos prochains stages en présentiel pour approfondir votre pratique et vivre une expérience immersive de l'approche Fluance.
+      Découvrez les prochains événements en présentiel pour approfondir votre pratique et vivre une <strong>expérience immersive</strong> de l'approche Fluance.
     </p>
 
     <div class="section-card p-8 bg-white">
-      <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Stages à venir</h2>
+      <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Evénements à venir</h2>
       <p class="text-[#0f172a]/70 mb-4">
         Les dates des prochains stages seront bientôt annoncées. Inscrivez-vous à notre liste d'attente pour être informé en priorité.
       </p>
       <ul class="space-y-3 text-[#0f172a]/80 mb-4">
-        <li>• Stages d'une journée ou d'un weekend</li>
+        <li>• Stages d'une journée ou d'un weekend et retraites immersives</li>
         <li>• Approfondissement des pratiques Fluance</li>
         <li>• Temps d'échange et de partage</li>
         <li>• Groupe limité pour une expérience privilégiée</li>
       </ul>
       <p class="text-[#0f172a]/80 mt-4">
-        Les stages peuvent avoir lieu en <strong>Suisse</strong>, en <strong>France</strong>, en <strong>Belgique</strong> ou même ailleurs selon les demandes.
+        Les événements peuvent avoir lieu en <strong>Suisse</strong>, en <strong>France</strong>, en <strong>Belgique</strong> ou même ailleurs selon les demandes.
       </p>
     </div>
 
     <div class="text-center pt-6">
-      <a href="{{ '/contact/' | relativeUrl }}" class="btn-primary inline-flex">Ecrire pour être mis sur la liste d'attente</a>
+      <a href="{{ '/contact/' | relativeUrl }}" class="btn-primary inline-flex items-center gap-2">Ecrire pour être mis sur la liste d'attente <span>→</span></a>
     </div>
   </article>
 </section>
