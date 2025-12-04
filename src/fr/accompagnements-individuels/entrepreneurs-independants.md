@@ -13,7 +13,8 @@ permalink: /accompagnements-individuels/entrepreneurs-independants/
 
   <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
     <p class="text-lg text-[#0f172a]/75">
-      Cédric peut t'aider à <strong>retrouver de la fluidité et de l'harmonie au niveau de la structure de ton activité professionnelle</strong>.
+      Tu es entrepreneur·e ou indépendant·e ?<br><br>
+      Cédric peut aussi t'aider à <strong>retrouver de la fluidité et de l'harmonie au niveau de la structure de ton activité professionnelle</strong>.
     </p>
 
     <p class="text-lg text-[#0f172a]/75">

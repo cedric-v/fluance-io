@@ -96,9 +96,11 @@
       <a href="{{ '/contact/' | relativeUrl }}" class="hover:opacity-80 transition">Contact</a>
       {% endif %}
       
-      <a href="https://espace.fluance.io/" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 transition">
-        {% if locale == 'fr' %}Connexion{% else %}Login{% endif %}
-      </a>
+      {% if locale == 'en' %}
+      <a href="{{ '/en/connexion/' | relativeUrl }}" class="hover:opacity-80 transition">Login</a>
+      {% else %}
+      <a href="{{ '/connexion/' | relativeUrl }}" class="hover:opacity-80 transition">Connexion</a>
+      {% endif %}
       
       <div class="flex items-center gap-2 ml-2 pl-4 border-l border-[#ffce2d]/30">
         {% if locale == 'fr' %}
@@ -186,22 +188,23 @@
     </div>
 
     {% if locale == 'en' %}
-    <a href="{{ '/en/accompagnements-individuels/entrepreneurs-independants/' | relativeUrl }}" class="block py-2 border-b border-[#ffce2d]/20">Entrepreneurs/Independents</a>
-    {% else %}
-    <a href="{{ '/accompagnements-individuels/entrepreneurs-independants/' | relativeUrl }}" class="block py-2 border-b border-[#ffce2d]/20">Entrepreneurs/Indépendants</a>
-    {% endif %}
-
-    {% if locale == 'en' %}
     <a href="{{ '/en/contact/' | relativeUrl }}" class="block py-2 border-b border-[#ffce2d]/20">Contact</a>
     {% else %}
     <a href="{{ '/contact/' | relativeUrl }}" class="block py-2 border-b border-[#ffce2d]/20">Contact</a>
     {% endif %}
     
-    <a href="https://espace.fluance.io/" target="_blank" rel="noopener noreferrer" class="block py-2 border-b border-[#ffce2d]/20">
-      {% if locale == 'fr' %}Connexion{% else %}Login{% endif %}
-    </a>
+    {% if locale == 'en' %}
+    <a href="{{ '/en/connexion/' | relativeUrl }}" class="block py-2 border-b border-[#ffce2d]/20">Login</a>
+    {% else %}
+    <a href="{{ '/connexion/' | relativeUrl }}" class="block py-2 border-b border-[#ffce2d]/20">Connexion</a>
+    {% endif %}
     
     <div class="pt-3 mt-2 border-t border-[#ffce2d]/20">
+      {% if locale == 'en' %}
+      <a href="{{ '/en/accompagnements-individuels/entrepreneurs-independants/' | relativeUrl }}" class="block py-2 border-b border-[#ffce2d]/20">Entrepreneurs/Independents</a>
+      {% else %}
+      <a href="{{ '/accompagnements-individuels/entrepreneurs-independants/' | relativeUrl }}" class="block py-2 border-b border-[#ffce2d]/20">Entrepreneurs/Indépendants</a>
+      {% endif %}
       <div class="flex items-center justify-center gap-2 py-2">
         {% if locale == 'fr' %}
           <span class="font-bold text-[#ffce2d]">FR</span>

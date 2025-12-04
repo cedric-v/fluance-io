@@ -13,7 +13,8 @@ permalink: /en/accompagnements-individuels/entrepreneurs-independants/
 
   <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
     <p class="text-lg text-[#0f172a]/75">
-      Cédric can help you <strong>regain fluidity and harmony at the level of your professional business structure</strong>.
+      Are you an entrepreneur or independent professional?<br><br>
+      Cédric can also help you <strong>regain fluidity and harmony at the level of your professional business structure</strong>.
     </p>
 
     <p class="text-lg text-[#0f172a]/75">
