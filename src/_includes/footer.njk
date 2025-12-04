@@ -12,6 +12,19 @@
             <li><a href="{{ '/en/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="hover:text-[#ffce2d]">In-person</a></li>
             <li><a href="{{ '/en/accompagnements-individuels/entrepreneurs-independants/' | relativeUrl }}" class="hover:text-[#ffce2d]">Entrepreneurs</a></li>
             <li><a href="{{ '/en/contact/' | relativeUrl }}" class="hover:text-[#ffce2d]">Contact</a></li>
+            <li class="pt-2 mt-2 border-t border-[#ffce2d]/20">
+              <div class="flex items-center gap-2">
+                {% set currentUrl = page.url %}
+                {% if currentUrl == '/en/' %}
+                  {% set targetUrl = '/' %}
+                {% else %}
+                  {% set targetUrl = currentUrl | replace('/en/', '/') %}
+                {% endif %}
+                <span class="text-[#ffce2d] font-semibold">English</span>
+                <span class="text-[#ffce2d]/40">|</span>
+                <a href="{{ targetUrl | relativeUrl }}" class="text-[#ffce2d]/80 hover:text-[#ffce2d] transition">Français</a>
+              </div>
+            </li>
             {% else %}
             <li><a href="{{ '/' | relativeUrl }}" class="hover:text-[#ffce2d]">Accueil</a></li>
             <li><a href="{{ '/a-propos/philosophie/' | relativeUrl }}" class="hover:text-[#ffce2d]">A propos</a></li>
@@ -19,6 +32,20 @@
             <li><a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="hover:text-[#ffce2d]">Présentiel</a></li>
             <li><a href="{{ '/accompagnements-individuels/entrepreneurs-independants/' | relativeUrl }}" class="hover:text-[#ffce2d]">Entrepreneurs</a></li>
             <li><a href="{{ '/contact/' | relativeUrl }}" class="hover:text-[#ffce2d]">Contact</a></li>
+            <li class="pt-2 mt-2 border-t border-[#ffce2d]/20">
+              <div class="flex items-center gap-2">
+                {% set currentUrl = page.url %}
+                {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
+                {% if cleanUrl == '/' %}
+                  {% set targetUrl = '/en/' %}
+                {% else %}
+                  {% set targetUrl = '/en' + cleanUrl %}
+                {% endif %}
+                <span class="text-[#ffce2d] font-semibold">Français</span>
+                <span class="text-[#ffce2d]/40">|</span>
+                <a href="{{ targetUrl | relativeUrl }}" class="text-[#ffce2d]/80 hover:text-[#ffce2d] transition">English</a>
+              </div>
+            </li>
             {% endif %}
           </ul>
         </div>
