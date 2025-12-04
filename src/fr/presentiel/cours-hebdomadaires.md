@@ -67,7 +67,7 @@ permalink: /presentiel/cours-hebdomadaires/
             <p class="text-[#0f172a]/80">Liberté totale.</p>
           </div>
           <div class="border-l-4 border-[#82153e] pl-4">
-            <h4 class="text-lg font-semibold text-[#82153e] mb-2">Le Flow Pass : 200 CHF</h4>
+            <h4 class="text-lg font-semibold text-[#82153e] mb-2">Le Flow Pass : 220 CHF</h4>
             <p class="text-[#0f172a]/80">Pour une pratique régulière, profitez de 10 séances + 1 offerte.</p>
             <p class="text-[#0f172a]/80 mt-2">
               Votre carte est valable durant 12 mois pour vous laisser le temps de pratiquer à votre rythme.
