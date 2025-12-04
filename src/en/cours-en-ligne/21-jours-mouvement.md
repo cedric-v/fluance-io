@@ -22,7 +22,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="https://fluance.io/par/bdc" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Start the 21-day challenge for 19 CHF / equivalent €
       </a>
     </div>
@@ -255,7 +255,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="pt-4 flex justify-center">
-        <a href="https://fluance.io/par/bdc" class="btn-primary inline-flex flex-col items-center text-center">
+        <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary inline-flex flex-col items-center text-center">
           <span>I join this challenge towards a path to a body free of tension</span>
           <span class="text-sm font-normal opacity-90">19 CHF / equivalent €</span>
         </a>
@@ -310,7 +310,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
         A <strong>simple, gentle and lively way to regain fluidity and calm</strong>, without trying to fit into a framework.
       </p>
       <div class="pt-4 flex justify-center">
-        <a href="https://fluance.io/par/bdc" class="btn-primary inline-flex flex-col items-center text-center">
+        <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary inline-flex flex-col items-center text-center">
           <span>I join this challenge towards a path to a body free of tension</span>
           <span class="text-sm font-normal opacity-90">19 CHF / equivalent €</span>
         </a>

@@ -41,8 +41,9 @@ eleventyExcludeFromCollections: true
           To receive it, simply click on the link below:
         </p>
         <div class="pt-4">
-          <a href="{{ '/en/cadeau/' | relativeUrl }}" class="btn-primary inline-flex text-center">
+          <a href="{{ '/en/cadeau/' | relativeUrl }}" class="btn-primary inline-flex items-center gap-2 text-center">
             Access my welcome gift: some refreshing moments in nature
+            <span>→</span>
           </a>
         </div>
       </div>
