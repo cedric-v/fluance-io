@@ -24,7 +24,7 @@ permalink: /en/presentiel/prochains-stages/
       </p>
       <ul class="space-y-3 text-[#0f172a]/80 mb-4">
         <li>• One-day or weekend workshops and immersive retreats</li>
-        <li>• Deepening of Fluance practices</li>
+        <li>• Deepening of Fluance practices in nature</li>
         <li>• Time for exchange and sharing</li>
         <li>• Limited group for a privileged experience</li>
       </ul>

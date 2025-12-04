@@ -24,7 +24,7 @@ permalink: /presentiel/prochains-stages/
       </p>
       <ul class="space-y-3 text-[#0f172a]/80 mb-4">
         <li>• Stages d'une journée ou d'un weekend et retraites immersives</li>
-        <li>• Approfondissement des pratiques Fluance</li>
+        <li>• Approfondissement des pratiques Fluance dans la nature</li>
         <li>• Temps d'échange et de partage</li>
         <li>• Groupe limité pour une expérience privilégiée</li>
       </ul>
