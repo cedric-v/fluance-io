@@ -10,16 +10,17 @@ ogImage: assets/img/cedric-bord-mer.jpg
 <section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">
   <div class="absolute inset-0 z-0">
     {% image "assets/img/cedric-bord-mer.jpg", "Cédric au bord de la mer", "w-full h-full object-cover" %}
-    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90 md:via-[#648ED8]/70 md:to-[#648ED8]/90"></div>
+    <div class="absolute inset-0 bg-black/30 md:bg-transparent"></div>
   </div>
   <div class="relative z-10 max-w-2xl text-white space-y-8">
     <div class="space-y-4">
-      <h1 class="text-3xl md:text-5xl font-semibold leading-relaxed">
+      <h1 class="text-3xl md:text-5xl font-semibold leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] md:drop-shadow-none">
         Augmentez votre énergie<br />
         Diminuez les tensions<br />
         Restez joyeux et en pleine forme<br />
       </h1>
-      <p class="text-lg md:text-xl text-white/90">
+      <p class="text-lg md:text-xl text-white/90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)] md:drop-shadow-none">
         en seulement 2 à 5 minutes par jour, grâce à un élan continu et fluide vers vous-même.
       </p>
     </div>
