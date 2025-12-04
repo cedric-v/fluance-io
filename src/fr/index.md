@@ -40,7 +40,7 @@ locale: fr
   <div class="text-left space-y-4">
     <h2 class="text-3xl md:text-4xl font-semibold text-[#0f172a]">Qu'est-ce que Fluance ?</h2>
     <p class="text-lg md:text-xl text-[#0f172a]/75">
-      Fluance est une approche nouvelle de lien au corps et ses tensions.<br><br>
+      Fluance est une approche nouvelle du lien au corps et ses tensions.<br><br>
       Grâce à des mouvements en conscience et son aspect ludique, elle rééquilibre progressivement votre système nerveux, amène de la clarté mentale et procure de la vitalité.
     </p>
   </div>
