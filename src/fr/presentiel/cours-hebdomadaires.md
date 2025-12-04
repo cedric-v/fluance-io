@@ -23,7 +23,7 @@ permalink: /presentiel/cours-hebdomadaires/
     <div class="section-card p-8 bg-white">
       <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Informations pratiques</h2>
       <ul class="space-y-3 text-[#0f172a]/80 mb-6">
-        <li>• Un cours par semaine, et vous décidez quand vous participez</li>
+        <li>• Plusieurs cours disponibles chaque semaine. Vous décidez quand vous participez.</li>
         <li>• Groupes de 15 personnes maximum pour un accompagnement de qualité</li>
         <li>• Pratiques adaptées à toutes et tous</li>
         <li>• Ambiance bienveillante et conviviale</li>

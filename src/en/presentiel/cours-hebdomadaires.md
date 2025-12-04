@@ -23,7 +23,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
     <div class="section-card p-8 bg-white">
       <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Practical Information</h2>
       <ul class="space-y-3 text-[#0f172a]/80 mb-6">
-        <li>• One class per week, and you decide when you participate</li>
+        <li>• Several classes available each week. You decide when you participate.</li>
         <li>• Groups of 15 people maximum for quality support</li>
         <li>• Practices adapted to everyone</li>
         <li>• Welcoming and friendly atmosphere</li>
