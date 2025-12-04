@@ -85,13 +85,6 @@
         </div>
       </div>
 
-      <!-- Entrepreneurs -->
-      {% if locale == 'en' %}
-      <a href="{{ '/en/accompagnements-individuels/entrepreneurs-independants/' | relativeUrl }}" class="hover:opacity-80 transition">Entrepreneurs</a>
-      {% else %}
-      <a href="{{ '/accompagnements-individuels/entrepreneurs-independants/' | relativeUrl }}" class="hover:opacity-80 transition">Entrepreneurs</a>
-      {% endif %}
-
       {% if locale == 'en' %}
       <a href="{{ '/en/contact/' | relativeUrl }}" class="hover:opacity-80 transition">Contact</a>
       {% else %}
@@ -103,6 +96,15 @@
       {% else %}
       <a href="{{ '/connexion/' | relativeUrl }}" class="hover:opacity-80 transition">Connexion</a>
       {% endif %}
+
+      <!-- Entrepreneurs -->
+      <div class="ml-2 pl-4 border-l border-[#ffce2d]/20">
+        {% if locale == 'en' %}
+        <a href="{{ '/en/accompagnements-individuels/entrepreneurs-independants/' | relativeUrl }}" class="hover:opacity-80 transition">Entrepreneurs</a>
+        {% else %}
+        <a href="{{ '/accompagnements-individuels/entrepreneurs-independants/' | relativeUrl }}" class="hover:opacity-80 transition">Entrepreneurs</a>
+        {% endif %}
+      </div>
       
       <div class="flex items-center gap-2 ml-2 pl-4 border-l border-[#ffce2d]/30">
         {% if locale == 'fr' %}
