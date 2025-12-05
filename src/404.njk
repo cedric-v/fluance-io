@@ -1,0 +1,50 @@
+---
+layout: base.njk
+title: Page introuvable
+description: "La page que vous recherchez n'existe pas ou a été déplacée."
+permalink: /404.html
+locale: fr
+eleventyExcludeFromCollections: true
+---
+
+<section class="max-w-4xl mx-auto px-6 md:px-12 py-24 md:py-32 text-center">
+  <div class="space-y-8">
+    <div class="space-y-4">
+      <h1 class="text-6xl md:text-8xl font-bold text-[#82153e]">404</h1>
+      <h2 class="text-3xl md:text-4xl font-semibold text-[#0f172a]" id="error-title">Page introuvable</h2>
+      <p class="text-lg md:text-xl text-[#0f172a]/75 max-w-2xl mx-auto" id="error-message">
+        La page que vous recherchez n'existe pas ou a été déplacée.<br>
+        Retournez à l'accueil pour continuer votre navigation.
+      </p>
+    </div>
+    
+    <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+      <a href="{{ '/' | relativeUrl }}" class="btn-primary inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]" id="home-link">
+        <span>Retour à l'accueil</span>
+        <span>→</span>
+      </a>
+      <a href="{{ '/contact/' | relativeUrl }}" class="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-[#82153e] text-[#82153e] bg-white hover:bg-[#82153e] hover:text-white px-6 py-3 font-bold shadow-lg transition-all duration-200" id="contact-link">
+        <span>Nous contacter</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Détection de la langue depuis l'URL
+  (function() {
+    const path = window.location.pathname;
+    const isEnglish = path.startsWith('/en/') || path === '/en' || path === '/en';
+    
+    if (isEnglish) {
+      document.documentElement.lang = 'en';
+      document.getElementById('error-title').textContent = 'Page not found';
+      document.getElementById('error-message').innerHTML = 'The page you are looking for does not exist or has been moved.<br>Return to the homepage to continue browsing.';
+      document.getElementById('home-link').innerHTML = '<span>Back to homepage</span><span>→</span>';
+      document.getElementById('home-link').href = '/en/';
+      document.getElementById('contact-link').innerHTML = '<span>Contact us</span>';
+      document.getElementById('contact-link').href = '/en/contact/';
+    }
+  })();
+</script>
+
