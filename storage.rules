@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Contenu protégé - accessible uniquement aux utilisateurs authentifiés
+    match /protected-content/{allPaths=**} {
+      // Vérifier que l'utilisateur est authentifié
+      allow read: if request.auth != null;
+      // Seules les Firebase Functions peuvent écrire
+      allow write: if false;
+    }
+
+    // Tous les autres fichiers sont publics (pour les assets du site)
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
+

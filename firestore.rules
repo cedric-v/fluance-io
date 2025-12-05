@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Règles pour les tokens d'inscription
+    match /registrationTokens/{tokenId} {
+      // Seuls les utilisateurs authentifiés peuvent lire leur propre token
+      // Les tokens sont vérifiés côté serveur (Firebase Functions)
+      allow read: if false; // Les tokens ne doivent jamais être lus côté client
+      allow write: if false; // Seules les Firebase Functions peuvent écrire
+    }
+
+    // Règles pour les utilisateurs
+    match /users/{userId} {
+      // Un utilisateur peut lire et mettre à jour son propre document
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      // Les Firebase Functions peuvent créer et mettre à jour tous les documents
+      allow create, update: if false; // Géré par les Functions
+    }
+
+    // Règles pour le contenu protégé (métadonnées)
+    match /protectedContent/{contentId} {
+      // Seuls les utilisateurs authentifiés peuvent lire
+      allow read: if request.auth != null;
+      // Seules les Firebase Functions peuvent écrire
+      allow write: if false;
+    }
+
+    // Règles pour les commentaires (existant)
+    match /comments/{commentId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Toutes les autres collections sont refusées par défaut
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

@@ -90,6 +90,32 @@ module.exports = function(eleventyConfig) {
     return 'https://fluance.io/' + imagePath;
   });
 
+  // 2e. Shortcode pour le contenu protégé
+  eleventyConfig.addShortcode("protectedContent", function(contentId) {
+    const escapedContentId = contentId.replace(/'/g, "\\'");
+    return `<div class="protected-content" data-content-id="${contentId}">
+  <div class="bg-gray-100 rounded-lg p-8 text-center">
+    <p class="text-gray-600 mb-4">Chargement du contenu protégé...</p>
+    <div class="animate-pulse">
+      <div class="h-4 bg-gray-300 rounded w-3/4 mx-auto mb-2"></div>
+      <div class="h-4 bg-gray-300 rounded w-1/2 mx-auto"></div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof window.FluanceAuth !== 'undefined') {
+    const element = document.querySelector('.protected-content[data-content-id="${contentId}"]');
+    if (element && window.FluanceAuth.isAuthenticated()) {
+      window.FluanceAuth.displayProtectedContent('${escapedContentId}', element);
+    } else if (element) {
+      element.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center"><p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder à ce contenu.</p><a href="/connexion-firebase?return=' + encodeURIComponent(window.location.pathname) + '" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">Se connecter</a></div>';
+    }
+  }
+});
+</script>`;
+  });
+
   // 3. Minification HTML sécurisée
   eleventyConfig.addTransform("htmlmin", function(content, outputPath) {
     if (process.env.ELEVENTY_ENV === 'prod' && outputPath && outputPath.endsWith(".html")) {
@@ -105,6 +131,7 @@ module.exports = function(eleventyConfig) {
 
   // 4. Copie des assets statiques (images, etc.) — le CSS est généré dans _site par Tailwind
   eleventyConfig.addPassthroughCopy({ "src/assets/img": "assets/img" });
+  eleventyConfig.addPassthroughCopy({ "src/assets/js": "assets/js" });
   eleventyConfig.addPassthroughCopy("src/robots.txt");
   // Copie de la favicon à la racine
   eleventyConfig.addPassthroughCopy({ "src/assets/img/favicon.ico": "favicon.ico" });

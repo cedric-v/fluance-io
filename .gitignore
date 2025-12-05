@@ -1,13 +1,32 @@
+# Dependencies
 node_modules/
+package-lock.json
+
+# Build output
 _site/
 
-# Fichiers d'environnement / secrets
+# Environment variables
 .env
-.env.*
+.env.local
 
-# Sorties temporaires
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
 
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Functions
+functions/node_modules/
+functions/.env
+functions/.env.local

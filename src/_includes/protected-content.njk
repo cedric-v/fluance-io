@@ -1,0 +1,50 @@
+{# 
+  Shortcode pour afficher du contenu protégé
+  Usage: {% protectedContent "content-id" %}
+#}
+<div class="protected-content" data-content-id="{{ contentId }}">
+  <div class="bg-gray-100 rounded-lg p-8 text-center">
+    <p class="text-gray-600 mb-4">Chargement du contenu protégé...</p>
+    <div class="animate-pulse">
+      <div class="h-4 bg-gray-300 rounded w-3/4 mx-auto mb-2"></div>
+      <div class="h-4 bg-gray-300 rounded w-1/2 mx-auto"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Attendre que le script Firebase Auth soit chargé
+  if (typeof window.FluanceAuth !== 'undefined') {
+    const protectedContentElements = document.querySelectorAll('.protected-content[data-content-id]');
+    
+    protectedContentElements.forEach(async (element) => {
+      const contentId = element.getAttribute('data-content-id');
+      
+      // Vérifier si l'utilisateur est authentifié
+      if (window.FluanceAuth.isAuthenticated()) {
+        // Charger et afficher le contenu
+        await window.FluanceAuth.displayProtectedContent(contentId, element);
+      } else {
+        // Afficher un message de connexion
+        element.innerHTML = `
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder à ce contenu.</p>
+            <a href="/connexion-firebase?return=${encodeURIComponent(window.location.pathname)}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+              Se connecter
+            </a>
+          </div>
+        `;
+      }
+    });
+  } else {
+    // Si le script n'est pas encore chargé, attendre un peu
+    setTimeout(() => {
+      if (typeof window.FluanceAuth !== 'undefined') {
+        window.location.reload();
+      }
+    }, 1000);
+  }
+});
+</script>
+
