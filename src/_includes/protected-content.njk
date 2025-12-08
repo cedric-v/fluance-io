@@ -39,14 +39,41 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   const protectedContentElements = document.querySelectorAll('.protected-content[data-content-id]');
   
-  protectedContentElements.forEach(async (element) => {
+  // Fonction pour charger le contenu protégé
+  async function loadProtectedContentForElement(element) {
     const contentId = element.getAttribute('data-content-id');
     
-    // Attendre un peu pour que l'état d'authentification soit synchronisé
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Attendre que l'état d'authentification soit synchronisé
+    // Utiliser onAuthStateChanged pour être sûr que l'état est à jour
+    await new Promise((resolve) => {
+      if (typeof firebase !== 'undefined' && firebase.auth) {
+        // Vérifier immédiatement
+        const currentUser = firebase.auth().currentUser;
+        if (currentUser) {
+          resolve();
+          return;
+        }
+        
+        // Sinon, attendre le prochain changement d'état
+        const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+          unsubscribe();
+          resolve();
+        });
+        
+        // Timeout de sécurité
+        setTimeout(() => {
+          unsubscribe();
+          resolve();
+        }, 2000);
+      } else {
+        resolve();
+      }
+    });
     
     // Vérifier si l'utilisateur est authentifié
-    if (window.FluanceAuth && window.FluanceAuth.isAuthenticated()) {
+    const isAuth = window.FluanceAuth && window.FluanceAuth.isAuthenticated();
+    
+    if (isAuth) {
       // Charger et afficher le contenu
       await window.FluanceAuth.displayProtectedContent(contentId, element);
     } else {
@@ -60,6 +87,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         </div>
       `;
     }
+  }
+  
+  // Charger le contenu pour chaque élément
+  protectedContentElements.forEach(async (element) => {
+    await loadProtectedContentForElement(element);
   });
 });
 </script>

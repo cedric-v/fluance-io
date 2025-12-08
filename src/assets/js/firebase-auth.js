@@ -483,6 +483,24 @@ function extractEmailFromToken(token) {
   return '';
 }
 
+// Fonction pour obtenir l'utilisateur actuel (avec fallback)
+function getCurrentUser() {
+  if (auth && auth.currentUser) {
+    return auth.currentUser;
+  }
+  // Fallback : utiliser firebase.auth() directement si auth n'est pas encore initialisé
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    return firebase.auth().currentUser;
+  }
+  return null;
+}
+
+// Fonction pour vérifier l'authentification (avec fallback)
+function isAuthenticated() {
+  const user = getCurrentUser();
+  return !!user;
+}
+
 // Exporter les fonctions pour utilisation globale
 window.FluanceAuth = {
   signIn,
@@ -492,7 +510,7 @@ window.FluanceAuth = {
   verifyTokenAndCreateAccount,
   loadProtectedContent,
   displayProtectedContent,
-  getCurrentUser: () => auth?.currentUser,
-  isAuthenticated: () => !!auth?.currentUser
+  getCurrentUser,
+  isAuthenticated
 };
 
