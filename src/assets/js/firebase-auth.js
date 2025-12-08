@@ -91,7 +91,10 @@ async function verifyTokenAndCreateAccount(token, password, email = null) {
     }
 
     // Spécifier la région europe-west1 où la fonction est déployée
-    const verifyTokenFunction = firebase.functions('europe-west1').httpsCallable('verifyToken');
+    // Dans la version compat, on utilise firebase.app().functions('region')
+    const app = firebase.app();
+    const functions = app.functions('europe-west1');
+    const verifyTokenFunction = functions.httpsCallable('verifyToken');
     const result = await verifyTokenFunction({ token, password });
     
     console.log('verifyToken result:', result);
