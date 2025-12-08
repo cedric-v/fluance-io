@@ -211,9 +211,13 @@ async function sendPasswordResetEmail(email) {
       auth = firebase.auth();
     }
 
+    // Détecter la langue depuis l'URL ou le chemin
+    const isEnglish = window.location.pathname.startsWith('/en/');
+    const resetPath = isEnglish ? '/en/reset-password' : '/reinitialiser-mot-de-passe';
+
     // Configuration pour le lien de réinitialisation
     const actionCodeSettings = {
-      url: window.location.origin + '/reinitialiser-mot-de-passe',
+      url: window.location.origin + resetPath,
       handleCodeInApp: true
     };
 

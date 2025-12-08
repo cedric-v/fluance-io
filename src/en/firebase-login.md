@@ -50,9 +50,14 @@ permalink: /en/firebase-login/
       </div>
 
       <div id="password-field">
-        <label for="password" class="block text-sm font-medium text-[#0f172a] mb-2">
-          Password
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label for="password" class="block text-sm font-medium text-[#0f172a]">
+            Password
+          </label>
+          <a href="/en/reset-password" class="text-sm text-[#82153e] hover:text-[#82153e]/80">
+            Forgot password?
+          </a>
+        </div>
         <input
           type="password"
           id="password"
