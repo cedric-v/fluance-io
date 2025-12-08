@@ -229,10 +229,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (user) {
-          console.log('✅ User authenticated:', user.email, '- Redirecting to /test-contenu-protege/');
-          showSuccess('Redirecting to your content...');
+          console.log('✅ User authenticated:', user.email, '- Redirecting to /membre/');
+          showSuccess('Redirecting to your member area...');
           // Immediate redirect
-          window.location.href = '/test-contenu-protege/';
+          window.location.href = '/membre/';
         } else {
           console.error('❌ User not authenticated after', maxAttempts, 'attempts');
           console.log('Firebase state:', {

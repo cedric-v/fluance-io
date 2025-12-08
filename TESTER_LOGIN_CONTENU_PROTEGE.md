@@ -131,9 +131,9 @@ Pour tester l'affichage du contenu protégé, ajoutez un document dans Firestore
 
 ### Méthode recommandée : Page de test créée
 
-Une page de test a été créée : `/test-contenu-protege/`
+Une page d'espace client a été créée : `/membre/`
 
-1. Allez sur : `https://fluance.io/test-contenu-protege/` (ou votre URL locale)
+1. Allez sur : `https://fluance.io/membre/` (ou votre URL locale)
 2. Si vous n'êtes pas connecté, vous verrez un message vous invitant à vous connecter
 3. Si vous êtes connecté, le contenu protégé devrait s'afficher automatiquement
 
