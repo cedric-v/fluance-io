@@ -1,0 +1,103 @@
+# Fluance
+
+> Fluance : le mouvement qui éveille et apaise. Libérez votre corps des tensions grâce à une approche simple basée sur le mouvement, le souffle et le jeu.
+
+## Summary
+
+Fluance is a wellness and personal development approach created by Cédric Vonlanthen. It offers a unique method to release body tension, regain fluidity, mobility, and serenity through conscious movement, breath, and play. The approach draws inspiration from martial arts, Chi Gong, Tai-Chi, and Yoga, but frees itself from rigid forms and imposed choreographies.
+
+**Target Audience:** People seeking to release physical and emotional tension, improve body awareness, and find calm through movement. Particularly suitable for those who find seated meditation difficult.
+
+**Key Value Propositions:**
+- No equipment needed
+- No prerequisites
+- Simple, playful, natural, and liberating approach
+- Accessible online and in-person (Fribourg, Switzerland)
+- Suitable for individuals and businesses
+
+## Main Sections
+
+### About Fluance
+- [Approach](/a-propos/approche-fluance/): Detailed explanation of the Fluance method
+- [Philosophy](/a-propos/philosophie/): The philosophical foundations of the approach
+- [Cédric's Story](/a-propos/histoire-cedric/): The founder's journey and background
+
+### Online Courses
+- [21-Day Challenge](/cours-en-ligne/21-jours-mouvement/): A 21-day program with 2-5 minute daily practices to find lightness, mobility, and serenity
+- [Complete Fluance Approach](/cours-en-ligne/approche-fluance-complete/): Full access to all courses and practices with monthly or quarterly subscription
+- [2 Free Practices](/2-pratiques-offertes/): Try 2 liberating practices online for free
+
+### In-Person Classes
+- [Weekly Classes in Fribourg](/presentiel/cours-hebdomadaires/): In-person wellness classes in Fribourg, Switzerland
+- [Corporate Services](/presentiel/en-entreprise/): Wellness programs for businesses
+- [Upcoming Workshops](/presentiel/prochains-stages/): Information about upcoming workshops and seminars
+
+### Individual Support
+- [For Entrepreneurs and Self-Employed](/accompagnements-individuels/entrepreneurs-individuels/): Personalized support for entrepreneurs and independent professionals
+
+### Practical Information
+- [Contact](/contact/): Contact information and ways to reach Cédric Vonlanthen
+- [Legal Notice](/mentions-legales/): Legal information and privacy policy
+- [Terms & Conditions](/cgv/): General terms and conditions of sale
+
+## Key Information
+
+**Organization:** Instants Zen Sàrl / Fluance
+**Location:** Fribourg, Switzerland (in-person classes)
+**Languages:** French (FR) and English (EN)
+**Founder:** Cédric Vonlanthen
+**Website:** https://fluance.io
+
+**Contact:**
+- Email: support@fluance.io (available in footer, protected from spam)
+- Phone: +33 (0)9 72 13 33 88
+- Address: Case postale, 1782 Belfaux, Switzerland
+
+**Social Media:**
+- YouTube: https://www.youtube.com/@fluanceio
+- Facebook: https://www.facebook.com/Fluanceio/
+- Instagram: https://www.instagram.com/fluanceio/
+- LinkedIn: https://www.linkedin.com/company/fluance-consulting/
+- X (Twitter): https://x.com/fluanceio
+- Pinterest: https://ch.pinterest.com/fluanceio/
+
+## Services Offered
+
+### Online Services
+1. **21-Day Challenge** (19 CHF)
+   - 21 days of liberating mini-practices (2-5 minutes per day)
+   - Email reminders
+   - WhatsApp community support
+   - Bonus: 3-minute routine to relieve back pain
+
+2. **Complete Fluance Approach**
+   - Monthly subscription: 30 CHF (first 14 days free)
+   - Quarterly subscription: 75 CHF (first 14 days free)
+   - Full access to all courses and practices
+
+### In-Person Services (Fribourg, Switzerland)
+1. **Weekly Classes**
+   - First session free
+   - Pay-per-session: 25 CHF
+   - Flow Pass: 220 CHF (10 sessions + 1 free, valid for 12 months)
+
+2. **Corporate Services**
+   - Customized wellness programs for businesses
+   - Team workshops and seminars
+
+## Approach Characteristics
+
+- **Movement-based:** Uses conscious, organic, and intuitive movement
+- **Breath-focused:** Incorporates breathing techniques
+- **Playful:** Emphasizes the playful aspect of practice
+- **Body-centered:** Works through the body rather than the mind
+- **Accessible:** No equipment or prerequisites needed
+- **Personalized:** Movement adapts to individual anatomy and sensations
+
+## Content Access
+
+The site includes:
+- Free content: Information pages, approach explanations, testimonials
+- Protected content: Requires authentication for paid courses and practices
+- Multilingual: All content available in French and English
+- Payment methods: Stripe and PayPal accepted for online courses
