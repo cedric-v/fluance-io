@@ -90,9 +90,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const daysSinceRegistration = result.daysSinceRegistration || 0;
         const currentDay = daysSinceRegistration + 1;
         
+        // Calculer le nombre total de jours (incluant le bonus jour 22)
+        const maxDay = Math.max(...contents.map(c => c.day || 0), 21);
+        const totalDays = maxDay >= 22 ? 23 : 22; // 23 si bonus jour 22 existe, sinon 22
+        
         contentHTML += `
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p class="text-blue-800 font-semibold">Vous êtes au jour ${currentDay} sur 22</p>
+            <p class="text-blue-800 font-semibold">Vous êtes au jour ${currentDay} sur ${totalDays}</p>
             <p class="text-blue-700 text-sm mt-1">Continuez votre parcours vers la détente et la mobilité.</p>
           </div>
         `;
@@ -100,9 +104,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Trouver le contenu du jour actuel
         let currentDayContent = null;
         if (currentDay === 1) {
+          // Jour 1 = déroulé (jour 0)
           currentDayContent = contents.find(c => c.day === 0);
         } else if (currentDay <= 22) {
+          // Jours 2-22 = jours 1-21 du programme
           currentDayContent = contents.find(c => c.day === currentDay - 1);
+        } else if (currentDay === 23) {
+          // Jour 23 = bonus (jour 22)
+          currentDayContent = contents.find(c => c.day === 22);
         }
 
         if (!currentDayContent) {

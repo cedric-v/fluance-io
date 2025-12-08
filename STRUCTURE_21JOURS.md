@@ -83,6 +83,7 @@ users/
 | 19 | `21jours-jour-19` | Jour 19 |
 | 20 | `21jours-jour-20` | Jour 20 |
 | 21 | `21jours-jour-21` | Jour 21 |
+| 22 | `21jours-jour-22` | Bonus (jour 22) |
 
 ## Logique d'accès progressif
 

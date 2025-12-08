@@ -430,7 +430,8 @@ async function loadProtectedContent(contentId = null) {
             // Jour 0 (déroulé) accessible immédiatement
             isAccessible = true;
           } else if (daysSinceRegistration !== null) {
-            // Jours 1-21 accessibles à partir du jour correspondant
+            // Jours 1-21 : accessibles à partir du jour correspondant
+            // Jour 22 (bonus) : accessible au jour 22 (daysSinceRegistration >= 21)
             isAccessible = daysSinceRegistration >= dayNumber - 1;
           } else {
             isAccessible = false;

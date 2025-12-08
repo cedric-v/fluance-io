@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       const contents = result.contents || [];
       const daysSinceRegistration = result.daysSinceRegistration || 0;
-      const currentDay = daysSinceRegistration + 1; // Jour actuel (1-22)
+      const currentDay = daysSinceRegistration + 1; // Jour actuel (1-23 si bonus)
 
       // Trouver le contenu du jour actuel
       let currentDayContent = null;
@@ -98,8 +98,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Jour 1 = déroulé (jour 0)
         currentDayContent = contents.find(c => c.day === 0);
       } else if (currentDay <= 22) {
-        // Jours 2-22 = jours 1-21
+        // Jours 2-22 = jours 1-21 du programme
         currentDayContent = contents.find(c => c.day === currentDay - 1);
+      } else if (currentDay === 23) {
+        // Jour 23 = bonus (jour 22)
+        currentDayContent = contents.find(c => c.day === 22);
       }
 
       // Si pas de contenu pour aujourd'hui, prendre le dernier accessible
