@@ -13,7 +13,7 @@ La solution comprend :
 
 ## Prérequis
 
-1. Un projet Firebase existant (déjà configuré pour les commentaires)
+1. Un projet Firebase : **fluance-protected-content** (voir `ACTIVER_SERVICES_FIREBASE.md` pour l'activation)
 2. Node.js 18+ installé
 3. Firebase CLI installé : `npm install -g firebase-tools`
 4. Compte Mailjet avec API Key et Secret
@@ -64,8 +64,10 @@ Dans la console Firebase, allez dans Functions > Configuration et ajoutez :
 ### 4. Déployer les règles de sécurité
 
 ```bash
-firebase deploy --only firestore:rules,storage:rules
+firebase deploy --only firestore:rules
 ```
+
+**Note** : Les règles Storage ne sont pas nécessaires car le contenu est stocké dans Firestore.
 
 ### 5. Déployer les Firebase Functions
 
@@ -89,18 +91,18 @@ firebase deploy --only functions
 
 1. Dans le dashboard Stripe, allez dans **Developers > Webhooks**
 2. Cliquez sur **Add endpoint**
-3. URL : `https://YOUR_REGION-YOUR_PROJECT.cloudfunctions.net/webhookStripe`
+3. URL : `https://europe-west6-fluance-protected-content.cloudfunctions.net/webhookStripe`
 4. Événements à écouter :
    - `checkout.session.completed`
    - `payment_intent.succeeded`
-5. Copier le **Signing secret** et l'ajouter à la configuration Firebase
+5. Copier le **Signing secret** et l'ajouter à la configuration Firebase (variable `STRIPE_WEBHOOK_SECRET`)
 
 ### PayPal
 
 1. Dans le dashboard PayPal, allez dans **My Apps & Credentials**
 2. Créer une nouvelle app ou utiliser une existante
 3. Configurer les webhooks :
-   - URL : `https://YOUR_REGION-YOUR_PROJECT.cloudfunctions.net/webhookPayPal`
+   - URL : `https://europe-west6-fluance-protected-content.cloudfunctions.net/webhookPayPal`
    - Événements : `PAYMENT.CAPTURE.COMPLETED`, `CHECKOUT.ORDER.APPROVED`
 
 ## Structure Firestore
@@ -132,40 +134,54 @@ Chaque document contient :
 }
 ```
 
-### Collection `protectedContent` (optionnel)
+### Collection `protectedContent`
 
-Métadonnées sur le contenu protégé :
+Contenu protégé complet (HTML, texte, code embed) :
 ```javascript
 {
-  contentId: "video-1",
+  // ID du document = contentId (ex: "video-1")
   product: "Approche Fluance Complète",
   title: "Titre du contenu",
-  description: "Description",
-  createdAt: Timestamp
+  content: "<div>...code HTML complet...</div>", // Contenu HTML complet
+  createdAt: Timestamp,
+  updatedAt: Timestamp
 }
 ```
 
-## Structure Firebase Storage
+**Note** : Le contenu est stocké directement dans Firestore (pas dans Storage). Limite : 1 MiB par document.
 
-Organiser le contenu protégé comme suit :
+## Structure Firestore pour le contenu protégé
 
+Le contenu protégé est stocké dans la collection `protectedContent` de Firestore.
+
+### Structure d'un document
+
+Chaque document dans `protectedContent` contient :
+
+```javascript
+{
+  contentId: "video-1", // ID du document
+  product: "Approche Fluance Complète", // Produit associé
+  title: "Vidéo 1 : Introduction", // Titre du contenu
+  content: "<div>...code HTML...</div>", // Contenu HTML complet
+  createdAt: Timestamp,
+  updatedAt: Timestamp
+}
 ```
-protected-content/
-  ├── Approche Fluance Complète/
-  │   ├── video-1.html
-  │   ├── video-2.html
-  │   └── ...
-  ├── Cours en ligne/
-  │   ├── cours-1.html
-  │   └── ...
-  └── Produit standard/
-      └── ...
-```
 
-Chaque fichier HTML peut contenir :
-- Code embed de vidéos (YouTube, Vimeo, etc.)
-- Texte formaté
-- Autre HTML/CSS/JS nécessaire
+### Organisation
+
+Les documents sont organisés par `product` et peuvent être filtrés par ce champ. Chaque utilisateur ne peut accéder qu'au contenu de son produit.
+
+**Exemple de structure** :
+- Document ID: `video-1`, product: `"Approche Fluance Complète"`
+- Document ID: `video-2`, product: `"Approche Fluance Complète"`
+- Document ID: `cours-1`, product: `"Cours en ligne"`
+
+### Limites
+
+- **Taille maximale** : 1 MiB par document (suffisant pour du texte/HTML)
+- **Contenu** : HTML, texte, code embed vidéos (YouTube, Vimeo, etc.)
 
 ## Utilisation
 
@@ -226,14 +242,9 @@ const result = await sendNewsletter({
 
 Les règles sont définies dans `firestore.rules` :
 - Les tokens ne sont jamais accessibles côté client
-- Les utilisateurs ne peuvent lire que leur propre document
-- Le contenu protégé nécessite une authentification
-
-### Règles Storage
-
-Les règles sont définies dans `storage.rules` :
-- Le contenu protégé nécessite une authentification
-- Seules les Firebase Functions peuvent écrire
+- Les utilisateurs ne peuvent lire que leur propre document utilisateur
+- Le contenu protégé nécessite une authentification et l'accès est limité au produit de l'utilisateur
+- Seules les Firebase Functions peuvent écrire le contenu protégé
 
 ### Tokens
 
@@ -281,7 +292,7 @@ firebase deploy --only functions
 ### Déployer uniquement les règles
 
 ```bash
-firebase deploy --only firestore:rules,storage:rules
+firebase deploy --only firestore:rules
 ```
 
 ## Monitoring
@@ -309,9 +320,10 @@ firebase deploy --only firestore:rules,storage:rules
 ### Le contenu protégé ne s'affiche pas
 
 1. Vérifier que l'utilisateur est authentifié
-2. Vérifier que le fichier existe dans Storage au bon chemin
-3. Vérifier les règles de sécurité Storage
-4. Vérifier la console du navigateur pour les erreurs
+2. Vérifier que le document existe dans Firestore (`protectedContent/{contentId}`)
+3. Vérifier que le champ `product` du contenu correspond au produit de l'utilisateur
+4. Vérifier les règles de sécurité Firestore
+5. Vérifier la console du navigateur pour les erreurs
 
 ## Support
 
@@ -319,4 +331,5 @@ Pour toute question ou problème, consulter :
 - [Documentation Firebase](https://firebase.google.com/docs)
 - [Documentation Mailjet](https://dev.mailjet.com/)
 - [Documentation Stripe](https://stripe.com/docs/webhooks)
+
 

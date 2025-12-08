@@ -261,3 +261,5 @@ Pour tester le contenu protégé :
 4. Afficher le contenu dans une page avec `{% protectedContent "test" %}`
 5. Vérifier que le contenu s'affiche correctement
 
+
+

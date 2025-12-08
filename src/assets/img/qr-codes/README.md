@@ -62,3 +62,9 @@ Pour vérifier que le QR code fonctionne correctement :
 - Les paramètres UTM sont conservés dans l'URL et transmis à Google Analytics
 - Pour un meilleur résultat d'impression, utilisez toujours la version SVG
 
+
+
+
+
+
+

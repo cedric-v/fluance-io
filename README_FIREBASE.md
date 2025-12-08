@@ -196,3 +196,5 @@ Page de connexion Firebase Auth. Accepte le paramètre `?return=/path` pour redi
 
 Voir `FIREBASE_SETUP.md` pour les détails complets de configuration.
 
+
+

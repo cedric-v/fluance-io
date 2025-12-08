@@ -61,7 +61,7 @@ permalink: /cours-en-ligne/5jours/j4/
       </script>
       <script>
       var firebaseConfig = {
-        apiKey: "AIzaSyDF7lpMAEaZxOajdiHFWft-Hary1RtQM2c",
+        apiKey: "VOTRE_API_KEY_FIREBASE", // Clé Firebase pour les commentaires (ancien projet)
         authDomain: "owncommentsfluance.firebaseapp.com",
         projectId: "owncommentsfluance",
         storageBucket: "owncommentsfluance.firebasestorage.app",

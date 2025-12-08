@@ -3,14 +3,16 @@
  * Gère l'authentification et l'accès au contenu protégé
  */
 
-// Configuration Firebase (utiliser le même projet que les commentaires)
+// Configuration Firebase pour fluance-protected-content
+// ⚠️ IMPORTANT : Remplacez ces valeurs par celles de votre projet Firebase
+// Voir OBTENIR_CONFIGURATION_FIREBASE.md pour obtenir les vraies clés
 const firebaseConfig = {
-  apiKey: "AIzaSyDF7lpMAEaZxOajdiHFWft-Hary1RtQM2c",
-  authDomain: "owncommentsfluance.firebaseapp.com",
-  projectId: "owncommentsfluance",
-  storageBucket: "owncommentsfluance.firebasestorage.app",
-  messagingSenderId: "561599480401",
-  appId: "1:561599480401:web:e1ad00b17fb27392126e70"
+  apiKey: "VOTRE_API_KEY_ICI", // À remplacer : obtenez-la dans Firebase Console > Paramètres du projet
+  authDomain: "fluance-protected-content.firebaseapp.com",
+  projectId: "fluance-protected-content",
+  storageBucket: "fluance-protected-content.firebasestorage.app", // Même si Storage n'est pas utilisé
+  messagingSenderId: "VOTRE_MESSAGING_SENDER_ID", // À remplacer
+  appId: "VOTRE_APP_ID" // À remplacer (format: 1:...:web:...)
 };
 
 // Initialiser Firebase (compat mode pour compatibilité avec l'existant)
@@ -28,11 +30,7 @@ if (typeof firebase === 'undefined') {
   script3.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
   document.head.appendChild(script3);
   
-  const script4 = document.createElement('script');
-  script4.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js';
-  document.head.appendChild(script4);
-  
-  script4.onload = () => {
+  script3.onload = () => {
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
@@ -45,12 +43,11 @@ if (typeof firebase === 'undefined') {
   initAuth();
 }
 
-let auth, db, storage;
+let auth, db;
 
 function initAuth() {
   auth = firebase.auth();
   db = firebase.firestore();
-  storage = firebase.storage();
   
   // Écouter les changements d'état d'authentification
   auth.onAuthStateChanged((user) => {
@@ -119,6 +116,64 @@ async function signIn(email, password) {
 }
 
 /**
+ * Envoie un lien de connexion par email (passwordless)
+ */
+async function sendSignInLink(email, actionCodeSettings = null) {
+  try {
+    // Configuration par défaut : lien valide pour cette page
+    const defaultSettings = {
+      url: window.location.origin + '/connexion-firebase',
+      handleCodeInApp: true
+    };
+    
+    const settings = actionCodeSettings || defaultSettings;
+    
+    await auth.sendSignInLinkToEmail(email, settings);
+    return { success: true };
+  } catch (error) {
+    console.error('Send sign in link error:', error);
+    return { success: false, error: getErrorMessage(error.code) };
+  }
+}
+
+/**
+ * Vérifie si un lien de connexion passwordless est présent dans l'URL
+ */
+async function handleSignInLink() {
+  try {
+    // Vérifier si un lien de connexion est présent dans l'URL
+    if (auth.isSignInWithEmailLink(window.location.href)) {
+      let email = window.localStorage.getItem('emailForSignIn');
+      
+      // Si l'email n'est pas dans localStorage, demander à l'utilisateur
+      if (!email) {
+        email = window.prompt('Veuillez fournir votre email pour confirmation');
+      }
+      
+      if (!email) {
+        return { success: false, error: 'Email requis pour la connexion' };
+      }
+      
+      // Connecter l'utilisateur avec le lien
+      const result = await auth.signInWithEmailLink(email, window.location.href);
+      
+      // Nettoyer localStorage
+      window.localStorage.removeItem('emailForSignIn');
+      
+      // Nettoyer l'URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      return { success: true, user: result.user };
+    }
+    
+    return { success: false, error: 'Aucun lien de connexion valide' };
+  } catch (error) {
+    console.error('Handle sign in link error:', error);
+    return { success: false, error: getErrorMessage(error.code) };
+  }
+}
+
+/**
  * Déconnexion
  */
 async function signOut() {
@@ -132,7 +187,7 @@ async function signOut() {
 }
 
 /**
- * Charge le contenu protégé depuis Firebase Storage
+ * Charge le contenu protégé depuis Firestore
  */
 async function loadProtectedContent(contentId = null) {
   try {
@@ -148,33 +203,54 @@ async function loadProtectedContent(contentId = null) {
     }
 
     const userData = userDoc.data();
+    const userProduct = userData.product;
     
     // Si un contentId est spécifié, charger ce contenu spécifique
     if (contentId) {
-      const contentRef = storage.ref(`protected-content/${userData.product}/${contentId}.html`);
-      const url = await contentRef.getDownloadURL();
-      const response = await fetch(url);
-      const content = await response.text();
-      return { success: true, content, product: userData.product };
+      const contentDoc = await db.collection('protectedContent').doc(contentId).get();
+      
+      if (!contentDoc.exists) {
+        return { success: false, error: 'Contenu non trouvé' };
+      }
+
+      const contentData = contentDoc.data();
+      
+      // Vérifier que l'utilisateur a accès à ce produit
+      if (contentData.product !== userProduct) {
+        return { success: false, error: 'Accès non autorisé à ce contenu' };
+      }
+
+      return { 
+        success: true, 
+        content: contentData.content || '', 
+        product: userProduct,
+        title: contentData.title || '',
+        metadata: {
+          createdAt: contentData.createdAt,
+          updatedAt: contentData.updatedAt
+        }
+      };
     }
 
-    // Sinon, charger la liste des contenus disponibles
-    const contentListRef = storage.ref(`protected-content/${userData.product}/`);
-    const listResult = await contentListRef.listAll();
+    // Sinon, charger la liste des contenus disponibles pour ce produit
+    const contentsSnapshot = await db.collection('protectedContent')
+      .where('product', '==', userProduct)
+      .orderBy('createdAt', 'desc')
+      .get();
     
     const contents = [];
-    for (const itemRef of listResult.items) {
-      const url = await itemRef.getDownloadURL();
-      const metadata = await itemRef.getMetadata();
+    contentsSnapshot.forEach((doc) => {
+      const data = doc.data();
       contents.push({
-        id: itemRef.name.replace('.html', ''),
-        url,
-        name: metadata.name,
-        updated: metadata.updated
+        id: doc.id,
+        title: data.title || doc.id,
+        content: data.content || '',
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt
       });
-    }
+    });
 
-    return { success: true, contents, product: userData.product };
+    return { success: true, contents, product: userProduct };
   } catch (error) {
     console.error('Error loading protected content:', error);
     return { success: false, error: error.message };
@@ -291,6 +367,8 @@ function extractEmailFromToken(token) {
 window.FluanceAuth = {
   signIn,
   signOut,
+  sendSignInLink,
+  handleSignInLink,
   verifyTokenAndCreateAccount,
   loadProtectedContent,
   displayProtectedContent,

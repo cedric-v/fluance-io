@@ -13,6 +13,27 @@ permalink: /connexion-firebase/
       <p class="text-gray-600">Accédez à votre contenu protégé Fluance</p>
     </div>
 
+    <!-- Onglets pour choisir la méthode de connexion -->
+    <div class="mb-6 border-b border-gray-200">
+      <nav class="flex -mb-px">
+        <button
+          id="tab-password"
+          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-green-600 text-green-600"
+          onclick="switchTab('password')"
+        >
+          Mot de passe
+        </button>
+        <button
+          id="tab-passwordless"
+          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          onclick="switchTab('passwordless')"
+        >
+          Lien magique
+        </button>
+      </nav>
+    </div>
+
+    <!-- Formulaire avec mot de passe -->
     <form id="login-form" class="space-y-6">
       <div>
         <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
@@ -28,7 +49,7 @@ permalink: /connexion-firebase/
         />
       </div>
 
-      <div>
+      <div id="password-field">
         <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
           Mot de passe
         </label>
@@ -36,10 +57,13 @@ permalink: /connexion-firebase/
           type="password"
           id="password"
           name="password"
-          required
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           placeholder="Votre mot de passe"
         />
+      </div>
+
+      <div id="success-message" class="hidden bg-green-50 border border-green-200 rounded-lg p-4">
+        <p class="text-green-800 text-sm"></p>
       </div>
 
       <div id="error-message" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">
@@ -75,9 +99,70 @@ permalink: /connexion-firebase/
 
 <script src="/assets/js/firebase-auth.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+let currentTab = 'password';
+
+// Fonction pour changer d'onglet
+function switchTab(tab) {
+  currentTab = tab;
+  const passwordTab = document.getElementById('tab-password');
+  const passwordlessTab = document.getElementById('tab-passwordless');
+  const passwordField = document.getElementById('password-field');
+  const passwordInput = document.getElementById('password');
+  const buttonText = document.getElementById('button-text');
+
+  if (tab === 'password') {
+    passwordTab.classList.add('border-green-600', 'text-green-600');
+    passwordTab.classList.remove('border-transparent', 'text-gray-500');
+    passwordlessTab.classList.remove('border-green-600', 'text-green-600');
+    passwordlessTab.classList.add('border-transparent', 'text-gray-500');
+    passwordField.style.display = 'block';
+    passwordInput.required = true;
+    buttonText.textContent = 'Se connecter';
+  } else {
+    passwordlessTab.classList.add('border-green-600', 'text-green-600');
+    passwordlessTab.classList.remove('border-transparent', 'text-gray-500');
+    passwordTab.classList.remove('border-green-600', 'text-green-600');
+    passwordTab.classList.add('border-transparent', 'text-gray-500');
+    passwordField.style.display = 'none';
+    passwordInput.required = false;
+    passwordInput.value = '';
+    buttonText.textContent = 'Envoyer le lien magique';
+  }
+  
+  hideError();
+  hideSuccess();
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+  // Vérifier si un lien passwordless est présent dans l'URL
+  try {
+    await new Promise((resolve) => {
+      if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+        resolve();
+      } else {
+        const checkInterval = setInterval(() => {
+          if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 100);
+      }
+    });
+
+    const linkResult = await window.FluanceAuth.handleSignInLink();
+    if (linkResult.success) {
+      // Connexion réussie avec le lien
+      const returnUrl = new URLSearchParams(window.location.search).get('return') || '/';
+      window.location.href = returnUrl;
+      return;
+    }
+  } catch (error) {
+    console.error('Error handling sign in link:', error);
+  }
+
   const form = document.getElementById('login-form');
   const errorDiv = document.getElementById('error-message');
+  const successDiv = document.getElementById('success-message');
   const submitButton = document.getElementById('submit-button');
   const buttonText = document.getElementById('button-text');
   const buttonSpinner = document.getElementById('button-spinner');
@@ -88,16 +173,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
-    if (!email || !password) {
-      showError('Veuillez remplir tous les champs.');
+    if (!email) {
+      showError('Veuillez entrer votre email.');
+      return;
+    }
+
+    if (currentTab === 'password' && !password) {
+      showError('Veuillez entrer votre mot de passe.');
       return;
     }
 
     // Désactiver le bouton et afficher le spinner
     submitButton.disabled = true;
-    buttonText.textContent = 'Connexion...';
+    buttonText.textContent = currentTab === 'password' ? 'Connexion...' : 'Envoi...';
     buttonSpinner.classList.remove('hidden');
     hideError();
+    hideSuccess();
 
     try {
       // Attendre que Firebase soit initialisé
@@ -114,21 +205,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
 
-      const result = await window.FluanceAuth.signIn(email, password);
+      if (currentTab === 'password') {
+        // Connexion avec mot de passe
+        const result = await window.FluanceAuth.signIn(email, password);
 
-      if (result.success) {
-        // Rediriger vers la page d'origine ou la page d'accueil
-        const returnUrl = new URLSearchParams(window.location.search).get('return') || '/';
-        window.location.href = returnUrl;
+        if (result.success) {
+          // Rediriger vers la page d'origine ou la page d'accueil
+          const returnUrl = new URLSearchParams(window.location.search).get('return') || '/';
+          window.location.href = returnUrl;
+        } else {
+          showError(result.error || 'Erreur lors de la connexion.');
+        }
       } else {
-        showError(result.error || 'Erreur lors de la connexion.');
+        // Envoi du lien passwordless
+        // Sauvegarder l'email dans localStorage pour la vérification du lien
+        window.localStorage.setItem('emailForSignIn', email);
+        
+        const result = await window.FluanceAuth.sendSignInLink(email);
+
+        if (result.success) {
+          showSuccess('Un lien de connexion a été envoyé à votre email. Cliquez sur le lien pour vous connecter.');
+        } else {
+          showError(result.error || 'Erreur lors de l\'envoi du lien.');
+          window.localStorage.removeItem('emailForSignIn');
+        }
       }
     } catch (error) {
       console.error('Error:', error);
       showError('Une erreur est survenue. Veuillez réessayer.');
+      if (currentTab === 'passwordless') {
+        window.localStorage.removeItem('emailForSignIn');
+      }
     } finally {
       submitButton.disabled = false;
-      buttonText.textContent = 'Se connecter';
+      buttonText.textContent = currentTab === 'password' ? 'Se connecter' : 'Envoyer le lien magique';
       buttonSpinner.classList.add('hidden');
     }
   });
@@ -136,11 +246,24 @@ document.addEventListener('DOMContentLoaded', function() {
   function showError(message) {
     errorDiv.querySelector('p').textContent = message;
     errorDiv.classList.remove('hidden');
+    successDiv.classList.add('hidden');
   }
 
   function hideError() {
     errorDiv.classList.add('hidden');
   }
+
+  function showSuccess(message) {
+    successDiv.querySelector('p').textContent = message;
+    successDiv.classList.remove('hidden');
+    errorDiv.classList.add('hidden');
+  }
+
+  function hideSuccess() {
+    successDiv.classList.add('hidden');
+  }
 });
 </script>
+
+
 

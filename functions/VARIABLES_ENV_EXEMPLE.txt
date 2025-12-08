@@ -1,0 +1,22 @@
+# Exemple de configuration des variables d'environnement Firebase Functions
+# 
+# ⚠️ IMPORTANT : Ce fichier est un EXEMPLE uniquement
+# Ne JAMAIS mettre de vraies clés API ou secrets dans ce fichier
+# 
+# Pour configurer les variables d'environnement :
+# 1. Allez sur Firebase Console > Functions > Configuration
+# 2. Ajoutez les variables une par une avec leurs vraies valeurs
+# 3. Redéployez les fonctions : firebase deploy --only functions
+
+# Mailjet (obligatoire)
+MAILJET_API_KEY=votre_cle_api_mailjet_ici
+MAILJET_API_SECRET=votre_secret_api_mailjet_ici
+
+# Stripe (optionnel - si vous utilisez Stripe)
+STRIPE_SECRET_KEY=votre_cle_secrete_stripe_ici
+STRIPE_WEBHOOK_SECRET=votre_secret_webhook_stripe_ici
+
+# PayPal (optionnel - si vous utilisez PayPal)
+PAYPAL_CLIENT_ID=votre_client_id_paypal_ici
+PAYPAL_CLIENT_SECRET=votre_client_secret_paypal_ici
+

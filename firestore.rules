@@ -17,9 +17,10 @@ service cloud.firestore {
       allow create, update: if false; // Géré par les Functions
     }
 
-    // Règles pour le contenu protégé (métadonnées)
+    // Règles pour le contenu protégé (stocké dans Firestore)
     match /protectedContent/{contentId} {
-      // Seuls les utilisateurs authentifiés peuvent lire
+      // Les utilisateurs authentifiés peuvent lire le contenu
+      // La vérification que le produit correspond se fait côté client (dans firebase-auth.js)
       allow read: if request.auth != null;
       // Seules les Firebase Functions peuvent écrire
       allow write: if false;
@@ -37,4 +38,6 @@ service cloud.firestore {
     }
   }
 }
+
+
 
