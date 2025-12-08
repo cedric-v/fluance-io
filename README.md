@@ -104,10 +104,14 @@ Stop the dev server with `Ctrl + C`.
   - `en/` – English content (e.g. `index.md`)
   - `index.njk` – root index, redirects to `/fr/`
   - `sitemap.njk` – sitemap.xml generator template
+  - `robots.txt` – robots.txt file (copied to root)
+  - `llms.txt` – LLM-friendly site description (copied to root)
   - `assets/css/styles.css` – Tailwind input CSS
 - `_site/` – generated static site (ignored by git)
   - `sitemap.xml` – automatically generated sitemap
-- `eleventy.config.js` – Eleventy configuration (i18n, filters, transforms)
+  - `robots.txt` – copied from src/
+  - `llms.txt` – copied from src/
+- `eleventy.config.js` – Eleventy configuration (i18n, filters, transforms, shortcodes)
 - `tailwind.config.js` – Tailwind configuration
 
 ---
@@ -411,6 +415,29 @@ To keep the project healthy over time:
     - `twitter:url`, `twitter:title`, `twitter:description`, `twitter:image`
   - **Image URL generation**: The `buildOgImageUrl` filter automatically converts relative image paths to full URLs (`https://fluance.io/...`).
   - **Testing**: Use Facebook's [Sharing Debugger](https://developers.facebook.com/tools/debug/) or Twitter's [Card Validator](https://cards-dev.twitter.com/validator) to preview how your pages appear when shared.
+
+- **Schema.org JSON-LD:**
+  - Structured data markup is automatically generated for all pages to improve SEO and enable rich results in search engines.
+  - The `schemaOrg` shortcode in `eleventy.config.js` generates appropriate schemas based on page type.
+  - **Schemas included:**
+    - **Organization** (all pages): Information about Fluance / Instants Zen Sàrl, address, contact, social media
+    - **WebSite** (all pages): Site information with SearchAction for search functionality
+    - **Person** (all pages): Information about Cédric Vonlanthen (founder/instructor)
+    - **Service** (homepage only): Description of wellness services and offers
+    - **Course** (online course pages): Course information, pricing, descriptions, languages
+    - **LocalBusiness** (in-person class pages): Information about classes in Fribourg, address, coordinates, pricing
+  - **Multilingual support**: Schemas automatically adapt to page language (FR/EN).
+  - **Security**: Email is not included in schemas to prevent spam scraping (phone number is used instead).
+  - **Validation**: Test your structured data with Google's [Rich Results Test](https://search.google.com/test/rich-results).
+  - Schemas are included in the `<head>` of every page via `src/_includes/base.njk`.
+
+- **llms.txt:**
+  - A structured file (`llms.txt`) is available at the root of the site to help Large Language Models (LLMs) better understand and reference the site.
+  - **Purpose**: Improves how AI assistants (ChatGPT, Claude, Perplexity, etc.) understand and recommend Fluance in their responses.
+  - **Content**: Includes site description, main sections with links, services, pricing, contact information, and approach characteristics.
+  - **Location**: The file is located at `src/llms.txt` and is automatically copied to the site root during build.
+  - **Access**: Available at `https://fluance.io/llms.txt` after deployment.
+  - **Focus**: Content-oriented information for users, without technical implementation details.
 
 - **Static assets:**
   - Add images, icons, etc. under `src/assets/img/`.
