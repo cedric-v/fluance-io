@@ -52,6 +52,14 @@ function initAuth() {
   auth = firebase.auth();
   db = firebase.firestore();
   
+  // Configurer la persistance de session (LOCAL par défaut, mais on s'assure qu'elle est active)
+  // La persistance LOCAL permet de garder la session même après fermeture du navigateur
+  if (auth.setPersistence) {
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => {
+      console.warn('Error setting auth persistence:', err);
+    });
+  }
+  
   // Écouter les changements d'état d'authentification
   auth.onAuthStateChanged((user) => {
     if (user) {
@@ -124,8 +132,29 @@ async function verifyTokenAndCreateAccount(token, password, email = null) {
       
       console.log('Sign in successful, user:', userCredential.user.email);
       
-      // Attendre un peu pour que l'état d'authentification soit mis à jour
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Attendre que l'état d'authentification soit confirmé via onAuthStateChanged
+      // Cela garantit que l'authentification est persistée avant de rediriger
+      await new Promise((resolve, reject) => {
+        let resolved = false;
+        const timeout = setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            unsubscribe();
+            console.warn('Timeout waiting for auth state, but user is signed in');
+            resolve(); // Resolve anyway since signInWithEmailAndPassword succeeded
+          }
+        }, 3000);
+        
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+          if (user && user.email === userEmail && !resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            unsubscribe();
+            console.log('Auth state confirmed, user persisted:', user.email);
+            resolve();
+          }
+        });
+      });
       
       return { success: true, user: userCredential.user };
     }
