@@ -57,7 +57,7 @@ users/
       └── ...
 ```
 
-## Liste des 22 jours
+## Liste des jours (22 jours de programme + 1 bonus = 23 au total)
 
 | Jour | Document ID | Titre |
 |------|-------------|-------|
@@ -91,7 +91,9 @@ users/
 2. **Jours 1-21** : Accessible à partir du jour correspondant depuis la date d'inscription
    - Jour 1 : accessible à partir du jour 1 après l'inscription
    - Jour 2 : accessible à partir du jour 2 après l'inscription
-   - etc.
+   - ...
+   - Jour 21 : accessible à partir du jour 21 après l'inscription
+3. **Jour 22 (Bonus)** : Accessible au jour 22 après l'inscription (21 jours après l'inscription)
 
 ## Création des documents dans Firestore
 
