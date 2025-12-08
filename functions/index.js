@@ -208,15 +208,19 @@ exports.webhookStripe = functions.region('europe-west1').runWith({
         }
 
         // Vérifier si ce paiement est destiné au nouveau système (Firebase)
-        // Si metadata.system n'est pas 'firebase', ignorer (c'est pour l'ancien système)
+        // ⚠️ IMPORTANT : Pas de fallback - seuls les paiements avec metadata.system = 'firebase' sont traités
         const system = session.metadata?.system;
-        if (system && system !== 'firebase') {
-          console.log(`Paiement ignoré - système: ${system} (ancien système)`);
+        if (system !== 'firebase') {
+          console.log(`Paiement Stripe ignoré - système: ${system || 'non défini'} (pas pour Firebase)`);
           return res.status(200).json({received: true, ignored: true});
         }
 
-        // Déterminer le produit selon le montant ou les metadata
-        const product = session.metadata?.product || determineProductFromAmount(amount, currency);
+        // Déterminer le produit depuis les métadonnées uniquement (pas de fallback)
+        const product = session.metadata?.product;
+        if (!product || (product !== '21jours' && product !== 'complet')) {
+          console.error(`Paiement Stripe ignoré - produit invalide: ${product}`);
+          return res.status(200).json({received: true, ignored: true});
+        }
 
         try {
           await createTokenAndSendEmail(
@@ -262,18 +266,20 @@ exports.webhookPayPal = functions.region('europe-west1').runWith({
     }
 
     // Vérifier si ce paiement est destiné au nouveau système (Firebase)
-    // Si custom_id ne commence pas par 'firebase_', ignorer (c'est pour l'ancien système)
+    // ⚠️ IMPORTANT : Pas de fallback - seuls les paiements avec custom_id commençant par 'firebase_' sont traités
     const customId = resource.custom_id || '';
-    if (customId && !customId.startsWith('firebase_') && customId !== '21jours' && customId !== 'complet') {
-      console.log(`Paiement PayPal ignoré - custom_id: ${customId} (ancien système)`);
+    if (!customId.startsWith('firebase_')) {
+      console.log(`Paiement PayPal ignoré - custom_id: ${customId || 'non défini'} (pas pour Firebase)`);
       return res.status(200).json({received: true, ignored: true});
     }
 
-    // Déterminer le produit selon le montant ou les metadata
-    // Si custom_id commence par 'firebase_', extraire le produit (ex: 'firebase_21jours' -> '21jours')
-    const product = customId.startsWith('firebase_')
-      ? customId.replace('firebase_', '')
-      : (customId || determineProductFromAmount(amount, currency));
+    // Déterminer le produit depuis custom_id uniquement (pas de fallback)
+    // Format attendu : 'firebase_21jours' ou 'firebase_complet'
+    const product = customId.replace('firebase_', '');
+    if (product !== '21jours' && product !== 'complet') {
+      console.error(`Paiement PayPal ignoré - produit invalide: ${product}`);
+      return res.status(200).json({received: true, ignored: true});
+    }
 
     try {
       await createTokenAndSendEmail(

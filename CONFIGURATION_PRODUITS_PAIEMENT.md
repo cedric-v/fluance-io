@@ -2,25 +2,25 @@
 
 ## Comment le produit est déterminé
 
-Le système détermine le produit de deux façons, dans cet ordre de priorité :
+⚠️ **IMPORTANT** : Les métadonnées sont **OBLIGATOIRES**. Il n'y a **aucun fallback** basé sur le montant.
 
-### 1. Via les métadonnées (méthode recommandée)
+### Via les métadonnées (OBLIGATOIRE)
 
 **Stripe** :
 - Utilisez le champ `metadata.product` lors de la création de la session de paiement
 - Le produit sera : `session.metadata?.product`
+- **Doit également avoir** : `metadata.system === 'firebase'`
 
 **PayPal** :
 - Utilisez le champ `custom_id` lors de la création de la commande
-- Le produit sera : `resource.custom_id`
+- Format requis : `'firebase_21jours'` ou `'firebase_complet'`
+- Le produit sera extrait du `custom_id`
 
-### 2. Automatiquement selon le montant (fallback)
+### ⚠️ Pas de fallback
 
-Si aucune métadonnée n'est fournie, le système détermine automatiquement le produit selon le montant :
+Si les métadonnées ne sont pas présentes ou incorrectes, le paiement est **ignoré** (pas de token créé, pas d'accès aux cours).
 
-- **19 CHF** (±5 CHF) → `"21jours"`
-- **30 CHF** (±5 CHF) → `"complet"` (mensuel)
-- **75 CHF** (±5 CHF) → `"complet"` (trimestriel)
+**Raison** : D'autres produits sont vendus via les mêmes comptes Stripe/PayPal. Seuls les paiements explicitement identifiés comme Fluance sont traités.
 
 ## Réponse à votre question
 

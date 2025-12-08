@@ -29,11 +29,15 @@ Stripe et PayPal permettent de configurer **plusieurs endpoints** pour les même
 **Stripe** : Ajoutez `metadata.system = 'firebase'` lors de la création des sessions
 **PayPal** : Utilisez `custom_id = 'firebase_21jours'` ou `'firebase_complet'` pour les nouvelles commandes
 
-## ✅ Protection contre les doublons
+**📍 Où les ajouter ?** Dans les fonctions Firebase `createStripeSession` et `createPayPalOrder` (à créer dans `functions/index.js`). Voir `OU_AJOUTER_METADONNEES.md` pour les détails complets avec le code.
+
+## ✅ Protection contre les doublons et accès non autorisés
 
 Les fonctions Firebase vérifient automatiquement :
-- **Stripe** : Si `metadata.system !== 'firebase'`, le paiement est ignoré
-- **PayPal** : Si `custom_id` ne commence pas par `firebase_`, le paiement est ignoré
+- **Stripe** : Si `metadata.system !== 'firebase'` OU `metadata.product` n'est pas valide, le paiement est ignoré
+- **PayPal** : Si `custom_id` ne commence pas par `firebase_` OU le produit n'est pas valide, le paiement est ignoré
+
+⚠️ **IMPORTANT** : Il n'y a **aucun fallback** basé sur le montant. Seuls les paiements avec les métadonnées correctes sont traités. Cela protège contre l'accès non autorisé aux cours Fluance si d'autres produits sont vendus via les mêmes comptes Stripe/PayPal.
 
 ## 📚 Documentation complète
 

@@ -6,26 +6,26 @@ lang: fr
 permalink: /connexion-firebase/
 ---
 
-<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
+<div class="min-h-screen bg-[#fdfaf6] py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 section-card">
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Connexion</h1>
-      <p class="text-gray-600">Accédez à votre contenu protégé Fluance</p>
+      <h1 class="text-3xl font-bold text-[#0f172a] mb-2">Connexion</h1>
+      <p class="text-[#1f1f1f]/80">Accédez à votre contenu protégé Fluance</p>
     </div>
 
     <!-- Onglets pour choisir la méthode de connexion -->
-    <div class="mb-6 border-b border-gray-200">
+    <div class="mb-6 border-b border-[#82153e]/20">
       <nav class="flex -mb-px">
         <button
           id="tab-password"
-          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-green-600 text-green-600"
+          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-[#82153e] text-[#82153e]"
           onclick="switchTab('password')"
         >
           Mot de passe
         </button>
         <button
           id="tab-passwordless"
-          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-[#82153e] hover:border-[#82153e]/30"
           onclick="switchTab('passwordless')"
         >
           Lien magique
@@ -36,7 +36,7 @@ permalink: /connexion-firebase/
     <!-- Formulaire avec mot de passe -->
     <form id="login-form" class="space-y-6">
       <div>
-        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="email" class="block text-sm font-medium text-[#0f172a] mb-2">
           Email
         </label>
         <input
@@ -44,26 +44,26 @@ permalink: /connexion-firebase/
           id="email"
           name="email"
           required
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
           placeholder="votre@email.com"
         />
       </div>
 
       <div id="password-field">
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="password" class="block text-sm font-medium text-[#0f172a] mb-2">
           Mot de passe
         </label>
         <input
           type="password"
           id="password"
           name="password"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
           placeholder="Votre mot de passe"
         />
       </div>
 
-      <div id="success-message" class="hidden bg-green-50 border border-green-200 rounded-lg p-4">
-        <p class="text-green-800 text-sm"></p>
+      <div id="success-message" class="hidden bg-[#ffce2d]/10 border border-[#ffce2d]/30 rounded-lg p-4">
+        <p class="text-[#0f172a] text-sm"></p>
       </div>
 
       <div id="error-message" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">
@@ -73,7 +73,7 @@ permalink: /connexion-firebase/
       <button
         type="submit"
         id="submit-button"
-        class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors duration-200 flex items-center justify-center"
+        class="w-full bg-[#82153e] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#82153e]/90 transition-colors duration-200 flex items-center justify-center"
       >
         <span id="button-text">Se connecter</span>
         <span id="button-spinner" class="hidden ml-2">
@@ -86,12 +86,12 @@ permalink: /connexion-firebase/
     </form>
 
     <div class="mt-6 text-center space-y-2">
-      <p class="text-sm text-gray-600">
+      <p class="text-sm text-[#1f1f1f]/80">
         Pas encore de compte ? 
-        <a href="/creer-compte" class="text-green-600 hover:text-green-700 font-medium">Créer un compte</a>
+        <a href="/creer-compte" class="text-[#82153e] hover:text-[#82153e]/80 font-medium">Créer un compte</a>
       </p>
-      <p class="text-sm text-gray-600">
-        <a href="/connexion" class="text-gray-500 hover:text-gray-700">Retour à la page de connexion principale</a>
+      <p class="text-sm text-[#1f1f1f]/60">
+        <a href="/connexion" class="hover:text-[#82153e]">Retour à la page de connexion principale</a>
       </p>
     </div>
   </div>
@@ -111,18 +111,18 @@ function switchTab(tab) {
   const buttonText = document.getElementById('button-text');
 
   if (tab === 'password') {
-    passwordTab.classList.add('border-green-600', 'text-green-600');
-    passwordTab.classList.remove('border-transparent', 'text-gray-500');
-    passwordlessTab.classList.remove('border-green-600', 'text-green-600');
-    passwordlessTab.classList.add('border-transparent', 'text-gray-500');
+    passwordTab.classList.add('border-[#82153e]', 'text-[#82153e]');
+    passwordTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
+    passwordlessTab.classList.remove('border-[#82153e]', 'text-[#82153e]');
+    passwordlessTab.classList.add('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'block';
     passwordInput.required = true;
     buttonText.textContent = 'Se connecter';
   } else {
-    passwordlessTab.classList.add('border-green-600', 'text-green-600');
-    passwordlessTab.classList.remove('border-transparent', 'text-gray-500');
-    passwordTab.classList.remove('border-green-600', 'text-green-600');
-    passwordTab.classList.add('border-transparent', 'text-gray-500');
+    passwordlessTab.classList.add('border-[#82153e]', 'text-[#82153e]');
+    passwordlessTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
+    passwordTab.classList.remove('border-[#82153e]', 'text-[#82153e]');
+    passwordTab.classList.add('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'none';
     passwordInput.required = false;
     passwordInput.value = '';

@@ -6,16 +6,16 @@ lang: fr
 permalink: /creer-compte/
 ---
 
-<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
+<div class="min-h-screen bg-[#fdfaf6] py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 section-card">
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Créer mon compte</h1>
-      <p class="text-gray-600">Accédez à votre contenu protégé Fluance</p>
+      <h1 class="text-3xl font-bold text-[#0f172a] mb-2">Créer mon compte</h1>
+      <p class="text-[#1f1f1f]/80">Accédez à votre contenu protégé Fluance</p>
     </div>
 
     <div id="token-form" class="space-y-6">
       <div>
-        <label for="token" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="token" class="block text-sm font-medium text-[#0f172a] mb-2">
           Token d'inscription
         </label>
         <input
@@ -23,16 +23,16 @@ permalink: /creer-compte/
           id="token"
           name="token"
           required
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
           placeholder="Votre token unique"
         />
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-[#1f1f1f]/60">
           Ce token vous a été envoyé par email après votre achat.
         </p>
       </div>
 
       <div>
-        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="email" class="block text-sm font-medium text-[#0f172a] mb-2">
           Email
         </label>
         <input
@@ -40,13 +40,13 @@ permalink: /creer-compte/
           id="email"
           name="email"
           required
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
           placeholder="votre@email.com"
         />
       </div>
 
       <div>
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="password" class="block text-sm font-medium text-[#0f172a] mb-2">
           Mot de passe
         </label>
         <input
@@ -55,13 +55,13 @@ permalink: /creer-compte/
           name="password"
           required
           minlength="6"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
           placeholder="Minimum 6 caractères"
         />
       </div>
 
       <div>
-        <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="confirm-password" class="block text-sm font-medium text-[#0f172a] mb-2">
           Confirmer le mot de passe
         </label>
         <input
@@ -70,7 +70,7 @@ permalink: /creer-compte/
           name="confirm-password"
           required
           minlength="6"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
           placeholder="Répétez votre mot de passe"
         />
       </div>
@@ -79,14 +79,14 @@ permalink: /creer-compte/
         <p class="text-red-800 text-sm"></p>
       </div>
 
-      <div id="success-message" class="hidden bg-green-50 border border-green-200 rounded-lg p-4">
-        <p class="text-green-800 text-sm"></p>
+      <div id="success-message" class="hidden bg-[#ffce2d]/10 border border-[#ffce2d]/30 rounded-lg p-4">
+        <p class="text-[#0f172a] text-sm"></p>
       </div>
 
       <button
         type="submit"
         id="submit-button"
-        class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors duration-200 flex items-center justify-center"
+        class="w-full bg-[#82153e] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#82153e]/90 transition-colors duration-200 flex items-center justify-center"
       >
         <span id="button-text">Créer mon compte</span>
         <span id="button-spinner" class="hidden ml-2">
@@ -99,9 +99,9 @@ permalink: /creer-compte/
     </div>
 
     <div class="mt-6 text-center">
-      <p class="text-sm text-gray-600">
+      <p class="text-sm text-[#1f1f1f]/80">
         Déjà un compte ? 
-        <a href="/connexion" class="text-green-600 hover:text-green-700 font-medium">Se connecter</a>
+        <a href="/connexion-firebase" class="text-[#82153e] hover:text-[#82153e]/80 font-medium">Se connecter</a>
       </p>
     </div>
   </div>
