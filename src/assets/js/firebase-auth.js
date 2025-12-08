@@ -334,24 +334,57 @@ async function loadProtectedContent(contentId = null) {
 
     // Sinon, charger la liste des contenus disponibles pour ce produit
     try {
-      const contentsSnapshot = await db.collection('protectedContent')
-        .where('product', '==', userProduct)
-        .orderBy('createdAt', 'desc')
-        .get();
+      let query = db.collection('protectedContent').where('product', '==', userProduct);
+      
+      // Pour "21jours", trier par jour (0-21) au lieu de createdAt
+      if (userProduct === '21jours') {
+        query = query.orderBy('day', 'asc');
+      } else {
+        query = query.orderBy('createdAt', 'desc');
+      }
+      
+      const contentsSnapshot = await query.get();
       
       const contents = [];
+      const now = new Date();
+      const registrationDate = userData.registrationDate;
+      const daysSinceRegistration = registrationDate 
+        ? Math.floor((now - registrationDate.toDate()) / (1000 * 60 * 60 * 24))
+        : null;
+      
       contentsSnapshot.forEach((doc) => {
         const data = doc.data();
+        const dayNumber = data.day;
+        
+        // Pour "21jours", vérifier l'accès progressif
+        let isAccessible = true;
+        if (userProduct === '21jours' && dayNumber !== undefined) {
+          if (dayNumber === 0) {
+            // Jour 0 (déroulé) accessible immédiatement
+            isAccessible = true;
+          } else if (daysSinceRegistration !== null) {
+            // Jours 1-21 accessibles à partir du jour correspondant
+            isAccessible = daysSinceRegistration >= dayNumber - 1;
+          } else {
+            isAccessible = false;
+          }
+        }
+        
         contents.push({
           id: doc.id,
           title: data.title || doc.id,
           content: data.content || '',
+          day: dayNumber,
+          isAccessible: isAccessible,
+          daysRemaining: (userProduct === '21jours' && dayNumber !== undefined && daysSinceRegistration !== null && dayNumber > 0)
+            ? Math.max(0, dayNumber - daysSinceRegistration - 1)
+            : null,
           createdAt: data.createdAt,
           updatedAt: data.updatedAt
         });
       });
 
-      return { success: true, contents, product: userProduct };
+      return { success: true, contents, product: userProduct, daysSinceRegistration };
     } catch (indexError) {
       // Si l'index est en cours de construction, essayer sans orderBy
       if (indexError.code === 'failed-precondition' && 
