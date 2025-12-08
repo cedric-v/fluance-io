@@ -26,13 +26,6 @@ permalink: /membre/
     <div id="content-container" class="hidden">
       <!-- Le contenu sera chargé dynamiquement ici -->
     </div>
-
-    <div class="border-t pt-8">
-      <h2 class="text-xl font-semibold mb-4">État de l'authentification</h2>
-      <div id="auth-status" class="bg-gray-100 rounded-lg p-4">
-        <p class="text-gray-600">Vérification...</p>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -40,45 +33,21 @@ permalink: /membre/
 <script src="/assets/js/protected-content.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const authStatus = document.getElementById('auth-status');
   const authRequired = document.getElementById('auth-required');
   const contentContainer = document.getElementById('content-container');
   
-  function updateAuthStatus() {
+  function checkAuthAndLoad() {
     if (typeof window.FluanceAuth !== 'undefined') {
       const isAuth = window.FluanceAuth.isAuthenticated();
       const user = window.FluanceAuth.getCurrentUser();
       
       if (isAuth && user) {
-        authStatus.innerHTML = `
-          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p class="text-green-800 font-semibold mb-2">✅ Connecté</p>
-            <p class="text-green-700 text-sm">Email : ${user.email}</p>
-          </div>
-        `;
-        
         // Charger le contenu disponible
         loadUserContent();
       } else {
-        authStatus.innerHTML = `
-          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p class="text-yellow-800 font-semibold mb-2">⚠️ Non connecté</p>
-            <p class="text-yellow-700 text-sm mb-3">Vous devez être connecté pour accéder à votre contenu.</p>
-            <a href="/connexion-firebase?return=${encodeURIComponent(window.location.pathname)}" 
-               class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
-              Se connecter
-            </a>
-          </div>
-        `;
         authRequired.classList.remove('hidden');
         contentContainer.classList.add('hidden');
       }
-    } else {
-      authStatus.innerHTML = `
-        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p class="text-red-800">❌ Erreur : Script Firebase Auth non chargé</p>
-        </div>
-      `;
     }
   }
   
@@ -278,16 +247,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Mettre à jour immédiatement
-  updateAuthStatus();
+  // Vérifier l'authentification immédiatement
+  checkAuthAndLoad();
   
-  // Mettre à jour après un délai (au cas où le script se charge plus tard)
-  setTimeout(updateAuthStatus, 1000);
+  // Vérifier après un délai (au cas où le script se charge plus tard)
+  setTimeout(checkAuthAndLoad, 1000);
   
   // Écouter les changements d'authentification
   if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged(() => {
-      updateAuthStatus();
+      checkAuthAndLoad();
     });
   }
 });
