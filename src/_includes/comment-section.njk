@@ -1,0 +1,226 @@
+{# 
+  Section de commentaires pour les vidéos du programme 21 jours
+  Usage: {% commentSection %}
+#}
+<div class="mt-8 pt-8 border-t border-gray-200">
+  <h3 class="text-xl font-semibold text-[#0f172a] mb-4">
+    Quelles améliorations avez-vous ressenties suite à la pratique du jour ?
+  </h3>
+  
+  <!-- Comment Section -->
+  <form id="comment-form" class="mb-6 space-y-4">
+    <input 
+      type="text" 
+      id="name" 
+      placeholder="Votre prénom" 
+      required 
+      class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+    />
+    <textarea 
+      id="text" 
+      placeholder="Votre commentaire" 
+      required
+      rows="4"
+      class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+    ></textarea>
+    <button 
+      type="submit"
+      class="bg-[#82153e] text-white py-2 px-6 rounded-lg font-semibold hover:bg-[#82153e]/90 transition-colors duration-200"
+    >
+      Envoyer
+    </button>
+  </form>
+  
+  <div id="comments-container" class="mb-4"></div>
+  <div id="pagination-controls" class="mt-4"></div>
+</div>
+
+<!-- Firebase App + Firestore (projet owncommentsfluance pour les commentaires) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<!-- Fonctions utilitaires -->
+<script>
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+</script>
+
+<!-- Script principal -->
+<script>
+(function() {
+  // Configuration Firebase pour les commentaires (projet séparé)
+  var firebaseConfig = {
+    apiKey: "AIzaSyDF7lpMAEaZxOajdiHFWft-Hary1RtQM2c",
+    authDomain: "owncommentsfluance.firebaseapp.com",
+    projectId: "owncommentsfluance",
+    storageBucket: "owncommentsfluance.firebasestorage.app",
+    messagingSenderId: "561599480401",
+    appId: "1:561599480401:web:e1ad00b17fb27392126e70",
+    measurementId: "G-TK4FQPTXCL"
+  };
+
+  // Initialiser Firebase uniquement si pas déjà initialisé avec ce projet
+  var commentsApp;
+  try {
+    commentsApp = firebase.app('comments');
+  } catch (e) {
+    commentsApp = firebase.initializeApp(firebaseConfig, 'comments');
+  }
+
+  var db = commentsApp.firestore();
+  var pageId = encodeURIComponent(window.location.origin + window.location.pathname);
+  var COMMENTS_PER_PAGE = 20;
+  var allComments = [];
+  var currentPage = 1;
+
+  // Gérer la soumission du formulaire
+  var commentForm = document.getElementById("comment-form");
+  if (commentForm) {
+    commentForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var name = document.getElementById("name").value.trim();
+      var text = document.getElementById("text").value.trim();
+      
+      if (!name || !text) return;
+      
+      if (/[<>]/.test(name) || /[<>]/.test(text)) {
+        alert("Les caractères < et > ne sont pas autorisés.");
+        return;
+      }
+      
+      db.collection("comments").doc(pageId).collection("messages").add({
+        name: name,
+        text: text,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        document.getElementById("comment-form").reset();
+      }).catch(function(error) {
+        console.error("Erreur lors de l'ajout du commentaire:", error);
+        alert("Erreur lors de l'envoi du commentaire. Veuillez réessayer.");
+      });
+    });
+  }
+
+  function renderCommentsPage(page) {
+    var container = document.getElementById("comments-container");
+    if (!container) return;
+    
+    container.innerHTML = "<h4 class='text-lg font-semibold text-[#0f172a] mb-4'>Commentaires</h4>";
+    
+    if (allComments.length === 0) {
+      container.innerHTML += "<p class='text-[#1f1f1f]/60 text-sm'>Aucun commentaire pour le moment. Soyez le premier à partager votre expérience !</p>";
+      renderPaginationControls(page);
+      return;
+    }
+    
+    var start = (page - 1) * COMMENTS_PER_PAGE;
+    var end = start + COMMENTS_PER_PAGE;
+    var pageComments = allComments.slice(start, end);
+    
+    for (var i = 0; i < pageComments.length; i++) {
+      var c = pageComments[i];
+      var text = escapeHTML(c.text);
+      var name = escapeHTML(c.name);
+      var date = '';
+      
+      if (c.timestamp) {
+        try {
+          var timestamp = c.timestamp.toDate ? c.timestamp.toDate() : new Date(c.timestamp);
+          date = timestamp.toLocaleDateString('fr-FR', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (e) {
+          // Ignorer les erreurs de date
+        }
+      }
+      
+      container.innerHTML += '<div class="border-b border-gray-200 mb-4 pb-4"><div class="flex items-start justify-between mb-2"><strong class="text-[#0f172a]">' + name + '</strong><span class="text-xs text-[#1f1f1f]/60">' + date + '</span></div><p class="text-[#1f1f1f]/80">' + text + '</p></div>';
+    }
+    
+    renderPaginationControls(page);
+  }
+
+  function renderPaginationControls(page) {
+    var controls = document.getElementById("pagination-controls");
+    if (!controls) return;
+    
+    var totalPages = Math.ceil(allComments.length / COMMENTS_PER_PAGE);
+    
+    if (totalPages <= 1) {
+      controls.innerHTML = '';
+      return;
+    }
+    
+    var html = '';
+    if (page > 1) {
+      html += '<button id="prev-page" class="bg-gray-100 text-[#0f172a] py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors mr-2">&lt; Précédent</button> ';
+    }
+    html += '<span class="text-[#1f1f1f]/80 text-sm">Page ' + page + ' / ' + totalPages + '</span>';
+    if (page < totalPages) {
+      html += ' <button id="next-page" class="bg-gray-100 text-[#0f172a] py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors ml-2">Suivant &gt;</button>';
+    }
+    
+    controls.innerHTML = html;
+    
+    if (page > 1) {
+      document.getElementById("prev-page").onclick = function() {
+        currentPage--;
+        renderCommentsPage(currentPage);
+      };
+    }
+    
+    if (page < totalPages) {
+      document.getElementById("next-page").onclick = function() {
+        currentPage++;
+        renderCommentsPage(currentPage);
+      };
+    }
+  }
+
+  // Charger les commentaires
+  if (db && pageId) {
+    db.collection("comments").doc(pageId).collection("messages")
+      .orderBy("timestamp", "desc")
+      .onSnapshot(function(snapshot) {
+        allComments = [];
+        snapshot.forEach(function(doc) {
+          allComments.push(doc.data());
+        });
+        
+        // Trier par date (plus récent en premier)
+        allComments.sort(function(a, b) {
+          if (a.timestamp && b.timestamp) {
+            try {
+              var timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+              var timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+              return timeB - timeA;
+            } catch (e) {
+              return 0;
+            }
+          }
+          return 0;
+        });
+        
+        currentPage = 1;
+        renderCommentsPage(currentPage);
+      }, function(error) {
+        console.error("Erreur Firestore :", error);
+        var container = document.getElementById("comments-container");
+        if (container) {
+          container.innerHTML = "<p class='text-red-600 text-sm'>Erreur lors du chargement des commentaires.</p>";
+        }
+      });
+  }
+})();
+</script>
+

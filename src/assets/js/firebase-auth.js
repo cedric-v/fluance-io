@@ -553,6 +553,54 @@ async function displayProtectedContent(contentId, containerElement) {
     // Afficher le contenu HTML
     containerElement.innerHTML = result.content;
     
+    // Pour le produit "21jours", ajouter automatiquement la question et la section de commentaires
+    if (result.product === '21jours' && result.day !== undefined) {
+      // Créer un conteneur pour la section de commentaires
+      const commentSection = document.createElement('div');
+      commentSection.className = 'mt-8 pt-8 border-t border-gray-200';
+      commentSection.setAttribute('data-comment-section', contentId);
+      commentSection.innerHTML = `
+        <h3 class="text-xl font-semibold text-[#0f172a] mb-4">
+          Quelles améliorations avez-vous ressenties suite à la pratique du jour ?
+        </h3>
+        
+        <!-- Comment Section -->
+        <form id="comment-form-${contentId}" class="mb-6 space-y-4">
+          <input 
+            type="text" 
+            id="name-${contentId}" 
+            placeholder="Votre prénom" 
+            required 
+            class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          />
+          <textarea 
+            id="text-${contentId}" 
+            placeholder="Votre commentaire" 
+            required
+            rows="4"
+            class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          ></textarea>
+          <button 
+            type="submit"
+            class="bg-[#82153e] text-white py-2 px-6 rounded-lg font-semibold hover:bg-[#82153e]/90 transition-colors duration-200"
+          >
+            Envoyer
+          </button>
+        </form>
+        
+        <div id="comments-container-${contentId}" class="mb-4"></div>
+        <div id="pagination-controls-${contentId}" class="mt-4"></div>
+      `;
+      
+      // Ajouter la section après le contenu
+      containerElement.appendChild(commentSection);
+      
+      // Initialiser le système de commentaires pour ce contenu (avec un petit délai pour s'assurer que le DOM est prêt)
+      setTimeout(() => {
+        initCommentSection(contentId);
+      }, 100);
+    }
+    
     // Exécuter les scripts dans le contenu (pour les embeds vidéo, etc.)
     const scripts = containerElement.querySelectorAll('script');
     scripts.forEach((oldScript) => {
@@ -570,6 +618,212 @@ async function displayProtectedContent(contentId, containerElement) {
         <p class="text-red-800">Erreur lors du chargement du contenu</p>
       </div>
     `;
+  }
+}
+
+/**
+ * Initialise la section de commentaires pour un contenu spécifique
+ */
+function initCommentSection(contentId) {
+  // Vérifier si Firebase pour les commentaires est déjà chargé
+  if (typeof firebase === 'undefined') {
+    // Charger Firebase pour les commentaires
+    const script1 = document.createElement('script');
+    script1.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
+    document.head.appendChild(script1);
+    
+    const script2 = document.createElement('script');
+    script2.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
+    document.head.appendChild(script2);
+    
+    script2.onload = () => {
+      setupCommentSection(contentId);
+    };
+  } else {
+    setupCommentSection(contentId);
+  }
+}
+
+/**
+ * Configure la section de commentaires
+ */
+function setupCommentSection(contentId) {
+  // Configuration Firebase pour les commentaires (projet séparé)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDF7lpMAEaZxOajdiHFWft-Hary1RtQM2c",
+    authDomain: "owncommentsfluance.firebaseapp.com",
+    projectId: "owncommentsfluance",
+    storageBucket: "owncommentsfluance.firebasestorage.app",
+    messagingSenderId: "561599480401",
+    appId: "1:561599480401:web:e1ad00b17fb27392126e70",
+    measurementId: "G-TK4FQPTXCL"
+  };
+
+  // Initialiser Firebase uniquement si pas déjà initialisé avec ce projet
+  let commentsApp;
+  try {
+    commentsApp = firebase.app('comments');
+  } catch (e) {
+    commentsApp = firebase.initializeApp(firebaseConfig, 'comments');
+  }
+
+  const db = commentsApp.firestore();
+  const pageId = encodeURIComponent(window.location.origin + window.location.pathname + '#' + contentId);
+  const COMMENTS_PER_PAGE = 20;
+  let allComments = [];
+  let currentPage = 1;
+
+  // Fonction pour échapper le HTML
+  function escapeHTML(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  // Gérer la soumission du formulaire
+  const commentForm = document.getElementById(`comment-form-${contentId}`);
+  if (commentForm) {
+    commentForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = document.getElementById(`name-${contentId}`).value.trim();
+      const text = document.getElementById(`text-${contentId}`).value.trim();
+      
+      if (!name || !text) return;
+      
+      if (/[<>]/.test(name) || /[<>]/.test(text)) {
+        alert("Les caractères < et > ne sont pas autorisés.");
+        return;
+      }
+      
+      db.collection("comments").doc(pageId).collection("messages").add({
+        name: name,
+        text: text,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        document.getElementById(`comment-form-${contentId}`).reset();
+      }).catch(function(error) {
+        console.error("Erreur lors de l'ajout du commentaire:", error);
+        alert("Erreur lors de l'envoi du commentaire. Veuillez réessayer.");
+      });
+    });
+  }
+
+  function renderCommentsPage(page) {
+    const container = document.getElementById(`comments-container-${contentId}`);
+    if (!container) return;
+    
+    container.innerHTML = "<h4 class='text-lg font-semibold text-[#0f172a] mb-4'>Commentaires</h4>";
+    
+    if (allComments.length === 0) {
+      container.innerHTML += "<p class='text-[#1f1f1f]/60 text-sm'>Aucun commentaire pour le moment. Soyez le premier à partager votre expérience !</p>";
+      renderPaginationControls(page);
+      return;
+    }
+    
+    const start = (page - 1) * COMMENTS_PER_PAGE;
+    const end = start + COMMENTS_PER_PAGE;
+    const pageComments = allComments.slice(start, end);
+    
+    for (let i = 0; i < pageComments.length; i++) {
+      const c = pageComments[i];
+      const text = escapeHTML(c.text);
+      const name = escapeHTML(c.name);
+      let date = '';
+      
+      if (c.timestamp) {
+        try {
+          const timestamp = c.timestamp.toDate ? c.timestamp.toDate() : new Date(c.timestamp);
+          date = timestamp.toLocaleDateString('fr-FR', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (e) {
+          // Ignorer les erreurs de date
+        }
+      }
+      
+      container.innerHTML += '<div class="border-b border-gray-200 mb-4 pb-4"><div class="flex items-start justify-between mb-2"><strong class="text-[#0f172a]">' + name + '</strong><span class="text-xs text-[#1f1f1f]/60">' + date + '</span></div><p class="text-[#1f1f1f]/80">' + text + '</p></div>';
+    }
+    
+    renderPaginationControls(page);
+  }
+
+  function renderPaginationControls(page) {
+    const controls = document.getElementById(`pagination-controls-${contentId}`);
+    if (!controls) return;
+    
+    const totalPages = Math.ceil(allComments.length / COMMENTS_PER_PAGE);
+    
+    if (totalPages <= 1) {
+      controls.innerHTML = '';
+      return;
+    }
+    
+    let html = '';
+    if (page > 1) {
+      html += '<button id="prev-page-' + contentId + '" class="bg-gray-100 text-[#0f172a] py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors mr-2">&lt; Précédent</button> ';
+    }
+    html += '<span class="text-[#1f1f1f]/80 text-sm">Page ' + page + ' / ' + totalPages + '</span>';
+    if (page < totalPages) {
+      html += ' <button id="next-page-' + contentId + '" class="bg-gray-100 text-[#0f172a] py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors ml-2">Suivant &gt;</button>';
+    }
+    
+    controls.innerHTML = html;
+    
+    if (page > 1) {
+      document.getElementById(`prev-page-${contentId}`).onclick = function() {
+        currentPage--;
+        renderCommentsPage(currentPage);
+      };
+    }
+    
+    if (page < totalPages) {
+      document.getElementById(`next-page-${contentId}`).onclick = function() {
+        currentPage++;
+        renderCommentsPage(currentPage);
+      };
+    }
+  }
+
+  // Charger les commentaires
+  if (db && pageId) {
+    db.collection("comments").doc(pageId).collection("messages")
+      .orderBy("timestamp", "desc")
+      .onSnapshot(function(snapshot) {
+        allComments = [];
+        snapshot.forEach(function(doc) {
+          allComments.push(doc.data());
+        });
+        
+        // Trier par date (plus récent en premier)
+        allComments.sort(function(a, b) {
+          if (a.timestamp && b.timestamp) {
+            try {
+              const timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+              const timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+              return timeB - timeA;
+            } catch (e) {
+              return 0;
+            }
+          }
+          return 0;
+        });
+        
+        currentPage = 1;
+        renderCommentsPage(currentPage);
+      }, function(error) {
+        console.error("Erreur Firestore :", error);
+        const container = document.getElementById(`comments-container-${contentId}`);
+        if (container) {
+          container.innerHTML = "<p class='text-red-600 text-sm'>Erreur lors du chargement des commentaires.</p>";
+        }
+      });
   }
 }
 
