@@ -20,7 +20,7 @@ permalink: /connexion/
           Accédez à votre espace de formation en ligne pour suivre vos cours et pratiques.
         </p>
         <div class="text-center">
-          <a href="https://espace.fluance.io/" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex items-center gap-2">Se connecter <span>→</span></a>
+          <a href="/connexion-firebase/" class="btn-primary inline-flex items-center gap-2">Se connecter <span>→</span></a>
         </div>
       </div>
 
