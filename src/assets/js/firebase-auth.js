@@ -292,11 +292,39 @@ async function loadProtectedContent(contentId = null) {
         };
       }
 
+      // Pour le produit "21jours", vérifier l'accès progressif basé sur le jour
+      if (userProduct === '21jours' && contentData.day !== undefined) {
+        const registrationDate = userData.registrationDate;
+        if (!registrationDate) {
+          return { 
+            success: false, 
+            error: 'Date d\'inscription non trouvée. Veuillez contacter le support.' 
+          };
+        }
+
+        // Calculer le nombre de jours depuis l'inscription
+        const now = new Date();
+        const registration = registrationDate.toDate();
+        const daysSinceRegistration = Math.floor((now - registration) / (1000 * 60 * 60 * 24));
+        const dayNumber = contentData.day;
+
+        // Jour 0 (déroulé) accessible immédiatement
+        // Jours 1-21 accessibles à partir du jour correspondant
+        if (dayNumber > 0 && daysSinceRegistration < dayNumber) {
+          const daysRemaining = dayNumber - daysSinceRegistration;
+          return { 
+            success: false, 
+            error: `Ce contenu sera disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}. Vous êtes au jour ${daysSinceRegistration + 1} du défi.` 
+          };
+        }
+      }
+
       return { 
         success: true, 
         content: contentData.content || '', 
         product: userProduct,
         title: contentData.title || '',
+        day: contentData.day,
         metadata: {
           createdAt: contentData.createdAt,
           updatedAt: contentData.updatedAt

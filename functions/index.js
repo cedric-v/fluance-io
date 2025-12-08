@@ -422,12 +422,19 @@ exports.verifyToken = onCall(
         });
 
         // Créer ou mettre à jour le document utilisateur dans Firestore
-        await db.collection('users').doc(userRecord.uid).set({
+        const userData = {
           email: email,
           product: tokenData.product,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        }, {merge: true});
+        };
+        
+        // Pour le produit "21jours", ajouter la date d'inscription pour l'accès progressif
+        if (tokenData.product === '21jours') {
+          userData.registrationDate = admin.firestore.FieldValue.serverTimestamp();
+        }
+        
+        await db.collection('users').doc(userRecord.uid).set(userData, {merge: true});
 
         return {success: true, userId: userRecord.uid, email: email};
       } catch (error) {
