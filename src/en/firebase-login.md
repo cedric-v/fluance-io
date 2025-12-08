@@ -1,19 +1,19 @@
 ---
 layout: base.njk
-title: Connexion - Contenu protégé
-description: Connectez-vous pour accéder à votre contenu protégé Fluance
-locale: fr
-permalink: /connexion-firebase/
+title: Login - Protected content
+description: Log in to access your protected Fluance content
+locale: en
+permalink: /en/firebase-login/
 ---
 
 <div class="min-h-screen bg-[#fdfaf6] py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 section-card">
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-[#0f172a] mb-2">Connexion</h1>
-      <p class="text-[#1f1f1f]/80">Accédez à votre contenu protégé Fluance</p>
+      <h1 class="text-3xl font-bold text-[#0f172a] mb-2">Login</h1>
+      <p class="text-[#1f1f1f]/80">Access your protected Fluance content</p>
     </div>
 
-    <!-- Onglets pour choisir la méthode de connexion -->
+    <!-- Tabs to choose login method -->
     <div class="mb-6 border-b border-[#82153e]/20">
       <nav class="flex -mb-px">
         <button
@@ -21,19 +21,19 @@ permalink: /connexion-firebase/
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-[#82153e] text-[#82153e]"
           onclick="switchTab('password')"
         >
-          Mot de passe
+          Password
         </button>
         <button
           id="tab-passwordless"
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-[#82153e] hover:border-[#82153e]/30"
           onclick="switchTab('passwordless')"
         >
-          Connexion par email
+          Email login
         </button>
       </nav>
     </div>
 
-    <!-- Formulaire avec mot de passe -->
+    <!-- Password form -->
     <form id="login-form" class="space-y-6">
       <div>
         <label for="email" class="block text-sm font-medium text-[#0f172a] mb-2">
@@ -45,20 +45,20 @@ permalink: /connexion-firebase/
           name="email"
           required
           class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
-          placeholder="votre@email.com"
+          placeholder="your@email.com"
         />
       </div>
 
       <div id="password-field">
         <label for="password" class="block text-sm font-medium text-[#0f172a] mb-2">
-          Mot de passe
+          Password
         </label>
         <input
           type="password"
           id="password"
           name="password"
           class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
-          placeholder="Votre mot de passe"
+          placeholder="Your password"
         />
       </div>
 
@@ -75,7 +75,7 @@ permalink: /connexion-firebase/
         id="submit-button"
         class="w-full bg-[#82153e] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#82153e]/90 transition-colors duration-200 flex items-center justify-center"
       >
-        <span id="button-text">Se connecter</span>
+        <span id="button-text">Login</span>
         <span id="button-spinner" class="hidden ml-2">
           <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -87,42 +87,42 @@ permalink: /connexion-firebase/
 
     <div class="mt-6 text-center space-y-2">
       <p class="text-sm text-[#1f1f1f]/80">
-        Pas encore de compte ? 
-        <a href="/creer-compte" class="text-[#82153e] hover:text-[#82153e]/80 font-medium">Créer un compte</a>
+        Don't have an account yet? 
+        <a href="/en/create-account" class="text-[#82153e] hover:text-[#82153e]/80 font-medium">Create an account</a>
       </p>
       <p class="text-sm text-[#1f1f1f]/60">
-        <a href="/connexion" class="hover:text-[#82153e]">Retour à la page de connexion principale</a>
+        <a href="/en/connexion" class="hover:text-[#82153e]">Back to main login page</a>
       </p>
     </div>
 
-    <!-- Section d'aide dépliable -->
+    <!-- Help section (collapsible) -->
     <div class="mt-8 border-t border-[#82153e]/20 pt-6">
       <button
         id="help-toggle"
         class="w-full flex items-center justify-between text-left text-sm font-medium text-[#82153e] hover:text-[#82153e]/80 transition-colors"
         onclick="toggleHelp()"
       >
-        <span>❓ Besoin d'aide ?</span>
+        <span>❓ Need help?</span>
         <svg id="help-arrow" class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
       <div id="help-content" class="hidden mt-4 space-y-4 text-sm text-[#1f1f1f]/80">
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Je ne trouve pas mon email/code</p>
-          <p>→ Vérifiez vos courriers indésirables (spams).</p>
+          <p class="font-semibold text-[#0f172a] mb-1">I can't find my email/code</p>
+          <p>→ Check your spam folder.</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Le code ne fonctionne pas</p>
-          <p>→ Assurez-vous de copier-coller le code complet, sans espace</p>
+          <p class="font-semibold text-[#0f172a] mb-1">The code doesn't work</p>
+          <p>→ Make sure to copy-paste the complete code, without spaces</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Qu'est-ce que la « Connexion par e-mail » ?</p>
-          <p>C'est la méthode de connexion sans mot de passe. Nous vous envoyons un e-mail contenant un lien unique, utilisable une seule fois, pour vous identifier. C'est simple et très sécurisé.</p>
+          <p class="font-semibold text-[#0f172a] mb-1">What is "Email login"?</p>
+          <p>It's a passwordless login method. We send you an email containing a unique, one-time-use link to identify yourself. It's simple and very secure.</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Encore besoin d'aide ?</p>
-          <p><a href="/contact" class="text-[#82153e] hover:underline">Contactez-nous.</a></p>
+          <p class="font-semibold text-[#0f172a] mb-1">Still need help?</p>
+          <p><a href="/en/contact" class="text-[#82153e] hover:underline">Contact us.</a></p>
         </div>
       </div>
     </div>
@@ -133,7 +133,7 @@ permalink: /connexion-firebase/
 <script>
 let currentTab = 'password';
 
-// Fonction pour changer d'onglet
+// Function to switch tabs
 function switchTab(tab) {
   currentTab = tab;
   const passwordTab = document.getElementById('tab-password');
@@ -149,7 +149,7 @@ function switchTab(tab) {
     passwordlessTab.classList.add('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'block';
     passwordInput.required = true;
-    buttonText.textContent = 'Se connecter';
+    buttonText.textContent = 'Login';
   } else {
     passwordlessTab.classList.add('border-[#82153e]', 'text-[#82153e]');
     passwordlessTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
@@ -158,7 +158,7 @@ function switchTab(tab) {
     passwordField.style.display = 'none';
     passwordInput.required = false;
     passwordInput.value = '';
-    buttonText.textContent = 'Envoyer le lien de connexion';
+    buttonText.textContent = 'Send login link';
   }
   
   hideError();
@@ -166,7 +166,7 @@ function switchTab(tab) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-  // Vérifier si un lien passwordless est présent dans l'URL
+  // Check if a passwordless link is present in the URL
   try {
     await new Promise((resolve) => {
       if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
@@ -183,8 +183,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const linkResult = await window.FluanceAuth.handleSignInLink();
     if (linkResult.success) {
-      // Connexion réussie avec le lien
-      const returnUrl = new URLSearchParams(window.location.search).get('return') || '/';
+      // Login successful with link
+      const returnUrl = new URLSearchParams(window.location.search).get('return') || '/en/';
       window.location.href = returnUrl;
       return;
     }
@@ -206,24 +206,24 @@ document.addEventListener('DOMContentLoaded', async function() {
     const password = document.getElementById('password').value;
 
     if (!email) {
-      showError('Veuillez entrer votre email.');
+      showError('Please enter your email.');
       return;
     }
 
     if (currentTab === 'password' && !password) {
-      showError('Veuillez entrer votre mot de passe.');
+      showError('Please enter your password.');
       return;
     }
 
-    // Désactiver le bouton et afficher le spinner
+    // Disable button and show spinner
     submitButton.disabled = true;
-    buttonText.textContent = currentTab === 'password' ? 'Connexion...' : 'Envoi...';
+    buttonText.textContent = currentTab === 'password' ? 'Logging in...' : 'Sending...';
     buttonSpinner.classList.remove('hidden');
     hideError();
     hideSuccess();
 
     try {
-      // Attendre que Firebase soit initialisé
+      // Wait for Firebase to be initialized
       await new Promise((resolve) => {
         if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
           resolve();
@@ -238,39 +238,39 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
 
       if (currentTab === 'password') {
-        // Connexion avec mot de passe
+        // Login with password
         const result = await window.FluanceAuth.signIn(email, password);
 
         if (result.success) {
-          // Rediriger vers la page d'origine ou la page d'accueil
-          const returnUrl = new URLSearchParams(window.location.search).get('return') || '/';
+          // Redirect to original page or homepage
+          const returnUrl = new URLSearchParams(window.location.search).get('return') || '/en/';
           window.location.href = returnUrl;
         } else {
-          showError(result.error || 'Erreur lors de la connexion.');
+          showError(result.error || 'Login error.');
         }
       } else {
-        // Envoi du lien passwordless
-        // Sauvegarder l'email dans localStorage pour la vérification du lien
+        // Send passwordless link
+        // Save email in localStorage for link verification
         window.localStorage.setItem('emailForSignIn', email);
         
         const result = await window.FluanceAuth.sendSignInLink(email);
 
         if (result.success) {
-          showSuccess('Un lien de connexion a été envoyé à votre email. Cliquez sur le lien pour vous connecter.');
+          showSuccess('A login link has been sent to your email. Click on the link to log in.');
         } else {
-          showError(result.error || 'Erreur lors de l\'envoi du lien.');
+          showError(result.error || 'Error sending link.');
           window.localStorage.removeItem('emailForSignIn');
         }
       }
     } catch (error) {
       console.error('Error:', error);
-      showError('Une erreur est survenue. Veuillez réessayer.');
+      showError('An error occurred. Please try again.');
       if (currentTab === 'passwordless') {
         window.localStorage.removeItem('emailForSignIn');
       }
     } finally {
       submitButton.disabled = false;
-      buttonText.textContent = currentTab === 'password' ? 'Se connecter' : 'Envoyer le lien de connexion';
+      buttonText.textContent = currentTab === 'password' ? 'Login' : 'Send login link';
       buttonSpinner.classList.add('hidden');
     }
   });
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     successDiv.classList.add('hidden');
   }
 
-  // Fonction pour toggle la section d'aide
+  // Function to toggle help section
   function toggleHelp() {
     const helpContent = document.getElementById('help-content');
     const helpArrow = document.getElementById('help-arrow');
@@ -307,6 +307,4 @@ document.addEventListener('DOMContentLoaded', async function() {
   window.toggleHelp = toggleHelp;
 });
 </script>
-
-
 

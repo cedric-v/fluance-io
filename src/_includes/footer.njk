@@ -17,6 +17,10 @@
                 {% set currentUrl = page.url %}
                 {% if currentUrl == '/en/' %}
                   {% set targetUrl = '/' %}
+                {% elif currentUrl == '/en/firebase-login/' %}
+                  {% set targetUrl = '/connexion-firebase/' %}
+                {% elif currentUrl == '/en/create-account/' %}
+                  {% set targetUrl = '/creer-compte/' %}
                 {% else %}
                   {% set targetUrl = currentUrl | replace('/en/', '/') %}
                 {% endif %}
@@ -35,11 +39,19 @@
             <li class="pt-2 mt-2 border-t border-[#ffce2d]/20">
               <div class="flex items-center gap-2">
                 {% set currentUrl = page.url %}
-                {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
-                {% if cleanUrl == '/' %}
+                {% if currentUrl == '/' %}
                   {% set targetUrl = '/en/' %}
+                {% elif currentUrl == '/connexion-firebase/' %}
+                  {% set targetUrl = '/en/firebase-login/' %}
+                {% elif currentUrl == '/creer-compte/' %}
+                  {% set targetUrl = '/en/create-account/' %}
                 {% else %}
-                  {% set targetUrl = '/en' + cleanUrl %}
+                  {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
+                  {% if cleanUrl == '/' %}
+                    {% set targetUrl = '/en/' %}
+                  {% else %}
+                    {% set targetUrl = '/en' + cleanUrl %}
+                  {% endif %}
                 {% endif %}
                 <span class="text-[#ffce2d] font-semibold">Français</span>
                 <span class="text-[#ffce2d]/40">|</span>

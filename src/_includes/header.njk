@@ -110,17 +110,29 @@
         {% if locale == 'fr' %}
           <span class="font-bold text-[#ffce2d]">FR</span>
           {% set currentUrl = page.url %}
-          {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
-          {% if cleanUrl == '/' %}
+          {% if currentUrl == '/' %}
             {% set targetUrl = '/en/' %}
+          {% elif currentUrl == '/connexion-firebase/' %}
+            {% set targetUrl = '/en/firebase-login/' %}
+          {% elif currentUrl == '/creer-compte/' %}
+            {% set targetUrl = '/en/create-account/' %}
           {% else %}
-            {% set targetUrl = '/en' + cleanUrl %}
+            {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
+            {% if cleanUrl == '/' %}
+              {% set targetUrl = '/en/' %}
+            {% else %}
+              {% set targetUrl = '/en' + cleanUrl %}
+            {% endif %}
           {% endif %}
           <a href="{{ targetUrl | relativeUrl }}" class="text-[#ffce2d]/60 hover:text-[#ffce2d] hover:opacity-100 transition">EN</a>
         {% else %}
           {% set currentUrl = page.url %}
           {% if currentUrl == '/en/' %}
             {% set targetUrl = '/' %}
+          {% elif currentUrl == '/en/firebase-login/' %}
+            {% set targetUrl = '/connexion-firebase/' %}
+          {% elif currentUrl == '/en/create-account/' %}
+            {% set targetUrl = '/creer-compte/' %}
           {% else %}
             {% set targetUrl = currentUrl | replace('/en/', '/') %}
           {% endif %}
@@ -216,17 +228,29 @@
           <span class="font-bold text-[#ffce2d]">FR</span>
           <span class="text-[#ffce2d]/40">|</span>
           {% set currentUrl = page.url %}
-          {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
-          {% if cleanUrl == '/' %}
+          {% if currentUrl == '/' %}
             {% set targetUrl = '/en/' %}
+          {% elif currentUrl == '/connexion-firebase/' %}
+            {% set targetUrl = '/en/firebase-login/' %}
+          {% elif currentUrl == '/creer-compte/' %}
+            {% set targetUrl = '/en/create-account/' %}
           {% else %}
-            {% set targetUrl = '/en' + cleanUrl %}
+            {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
+            {% if cleanUrl == '/' %}
+              {% set targetUrl = '/en/' %}
+            {% else %}
+              {% set targetUrl = '/en' + cleanUrl %}
+            {% endif %}
           {% endif %}
           <a href="{{ targetUrl | relativeUrl }}" class="text-[#ffce2d]/60 hover:text-[#ffce2d] hover:opacity-100 transition">EN</a>
         {% else %}
           {% set currentUrl = page.url %}
           {% if currentUrl == '/en/' %}
             {% set targetUrl = '/' %}
+          {% elif currentUrl == '/en/firebase-login/' %}
+            {% set targetUrl = '/connexion-firebase/' %}
+          {% elif currentUrl == '/en/create-account/' %}
+            {% set targetUrl = '/creer-compte/' %}
           {% else %}
             {% set targetUrl = currentUrl | replace('/en/', '/') %}
           {% endif %}
