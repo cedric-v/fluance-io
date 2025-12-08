@@ -1,0 +1,295 @@
+---
+layout: base.njk
+title: Espace client
+description: Accédez à votre contenu protégé Fluance
+locale: fr
+permalink: /membre/
+---
+
+<section class="max-w-6xl mx-auto px-6 py-16">
+  <div class="bg-white rounded-lg shadow-lg p-8 space-y-8">
+    <header class="text-center">
+      <h1 class="text-3xl font-bold text-gray-900 mb-4">Bienvenue dans l'espace client de Fluance</h1>
+      <p class="text-gray-600">
+        Accédez à votre contenu protégé et suivez votre progression.
+      </p>
+    </header>
+
+    <div id="auth-required" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center hidden">
+      <p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder à votre espace client.</p>
+      <a href="/connexion-firebase?return={{ '/membre/' | url }}" 
+         class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+        Se connecter
+      </a>
+    </div>
+
+    <div id="content-container" class="hidden">
+      <!-- Le contenu sera chargé dynamiquement ici -->
+    </div>
+
+    <div class="border-t pt-8">
+      <h2 class="text-xl font-semibold mb-4">État de l'authentification</h2>
+      <div id="auth-status" class="bg-gray-100 rounded-lg p-4">
+        <p class="text-gray-600">Vérification...</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="/assets/js/firebase-auth.js"></script>
+<script src="/assets/js/protected-content.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const authStatus = document.getElementById('auth-status');
+  const authRequired = document.getElementById('auth-required');
+  const contentContainer = document.getElementById('content-container');
+  
+  function updateAuthStatus() {
+    if (typeof window.FluanceAuth !== 'undefined') {
+      const isAuth = window.FluanceAuth.isAuthenticated();
+      const user = window.FluanceAuth.getCurrentUser();
+      
+      if (isAuth && user) {
+        authStatus.innerHTML = `
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p class="text-green-800 font-semibold mb-2">✅ Connecté</p>
+            <p class="text-green-700 text-sm">Email : ${user.email}</p>
+          </div>
+        `;
+        
+        // Charger le contenu disponible
+        loadUserContent();
+      } else {
+        authStatus.innerHTML = `
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p class="text-yellow-800 font-semibold mb-2">⚠️ Non connecté</p>
+            <p class="text-yellow-700 text-sm mb-3">Vous devez être connecté pour accéder à votre contenu.</p>
+            <a href="/connexion-firebase?return=${encodeURIComponent(window.location.pathname)}" 
+               class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+              Se connecter
+            </a>
+          </div>
+        `;
+        authRequired.classList.remove('hidden');
+        contentContainer.classList.add('hidden');
+      }
+    } else {
+      authStatus.innerHTML = `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p class="text-red-800">❌ Erreur : Script Firebase Auth non chargé</p>
+        </div>
+      `;
+    }
+  }
+  
+  async function loadUserContent() {
+    if (!window.FluanceAuth || !window.FluanceAuth.isAuthenticated()) {
+      return;
+    }
+
+    try {
+      const result = await window.FluanceAuth.loadProtectedContent();
+      
+      if (!result.success) {
+        contentContainer.innerHTML = `
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p class="text-red-800">Erreur : ${result.error}</p>
+          </div>
+        `;
+        contentContainer.classList.remove('hidden');
+        return;
+      }
+
+      const product = result.product;
+      const contents = result.contents || [];
+
+      if (contents.length === 0) {
+        contentContainer.innerHTML = `
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-blue-800">Aucun contenu disponible pour le moment.</p>
+          </div>
+        `;
+        contentContainer.classList.remove('hidden');
+        return;
+      }
+
+      // Afficher les contenus disponibles
+      let contentHTML = '<div class="space-y-6">';
+      
+      if (product === '21jours') {
+        // Pour 21jours, afficher avec navigation par jour
+        const daysSinceRegistration = result.daysSinceRegistration || 0;
+        const currentDay = daysSinceRegistration + 1;
+        
+        contentHTML += `
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p class="text-blue-800 font-semibold">Vous êtes au jour ${currentDay} sur 22</p>
+            <p class="text-blue-700 text-sm mt-1">Continuez votre parcours vers la détente et la mobilité.</p>
+          </div>
+        `;
+
+        // Trouver le contenu du jour actuel
+        let currentDayContent = null;
+        if (currentDay === 1) {
+          currentDayContent = contents.find(c => c.day === 0);
+        } else if (currentDay <= 22) {
+          currentDayContent = contents.find(c => c.day === currentDay - 1);
+        }
+
+        if (!currentDayContent) {
+          currentDayContent = contents
+            .filter(c => c.isAccessible)
+            .sort((a, b) => (b.day || 0) - (a.day || 0))[0];
+        }
+
+        if (currentDayContent) {
+          contentHTML += `
+            <div class="mb-6">
+              <h2 class="text-2xl font-semibold mb-4">${currentDayContent.title}</h2>
+              <div class="protected-content" data-content-id="${currentDayContent.id}">
+                <div class="bg-gray-100 rounded-lg p-8 text-center">
+                  <p class="text-gray-600 mb-4">Chargement du contenu...</p>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // Navigation des jours
+        if (contents.length > 0) {
+          contentHTML += `
+            <div class="border-t pt-6 mt-6">
+              <h3 class="text-lg font-semibold mb-4">Navigation des jours</h3>
+              <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                ${contents.map(content => {
+                  const dayLabel = content.day === 0 ? 'Déroulé' : `Jour ${content.day}`;
+                  const isCurrent = content.id === currentDayContent?.id;
+                  const isLocked = !content.isAccessible;
+                  
+                  return `
+                    <a href="#" 
+                       data-content-id="${content.id}"
+                       class="block p-3 rounded-lg text-center text-sm transition-colors
+                              ${isCurrent ? 'bg-green-600 text-white font-semibold' : ''}
+                              ${isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
+                              ${!isLocked && !isCurrent ? 'hover:bg-gray-200' : ''}"
+                       ${isLocked ? 'onclick="return false;"' : ''}>
+                      <div class="font-semibold">${dayLabel}</div>
+                      <div class="text-xs mt-1">${content.title}</div>
+                      ${isLocked && content.daysRemaining !== null ? `<div class="text-xs mt-1">+${content.daysRemaining}j</div>` : ''}
+                    </a>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        // Pour les autres produits, afficher la liste des contenus
+        contentHTML += '<h2 class="text-2xl font-semibold mb-4">Vos contenus disponibles</h2>';
+        contentHTML += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+        
+        contents.forEach(content => {
+          contentHTML += `
+            <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <h3 class="font-semibold mb-2">${content.title}</h3>
+              <div class="protected-content" data-content-id="${content.id}">
+                <div class="bg-gray-100 rounded-lg p-4 text-center">
+                  <p class="text-gray-600 text-sm">Chargement...</p>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        
+        contentHTML += '</div>';
+      }
+
+      contentHTML += '</div>';
+      contentContainer.innerHTML = contentHTML;
+      contentContainer.classList.remove('hidden');
+
+      // Charger les contenus protégés
+      const protectedElements = contentContainer.querySelectorAll('.protected-content[data-content-id]');
+      protectedElements.forEach(element => {
+        const contentId = element.getAttribute('data-content-id');
+        if (window.FluanceAuth && window.FluanceAuth.displayProtectedContent) {
+          window.FluanceAuth.displayProtectedContent(contentId, element).catch(err => {
+            console.error('Error loading content:', err);
+            element.innerHTML = `
+              <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-red-800 text-sm">Erreur lors du chargement</p>
+              </div>
+            `;
+          });
+        }
+      });
+
+      // Ajouter les listeners pour la navigation (21jours uniquement)
+      if (product === '21jours') {
+        contentContainer.querySelectorAll('a[data-content-id]').forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const contentId = link.getAttribute('data-content-id');
+            const content = contents.find(c => c.id === contentId);
+            
+            if (!content || !content.isAccessible) {
+              return;
+            }
+
+            // Mettre à jour le contenu affiché
+            const contentSection = contentContainer.querySelector('.mb-6');
+            if (contentSection) {
+              const titleElement = contentSection.querySelector('h2');
+              const protectedElement = contentSection.querySelector('.protected-content');
+              
+              if (titleElement) {
+                titleElement.textContent = content.title;
+              }
+              
+              if (protectedElement) {
+                protectedElement.setAttribute('data-content-id', content.id);
+                protectedElement.innerHTML = '<div class="bg-gray-100 rounded-lg p-8 text-center"><p class="text-gray-600 mb-4">Chargement du contenu...</p></div>';
+                
+                if (window.FluanceAuth && window.FluanceAuth.displayProtectedContent) {
+                  window.FluanceAuth.displayProtectedContent(content.id, protectedElement);
+                }
+              }
+            }
+
+            // Mettre à jour la navigation
+            contentContainer.querySelectorAll('a[data-content-id]').forEach(l => {
+              l.classList.remove('bg-green-600', 'text-white', 'font-semibold');
+              l.classList.add('bg-gray-100', 'text-gray-700');
+            });
+            link.classList.add('bg-green-600', 'text-white', 'font-semibold');
+            link.classList.remove('bg-gray-100', 'text-gray-700');
+          });
+        });
+      }
+    } catch (error) {
+      console.error('Error loading user content:', error);
+      contentContainer.innerHTML = `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p class="text-red-800">Erreur lors du chargement du contenu : ${error.message || error}</p>
+        </div>
+      `;
+      contentContainer.classList.remove('hidden');
+    }
+  }
+  
+  // Mettre à jour immédiatement
+  updateAuthStatus();
+  
+  // Mettre à jour après un délai (au cas où le script se charge plus tard)
+  setTimeout(updateAuthStatus, 1000);
+  
+  // Écouter les changements d'authentification
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    firebase.auth().onAuthStateChanged(() => {
+      updateAuthStatus();
+    });
+  }
+});
+</script>
+
