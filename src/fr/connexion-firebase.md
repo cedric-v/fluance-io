@@ -132,6 +132,36 @@ permalink: /connexion-firebase/
 <script src="/assets/js/firebase-auth.js"></script>
 <script>
 let currentTab = 'password';
+let errorDiv, successDiv; // Variables globales pour les divs d'erreur/succès
+
+// Fonctions globales pour gérer les messages d'erreur/succès
+function showError(message) {
+  if (errorDiv && successDiv) {
+    errorDiv.querySelector('p').textContent = message;
+    errorDiv.classList.remove('hidden');
+    successDiv.classList.add('hidden');
+  }
+}
+
+function hideError() {
+  if (errorDiv) {
+    errorDiv.classList.add('hidden');
+  }
+}
+
+function showSuccess(message) {
+  if (successDiv && errorDiv) {
+    successDiv.querySelector('p').textContent = message;
+    successDiv.classList.remove('hidden');
+    errorDiv.classList.add('hidden');
+  }
+}
+
+function hideSuccess() {
+  if (successDiv) {
+    successDiv.classList.add('hidden');
+  }
+}
 
 // Fonction pour changer d'onglet
 function switchTab(tab) {
@@ -193,8 +223,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 
   const form = document.getElementById('login-form');
-  const errorDiv = document.getElementById('error-message');
-  const successDiv = document.getElementById('success-message');
+  errorDiv = document.getElementById('error-message'); // Assigner à la variable globale
+  successDiv = document.getElementById('success-message'); // Assigner à la variable globale
   const submitButton = document.getElementById('submit-button');
   const buttonText = document.getElementById('button-text');
   const buttonSpinner = document.getElementById('button-spinner');
@@ -275,26 +305,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 
-  function showError(message) {
-    errorDiv.querySelector('p').textContent = message;
-    errorDiv.classList.remove('hidden');
-    successDiv.classList.add('hidden');
-  }
-
-  function hideError() {
-    errorDiv.classList.add('hidden');
-  }
-
-  function showSuccess(message) {
-    successDiv.querySelector('p').textContent = message;
-    successDiv.classList.remove('hidden');
-    errorDiv.classList.add('hidden');
-  }
-
-  function hideSuccess() {
-    successDiv.classList.add('hidden');
-  }
-
+  // Les fonctions showError, hideError, showSuccess, hideSuccess sont déjà définies globalement
   // Fonction pour toggle la section d'aide
   function toggleHelp() {
     const helpContent = document.getElementById('help-content');
