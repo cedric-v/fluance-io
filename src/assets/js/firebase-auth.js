@@ -370,7 +370,7 @@ async function loadProtectedContent(contentId = null) {
           }
         }
         
-        contents.push({
+        const contentObj = {
           id: doc.id,
           title: data.title || doc.id,
           content: data.content || '',
@@ -379,10 +379,15 @@ async function loadProtectedContent(contentId = null) {
           daysRemaining: (userProduct === '21jours' && dayNumber !== undefined && daysSinceRegistration !== null && dayNumber > 0)
             ? Math.max(0, dayNumber - daysSinceRegistration - 1)
             : null,
-          // createdAt et updatedAt sont optionnels (utilisés uniquement pour les autres produits)
-          createdAt: data.createdAt || null,
-          updatedAt: data.updatedAt || null
-        });
+        };
+        
+        // Pour les autres produits (pas 21jours), ajouter createdAt/updatedAt pour le tri
+        if (userProduct !== '21jours') {
+          contentObj.createdAt = data.createdAt;
+          contentObj.updatedAt = data.updatedAt;
+        }
+        
+        contents.push(contentObj);
       });
 
       return { success: true, contents, product: userProduct, daysSinceRegistration };
@@ -400,21 +405,36 @@ async function loadProtectedContent(contentId = null) {
           const contents = [];
           contentsSnapshot.forEach((doc) => {
             const data = doc.data();
-            contents.push({
+            const contentObj = {
               id: doc.id,
               title: data.title || doc.id,
               content: data.content || '',
-              createdAt: data.createdAt,
-              updatedAt: data.updatedAt
-            });
+            };
+            
+            // Pour 21jours, trier par day
+            if (userProduct === '21jours' && data.day !== undefined) {
+              contentObj.day = data.day;
+            } else {
+              // Pour les autres produits, utiliser createdAt pour le tri
+              contentObj.createdAt = data.createdAt;
+              contentObj.updatedAt = data.updatedAt;
+            }
+            
+            contents.push(contentObj);
           });
           
           // Trier manuellement côté client
-          contents.sort((a, b) => {
-            const aDate = a.createdAt?.toDate?.() || new Date(0);
-            const bDate = b.createdAt?.toDate?.() || new Date(0);
-            return bDate - aDate; // Descending
-          });
+          if (userProduct === '21jours') {
+            // Trier par day pour 21jours
+            contents.sort((a, b) => (a.day || 0) - (b.day || 0));
+          } else {
+            // Trier par createdAt pour les autres produits
+            contents.sort((a, b) => {
+              const aDate = a.createdAt?.toDate?.() || new Date(0);
+              const bDate = b.createdAt?.toDate?.() || new Date(0);
+              return bDate - aDate; // Descending
+            });
+          }
 
           return { success: true, contents, product: userProduct };
         } catch (fallbackError) {
