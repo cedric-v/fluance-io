@@ -1,0 +1,71 @@
+{
+  "21jours": {
+    "id": "21jours",
+    "name": {
+      "fr": "Défi 21 jours",
+      "en": "21-Day Challenge"
+    },
+    "description": {
+      "fr": "Retrouvez légèreté, mobilité et sérénité en seulement 2 à 5 minutes par jour, durant 21 jours.",
+      "en": "Find lightness, mobility and serenity in just 2 to 5 minutes a day, for 21 days."
+    },
+    "price": {
+      "amount": 19,
+      "currency": "CHF"
+    },
+    "stripe": {
+      "priceId": "price_XXXXX",
+      "mode": "payment"
+    },
+    "paypal": {
+      "productId": "PROD-XXXXX"
+    }
+  },
+  "complet": {
+    "mensuel": {
+      "id": "complet",
+      "name": {
+        "fr": "Approche Fluance Complète - Mensuel",
+        "en": "Complete Fluance Approach - Monthly"
+      },
+      "description": {
+        "fr": "Accès complet à tous les cours et pratiques. Abonnement mensuel avec les 14 premiers jours offerts.",
+        "en": "Full access to all courses and practices. Monthly subscription with the first 14 days free."
+      },
+      "price": {
+        "amount": 30,
+        "currency": "CHF"
+      },
+      "stripe": {
+        "priceId": "price_YYYYY",
+        "mode": "subscription"
+      },
+      "paypal": {
+        "productId": "PROD-YYYYY"
+      }
+    },
+    "trimestriel": {
+      "id": "complet",
+      "name": {
+        "fr": "Approche Fluance Complète - Trimestriel",
+        "en": "Complete Fluance Approach - Quarterly"
+      },
+      "description": {
+        "fr": "Accès complet à tous les cours et pratiques. Abonnement trimestriel avec les 14 premiers jours offerts.",
+        "en": "Full access to all courses and practices. Quarterly subscription with the first 14 days free."
+      },
+      "price": {
+        "amount": 75,
+        "currency": "CHF"
+      },
+      "stripe": {
+        "priceId": "price_ZZZZZ",
+        "mode": "subscription"
+      },
+      "paypal": {
+        "productId": "PROD-ZZZZZ"
+      }
+    }
+  }
+}
+

@@ -113,7 +113,7 @@ Chaque document contient :
 ```javascript
 {
   email: "client@example.com",
-  product: "Approche Fluance Complète",
+  product: "complet", // ou "21jours"
   createdAt: Timestamp,
   expiresAt: Timestamp,
   used: false,
@@ -128,7 +128,7 @@ Chaque document contient :
 ```javascript
 {
   email: "client@example.com",
-  product: "Approche Fluance Complète",
+  product: "complet", // ou "21jours"
   createdAt: Timestamp,
   updatedAt: Timestamp
 }
@@ -140,7 +140,7 @@ Contenu protégé complet (HTML, texte, code embed) :
 ```javascript
 {
   // ID du document = contentId (ex: "video-1")
-  product: "Approche Fluance Complète",
+  product: "complet", // ou "21jours"
   title: "Titre du contenu",
   content: "<div>...code HTML complet...</div>", // Contenu HTML complet
   createdAt: Timestamp,
@@ -174,9 +174,9 @@ Chaque document dans `protectedContent` contient :
 Les documents sont organisés par `product` et peuvent être filtrés par ce champ. Chaque utilisateur ne peut accéder qu'au contenu de son produit.
 
 **Exemple de structure** :
-- Document ID: `video-1`, product: `"Approche Fluance Complète"`
-- Document ID: `video-2`, product: `"Approche Fluance Complète"`
-- Document ID: `cours-1`, product: `"Cours en ligne"`
+- Document ID: `video-1`, product: `"complet"`
+- Document ID: `video-2`, product: `"complet"`
+- Document ID: `cours-1`, product: `"21jours"`
 
 ### Limites
 
@@ -194,7 +194,7 @@ Pour les paiements par virement, cash, etc., utiliser la fonction `createUserTok
 const createUserToken = firebase.functions().httpsCallable('createUserToken');
 const result = await createUserToken({
   email: 'client@example.com',
-  product: 'Approche Fluance Complète',
+  product: 'complet', // ou '21jours'
   expirationDays: 30
 });
 ```

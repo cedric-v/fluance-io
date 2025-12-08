@@ -92,7 +92,7 @@ Crée manuellement un token pour un utilisateur (paiement virement, cash, etc.).
 const createUserToken = firebase.functions().httpsCallable('createUserToken');
 await createUserToken({
   email: 'client@example.com',
-  product: 'Approche Fluance Complète',
+  product: 'complet', // ou '21jours'
   expirationDays: 30
 });
 ```

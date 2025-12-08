@@ -9,7 +9,7 @@ Le contenu est stocké dans la collection `protectedContent` avec cette structur
 ```
 protectedContent/
   ├── video-1 (document ID)
-  │   ├── product: "Approche Fluance Complète"
+  │   ├── product: "complet" (ou "21jours")
   │   ├── title: "Vidéo 1 : Introduction"
   │   ├── content: "<div>...code HTML complet...</div>"
   │   ├── createdAt: Timestamp
@@ -32,7 +32,7 @@ protectedContent/
 
 | Champ | Type | Valeur |
 |-------|------|--------|
-| `product` | string | `"Approche Fluance Complète"` (ou votre produit) |
+| `product` | string | `"complet"` ou `"21jours"` (selon le produit) |
 | `title` | string | `"Vidéo 1 : Introduction"` |
 | `content` | string | `"<div>...votre code HTML...</div>"` |
 | `createdAt` | timestamp | Date actuelle |
@@ -47,7 +47,7 @@ Créez un fichier JSON pour chaque contenu :
 **video-1.json** :
 ```json
 {
-  "product": "Approche Fluance Complète",
+  "product": "complet", // ou "21jours"
   "title": "Vidéo 1 : Introduction",
   "content": "<div><h2>Introduction</h2><p>Contenu HTML...</p></div>",
   "createdAt": "2024-01-01T00:00:00Z",
@@ -124,7 +124,7 @@ async function main() {
   
   await addContent(
     'video-1',
-    'Approche Fluance Complète',
+    'complet', // ou '21jours'
     'Vidéo 1 : Introduction',
     htmlContent
   );

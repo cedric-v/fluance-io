@@ -392,23 +392,40 @@ exports.verifyToken = functions.region('europe-west1').https.onCall(
 
 /**
  * Fonction utilitaire pour déterminer le produit selon le montant
+ * Produits disponibles : "21jours" (19 CHF), "complet" (30 CHF/mois ou 75 CHF/trimestre)
  */
 function determineProductFromAmount(amount, currency) {
   // Convertir le montant selon la devise
   let amountInCHF = amount;
   if (currency.toLowerCase() === 'eur') {
-    amountInCHF = amount * 1.1; // Approximation
+    amountInCHF = amount * 1.1; // Approximation EUR -> CHF
   } else if (currency.toLowerCase() === 'usd') {
-    amountInCHF = amount * 0.9; // Approximation
+    amountInCHF = amount * 0.9; // Approximation USD -> CHF
   }
 
-  // Définir les produits selon les montants (à adapter selon vos tarifs)
-  if (amountInCHF >= 200) {
-    return 'Approche Fluance Complète';
-  } else if (amountInCHF >= 100) {
-    return 'Cours en ligne';
+  // Tarifs réels :
+  // - "21jours" : 19 CHF
+  // - "complet" : 30 CHF/mois ou 75 CHF/trimestre
+  
+  // Déterminer le produit selon le montant
+  // On utilise des plages pour gérer les variations de conversion de devise et frais
+  const tolerance = 5; // Tolérance de ±5 CHF pour les conversions et frais
+  
+  if (Math.abs(amountInCHF - 19) <= tolerance || (amountInCHF >= 15 && amountInCHF < 25)) {
+    // Montant autour de 19 CHF (21jours)
+    return '21jours';
+  } else if (Math.abs(amountInCHF - 30) <= tolerance || (amountInCHF >= 25 && amountInCHF < 40)) {
+    // Montant autour de 30 CHF (complet mensuel)
+    return 'complet';
+  } else if (Math.abs(amountInCHF - 75) <= tolerance || (amountInCHF >= 70 && amountInCHF <= 85)) {
+    // Montant autour de 75 CHF (complet trimestriel)
+    return 'complet';
+  } else if (amountInCHF >= 40) {
+    // Montant supérieur à 40 CHF -> probablement complet
+    return 'complet';
   } else {
-    return 'Produit standard';
+    // Par défaut, si le montant est inférieur à 25 CHF -> 21jours
+    return '21jours';
   }
 }
 
