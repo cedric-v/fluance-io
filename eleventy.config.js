@@ -136,7 +136,7 @@ module.exports = function(eleventyConfig) {
       },
       "contactPoint": {
         "@type": "ContactPoint",
-        "email": "support@fluance.io",
+        "telephone": "+33972133388",
         "contactType": "customer service",
         "availableLanguage": ["French", "English"]
       },
