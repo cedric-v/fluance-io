@@ -319,17 +319,23 @@ async function loadProtectedContent(contentId = null) {
         }
       }
 
-      return { 
+      const result = {
         success: true, 
         content: contentData.content || '', 
         product: userProduct,
         title: contentData.title || '',
         day: contentData.day,
-        metadata: {
-          createdAt: contentData.createdAt,
-          updatedAt: contentData.updatedAt
-        }
       };
+      
+      // Pour les autres produits (pas 21jours), ajouter createdAt/updatedAt
+      if (userProduct !== '21jours') {
+        result.metadata = {
+          createdAt: contentData.createdAt || null,
+          updatedAt: contentData.updatedAt || null
+        };
+      }
+      
+      return result;
     }
 
     // Sinon, charger la liste des contenus disponibles pour ce produit
