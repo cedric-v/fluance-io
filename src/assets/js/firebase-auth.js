@@ -370,9 +370,10 @@ async function loadProtectedContent(contentId = null) {
         const dayNumber = contentData.day;
 
         // Jour 0 (déroulé) accessible immédiatement
-        // Jours 1-21 accessibles à partir du jour correspondant
-        if (dayNumber > 0 && daysSinceRegistration < dayNumber) {
-          const daysRemaining = dayNumber - daysSinceRegistration;
+        // Jours 1-21 : accessibles à partir du jour correspondant
+        // Jour 22 (bonus) : accessible au jour 22 (daysSinceRegistration >= 21)
+        if (dayNumber > 0 && daysSinceRegistration < dayNumber - 1) {
+          const daysRemaining = dayNumber - daysSinceRegistration - 1;
           return { 
             success: false, 
             error: `Ce contenu sera disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}. Vous êtes au jour ${daysSinceRegistration + 1} du défi.` 
