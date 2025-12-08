@@ -9,10 +9,17 @@
  * - sendEmail : Envoie un email via Mailjet
  */
 
-const functions = require('firebase-functions');
+const {onRequest, onCall} = require('firebase-functions/v2/https');
+const {setGlobalOptions} = require('firebase-functions/v2');
+const {HttpsError} = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
+
+// Définir les options globales (région par défaut)
+setGlobalOptions({
+  region: 'europe-west1',
+});
 
 admin.initializeApp();
 
@@ -167,9 +174,11 @@ async function createTokenAndSendEmail(email, product, expirationDays = 30, mail
  * Région : europe-west1 (Belgique)
  * Utilise les secrets Firebase pour Mailjet
  */
-exports.webhookStripe = functions.region('europe-west1').runWith({
-  secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
-}).https.onRequest(
+exports.webhookStripe = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+    },
     async (req, res) => {
       // Vérifier la signature Stripe (sera utilisé avec le package Stripe)
       // const sig = req.headers['stripe-signature'];
@@ -247,60 +256,64 @@ exports.webhookStripe = functions.region('europe-west1').runWith({
  * Région : europe-west1 (Belgique)
  * Utilise les secrets Firebase pour Mailjet
  */
-exports.webhookPayPal = functions.region('europe-west1').runWith({
-  secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
-}).https.onRequest(async (req, res) => {
-  const event = req.body;
+exports.webhookPayPal = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+    },
+    async (req, res) => {
+      const event = req.body;
 
-  // Vérifier que c'est un événement de paiement réussi
-  if (event.event_type === 'PAYMENT.CAPTURE.COMPLETED' ||
+      // Vérifier que c'est un événement de paiement réussi
+      if (event.event_type === 'PAYMENT.CAPTURE.COMPLETED' ||
       event.event_type === 'CHECKOUT.ORDER.APPROVED') {
-    const resource = event.resource;
-    const customerEmail = resource.payer?.email_address ||
-                         resource.purchase_units?.[0]?.payee?.email_address;
-    // amount et currency ne sont plus utilisés car on utilise uniquement les métadonnées
-    // const amount = resource.amount?.value || resource.purchase_units?.[0]?.amount?.value;
-    // const currency = resource.amount?.currency_code || resource.purchase_units?.[0]?.amount?.currency_code || 'CHF';
+        const resource = event.resource;
+        const customerEmail = resource.payer?.email_address ||
+            resource.purchase_units?.[0]?.payee?.email_address;
+        // amount et currency ne sont plus utilisés car on utilise uniquement les métadonnées
+        // const amount = resource.amount?.value || resource.purchase_units?.[0]?.amount?.value;
+        // const currency = resource.amount?.currency_code ||
+        //   resource.purchase_units?.[0]?.amount?.currency_code || 'CHF';
 
-    if (!customerEmail) {
-      console.error('No email found in PayPal event');
-      return res.status(400).send('No email found');
-    }
+        if (!customerEmail) {
+          console.error('No email found in PayPal event');
+          return res.status(400).send('No email found');
+        }
 
-    // Vérifier si ce paiement est destiné au nouveau système (Firebase)
-    // ⚠️ IMPORTANT : Pas de fallback - seuls les paiements avec custom_id commençant par 'firebase_' sont traités
-    const customId = resource.custom_id || '';
-    if (!customId.startsWith('firebase_')) {
-      console.log(`Paiement PayPal ignoré - custom_id: ${customId || 'non défini'} (pas pour Firebase)`);
-      return res.status(200).json({received: true, ignored: true});
-    }
+        // Vérifier si ce paiement est destiné au nouveau système (Firebase)
+        // ⚠️ IMPORTANT : Pas de fallback - seuls les paiements avec custom_id commençant par 'firebase_' sont traités
+        const customId = resource.custom_id || '';
+        if (!customId.startsWith('firebase_')) {
+          console.log(`Paiement PayPal ignoré - custom_id: ${customId || 'non défini'} (pas pour Firebase)`);
+          return res.status(200).json({received: true, ignored: true});
+        }
 
-    // Déterminer le produit depuis custom_id uniquement (pas de fallback)
-    // Format attendu : 'firebase_21jours' ou 'firebase_complet'
-    const product = customId.replace('firebase_', '');
-    if (product !== '21jours' && product !== 'complet') {
-      console.error(`Paiement PayPal ignoré - produit invalide: ${product}`);
-      return res.status(200).json({received: true, ignored: true});
-    }
+        // Déterminer le produit depuis custom_id uniquement (pas de fallback)
+        // Format attendu : 'firebase_21jours' ou 'firebase_complet'
+        const product = customId.replace('firebase_', '');
+        if (product !== '21jours' && product !== 'complet') {
+          console.error(`Paiement PayPal ignoré - produit invalide: ${product}`);
+          return res.status(200).json({received: true, ignored: true});
+        }
 
-    try {
-      await createTokenAndSendEmail(
-          customerEmail,
-          product,
-          30,
-          process.env.MAILJET_API_KEY,
-          process.env.MAILJET_API_SECRET,
-      );
-      console.log(`Token created and email sent to ${customerEmail} for product ${product}`);
-      return res.status(200).json({received: true});
-    } catch (error) {
-      console.error('Error creating token:', error);
-      return res.status(500).send('Error processing payment');
-    }
-  }
+        try {
+          await createTokenAndSendEmail(
+              customerEmail,
+              product,
+              30,
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+          );
+          console.log(`Token created and email sent to ${customerEmail} for product ${product}`);
+          return res.status(200).json({received: true});
+        } catch (error) {
+          console.error('Error creating token:', error);
+          return res.status(500).send('Error processing payment');
+        }
+      }
 
-  res.status(200).json({received: true});
-});
+      res.status(200).json({received: true});
+    });
 
 /**
  * Fonction pour créer manuellement un token (paiement virement, cash, etc.)
@@ -308,66 +321,72 @@ exports.webhookPayPal = functions.region('europe-west1').runWith({
  * Région : europe-west1 (Belgique)
  * Utilise les secrets Firebase pour Mailjet
  */
-exports.createUserToken = functions.region('europe-west1').runWith({
-  secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
-}).https.onCall(async (data, context) => {
-  // Vérifier l'authentification admin (vous pouvez utiliser un claim personnalisé)
-  if (!context.auth || !context.auth.token.admin) {
-    throw new functions.https.HttpsError('permission-denied', 'Admin access required');
-  }
+exports.createUserToken = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+    },
+    async (request) => {
+      // Vérifier l'authentification admin (vous pouvez utiliser un claim personnalisé)
+      if (!request.auth || !request.auth.token.admin) {
+        throw new HttpsError('permission-denied', 'Admin access required');
+      }
 
-  const {email, product, expirationDays} = data;
+      const {email, product, expirationDays} = request.data;
 
-  if (!email || !product) {
-    throw new functions.https.HttpsError('invalid-argument', 'Email and product are required');
-  }
+      if (!email || !product) {
+        throw new HttpsError('invalid-argument', 'Email and product are required');
+      }
 
-  try {
-    const token = await createTokenAndSendEmail(
-        email,
-        product,
-        expirationDays || 30,
-        process.env.MAILJET_API_KEY,
-        process.env.MAILJET_API_SECRET,
-    );
-    return {success: true, token};
-  } catch (error) {
-    console.error('Error creating token:', error);
-    throw new functions.https.HttpsError('internal', 'Error creating token');
-  }
-});
+      try {
+        const token = await createTokenAndSendEmail(
+            email,
+            product,
+            expirationDays || 30,
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+        return {success: true, token};
+      } catch (error) {
+        console.error('Error creating token:', error);
+        throw new HttpsError('internal', 'Error creating token');
+      }
+    });
 
 /**
  * Vérifie un token et crée le compte Firebase Auth
  * Région : europe-west6 (Zurich - directement en Suisse)
  */
-exports.verifyToken = functions.region('europe-west1').https.onCall(
-    async (data, _context) => {
-      const {token, password} = data;
+exports.verifyToken = onCall(
+    {
+      region: 'europe-west1',
+    },
+    async (request) => {
+      const {token, password} = request.data;
 
       if (!token || !password) {
-        throw new functions.https.HttpsError('invalid-argument', 'Token and password are required');
+        throw new HttpsError('invalid-argument', 'Token and password are required');
       }
 
       // Vérifier le token dans Firestore
       const tokenDoc = await db.collection('registrationTokens').doc(token).get();
 
       if (!tokenDoc.exists) {
-        throw new functions.https.HttpsError('not-found', 'Token invalide');
+        throw new HttpsError('not-found', 'Token invalide');
       }
 
       const tokenData = tokenDoc.data();
 
       // Vérifier si le token a déjà été utilisé
       if (tokenData.used) {
-        throw new functions.https.HttpsError('failed-precondition', 'Ce token a déjà été utilisé');
+        throw new HttpsError('failed-precondition', 'Ce token a déjà été utilisé');
       }
 
       // Vérifier si le token a expiré
       const now = new Date();
       const expiresAt = tokenData.expiresAt.toDate();
       if (now > expiresAt) {
-        throw new functions.https.HttpsError('deadline-exceeded', 'Ce token a expiré');
+        throw new HttpsError('deadline-exceeded', 'Ce token a expiré');
       }
 
       const email = tokenData.email;
@@ -413,7 +432,7 @@ exports.verifyToken = functions.region('europe-west1').https.onCall(
         return {success: true, userId: userRecord.uid, email: email};
       } catch (error) {
         console.error('Error creating user:', error);
-        throw new functions.https.HttpsError('internal', 'Erreur lors de la création du compte');
+        throw new HttpsError('internal', 'Erreur lors de la création du compte');
       }
     });
 
@@ -463,78 +482,81 @@ exports.verifyToken = functions.region('europe-west1').https.onCall(
  * Région : europe-west1 (Belgique)
  * Utilise les secrets Firebase pour Mailjet
  */
-exports.sendNewsletter = functions.region('europe-west1').runWith({
-  secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
-}).https.onCall(async (data, context) => {
-  // Vérifier l'authentification admin
-  if (!context.auth || !context.auth.token.admin) {
-    throw new functions.https.HttpsError('permission-denied', 'Admin access required');
-  }
-
-  const {subject, htmlContent, textContent, recipientList} = data;
-
-  if (!subject || !htmlContent || !recipientList || !Array.isArray(recipientList)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing required fields');
-  }
-
-  // Récupérer les emails depuis Firestore si recipientList est un nom de collection
-  let emails = [];
-  if (typeof recipientList === 'string') {
-    const usersSnapshot = await db.collection(recipientList).get();
-    emails = usersSnapshot.docs.map((doc) => doc.data().email).filter(Boolean);
-  } else {
-    emails = recipientList;
-  }
-
-  const results = [];
-  const errors = [];
-
-  // Envoyer les emails par batch (Mailjet limite à 50 destinataires par requête)
-  const batchSize = 50;
-  for (let i = 0; i < emails.length; i += batchSize) {
-    const batch = emails.slice(i, i + batchSize);
-
-    try {
-      const url = 'https://api.mailjet.com/v3.1/send';
-      const body = {
-        Messages: batch.map((email) => ({
-          From: {
-            Email: 'support@fluance.io',
-            Name: 'Fluance',
-          },
-          To: [{Email: email}],
-          Subject: subject,
-          TextPart: textContent || subject,
-          HTMLPart: htmlContent,
-        })),
-      };
-
-      const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${auth}`,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
-        results.push(...batch);
-      } else {
-        const errorText = await response.text();
-        errors.push({batch, error: errorText});
+exports.sendNewsletter = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+    },
+    async (request) => {
+      // Vérifier l'authentification admin
+      if (!request.auth || !request.auth.token.admin) {
+        throw new HttpsError('permission-denied', 'Admin access required');
       }
-    } catch (error) {
-      errors.push({batch, error: error.message});
-    }
-  }
 
-  return {
-    success: true,
-    sent: results.length,
-    failed: errors.length,
-    errors: errors,
-  };
-});
+      const {subject, htmlContent, textContent, recipientList} = request.data;
+
+      if (!subject || !htmlContent || !recipientList || !Array.isArray(recipientList)) {
+        throw new HttpsError('invalid-argument', 'Missing required fields');
+      }
+
+      // Récupérer les emails depuis Firestore si recipientList est un nom de collection
+      let emails = [];
+      if (typeof recipientList === 'string') {
+        const usersSnapshot = await db.collection(recipientList).get();
+        emails = usersSnapshot.docs.map((doc) => doc.data().email).filter(Boolean);
+      } else {
+        emails = recipientList;
+      }
+
+      const results = [];
+      const errors = [];
+
+      // Envoyer les emails par batch (Mailjet limite à 50 destinataires par requête)
+      const batchSize = 50;
+      for (let i = 0; i < emails.length; i += batchSize) {
+        const batch = emails.slice(i, i + batchSize);
+
+        try {
+          const url = 'https://api.mailjet.com/v3.1/send';
+          const body = {
+            Messages: batch.map((email) => ({
+              From: {
+                Email: 'support@fluance.io',
+                Name: 'Fluance',
+              },
+              To: [{Email: email}],
+              Subject: subject,
+              TextPart: textContent || subject,
+              HTMLPart: htmlContent,
+            })),
+          };
+
+          const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify(body),
+          });
+
+          if (response.ok) {
+            results.push(...batch);
+          } else {
+            const errorText = await response.text();
+            errors.push({batch, error: errorText});
+          }
+        } catch (error) {
+          errors.push({batch, error: error.message});
+        }
+      }
+
+      return {
+        success: true,
+        sent: results.length,
+        failed: errors.length,
+        errors: errors,
+      };
+    });
 
