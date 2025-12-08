@@ -13,7 +13,7 @@ permalink: /en/create-account/
       <p class="text-[#1f1f1f]/80">Access your protected Fluance content</p>
     </div>
 
-    <div id="token-form" class="space-y-6">
+    <form id="token-form" class="space-y-6">
       <div>
         <label for="token" class="block text-sm font-medium text-[#0f172a] mb-2">
           Activation code
@@ -96,7 +96,7 @@ permalink: /en/create-account/
           </svg>
         </span>
       </button>
-    </div>
+    </form>
 
     <div class="mt-6 text-center">
       <p class="text-sm text-[#1f1f1f]/80">
@@ -204,12 +204,49 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const result = await window.FluanceAuth.verifyTokenAndCreateAccount(token, password, email);
 
+      console.log('Result from verifyTokenAndCreateAccount:', result);
+
       if (result.success) {
-        showSuccess('Account created successfully! Redirecting...');
-        setTimeout(() => {
-          window.location.href = '/en/';
-        }, 2000);
+        showSuccess('Account created successfully!');
+        
+        // Verify that user is connected
+        // Use firebase.auth() directly to be sure
+        let user = null;
+        let attempts = 0;
+        const maxAttempts = 30; // 3 seconds max (30 * 100ms)
+        
+        while (!user && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          if (typeof firebase !== 'undefined' && firebase.auth) {
+            try {
+              user = firebase.auth().currentUser;
+              console.log('Attempt', attempts + 1, '- Current user:', user ? user.email : 'null');
+            } catch (e) {
+              console.error('Error getting current user:', e);
+            }
+          }
+          attempts++;
+        }
+        
+        if (user) {
+          console.log('✅ User authenticated:', user.email, '- Redirecting to /test-contenu-protege/');
+          showSuccess('Redirecting to your content...');
+          // Immediate redirect
+          window.location.href = '/test-contenu-protege/';
+        } else {
+          console.error('❌ User not authenticated after', maxAttempts, 'attempts');
+          console.log('Firebase state:', {
+            firebaseDefined: typeof firebase !== 'undefined',
+            authAvailable: typeof firebase !== 'undefined' && !!firebase.auth,
+            currentUser: typeof firebase !== 'undefined' && firebase.auth ? firebase.auth().currentUser : 'N/A'
+          });
+          showError('Login successful but redirect failed. Redirecting to login page...');
+          setTimeout(() => {
+            window.location.href = '/en/firebase-login/';
+          }, 2000);
+        }
       } else {
+        console.error('Account creation failed:', result.error);
         showError(result.error || 'Error creating account.');
       }
     } catch (error) {

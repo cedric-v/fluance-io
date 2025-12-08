@@ -199,8 +199,9 @@ exports.webhookStripe = functions.region('europe-west1').runWith({
       if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
         const session = event.data.object;
         const customerEmail = session.customer_details?.email || session.customer_email;
-        const amount = session.amount_total || session.amount;
-        const currency = session.currency || 'chf';
+        // amount et currency ne sont plus utilisés car on utilise uniquement les métadonnées
+        // const amount = session.amount_total || session.amount;
+        // const currency = session.currency || 'chf';
 
         if (!customerEmail) {
           console.error('No email found in Stripe event');
@@ -257,8 +258,9 @@ exports.webhookPayPal = functions.region('europe-west1').runWith({
     const resource = event.resource;
     const customerEmail = resource.payer?.email_address ||
                          resource.purchase_units?.[0]?.payee?.email_address;
-    const amount = resource.amount?.value || resource.purchase_units?.[0]?.amount?.value;
-    const currency = resource.amount?.currency_code || resource.purchase_units?.[0]?.amount?.currency_code || 'CHF';
+    // amount et currency ne sont plus utilisés car on utilise uniquement les métadonnées
+    // const amount = resource.amount?.value || resource.purchase_units?.[0]?.amount?.value;
+    // const currency = resource.amount?.currency_code || resource.purchase_units?.[0]?.amount?.currency_code || 'CHF';
 
     if (!customerEmail) {
       console.error('No email found in PayPal event');
@@ -418,41 +420,43 @@ exports.verifyToken = functions.region('europe-west1').https.onCall(
 /**
  * Fonction utilitaire pour déterminer le produit selon le montant
  * Produits disponibles : "21jours" (19 CHF), "complet" (30 CHF/mois ou 75 CHF/trimestre)
+ * ⚠️ Cette fonction n'est plus utilisée car on utilise uniquement les métadonnées
+ * Conservée pour référence future si nécessaire
  */
-function determineProductFromAmount(amount, currency) {
-  // Convertir le montant selon la devise
-  let amountInCHF = amount;
-  if (currency.toLowerCase() === 'eur') {
-    amountInCHF = amount * 1.1; // Approximation EUR -> CHF
-  } else if (currency.toLowerCase() === 'usd') {
-    amountInCHF = amount * 0.9; // Approximation USD -> CHF
-  }
-
-  // Tarifs réels :
-  // - "21jours" : 19 CHF
-  // - "complet" : 30 CHF/mois ou 75 CHF/trimestre
-  
-  // Déterminer le produit selon le montant
-  // On utilise des plages pour gérer les variations de conversion de devise et frais
-  const tolerance = 5; // Tolérance de ±5 CHF pour les conversions et frais
-  
-  if (Math.abs(amountInCHF - 19) <= tolerance || (amountInCHF >= 15 && amountInCHF < 25)) {
-    // Montant autour de 19 CHF (21jours)
-    return '21jours';
-  } else if (Math.abs(amountInCHF - 30) <= tolerance || (amountInCHF >= 25 && amountInCHF < 40)) {
-    // Montant autour de 30 CHF (complet mensuel)
-    return 'complet';
-  } else if (Math.abs(amountInCHF - 75) <= tolerance || (amountInCHF >= 70 && amountInCHF <= 85)) {
-    // Montant autour de 75 CHF (complet trimestriel)
-    return 'complet';
-  } else if (amountInCHF >= 40) {
-    // Montant supérieur à 40 CHF -> probablement complet
-    return 'complet';
-  } else {
-    // Par défaut, si le montant est inférieur à 25 CHF -> 21jours
-    return '21jours';
-  }
-}
+// function determineProductFromAmount(amount, currency) {
+//   // Convertir le montant selon la devise
+//   let amountInCHF = amount;
+//   if (currency.toLowerCase() === 'eur') {
+//     amountInCHF = amount * 1.1; // Approximation EUR -> CHF
+//   } else if (currency.toLowerCase() === 'usd') {
+//     amountInCHF = amount * 0.9; // Approximation USD -> CHF
+//   }
+//
+//   // Tarifs réels :
+//   // - "21jours" : 19 CHF
+//   // - "complet" : 30 CHF/mois ou 75 CHF/trimestre
+//
+//   // Déterminer le produit selon le montant
+//   // On utilise des plages pour gérer les variations de conversion de devise et frais
+//   const tolerance = 5; // Tolérance de ±5 CHF pour les conversions et frais
+//
+//   if (Math.abs(amountInCHF - 19) <= tolerance || (amountInCHF >= 15 && amountInCHF < 25)) {
+//     // Montant autour de 19 CHF (21jours)
+//     return '21jours';
+//   } else if (Math.abs(amountInCHF - 30) <= tolerance || (amountInCHF >= 25 && amountInCHF < 40)) {
+//     // Montant autour de 30 CHF (complet mensuel)
+//     return 'complet';
+//   } else if (Math.abs(amountInCHF - 75) <= tolerance || (amountInCHF >= 70 && amountInCHF <= 85)) {
+//     // Montant autour de 75 CHF (complet trimestriel)
+//     return 'complet';
+//   } else if (amountInCHF >= 40) {
+//     // Montant supérieur à 40 CHF -> probablement complet
+//     return 'complet';
+//   } else {
+//     // Par défaut, si le montant est inférieur à 25 CHF -> 21jours
+//     return '21jours';
+//   }
+// }
 
 /**
  * Fonction pour envoyer des newsletters/communications marketing

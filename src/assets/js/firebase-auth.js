@@ -6,13 +6,16 @@
 // Configuration Firebase pour fluance-protected-content
 // ⚠️ IMPORTANT : Remplacez ces valeurs par celles de votre projet Firebase
 // Voir OBTENIR_CONFIGURATION_FIREBASE.md pour obtenir les vraies clés
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY_ICI", // À remplacer : obtenez-la dans Firebase Console > Paramètres du projet
+  apiKey: "AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM",
   authDomain: "fluance-protected-content.firebaseapp.com",
   projectId: "fluance-protected-content",
-  storageBucket: "fluance-protected-content.firebasestorage.app", // Même si Storage n'est pas utilisé
-  messagingSenderId: "VOTRE_MESSAGING_SENDER_ID", // À remplacer
-  appId: "VOTRE_APP_ID" // À remplacer (format: 1:...:web:...)
+  storageBucket: "fluance-protected-content.firebasestorage.app",
+  messagingSenderId: "173938686776",
+  appId: "1:173938686776:web:891caf76098a42c3579fcd",
+  measurementId: "G-CWPNXDQEYR"
 };
 
 // Initialiser Firebase (compat mode pour compatibilité avec l'existant)
@@ -67,6 +70,16 @@ function initAuth() {
  */
 async function verifyTokenAndCreateAccount(token, password, email = null) {
   try {
+    // S'assurer que Firebase est initialisé
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+      return { success: false, error: 'Firebase non initialisé. Veuillez recharger la page.' };
+    }
+
+    // S'assurer que auth est initialisé
+    if (!auth) {
+      auth = firebase.auth();
+    }
+
     // Initialiser Firebase Functions si nécessaire
     if (!firebase.functions) {
       const functionsScript = document.createElement('script');
@@ -77,8 +90,11 @@ async function verifyTokenAndCreateAccount(token, password, email = null) {
       });
     }
 
-    const verifyTokenFunction = firebase.functions().httpsCallable('verifyToken');
+    // Spécifier la région europe-west1 où la fonction est déployée
+    const verifyTokenFunction = firebase.functions('europe-west1').httpsCallable('verifyToken');
     const result = await verifyTokenFunction({ token, password });
+    
+    console.log('verifyToken result:', result);
     
     if (result.data.success) {
       // Utiliser l'email retourné par la fonction ou celui fourni
@@ -88,8 +104,16 @@ async function verifyTokenAndCreateAccount(token, password, email = null) {
         return { success: false, error: 'Email non disponible. Veuillez vous connecter manuellement.' };
       }
 
+      console.log('Signing in with email:', userEmail);
+      
       // Connecter l'utilisateur automatiquement
       const userCredential = await auth.signInWithEmailAndPassword(userEmail, password);
+      
+      console.log('Sign in successful, user:', userCredential.user.email);
+      
+      // Attendre un peu pour que l'état d'authentification soit mis à jour
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       return { success: true, user: userCredential.user };
     }
     
