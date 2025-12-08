@@ -108,6 +108,217 @@ module.exports = function(eleventyConfig) {
 </div>`;
   });
 
+  // 2f. Shortcode pour générer les schémas Schema.org JSON-LD
+  eleventyConfig.addShortcode("schemaOrg", function(locale) {
+    // Accéder au contexte Eleventy via 'this'
+    const page = this.page || this.ctx?.page || {};
+    const pageData = page.data || this.ctx || {};
+    const pageLocale = locale || this.ctx?.locale || this.locale || 'fr';
+    const baseUrl = 'https://fluance.io';
+    const pageUrl = baseUrl + (page.url || '/');
+    const schemas = [];
+
+    // 1. Organization Schema (toujours présent)
+    const organizationSchema = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Fluance",
+      "legalName": "Instants Zen Sàrl",
+      "url": baseUrl,
+      "logo": `${baseUrl}/assets/img/fond-cedric.jpg`,
+      "foundingDate": "2020",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Case postale",
+        "addressLocality": "Belfaux",
+        "postalCode": "1782",
+        "addressCountry": "CH"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "support@fluance.io",
+        "contactType": "customer service",
+        "availableLanguage": ["French", "English"]
+      },
+      "sameAs": [
+        "https://www.youtube.com/@fluanceio",
+        "https://www.facebook.com/Fluanceio/",
+        "https://www.instagram.com/fluanceio/",
+        "https://ch.pinterest.com/fluanceio/",
+        "https://x.com/fluanceio",
+        "https://www.linkedin.com/company/fluance-consulting/"
+      ]
+    };
+    schemas.push(organizationSchema);
+
+    // 2. WebSite Schema avec SearchAction (toujours présent)
+    const websiteSchema = {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Fluance",
+      "url": baseUrl,
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": `${baseUrl}/?q={search_term_string}`
+        },
+        "query-input": "required name=search_term_string"
+      },
+      "inLanguage": pageLocale === 'fr' ? 'fr-FR' : 'en-US',
+      "alternateName": pageLocale === 'fr' ? 'Fluance - Mouvement, souffle et jeu' : 'Fluance - Movement, breath and play'
+    };
+    schemas.push(websiteSchema);
+
+    // 3. Person Schema (Cédric Vonlanthen)
+    const personSchema = {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Cédric Vonlanthen",
+      "jobTitle": pageLocale === 'fr' ? "Fondateur et facilitateur Fluance" : "Founder and Fluance facilitator",
+      "worksFor": {
+        "@type": "Organization",
+        "name": "Fluance"
+      },
+      "url": `${baseUrl}${pageLocale === 'fr' ? '/a-propos/philosophie/' : '/en/a-propos/philosophie/'}`,
+      "sameAs": [
+        "https://www.youtube.com/@fluanceio",
+        "https://www.instagram.com/fluanceio/"
+      ]
+    };
+    schemas.push(personSchema);
+
+    // 4. Schémas spécifiques selon le type de page
+    const pagePath = page.url || '';
+    
+    // Page d'accueil
+    if (pagePath === '/' || pagePath === '/fr/' || pagePath === '/en/') {
+      const serviceSchema = {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "serviceType": pageLocale === 'fr' ? "Bien-être et développement personnel" : "Wellness and personal development",
+        "provider": {
+          "@type": "Organization",
+          "name": "Fluance"
+        },
+        "areaServed": {
+          "@type": "Country",
+          "name": "Switzerland"
+        },
+        "description": pageLocale === 'fr' 
+          ? "Fluance : libérez votre corps des tensions grâce à une approche simple basée sur le mouvement, le souffle et le jeu."
+          : "Fluance: release tension from your body through a simple approach based on movement, breath and play.",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": pageLocale === 'fr' ? "Cours en ligne" : "Online courses",
+            "url": `${baseUrl}${pageLocale === 'fr' ? '/cours-en-ligne/21-jours-mouvement/' : '/en/cours-en-ligne/21-jours-mouvement/'}`
+          },
+          {
+            "@type": "Offer",
+            "name": pageLocale === 'fr' ? "Cours en présentiel" : "In-person classes",
+            "url": `${baseUrl}${pageLocale === 'fr' ? '/presentiel/cours-hebdomadaires/' : '/en/presentiel/cours-hebdomadaires/'}`
+          }
+        ]
+      };
+      schemas.push(serviceSchema);
+    }
+
+    // Pages de cours en ligne
+    if (pagePath.includes('/cours-en-ligne/')) {
+      let courseSchema = {
+        "@context": "https://schema.org",
+        "@type": "Course",
+        "name": pageData.title || (pageLocale === 'fr' ? "Cours Fluance" : "Fluance Course"),
+        "description": pageData.description || (pageLocale === 'fr' 
+          ? "Cours de bien-être basé sur le mouvement, le souffle et le jeu"
+          : "Wellness course based on movement, breath and play"),
+        "provider": {
+          "@type": "Organization",
+          "name": "Fluance",
+          "sameAs": baseUrl
+        },
+        "courseMode": "online",
+        "inLanguage": pageLocale === 'fr' ? 'fr-FR' : 'en-US',
+        "url": pageUrl
+      };
+
+      // Schéma spécifique pour le cours 21 jours
+      if (pagePath.includes('21-jours')) {
+        courseSchema.name = pageLocale === 'fr' ? "Défi 21 jours" : "21-Day Challenge";
+        courseSchema.description = pageLocale === 'fr'
+          ? "Retrouvez légèreté, mobilité et sérénité en seulement 2 à 5 minutes par jour, durant 21 jours."
+          : "Find lightness, mobility and serenity in just 2 to 5 minutes a day, for 21 days.";
+        courseSchema.timeRequired = "PT5M"; // 5 minutes
+        courseSchema.offers = {
+          "@type": "Offer",
+          "price": "19.00",
+          "priceCurrency": "CHF"
+        };
+      }
+
+      // Schéma spécifique pour l'approche complète
+      if (pagePath.includes('approche-fluance-complete')) {
+        courseSchema.name = pageLocale === 'fr' ? "Approche Fluance Complète" : "Complete Fluance Approach";
+        courseSchema.description = pageLocale === 'fr'
+          ? "Accès complet à tous les cours et pratiques. Abonnement mensuel ou trimestriel."
+          : "Full access to all courses and practices. Monthly or quarterly subscription.";
+        courseSchema.offers = [
+          {
+            "@type": "Offer",
+            "name": pageLocale === 'fr' ? "Abonnement mensuel" : "Monthly subscription",
+            "price": "30.00",
+            "priceCurrency": "CHF",
+            "billingIncrement": "P1M"
+          },
+          {
+            "@type": "Offer",
+            "name": pageLocale === 'fr' ? "Abonnement trimestriel" : "Quarterly subscription",
+            "price": "75.00",
+            "priceCurrency": "CHF",
+            "billingIncrement": "P3M"
+          }
+        ];
+      }
+
+      schemas.push(courseSchema);
+    }
+
+    // Pages de cours en présentiel
+    if (pagePath.includes('/presentiel/cours-hebdomadaires')) {
+      const localBusinessSchema = {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Fluance - Cours en présentiel",
+        "description": pageLocale === 'fr'
+          ? "Cours de bien-être en présentiel à Fribourg, Suisse"
+          : "In-person wellness classes in Fribourg, Switzerland",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Fribourg",
+          "addressRegion": "FR",
+          "postalCode": "1700",
+          "addressCountry": "CH"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "46.8065",
+          "longitude": "7.1619"
+        },
+        "url": pageUrl,
+        "telephone": "+33972133388",
+        "priceRange": "CHF 25 - CHF 220"
+      };
+      schemas.push(localBusinessSchema);
+    }
+
+    // Générer les balises <script> pour chaque schéma
+    return schemas.map(schema => {
+      const json = JSON.stringify(schema, null, 2);
+      return `<script type="application/ld+json">\n${json}\n</script>`;
+    }).join('\n');
+  });
+
   // 3. Minification HTML sécurisée
   eleventyConfig.addTransform("htmlmin", function(content, outputPath) {
     if (process.env.ELEVENTY_ENV === 'prod' && outputPath && outputPath.endsWith(".html")) {
