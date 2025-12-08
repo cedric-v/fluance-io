@@ -1,32 +1,19 @@
 {
   "indexes": [
     {
-      "collectionGroup": "registrationTokens",
+      "collectionGroup": "protectedContent",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "email",
+          "fieldPath": "product",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "used",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "registrationTokens",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "expiresAt",
-          "order": "ASCENDING"
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
         }
       ]
     }
   ],
   "fieldOverrides": []
 }
-
-
-
