@@ -40,86 +40,85 @@ document.addEventListener('DOMContentLoaded', async function() {
   const protectedContentElements = document.querySelectorAll('.protected-content[data-content-id]');
   
   // Fonction pour charger le contenu protégé
-  async function loadProtectedContentForElement(element) {
+  function loadProtectedContentForElement(element) {
     const contentId = element.getAttribute('data-content-id');
     
-    // Attendre que l'état d'authentification soit synchronisé
-    // Utiliser onAuthStateChanged pour être sûr que l'état est à jour
-    await new Promise((resolve) => {
-      if (typeof firebase !== 'undefined' && firebase.auth) {
-        // Vérifier immédiatement si un utilisateur est connecté
-        const currentUser = firebase.auth().currentUser;
-        if (currentUser) {
-          console.log('User found immediately:', currentUser.email);
-          // Attendre quand même un peu pour que tout soit synchronisé
-          setTimeout(resolve, 200);
-          return;
-        }
-        
-        // Sinon, attendre le prochain changement d'état
-        let resolved = false;
-        const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
-          if (!resolved) {
-            resolved = true;
-            unsubscribe();
-            console.log('Auth state changed, user:', user ? user.email : 'null');
-            resolve();
-          }
-        });
-        
-        // Timeout de sécurité
-        setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            unsubscribe();
-            console.log('Timeout waiting for auth state');
-            resolve();
-          }
-        }, 2000);
-      } else {
-        resolve();
+    // Fonction pour vérifier et charger le contenu
+    function checkAuthAndLoad() {
+      // Vérifier l'authentification avec plusieurs méthodes
+      let isAuth = false;
+      let currentUser = null;
+      
+      // Méthode 1 : via FluanceAuth
+      if (window.FluanceAuth) {
+        isAuth = window.FluanceAuth.isAuthenticated();
+        currentUser = window.FluanceAuth.getCurrentUser();
       }
-    });
-    
-    // Attendre un peu plus pour être sûr
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Vérifier si l'utilisateur est authentifié (avec plusieurs méthodes)
-    let isAuth = false;
-    if (window.FluanceAuth) {
-      isAuth = window.FluanceAuth.isAuthenticated();
+      
+      // Méthode 2 : directement via firebase.auth() (fallback)
+      if (!isAuth && typeof firebase !== 'undefined' && firebase.auth) {
+        currentUser = firebase.auth().currentUser;
+        isAuth = !!currentUser;
+      }
+      
+      console.log('Auth check - isAuth:', isAuth, 'user:', currentUser ? currentUser.email : 'null');
+      
+      if (isAuth && window.FluanceAuth) {
+        // Charger et afficher le contenu
+        console.log('Loading protected content for:', contentId);
+        window.FluanceAuth.displayProtectedContent(contentId, element).catch(err => {
+          console.error('Error loading protected content:', err);
+          element.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p class="text-red-800">Erreur lors du chargement du contenu : ${err.message || err}</p>
+            </div>
+          `;
+        });
+      } else {
+        // Afficher un message de connexion
+        console.log('User not authenticated, showing login message');
+        element.innerHTML = `
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder à ce contenu.</p>
+            <a href="/connexion-firebase?return=${encodeURIComponent(window.location.pathname)}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+              Se connecter
+            </a>
+          </div>
+        `;
+      }
     }
     
-    // Fallback : vérifier directement avec firebase.auth()
-    if (!isAuth && typeof firebase !== 'undefined' && firebase.auth) {
+    // Vérifier immédiatement si un utilisateur est déjà connecté
+    if (typeof firebase !== 'undefined' && firebase.auth) {
       const currentUser = firebase.auth().currentUser;
-      isAuth = !!currentUser;
-      console.log('Fallback auth check:', isAuth, currentUser ? currentUser.email : 'null');
+      if (currentUser) {
+        console.log('User already authenticated, loading content immediately');
+        checkAuthAndLoad();
+        return;
+      }
     }
     
-    console.log('Final auth check result:', isAuth);
-    
-    if (isAuth) {
-      // Charger et afficher le contenu
-      console.log('Loading protected content for:', contentId);
-      await window.FluanceAuth.displayProtectedContent(contentId, element);
+    // Sinon, écouter les changements d'état d'authentification
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+        console.log('Auth state changed in protected content:', user ? user.email : 'null');
+        checkAuthAndLoad();
+        // Ne pas se désabonner, pour gérer les changements futurs (déconnexion, etc.)
+      });
+      
+      // Vérifier aussi après un court délai au cas où onAuthStateChanged ne se déclenche pas
+      setTimeout(() => {
+        checkAuthAndLoad();
+      }, 500);
     } else {
-      // Afficher un message de connexion
-      console.log('User not authenticated, showing login message');
-      element.innerHTML = `
-        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder à ce contenu.</p>
-          <a href="/connexion-firebase?return=${encodeURIComponent(window.location.pathname)}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
-            Se connecter
-          </a>
-        </div>
-      `;
+      // Si Firebase n'est pas disponible, vérifier quand même
+      setTimeout(checkAuthAndLoad, 1000);
     }
   }
   
   // Charger le contenu pour chaque élément
-  protectedContentElements.forEach(async (element) => {
-    await loadProtectedContentForElement(element);
+  protectedContentElements.forEach((element) => {
+    loadProtectedContentForElement(element);
   });
 });
 </script>
