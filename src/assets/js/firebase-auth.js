@@ -57,7 +57,17 @@ function initAuth() {
     if (user) {
       // Utilisateur connecté
       updateUIForAuthenticatedUser(user);
-      loadProtectedContent();
+      // Ne charger le contenu protégé que si on est sur une page qui en a besoin
+      // (évite les erreurs inutiles sur la page de création de compte)
+      if (document.querySelector('.protected-content[data-content-id]')) {
+        loadProtectedContent().catch(err => {
+          // Ignorer silencieusement les erreurs d'index en construction
+          if (err.code !== 'failed-precondition' || 
+              !err.message?.includes('index is currently building')) {
+            console.error('Error loading protected content:', err);
+          }
+        });
+      }
     } else {
       // Utilisateur déconnecté
       updateUIForUnauthenticatedUser();
@@ -260,26 +270,80 @@ async function loadProtectedContent(contentId = null) {
     }
 
     // Sinon, charger la liste des contenus disponibles pour ce produit
-    const contentsSnapshot = await db.collection('protectedContent')
-      .where('product', '==', userProduct)
-      .orderBy('createdAt', 'desc')
-      .get();
-    
-    const contents = [];
-    contentsSnapshot.forEach((doc) => {
-      const data = doc.data();
-      contents.push({
-        id: doc.id,
-        title: data.title || doc.id,
-        content: data.content || '',
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt
+    try {
+      const contentsSnapshot = await db.collection('protectedContent')
+        .where('product', '==', userProduct)
+        .orderBy('createdAt', 'desc')
+        .get();
+      
+      const contents = [];
+      contentsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        contents.push({
+          id: doc.id,
+          title: data.title || doc.id,
+          content: data.content || '',
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt
+        });
       });
-    });
 
-    return { success: true, contents, product: userProduct };
+      return { success: true, contents, product: userProduct };
+    } catch (indexError) {
+      // Si l'index est en cours de construction, essayer sans orderBy
+      if (indexError.code === 'failed-precondition' && 
+          indexError.message && 
+          indexError.message.includes('index is currently building')) {
+        console.warn('Index en cours de construction, chargement sans tri...');
+        try {
+          const contentsSnapshot = await db.collection('protectedContent')
+            .where('product', '==', userProduct)
+            .get();
+          
+          const contents = [];
+          contentsSnapshot.forEach((doc) => {
+            const data = doc.data();
+            contents.push({
+              id: doc.id,
+              title: data.title || doc.id,
+              content: data.content || '',
+              createdAt: data.createdAt,
+              updatedAt: data.updatedAt
+            });
+          });
+          
+          // Trier manuellement côté client
+          contents.sort((a, b) => {
+            const aDate = a.createdAt?.toDate?.() || new Date(0);
+            const bDate = b.createdAt?.toDate?.() || new Date(0);
+            return bDate - aDate; // Descending
+          });
+
+          return { success: true, contents, product: userProduct };
+        } catch (fallbackError) {
+          console.error('Error loading protected content (fallback):', fallbackError);
+          return { 
+            success: false, 
+            error: 'L\'index Firestore est en cours de construction. Veuillez réessayer dans quelques minutes.' 
+          };
+        }
+      }
+      // Relancer l'erreur si ce n'est pas une erreur d'index en construction
+      throw indexError;
+    }
   } catch (error) {
     console.error('Error loading protected content:', error);
+    
+    // Message d'erreur plus clair pour l'index en construction
+    if (error.code === 'failed-precondition' && 
+        error.message && 
+        error.message.includes('index is currently building')) {
+      return { 
+        success: false, 
+        error: 'L\'index Firestore est en cours de construction. Veuillez réessayer dans quelques minutes.' 
+      };
+    }
+    
     return { success: false, error: error.message };
   }
 }
