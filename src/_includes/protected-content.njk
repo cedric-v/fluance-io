@@ -47,37 +47,65 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Utiliser onAuthStateChanged pour être sûr que l'état est à jour
     await new Promise((resolve) => {
       if (typeof firebase !== 'undefined' && firebase.auth) {
-        // Vérifier immédiatement
+        // Vérifier immédiatement si un utilisateur est connecté
         const currentUser = firebase.auth().currentUser;
         if (currentUser) {
-          resolve();
+          console.log('User found immediately:', currentUser.email);
+          // Attendre quand même un peu pour que tout soit synchronisé
+          setTimeout(resolve, 200);
           return;
         }
         
         // Sinon, attendre le prochain changement d'état
+        let resolved = false;
         const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
-          unsubscribe();
-          resolve();
+          if (!resolved) {
+            resolved = true;
+            unsubscribe();
+            console.log('Auth state changed, user:', user ? user.email : 'null');
+            resolve();
+          }
         });
         
         // Timeout de sécurité
         setTimeout(() => {
-          unsubscribe();
-          resolve();
+          if (!resolved) {
+            resolved = true;
+            unsubscribe();
+            console.log('Timeout waiting for auth state');
+            resolve();
+          }
         }, 2000);
       } else {
         resolve();
       }
     });
     
-    // Vérifier si l'utilisateur est authentifié
-    const isAuth = window.FluanceAuth && window.FluanceAuth.isAuthenticated();
+    // Attendre un peu plus pour être sûr
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Vérifier si l'utilisateur est authentifié (avec plusieurs méthodes)
+    let isAuth = false;
+    if (window.FluanceAuth) {
+      isAuth = window.FluanceAuth.isAuthenticated();
+    }
+    
+    // Fallback : vérifier directement avec firebase.auth()
+    if (!isAuth && typeof firebase !== 'undefined' && firebase.auth) {
+      const currentUser = firebase.auth().currentUser;
+      isAuth = !!currentUser;
+      console.log('Fallback auth check:', isAuth, currentUser ? currentUser.email : 'null');
+    }
+    
+    console.log('Final auth check result:', isAuth);
     
     if (isAuth) {
       // Charger et afficher le contenu
+      console.log('Loading protected content for:', contentId);
       await window.FluanceAuth.displayProtectedContent(contentId, element);
     } else {
       // Afficher un message de connexion
+      console.log('User not authenticated, showing login message');
       element.innerHTML = `
         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder à ce contenu.</p>
