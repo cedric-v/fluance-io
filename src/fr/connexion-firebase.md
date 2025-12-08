@@ -28,7 +28,7 @@ permalink: /connexion-firebase/
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-[#82153e] hover:border-[#82153e]/30"
           onclick="switchTab('passwordless')"
         >
-          Lien magique
+          Connexion par email
         </button>
       </nav>
     </div>
@@ -94,6 +94,38 @@ permalink: /connexion-firebase/
         <a href="/connexion" class="hover:text-[#82153e]">Retour à la page de connexion principale</a>
       </p>
     </div>
+
+    <!-- Section d'aide dépliable -->
+    <div class="mt-8 border-t border-[#82153e]/20 pt-6">
+      <button
+        id="help-toggle"
+        class="w-full flex items-center justify-between text-left text-sm font-medium text-[#82153e] hover:text-[#82153e]/80 transition-colors"
+        onclick="toggleHelp()"
+      >
+        <span>❓ Besoin d'aide ?</span>
+        <svg id="help-arrow" class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div id="help-content" class="hidden mt-4 space-y-4 text-sm text-[#1f1f1f]/80">
+        <div>
+          <p class="font-semibold text-[#0f172a] mb-1">Je ne trouve pas mon email/code</p>
+          <p>→ Vérifiez vos courriers indésirables (spams).</p>
+        </div>
+        <div>
+          <p class="font-semibold text-[#0f172a] mb-1">Le code ne fonctionne pas</p>
+          <p>→ Assurez-vous de copier-coller le code complet, sans espace</p>
+        </div>
+        <div>
+          <p class="font-semibold text-[#0f172a] mb-1">Qu'est-ce que la « Connexion par e-mail » ?</p>
+          <p>C'est la méthode de connexion sans mot de passe. Nous vous envoyons un e-mail contenant un lien unique, utilisable une seule fois, pour vous identifier. C'est simple et très sécurisé.</p>
+        </div>
+        <div>
+          <p class="font-semibold text-[#0f172a] mb-1">Encore besoin d'aide ?</p>
+          <p><a href="/contact" class="text-[#82153e] hover:underline">Contactez-nous.</a></p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -126,7 +158,7 @@ function switchTab(tab) {
     passwordField.style.display = 'none';
     passwordInput.required = false;
     passwordInput.value = '';
-    buttonText.textContent = 'Envoyer le lien magique';
+    buttonText.textContent = 'Envoyer le lien de connexion';
   }
   
   hideError();
@@ -238,7 +270,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
     } finally {
       submitButton.disabled = false;
-      buttonText.textContent = currentTab === 'password' ? 'Se connecter' : 'Envoyer le lien magique';
+      buttonText.textContent = currentTab === 'password' ? 'Se connecter' : 'Envoyer le lien de connexion';
       buttonSpinner.classList.add('hidden');
     }
   });
@@ -262,6 +294,17 @@ document.addEventListener('DOMContentLoaded', async function() {
   function hideSuccess() {
     successDiv.classList.add('hidden');
   }
+
+  // Fonction pour toggle la section d'aide
+  function toggleHelp() {
+    const helpContent = document.getElementById('help-content');
+    const helpArrow = document.getElementById('help-arrow');
+    if (helpContent && helpArrow) {
+      helpContent.classList.toggle('hidden');
+      helpArrow.classList.toggle('rotate-180');
+    }
+  }
+  window.toggleHelp = toggleHelp;
 });
 </script>
 

@@ -16,7 +16,7 @@ permalink: /creer-compte/
     <div id="token-form" class="space-y-6">
       <div>
         <label for="token" class="block text-sm font-medium text-[#0f172a] mb-2">
-          Token d'inscription
+          Code d'activation
         </label>
         <input
           type="text"
@@ -24,10 +24,10 @@ permalink: /creer-compte/
           name="token"
           required
           class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
-          placeholder="Votre token unique"
+          placeholder="Votre code d'activation"
         />
         <p class="mt-1 text-sm text-[#1f1f1f]/60">
-          Ce token vous a été envoyé par email après votre achat.
+          Ce code vous a été envoyé par email après votre achat.
         </p>
       </div>
 
@@ -103,6 +103,38 @@ permalink: /creer-compte/
         Déjà un compte ? 
         <a href="/connexion-firebase" class="text-[#82153e] hover:text-[#82153e]/80 font-medium">Se connecter</a>
       </p>
+    </div>
+
+    <!-- Section d'aide dépliable -->
+    <div class="mt-8 border-t border-[#82153e]/20 pt-6">
+      <button
+        id="help-toggle"
+        class="w-full flex items-center justify-between text-left text-sm font-medium text-[#82153e] hover:text-[#82153e]/80 transition-colors"
+        onclick="toggleHelp()"
+      >
+        <span>❓ Besoin d'aide ?</span>
+        <svg id="help-arrow" class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div id="help-content" class="hidden mt-4 space-y-4 text-sm text-[#1f1f1f]/80">
+        <div>
+          <p class="font-semibold text-[#0f172a] mb-1">Je ne trouve pas mon email/code</p>
+          <p>→ Vérifiez vos courriers indésirables (spams).</p>
+        </div>
+        <div>
+          <p class="font-semibold text-[#0f172a] mb-1">Le code ne fonctionne pas</p>
+          <p>→ Assurez-vous de copier-coller le code complet, sans espace</p>
+        </div>
+        <div>
+          <p class="font-semibold text-[#0f172a] mb-1">Qu'est-ce que la « Connexion par e-mail » ?</p>
+          <p>C'est la méthode de connexion sans mot de passe. Nous vous envoyons un e-mail contenant un lien unique, utilisable une seule fois, pour vous identifier. C'est simple et très sécurisé.</p>
+        </div>
+        <div>
+          <p class="font-semibold text-[#0f172a] mb-1">Encore besoin d'aide ?</p>
+          <p><a href="/contact" class="text-[#82153e] hover:underline">Contactez-nous.</a></p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -209,6 +241,17 @@ document.addEventListener('DOMContentLoaded', function() {
   function hideSuccess() {
     successDiv.classList.add('hidden');
   }
+
+  // Fonction pour toggle la section d'aide
+  function toggleHelp() {
+    const helpContent = document.getElementById('help-content');
+    const helpArrow = document.getElementById('help-arrow');
+    if (helpContent && helpArrow) {
+      helpContent.classList.toggle('hidden');
+      helpArrow.classList.toggle('rotate-180');
+    }
+  }
+  window.toggleHelp = toggleHelp;
 });
 </script>
 
