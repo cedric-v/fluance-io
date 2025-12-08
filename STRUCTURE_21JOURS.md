@@ -15,12 +15,12 @@ Chaque jour est un document séparé avec cette structure :
 ```
 protectedContent/
   ├── 21jours-jour-0 (Déroulé)
-  │   ├── product: "21jours"
-  │   ├── day: 0
-  │   ├── title: "Déroulé"
-  │   ├── content: "<div>...HTML du déroulé...</div>"
-  │   ├── createdAt: Timestamp
-  │   └── updatedAt: Timestamp
+  │   ├── product: "21jours" (requis)
+  │   ├── day: 0 (requis)
+  │   ├── title: "Déroulé" (requis)
+  │   ├── content: "<div>...HTML du déroulé...</div>" (requis)
+  │   ├── createdAt: Timestamp (optionnel - non utilisé pour 21jours)
+  │   └── updatedAt: Timestamp (optionnel - non utilisé pour 21jours)
   │
   ├── 21jours-jour-1
   │   ├── product: "21jours"

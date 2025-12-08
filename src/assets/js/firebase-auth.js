@@ -379,8 +379,9 @@ async function loadProtectedContent(contentId = null) {
           daysRemaining: (userProduct === '21jours' && dayNumber !== undefined && daysSinceRegistration !== null && dayNumber > 0)
             ? Math.max(0, dayNumber - daysSinceRegistration - 1)
             : null,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt
+          // createdAt et updatedAt sont optionnels (utilisés uniquement pour les autres produits)
+          createdAt: data.createdAt || null,
+          updatedAt: data.updatedAt || null
         });
       });
 
