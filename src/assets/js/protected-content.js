@@ -1,0 +1,139 @@
+/**
+ * Script pour gérer l'affichage du contenu protégé
+ * Ce script est chargé une seule fois et gère tous les éléments .protected-content
+ */
+
+console.log('[Protected Content] Script loaded');
+
+document.addEventListener('DOMContentLoaded', async function() {
+  console.log('[Protected Content] DOMContentLoaded fired');
+  
+  // Attendre que Firebase soit complètement initialisé
+  await new Promise((resolve) => {
+    console.log('[Protected Content] Waiting for Firebase initialization...');
+    if (typeof window.FluanceAuth !== 'undefined' && 
+        typeof firebase !== 'undefined' && 
+        firebase.apps.length > 0) {
+      console.log('[Protected Content] Firebase already initialized');
+      resolve();
+    } else {
+      const checkInterval = setInterval(() => {
+        if (typeof window.FluanceAuth !== 'undefined' && 
+            typeof firebase !== 'undefined' && 
+            firebase.apps.length > 0) {
+          console.log('[Protected Content] Firebase initialized after wait');
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+      // Timeout de sécurité après 5 secondes
+      setTimeout(() => {
+        console.log('[Protected Content] Firebase init timeout');
+        clearInterval(checkInterval);
+        resolve();
+      }, 5000);
+    }
+  });
+  
+  console.log('[Protected Content] Looking for protected content elements...');
+  const protectedContentElements = document.querySelectorAll('.protected-content[data-content-id]');
+  console.log('[Protected Content] Found', protectedContentElements.length, 'protected content elements');
+  
+  // Fonction pour charger le contenu protégé
+  function loadProtectedContentForElement(element) {
+    const contentId = element.getAttribute('data-content-id');
+    console.log('[Protected Content] Loading content for element:', contentId);
+    
+    // Fonction pour vérifier et charger le contenu
+    function checkAuthAndLoad() {
+      console.log('[Protected Content] checkAuthAndLoad called for:', contentId);
+      
+      // Vérifier l'authentification avec plusieurs méthodes
+      let isAuth = false;
+      let currentUser = null;
+      
+      // Méthode 1 : via FluanceAuth
+      if (window.FluanceAuth) {
+        isAuth = window.FluanceAuth.isAuthenticated();
+        currentUser = window.FluanceAuth.getCurrentUser();
+        console.log('[Protected Content] FluanceAuth check - isAuth:', isAuth, 'user:', currentUser ? currentUser.email : 'null');
+      } else {
+        console.log('[Protected Content] window.FluanceAuth is undefined');
+      }
+      
+      // Méthode 2 : directement via firebase.auth() (fallback)
+      if (!isAuth && typeof firebase !== 'undefined' && firebase.auth) {
+        currentUser = firebase.auth().currentUser;
+        isAuth = !!currentUser;
+        console.log('[Protected Content] Firebase direct check - isAuth:', isAuth, 'user:', currentUser ? currentUser.email : 'null');
+      } else if (typeof firebase === 'undefined') {
+        console.log('[Protected Content] firebase is undefined');
+      } else if (!firebase.auth) {
+        console.log('[Protected Content] firebase.auth is undefined');
+      }
+      
+      console.log('[Protected Content] Final auth check - isAuth:', isAuth, 'has FluanceAuth:', !!window.FluanceAuth);
+      
+      if (isAuth && window.FluanceAuth) {
+        // Charger et afficher le contenu
+        console.log('[Protected Content] User authenticated, loading content for:', contentId);
+        window.FluanceAuth.displayProtectedContent(contentId, element).catch(err => {
+          console.error('[Protected Content] Error loading protected content:', err);
+          element.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p class="text-red-800">Erreur lors du chargement du contenu : ${err.message || err}</p>
+            </div>
+          `;
+        });
+      } else {
+        // Afficher un message de connexion
+        console.log('[Protected Content] User not authenticated, showing login message');
+        element.innerHTML = `
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder à ce contenu.</p>
+            <a href="/connexion-firebase?return=${encodeURIComponent(window.location.pathname)}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+              Se connecter
+            </a>
+          </div>
+        `;
+      }
+    }
+    
+    // Vérifier immédiatement si un utilisateur est déjà connecté
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      const currentUser = firebase.auth().currentUser;
+      console.log('[Protected Content] Immediate check - currentUser:', currentUser ? currentUser.email : 'null');
+      if (currentUser) {
+        console.log('[Protected Content] User already authenticated, loading content immediately');
+        checkAuthAndLoad();
+        return;
+      }
+    }
+    
+    // Sinon, écouter les changements d'état d'authentification
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      console.log('[Protected Content] Setting up onAuthStateChanged listener');
+      firebase.auth().onAuthStateChanged((user) => {
+        console.log('[Protected Content] Auth state changed:', user ? user.email : 'null');
+        checkAuthAndLoad();
+        // Ne pas se désabonner, pour gérer les changements futurs (déconnexion, etc.)
+      });
+      
+      // Vérifier aussi après un court délai au cas où onAuthStateChanged ne se déclenche pas
+      setTimeout(() => {
+        console.log('[Protected Content] Fallback check after 500ms');
+        checkAuthAndLoad();
+      }, 500);
+    } else {
+      console.log('[Protected Content] Firebase not available, checking after 1s');
+      // Si Firebase n'est pas disponible, vérifier quand même
+      setTimeout(checkAuthAndLoad, 1000);
+    }
+  }
+  
+  // Charger le contenu pour chaque élément
+  protectedContentElements.forEach((element) => {
+    loadProtectedContentForElement(element);
+  });
+});
+

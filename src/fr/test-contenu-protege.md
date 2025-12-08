@@ -42,6 +42,7 @@ permalink: /test-contenu-protege/
 </section>
 
 <script src="/assets/js/firebase-auth.js"></script>
+<script src="/assets/js/protected-content.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const authStatus = document.getElementById('auth-status');
