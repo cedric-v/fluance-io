@@ -13,38 +13,54 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Attendre que le script Firebase Auth soit chargé
-  if (typeof window.FluanceAuth !== 'undefined') {
-    const protectedContentElements = document.querySelectorAll('.protected-content[data-content-id]');
+document.addEventListener('DOMContentLoaded', async function() {
+  // Attendre que Firebase soit complètement initialisé
+  await new Promise((resolve) => {
+    if (typeof window.FluanceAuth !== 'undefined' && 
+        typeof firebase !== 'undefined' && 
+        firebase.apps.length > 0) {
+      resolve();
+    } else {
+      const checkInterval = setInterval(() => {
+        if (typeof window.FluanceAuth !== 'undefined' && 
+            typeof firebase !== 'undefined' && 
+            firebase.apps.length > 0) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+      // Timeout de sécurité après 5 secondes
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        resolve();
+      }, 5000);
+    }
+  });
+  
+  const protectedContentElements = document.querySelectorAll('.protected-content[data-content-id]');
+  
+  protectedContentElements.forEach(async (element) => {
+    const contentId = element.getAttribute('data-content-id');
     
-    protectedContentElements.forEach(async (element) => {
-      const contentId = element.getAttribute('data-content-id');
-      
-      // Vérifier si l'utilisateur est authentifié
-      if (window.FluanceAuth.isAuthenticated()) {
-        // Charger et afficher le contenu
-        await window.FluanceAuth.displayProtectedContent(contentId, element);
-      } else {
-        // Afficher un message de connexion
-        element.innerHTML = `
-          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-            <p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder à ce contenu.</p>
-            <a href="/connexion-firebase?return=${encodeURIComponent(window.location.pathname)}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
-              Se connecter
-            </a>
-          </div>
-        `;
-      }
-    });
-  } else {
-    // Si le script n'est pas encore chargé, attendre un peu
-    setTimeout(() => {
-      if (typeof window.FluanceAuth !== 'undefined') {
-        window.location.reload();
-      }
-    }, 1000);
-  }
+    // Attendre un peu pour que l'état d'authentification soit synchronisé
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Vérifier si l'utilisateur est authentifié
+    if (window.FluanceAuth && window.FluanceAuth.isAuthenticated()) {
+      // Charger et afficher le contenu
+      await window.FluanceAuth.displayProtectedContent(contentId, element);
+    } else {
+      // Afficher un message de connexion
+      element.innerHTML = `
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder à ce contenu.</p>
+          <a href="/connexion-firebase?return=${encodeURIComponent(window.location.pathname)}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+            Se connecter
+          </a>
+        </div>
+      `;
+    }
+  });
 });
 </script>
 
