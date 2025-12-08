@@ -50,9 +50,14 @@ permalink: /connexion-firebase/
       </div>
 
       <div id="password-field">
-        <label for="password" class="block text-sm font-medium text-[#0f172a] mb-2">
-          Mot de passe
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label for="password" class="block text-sm font-medium text-[#0f172a]">
+            Mot de passe
+          </label>
+          <a href="/reinitialiser-mot-de-passe" class="text-sm text-[#82153e] hover:text-[#82153e]/80">
+            Mot de passe oublié ?
+          </a>
+        </div>
         <input
           type="password"
           id="password"

@@ -203,6 +203,63 @@ async function sendSignInLink(email, actionCodeSettings = null) {
 }
 
 /**
+ * Envoie un email de réinitialisation de mot de passe
+ */
+async function sendPasswordResetEmail(email) {
+  try {
+    if (!auth) {
+      auth = firebase.auth();
+    }
+
+    // Configuration pour le lien de réinitialisation
+    const actionCodeSettings = {
+      url: window.location.origin + '/reinitialiser-mot-de-passe',
+      handleCodeInApp: true
+    };
+
+    await auth.sendPasswordResetEmail(email, actionCodeSettings);
+    return { success: true };
+  } catch (error) {
+    console.error('Send password reset email error:', error);
+    return { success: false, error: getErrorMessage(error.code) };
+  }
+}
+
+/**
+ * Confirme la réinitialisation de mot de passe avec le code d'action
+ */
+async function confirmPasswordReset(actionCode, newPassword) {
+  try {
+    if (!auth) {
+      auth = firebase.auth();
+    }
+
+    await auth.confirmPasswordReset(actionCode, newPassword);
+    return { success: true };
+  } catch (error) {
+    console.error('Confirm password reset error:', error);
+    return { success: false, error: getErrorMessage(error.code) };
+  }
+}
+
+/**
+ * Vérifie si un code de réinitialisation de mot de passe est valide
+ */
+async function verifyPasswordResetCode(actionCode) {
+  try {
+    if (!auth) {
+      auth = firebase.auth();
+    }
+
+    const email = await auth.verifyPasswordResetCode(actionCode);
+    return { success: true, email: email };
+  } catch (error) {
+    console.error('Verify password reset code error:', error);
+    return { success: false, error: getErrorMessage(error.code) };
+  }
+}
+
+/**
  * Vérifie si un lien de connexion passwordless est présent dans l'URL
  */
 async function handleSignInLink() {
