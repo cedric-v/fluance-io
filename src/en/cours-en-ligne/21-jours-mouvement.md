@@ -22,9 +22,12 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
         Regain lightness, mobility and serenity in just 2 to 5 minutes a day, for 21 days.
       </p>
     </div>
-    <div class="flex flex-col sm:flex-row gap-4">
+    <div class="flex flex-col gap-4">
       <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Start the 21-day challenge for 19 CHF / equivalent €
+      </a>
+      <a href="#learn-more" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
+        Learn more
       </a>
     </div>
   </div>
@@ -33,7 +36,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
 
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
-    <div class="text-center space-y-4">
+    <div id="learn-more" class="text-center space-y-4" style="scroll-margin-top: 120px;">
       <p class="text-lg text-[#0f172a]/80">
         Have you tried yoga, tai chi, qi gong... but nothing has <em>really</em> worked for you?
       </p>

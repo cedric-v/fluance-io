@@ -22,9 +22,12 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
         Retrouvez légèreté, mobilité et sérénité en seulement 2 à 5 minutes par jour, durant 21 jours.
       </p>
     </div>
-    <div class="flex flex-col sm:flex-row gap-4">
+    <div class="flex flex-col gap-4">
       <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         Démarrer le challenge de 21 jours pour 19 CHF / équivalent €
+      </a>
+      <a href="#en-savoir-plus" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
+        En savoir plus
       </a>
     </div>
   </div>
@@ -33,7 +36,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
 
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
-    <div class="text-center space-y-4">
+    <div id="en-savoir-plus" class="text-center space-y-4" style="scroll-margin-top: 120px;">
       <p class="text-lg text-[#0f172a]/80">
         Vous avez déjà essayé le yoga, le tai chi, le qi gong… mais rien ne vous a <em>vraiment</em> convenu ?
       </p>
