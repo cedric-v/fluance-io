@@ -668,7 +668,9 @@ function setupCommentSection(contentId) {
   }
 
   const db = commentsApp.firestore();
-  const pageId = encodeURIComponent(window.location.origin + window.location.pathname + '#' + contentId);
+  // Utiliser le contentId comme identifiant unique pour les commentaires de ce jour
+  // Cela permet d'avoir des commentaires séparés pour chaque jour du programme
+  const pageId = encodeURIComponent(window.location.origin + window.location.pathname + '|' + contentId);
   const COMMENTS_PER_PAGE = 20;
   let allComments = [];
   let currentPage = 1;
