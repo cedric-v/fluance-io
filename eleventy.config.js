@@ -103,14 +103,101 @@ module.exports = function(eleventyConfig) {
   </div>
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  if (typeof window.FluanceAuth !== 'undefined') {
-    const element = document.querySelector('.protected-content[data-content-id="${contentId}"]');
-    if (element && window.FluanceAuth.isAuthenticated()) {
-      window.FluanceAuth.displayProtectedContent('${escapedContentId}', element);
-    } else if (element) {
+console.log('[Protected Content] Shortcode script loaded for: ${escapedContentId}');
+document.addEventListener('DOMContentLoaded', async function() {
+  console.log('[Protected Content] DOMContentLoaded fired for: ${escapedContentId}');
+  
+  // Attendre que Firebase soit complètement initialisé
+  await new Promise((resolve) => {
+    if (typeof window.FluanceAuth !== 'undefined' && 
+        typeof firebase !== 'undefined' && 
+        firebase.apps.length > 0) {
+      console.log('[Protected Content] Firebase already initialized');
+      resolve();
+    } else {
+      const checkInterval = setInterval(() => {
+        if (typeof window.FluanceAuth !== 'undefined' && 
+            typeof firebase !== 'undefined' && 
+            firebase.apps.length > 0) {
+          console.log('[Protected Content] Firebase initialized after wait');
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+      setTimeout(() => {
+        console.log('[Protected Content] Firebase init timeout');
+        clearInterval(checkInterval);
+        resolve();
+      }, 5000);
+    }
+  });
+  
+  const element = document.querySelector('.protected-content[data-content-id="${contentId}"]');
+  if (!element) {
+    console.log('[Protected Content] Element not found');
+    return;
+  }
+  
+  function checkAuthAndLoad() {
+    console.log('[Protected Content] checkAuthAndLoad called for: ${escapedContentId}');
+    
+    let isAuth = false;
+    let currentUser = null;
+    
+    // Méthode 1 : via FluanceAuth
+    if (window.FluanceAuth) {
+      isAuth = window.FluanceAuth.isAuthenticated();
+      currentUser = window.FluanceAuth.getCurrentUser();
+      console.log('[Protected Content] FluanceAuth check - isAuth:', isAuth, 'user:', currentUser ? currentUser.email : 'null');
+    }
+    
+    // Méthode 2 : directement via firebase.auth() (fallback)
+    if (!isAuth && typeof firebase !== 'undefined' && firebase.auth) {
+      currentUser = firebase.auth().currentUser;
+      isAuth = !!currentUser;
+      console.log('[Protected Content] Firebase direct check - isAuth:', isAuth, 'user:', currentUser ? currentUser.email : 'null');
+    }
+    
+    console.log('[Protected Content] Final auth check - isAuth:', isAuth, 'has FluanceAuth:', !!window.FluanceAuth);
+    
+    if (isAuth && window.FluanceAuth) {
+      console.log('[Protected Content] User authenticated, loading content');
+      window.FluanceAuth.displayProtectedContent('${escapedContentId}', element).catch(err => {
+        console.error('[Protected Content] Error loading content:', err);
+        element.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-lg p-4"><p class="text-red-800">Erreur lors du chargement du contenu : ' + (err.message || err) + '</p></div>';
+      });
+    } else {
+      console.log('[Protected Content] User not authenticated, showing login message');
       element.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center"><p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder à ce contenu.</p><a href="/connexion-firebase?return=' + encodeURIComponent(window.location.pathname) + '" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">Se connecter</a></div>';
     }
+  }
+  
+  // Vérifier immédiatement si un utilisateur est déjà connecté
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    const currentUser = firebase.auth().currentUser;
+    console.log('[Protected Content] Immediate check - currentUser:', currentUser ? currentUser.email : 'null');
+    if (currentUser) {
+      console.log('[Protected Content] User already authenticated, loading immediately');
+      checkAuthAndLoad();
+      return;
+    }
+  }
+  
+  // Écouter les changements d'état d'authentification
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    console.log('[Protected Content] Setting up onAuthStateChanged listener');
+    firebase.auth().onAuthStateChanged((user) => {
+      console.log('[Protected Content] Auth state changed:', user ? user.email : 'null');
+      checkAuthAndLoad();
+    });
+    
+    // Fallback après 500ms
+    setTimeout(() => {
+      console.log('[Protected Content] Fallback check after 500ms');
+      checkAuthAndLoad();
+    }, 500);
+  } else {
+    setTimeout(checkAuthAndLoad, 1000);
   }
 });
 </script>`;
