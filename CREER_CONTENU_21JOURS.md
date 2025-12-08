@@ -23,13 +23,14 @@ Vous voyez l'erreur "Contenu non trouvé" car le document `test-video-1` n'exist
 
 Ajoutez les champs suivants :
 
-| Champ | Type | Valeur |
-|-------|------|--------|
-| `product` | **string** | `21jours` ⚠️ **IMPORTANT : doit être exactement "21jours"** |
-| `title` | **string** | `Test Vidéo 1` |
-| `content` | **string** | Votre HTML (voir exemple ci-dessous) |
-| `createdAt` | **timestamp** | Cliquez sur l'icône horloge pour la date actuelle |
-| `updatedAt` | **timestamp** | Cliquez sur l'icône horloge pour la date actuelle |
+| Champ | Type | Valeur | Requis |
+|-------|------|--------|--------|
+| `product` | **string** | `21jours` ⚠️ **IMPORTANT : doit être exactement "21jours"** | ✅ Oui |
+| `day` | **number** | `0` (ou 1, 2, 3... jusqu'à 21) | ✅ Oui |
+| `title` | **string** | Titre du jour (voir STRUCTURE_21JOURS.md) | ✅ Oui |
+| `content` | **string** | Votre HTML (voir exemple ci-dessous) | ✅ Oui |
+| `createdAt` | **timestamp** | Date actuelle | ❌ **Non** (optionnel - non utilisé) |
+| `updatedAt` | **timestamp** | Date actuelle | ❌ **Non** (optionnel - non utilisé) |
 
 ### Étape 4 : Exemple de contenu HTML
 

@@ -23,23 +23,25 @@ protectedContent/
   │   └── updatedAt: Timestamp (optionnel - non utilisé pour 21jours)
   │
   ├── 21jours-jour-1
-  │   ├── product: "21jours"
-  │   ├── day: 1
-  │   ├── title: "Ancrage et épaules"
-  │   ├── content: "<div>...HTML de la vidéo jour 1...</div>"
-  │   ├── createdAt: Timestamp
-  │   └── updatedAt: Timestamp
+  │   ├── product: "21jours" (requis)
+  │   ├── day: 1 (requis)
+  │   ├── title: "Ancrage et épaules" (requis)
+  │   ├── content: "<div>...HTML de la vidéo jour 1...</div>" (requis)
+  │   ├── createdAt: Timestamp (optionnel)
+  │   └── updatedAt: Timestamp (optionnel)
   │
   ├── 21jours-jour-2
-  │   ├── product: "21jours"
-  │   ├── day: 2
-  │   ├── title: "Dos et hanches avec le 8"
+  │   ├── product: "21jours" (requis)
+  │   ├── day: 2 (requis)
+  │   ├── title: "Dos et hanches avec le 8" (requis)
+  │   ├── content: "<div>...HTML...</div>" (requis)
   │   └── ...
   │
   └── 21jours-jour-21
-      ├── product: "21jours"
-      ├── day: 21
-      ├── title: "Jour 21"
+      ├── product: "21jours" (requis)
+      ├── day: 21 (requis)
+      ├── title: "Jour 21" (requis)
+      ├── content: "<div>...HTML...</div>" (requis)
       └── ...
 ```
 
