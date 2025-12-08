@@ -10,28 +10,24 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   // Attendre que Firebase soit complètement initialisé
   await new Promise((resolve) => {
-    console.log('[Protected Content] Waiting for Firebase initialization...');
     if (typeof window.FluanceAuth !== 'undefined' && 
         typeof firebase !== 'undefined' && 
         firebase.apps.length > 0) {
-      console.log('[Protected Content] Firebase already initialized');
       resolve();
     } else {
       const checkInterval = setInterval(() => {
         if (typeof window.FluanceAuth !== 'undefined' && 
             typeof firebase !== 'undefined' && 
             firebase.apps.length > 0) {
-          console.log('[Protected Content] Firebase initialized after wait');
           clearInterval(checkInterval);
           resolve();
         }
       }, 100);
-      // Timeout de sécurité après 5 secondes
+      // Timeout de sécurité après 3 secondes (réduit de 5s)
       setTimeout(() => {
-        console.log('[Protected Content] Firebase init timeout');
         clearInterval(checkInterval);
         resolve();
-      }, 5000);
+      }, 3000);
     }
   });
   

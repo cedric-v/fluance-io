@@ -276,14 +276,20 @@ async function loadProtectedContent(contentId = null) {
       const contentDoc = await db.collection('protectedContent').doc(contentId).get();
       
       if (!contentDoc.exists) {
-        return { success: false, error: 'Contenu non trouvé' };
+        return { 
+          success: false, 
+          error: `Contenu non trouvé (ID: ${contentId}). Vérifiez que le document existe dans Firestore avec le produit "${userProduct}".` 
+        };
       }
 
       const contentData = contentDoc.data();
       
       // Vérifier que l'utilisateur a accès à ce produit
       if (contentData.product !== userProduct) {
-        return { success: false, error: 'Accès non autorisé à ce contenu' };
+        return { 
+          success: false, 
+          error: `Accès non autorisé. Ce contenu est pour le produit "${contentData.product || 'inconnu'}", mais vous avez accès à "${userProduct}".` 
+        };
       }
 
       return { 
