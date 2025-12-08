@@ -92,6 +92,7 @@ exports.createStripeSession = functions.region('europe-west1').https.onCall(asyn
     cancel_url: `https://fluance.io/cancel`,
     metadata: {
       product: productId, // ⚠️ IMPORTANT : "21jours" ou "complet"
+      system: 'firebase', // ⚠️ IMPORTANT : Identifie que c'est pour le nouveau système
     },
     locale: locale === 'fr' ? 'fr' : 'en',
   });

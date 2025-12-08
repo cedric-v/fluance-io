@@ -207,6 +207,14 @@ exports.webhookStripe = functions.region('europe-west1').runWith({
           return res.status(400).send('No email found');
         }
 
+        // Vérifier si ce paiement est destiné au nouveau système (Firebase)
+        // Si metadata.system n'est pas 'firebase', ignorer (c'est pour l'ancien système)
+        const system = session.metadata?.system;
+        if (system && system !== 'firebase') {
+          console.log(`Paiement ignoré - système: ${system} (ancien système)`);
+          return res.status(200).json({received: true, ignored: true});
+        }
+
         // Déterminer le produit selon le montant ou les metadata
         const product = session.metadata?.product || determineProductFromAmount(amount, currency);
 
@@ -253,8 +261,19 @@ exports.webhookPayPal = functions.region('europe-west1').runWith({
       return res.status(400).send('No email found');
     }
 
+    // Vérifier si ce paiement est destiné au nouveau système (Firebase)
+    // Si custom_id ne commence pas par 'firebase_', ignorer (c'est pour l'ancien système)
+    const customId = resource.custom_id || '';
+    if (customId && !customId.startsWith('firebase_') && customId !== '21jours' && customId !== 'complet') {
+      console.log(`Paiement PayPal ignoré - custom_id: ${customId} (ancien système)`);
+      return res.status(200).json({received: true, ignored: true});
+    }
+
     // Déterminer le produit selon le montant ou les metadata
-    const product = resource.custom_id || determineProductFromAmount(amount, currency);
+    // Si custom_id commence par 'firebase_', extraire le produit (ex: 'firebase_21jours' -> '21jours')
+    const product = customId.startsWith('firebase_')
+      ? customId.replace('firebase_', '')
+      : (customId || determineProductFromAmount(amount, currency));
 
     try {
       await createTokenAndSendEmail(
