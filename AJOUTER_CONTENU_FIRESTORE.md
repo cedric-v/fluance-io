@@ -8,16 +8,19 @@ Le contenu est stocké dans la collection `protectedContent` avec cette structur
 
 ```
 protectedContent/
-  ├── video-1 (document ID)
-  │   ├── product: "complet" (ou "21jours")
+  ├── video-1 (document ID) - produit "complet"
+  │   ├── product: "complet"
   │   ├── title: "Vidéo 1 : Introduction"
   │   ├── content: "<div>...code HTML complet...</div>"
-  │   ├── createdAt: Timestamp
-  │   └── updatedAt: Timestamp
-  ├── video-2
-  │   └── ...
-  └── cours-1
-      └── ...
+  │   ├── createdAt: Timestamp (requis pour tri)
+  │   └── updatedAt: Timestamp (optionnel)
+  ├── 21jours-jour-1 (document ID) - produit "21jours"
+  │   ├── product: "21jours"
+  │   ├── day: 1 (requis)
+  │   ├── title: "Ancrage et épaules"
+  │   ├── content: "<div>...code HTML...</div>"
+  │   └── (createdAt et updatedAt non nécessaires)
+  └── ...
 ```
 
 ## Méthode 1 : Via la console Firebase (recommandé pour commencer)
@@ -30,13 +33,28 @@ protectedContent/
 6. Document ID : `video-1` (ou un autre ID unique)
 7. Ajoutez les champs suivants :
 
-| Champ | Type | Valeur |
-|-------|------|--------|
-| `product` | string | `"complet"` ou `"21jours"` (selon le produit) |
-| `title` | string | `"Vidéo 1 : Introduction"` |
-| `content` | string | `"<div>...votre code HTML...</div>"` |
-| `createdAt` | timestamp | Date actuelle |
-| `updatedAt` | timestamp | Date actuelle |
+### Pour le produit "complet"
+
+| Champ | Type | Valeur | Requis |
+|-------|------|--------|--------|
+| `product` | string | `"complet"` | ✅ Oui |
+| `title` | string | `"Vidéo 1 : Introduction"` | ✅ Oui |
+| `content` | string | `"<div>...votre code HTML...</div>"` | ✅ Oui |
+| `createdAt` | timestamp | Date actuelle | ✅ Oui (pour le tri) |
+| `updatedAt` | timestamp | Date actuelle | ❌ Non (optionnel) |
+
+### Pour le produit "21jours"
+
+| Champ | Type | Valeur | Requis |
+|-------|------|--------|--------|
+| `product` | string | `"21jours"` | ✅ Oui |
+| `day` | number | `0` (déroulé) ou `1-22` (jours) | ✅ Oui |
+| `title` | string | Titre du jour (voir STRUCTURE_21JOURS.md) | ✅ Oui |
+| `content` | string | `"<div>...votre code HTML...</div>"` | ✅ Oui |
+| `createdAt` | timestamp | - | ❌ **Non** (non utilisé) |
+| `updatedAt` | timestamp | - | ❌ **Non** (non utilisé) |
+
+**Note** : Pour "21jours", seuls `product`, `day`, `title` et `content` sont nécessaires. La question et la zone de commentaires sont ajoutées automatiquement.
 
 8. Cliquez sur **Enregistrer** / **Save**
 
@@ -44,16 +62,28 @@ protectedContent/
 
 Créez un fichier JSON pour chaque contenu :
 
-**video-1.json** :
+**Pour le produit "complet" - video-1.json** :
 ```json
 {
-  "product": "complet", // ou "21jours"
+  "product": "complet",
   "title": "Vidéo 1 : Introduction",
   "content": "<div><h2>Introduction</h2><p>Contenu HTML...</p></div>",
   "createdAt": "2024-01-01T00:00:00Z",
   "updatedAt": "2024-01-01T00:00:00Z"
 }
 ```
+
+**Pour le produit "21jours" - 21jours-jour-1.json** :
+```json
+{
+  "product": "21jours",
+  "day": 1,
+  "title": "Ancrage et épaules",
+  "content": "<div><h2>Jour 1</h2><iframe src='...'></iframe></div>"
+}
+```
+
+**Note** : Pour "21jours", `createdAt` et `updatedAt` ne sont pas nécessaires.
 
 Puis utilisez Firebase CLI :
 
@@ -85,16 +115,26 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-async function addContent(contentId, product, title, htmlContent) {
+async function addContent(contentId, product, title, htmlContent, day = null) {
   const docRef = db.collection('protectedContent').doc(contentId);
   
-  await docRef.set({
+  const data = {
     product: product,
     title: title,
-    content: htmlContent,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  });
+    content: htmlContent
+  };
+  
+  // Pour "21jours", ajouter le champ day
+  if (product === '21jours' && day !== null) {
+    data.day = day;
+    // createdAt et updatedAt ne sont pas nécessaires pour 21jours
+  } else if (product === 'complet') {
+    // Pour "complet", ajouter createdAt pour le tri
+    data.createdAt = admin.firestore.FieldValue.serverTimestamp();
+    data.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+  }
+  
+  await docRef.set(data);
   
   console.log(`✅ Contenu ajouté : ${contentId}`);
 }
@@ -122,11 +162,21 @@ async function main() {
     </div>
   `;
   
+  // Exemple pour le produit "complet"
   await addContent(
     'video-1',
-    'complet', // ou '21jours'
+    'complet',
     'Vidéo 1 : Introduction',
     htmlContent
+  );
+  
+  // Exemple pour le produit "21jours"
+  await addContent(
+    '21jours-jour-1',
+    '21jours',
+    'Ancrage et épaules',
+    htmlContent,
+    1 // numéro du jour (0-22)
   );
 }
 
