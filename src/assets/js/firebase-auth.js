@@ -835,9 +835,12 @@ function setupCommentSection(contentId) {
 
   // Charger les commentaires
   if (db && pageId) {
+    console.log("[21jours] Chargement des commentaires pour pageId:", pageId);
+    console.log("[21jours] contentId:", contentId);
     db.collection("comments").doc(pageId).collection("messages")
       .orderBy("timestamp", "desc")
       .onSnapshot(function(snapshot) {
+        console.log("[21jours] Commentaires reçus:", snapshot.size);
         allComments = [];
         snapshot.forEach(function(doc) {
           allComments.push(doc.data());
@@ -860,12 +863,23 @@ function setupCommentSection(contentId) {
         currentPage = 1;
         renderCommentsPage(currentPage);
       }, function(error) {
-        console.error("Erreur Firestore :", error);
+        console.error("[21jours] Erreur Firestore :", error);
+        console.error("[21jours] Code d'erreur:", error.code);
+        console.error("[21jours] Message:", error.message);
+        console.error("[21jours] pageId utilisé:", pageId);
         const container = document.getElementById(`comments-container-${contentId}`);
         if (container) {
-          container.innerHTML = "<p class='text-red-600 text-sm'>Erreur lors du chargement des commentaires.</p>";
+          if (error.code === 'permission-denied') {
+            container.innerHTML = "<p class='text-red-600 text-sm'>Erreur : Permissions Firestore insuffisantes. Les règles Firestore doivent être déployées.</p>";
+          } else if (error.code === 'failed-precondition') {
+            container.innerHTML = "<p class='text-red-600 text-sm'>Erreur : Un index Firestore est requis. Vérifiez la console pour le lien de création.</p>";
+          } else {
+            container.innerHTML = "<p class='text-red-600 text-sm'>Erreur lors du chargement des commentaires : " + error.message + "</p>";
+          }
         }
       });
+  } else {
+    console.error("[21jours] Firestore ou pageId non disponible. db:", !!db, "pageId:", pageId);
   }
 }
 
