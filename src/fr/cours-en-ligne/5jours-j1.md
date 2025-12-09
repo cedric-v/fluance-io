@@ -131,7 +131,16 @@ permalink: /cours-en-ligne/5jours/j1/
       
       function renderCommentsPage(page) {
         var container = document.getElementById("comments-container");
+        if (!container) return;
+        
         container.innerHTML = "<h3>Commentaires</h3>";
+        
+        if (allComments.length === 0) {
+          container.innerHTML += "<p style='color:#666; font-style:italic;'>Aucun commentaire pour le moment. Soyez le premier à partager votre expérience !</p>";
+          renderPaginationControls(page);
+          return;
+        }
+        
         var start = (page - 1) * COMMENTS_PER_PAGE;
         var end = start + COMMENTS_PER_PAGE;
         var pageComments = allComments.slice(start, end);
@@ -175,30 +184,45 @@ permalink: /cours-en-ligne/5jours/j1/
       }
       
       if (db) {
-      db.collection("comments").doc(pageId).collection("messages")
-        .orderBy("timestamp", "desc")
-        .onSnapshot(function(snapshot) {
-          allComments = [];
-          snapshot.forEach(function(doc) {
-            allComments.push(doc.data());
-          });
-          allComments.sort(function(a, b) {
-            if (a.timestamp && b.timestamp) {
-              try {
-                var timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-                var timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-                return timeB - timeA;
-              } catch (e) {
-                return 0;
+        console.log("Chargement des commentaires pour pageId:", pageId);
+        db.collection("comments").doc(pageId).collection("messages")
+          .orderBy("timestamp", "desc")
+          .onSnapshot(function(snapshot) {
+            console.log("Commentaires reçus:", snapshot.size);
+            allComments = [];
+            snapshot.forEach(function(doc) {
+              allComments.push(doc.data());
+            });
+            // Le tri est déjà fait par orderBy, mais on peut le garder pour sécurité
+            allComments.sort(function(a, b) {
+              if (a.timestamp && b.timestamp) {
+                try {
+                  var timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+                  var timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+                  return timeB - timeA;
+                } catch (e) {
+                  return 0;
+                }
+              }
+              return 0;
+            });
+            currentPage = 1;
+            renderCommentsPage(currentPage);
+          }, function(error) {
+            console.error("Erreur Firestore :", error);
+            console.error("Code d'erreur:", error.code);
+            console.error("Message:", error.message);
+            var container = document.getElementById("comments-container");
+            if (container) {
+              if (error.code === 'failed-precondition') {
+                container.innerHTML = "<p style='color:red;'>Erreur : Un index Firestore est requis. Vérifiez la console pour le lien de création.</p>";
+              } else {
+                container.innerHTML = "<p style='color:red;'>Erreur lors du chargement des commentaires : " + error.message + "</p>";
               }
             }
-            return 0;
           });
-          currentPage = 1;
-          renderCommentsPage(currentPage);
-        }, function(error) {
-          console.error("Erreur Firestore :", error);
-        });
+      } else {
+        console.error("Firestore n'est pas initialisé");
       }
       }
       </script>
