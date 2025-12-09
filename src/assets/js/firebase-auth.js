@@ -25,30 +25,71 @@ if (typeof firebase === 'undefined') {
   script1.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
   document.head.appendChild(script1);
   
-  const script2 = document.createElement('script');
-  script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js';
-  document.head.appendChild(script2);
-  
-  const script3 = document.createElement('script');
-  script3.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js';
-  document.head.appendChild(script3);
-  
-  script3.onload = () => {
+  script1.onload = () => {
+    const script2 = document.createElement('script');
+    script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js';
+    document.head.appendChild(script2);
+    
+    script2.onload = () => {
+      const script3 = document.createElement('script');
+      script3.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js';
+      document.head.appendChild(script3);
+      
+      script3.onload = () => {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+        // Attendre un peu pour s'assurer que tous les modules sont prêts
+        setTimeout(() => {
+          initAuth();
+        }, 100);
+      };
+    };
+  };
+} else {
+  // Vérifier que firebase.auth est disponible
+  if (typeof firebase.auth === 'function') {
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
     initAuth();
-  };
-} else {
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+  } else {
+    // Firebase est chargé mais auth n'est pas disponible, attendre un peu
+    const checkAuth = setInterval(() => {
+      if (typeof firebase.auth === 'function') {
+        clearInterval(checkAuth);
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+        initAuth();
+      }
+    }, 100);
+    
+    // Timeout après 5 secondes
+    setTimeout(() => {
+      clearInterval(checkAuth);
+      if (typeof firebase.auth !== 'function') {
+        console.error('Firebase Auth n\'a pas pu être chargé');
+      }
+    }, 5000);
   }
-  initAuth();
 }
 
 let auth, db;
 
 function initAuth() {
+  // Vérifier que firebase.auth est disponible
+  if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function') {
+    console.error('Firebase Auth n\'est pas disponible. Réessayez dans quelques instants.');
+    // Réessayer après un court délai
+    setTimeout(() => {
+      if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') {
+        initAuth();
+      }
+    }, 500);
+    return;
+  }
+  
   auth = firebase.auth();
   db = firebase.firestore();
   
