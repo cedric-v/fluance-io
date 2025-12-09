@@ -1,0 +1,137 @@
+# Format simple pour importer les vidéos 21 jours
+# 
+# Instructions :
+# 1. Pour chaque jour, copiez le titre et le code embed ci-dessous
+# 2. Collez directement le code HTML sans vous soucier des guillemets
+# 3. Le script convertira automatiquement ce fichier en JSON
+#
+# Format :
+# === JOUR X ===
+# TITRE: Titre de la vidéo
+# EMBED:
+# [Collez ici le code HTML complet, sur une ou plusieurs lignes]
+# ===
+
+=== JOUR 0 ===
+TITRE: Déroulé
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/d32d5ad9-92ec-4db8-b6da-f78a80ba8994?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+COMMENT_TEXT:
+Bilan de départ :
+partagez ici votre état de fluidité et de détente corporelle entre 0 et 10
+(0 étant le pire, 10 le meilleur)
+
+
+=== JOUR 1 ===
+TITRE: Ancrage et épaules
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/53628b2f-d3f3-4762-bcb6-bd1bdf800fa4?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 2 ===
+TITRE: Dos et hanches avec le 8
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/d33b0ca7-ff55-4d51-990e-27f0c19a8326?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 3 ===
+TITRE: Rotation pour accroître la mobilité
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/f0f6dd7e-1f24-4d96-adcc-2d39975fec40?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 4 ===
+TITRE: Crawl pour libérer la nuque et les épaules
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/a02f54ba-230e-4b44-8842-03c74878ccda?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 5 ===
+TITRE: Tambour chinois
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/436a23e8-7406-4f2d-9a73-cb634811eaf6?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 6 ===
+TITRE: Uppercut et verticalité
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/87761d93-dad2-4582-8aa7-590fa50495ab?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 7 ===
+TITRE: Soulager le bas du dos
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/c952b5fa-d29d-4884-aa85-8d284824cff6?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 8 ===
+TITRE: Bascule arrière
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/4f5906ab-f752-41c3-b525-2684d50464ea?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 9 ===
+TITRE: Détente des épaules
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/a8a0bb39-beb0-4d08-a18b-114c83d11d64?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 10 ===
+TITRE: Détente du bas du dos
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/29a30039-b9ca-4147-a54a-85ff092ca1fb?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 11 ===
+TITRE: Mobilité assise
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/cd7e6f9b-a4a1-43ee-9a06-ae84a992363a?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 12 ===
+TITRE: Plaisir de marcher
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/956d65e6-52d0-45d4-aaf1-18078a998f5d?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 13 ===
+TITRE: Salutation soleil (version fluide)
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/24e48c42-6065-4a3c-8e50-af37f361300f?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 14 ===
+TITRE: Boost d'énergie
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/1a4847a3-fb29-48a7-b243-3dd1735d8185?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 15 ===
+TITRE: Relâchement
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/4528ed56-6265-4978-8041-6ad9f102e5a4?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 16 ===
+TITRE: Plaisir de bouger vos bras
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/69932e6e-ea60-4750-aeb0-c3e43828fcb6?autoplay=true&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 17 ===
+TITRE: Gorille
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/7c62875b-b26d-4317-929b-7631d498b9de?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 18 ===
+TITRE: La tête guide
+EMBED:
+<div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/479894/2f53b51b-5ae3-4b33-8f3f-eff6a360c8e2?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+
+=== JOUR 19 ===
+TITRE: Jour 19
+EMBED:
+[Collez ici le code embed]
+
+=== JOUR 20 ===
+TITRE: Jour 20
+EMBED:
+[Collez ici le code embed]
+
+=== JOUR 21 ===
+TITRE: Jour 21
+EMBED:
+[Collez ici le code embed]
+COMMENT_TEXT:
+Bilan de fin des 21 premiers jours :
+partagez ici votre état de fluidité et de détente corporelle entre 0 et 10
+(0 étant le pire, 10 le meilleur)
+
+=== JOUR 22 ===
+TITRE: Bonus (jour 22)
+EMBED:
+[Collez ici le code embed]

@@ -87,3 +87,6 @@ Une fois que vous avez accès, ajoutez ces variables :
 - `PAYPAL_CLIENT_ID` (si vous utilisez PayPal)
 - `PAYPAL_CLIENT_SECRET` (si vous utilisez PayPal)
 
+
+
+

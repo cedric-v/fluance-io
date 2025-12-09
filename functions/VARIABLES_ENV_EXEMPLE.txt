@@ -20,3 +20,6 @@ STRIPE_WEBHOOK_SECRET=votre_secret_webhook_stripe_ici
 PAYPAL_CLIENT_ID=votre_client_id_paypal_ici
 PAYPAL_CLIENT_SECRET=votre_client_secret_paypal_ici
 
+
+
+

@@ -68,3 +68,6 @@ Pour vérifier que le QR code fonctionne correctement :
 
 
 
+
+
+
