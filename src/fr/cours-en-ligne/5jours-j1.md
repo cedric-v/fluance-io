@@ -47,8 +47,6 @@ permalink: /cours-en-ligne/5jours/j1/
       <div id="comments-container"></div>
       <div id="pagination-controls" style="margin-top:10px;"></div>
       
-      <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-      <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
       <script>
       function escapeHTML(str) {
         return String(str)
@@ -58,8 +56,9 @@ permalink: /cours-en-ligne/5jours/j1/
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#39;");
       }
-      </script>
-      <script>
+      
+      // Utiliser le projet Firebase principal (fluance-protected-content)
+      // Si Firebase n'est pas déjà initialisé, l'initialiser avec le projet principal
       // Utiliser le projet Firebase principal (fluance-protected-content)
       // Si Firebase n'est pas déjà initialisé, l'initialiser avec le projet principal
       if (typeof firebase === 'undefined') {
