@@ -337,6 +337,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/assets/js": "assets/js" });
   eleventyConfig.addPassthroughCopy("src/robots.txt");
   eleventyConfig.addPassthroughCopy("src/llms.txt");
+  eleventyConfig.addPassthroughCopy("src/CNAME");
   // Copie de la favicon à la racine
   eleventyConfig.addPassthroughCopy({ "src/assets/img/favicon.ico": "favicon.ico" });
   

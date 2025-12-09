@@ -317,6 +317,23 @@ jobs:
             fi
           done
           
+          # Test du fichier CNAME (nécessaire pour le domaine personnalisé)
+          echo ""
+          echo "🔍 Test du fichier CNAME"
+          if [ -f "_site/CNAME" ]; then
+            CNAME_CONTENT=$(cat "_site/CNAME" | tr -d '\n\r' | xargs)
+            if [ "$CNAME_CONTENT" = "fluance.io" ]; then
+              echo "  ✅ CNAME présent et correct: $CNAME_CONTENT"
+              PASSED_TESTS=$((PASSED_TESTS + 1))
+            else
+              echo "  ❌ CNAME présent mais contenu incorrect: '$CNAME_CONTENT' (attendu: 'fluance.io')"
+              FAILED_TESTS=$((FAILED_TESTS + 1))
+            fi
+          else
+            echo "  ❌ CNAME manquant dans _site/"
+            FAILED_TESTS=$((FAILED_TESTS + 1))
+          fi
+
           # Test de la page 404 personnalisée (page inexistante)
           echo ""
           echo "🔍 Test de la page 404 personnalisée (page inexistante)"
