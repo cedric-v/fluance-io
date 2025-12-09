@@ -807,29 +807,78 @@ function setupCommentSection(contentId) {
       return;
     }
     
-    let html = '';
-    if (page > 1) {
-      html += '<button id="prev-page-' + contentId + '" class="bg-gray-100 text-[#0f172a] py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors mr-2">&lt; Précédent</button> ';
-    }
-    html += '<span class="text-[#1f1f1f]/80 text-sm">Page ' + page + ' / ' + totalPages + '</span>';
-    if (page < totalPages) {
-      html += ' <button id="next-page-' + contentId + '" class="bg-gray-100 text-[#0f172a] py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors ml-2">Suivant &gt;</button>';
-    }
+    // Vider le conteneur
+    controls.innerHTML = '';
     
-    controls.innerHTML = html;
-    
+    // Bouton précédent
     if (page > 1) {
-      document.getElementById(`prev-page-${contentId}`).onclick = function() {
+      const prevBtn = document.createElement('button');
+      prevBtn.id = `prev-page-${contentId}`;
+      prevBtn.textContent = '< Précédent';
+      prevBtn.style.cursor = 'pointer';
+      prevBtn.style.padding = '0.5rem 1rem';
+      prevBtn.style.borderRadius = '0.5rem';
+      prevBtn.style.border = '1px solid rgba(130, 21, 62, 0.2)';
+      prevBtn.style.backgroundColor = 'transparent';
+      prevBtn.style.color = '#82153e';
+      prevBtn.style.fontWeight = '500';
+      prevBtn.style.transition = 'all 0.2s ease';
+      prevBtn.style.marginRight = '0.5rem';
+      prevBtn.onmouseenter = function() {
+        this.style.backgroundColor = 'rgba(130, 21, 62, 0.1)';
+        this.style.borderColor = 'rgba(130, 21, 62, 0.3)';
+        this.style.transform = 'translateY(-1px)';
+      };
+      prevBtn.onmouseleave = function() {
+        this.style.backgroundColor = 'transparent';
+        this.style.borderColor = 'rgba(130, 21, 62, 0.2)';
+        this.style.transform = 'translateY(0)';
+      };
+      prevBtn.onclick = function() {
         currentPage--;
         renderCommentsPage(currentPage);
       };
+      controls.appendChild(prevBtn);
+      controls.appendChild(document.createTextNode(' '));
     }
     
+    // Texte de pagination
+    const pageText = document.createElement('span');
+    pageText.style.color = 'rgba(31, 31, 31, 0.8)';
+    pageText.style.fontSize = '0.875rem';
+      pageText.textContent = 'Page ' + page + ' / ' + totalPages;
+    controls.appendChild(pageText);
+    
+    // Bouton suivant
     if (page < totalPages) {
-      document.getElementById(`next-page-${contentId}`).onclick = function() {
+      controls.appendChild(document.createTextNode(' '));
+      const nextBtn = document.createElement('button');
+      nextBtn.id = `next-page-${contentId}`;
+      nextBtn.textContent = 'Suivant >';
+      nextBtn.style.cursor = 'pointer';
+      nextBtn.style.padding = '0.5rem 1rem';
+      nextBtn.style.borderRadius = '0.5rem';
+      nextBtn.style.border = '1px solid rgba(130, 21, 62, 0.2)';
+      nextBtn.style.backgroundColor = 'transparent';
+      nextBtn.style.color = '#82153e';
+      nextBtn.style.fontWeight = '500';
+      nextBtn.style.transition = 'all 0.2s ease';
+      nextBtn.style.marginLeft = '0.5rem';
+      nextBtn.onmouseenter = function() {
+        this.style.backgroundColor = 'rgba(130, 21, 62, 0.1)';
+        this.style.borderColor = 'rgba(130, 21, 62, 0.3)';
+        this.style.transform = 'translateY(-1px)';
+      };
+      nextBtn.onmouseleave = function() {
+        this.style.backgroundColor = 'transparent';
+        this.style.borderColor = 'rgba(130, 21, 62, 0.2)';
+        this.style.transform = 'translateY(0)';
+      };
+      nextBtn.onclick = function() {
         currentPage++;
         renderCommentsPage(currentPage);
       };
+      controls.appendChild(nextBtn);
     }
   }
 
