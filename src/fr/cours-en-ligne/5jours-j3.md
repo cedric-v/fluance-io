@@ -60,16 +60,51 @@ permalink: /cours-en-ligne/5jours/j3/
       }
       </script>
       <script>
-      var firebaseConfig = {
-        apiKey: "VOTRE_API_KEY_FIREBASE", // Clé Firebase pour les commentaires (ancien projet)
-        authDomain: "owncommentsfluance.firebaseapp.com",
-        projectId: "owncommentsfluance",
-        storageBucket: "owncommentsfluance.firebasestorage.app",
-        messagingSenderId: "561599480401",
-        appId: "1:561599480401:web:e1ad00b17fb27392126e70",
-        measurementId: "G-TK4FQPTXCL"
-      };
-      firebase.initializeApp(firebaseConfig);
+      // Utiliser le projet Firebase principal (fluance-protected-content)
+      // Si Firebase n'est pas déjà initialisé, l'initialiser avec le projet principal
+      if (typeof firebase === 'undefined') {
+        // Charger Firebase SDK
+        var script1 = document.createElement('script');
+        script1.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
+        document.head.appendChild(script1);
+        
+        var script2 = document.createElement('script');
+        script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js';
+        document.head.appendChild(script2);
+        
+        script2.onload = function() {
+          var firebaseConfig = {
+            apiKey: "AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM",
+            authDomain: "fluance-protected-content.firebaseapp.com",
+            projectId: "fluance-protected-content",
+            storageBucket: "fluance-protected-content.firebasestorage.app",
+            messagingSenderId: "173938686776",
+            appId: "1:173938686776:web:891caf76098a42c3579fcd",
+            measurementId: "G-CWPNXDQEYR"
+          };
+          if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+          }
+          initComments();
+        };
+      } else {
+        // Firebase déjà initialisé, utiliser l'instance existante
+        if (!firebase.apps.length) {
+          var firebaseConfig = {
+            apiKey: "AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM",
+            authDomain: "fluance-protected-content.firebaseapp.com",
+            projectId: "fluance-protected-content",
+            storageBucket: "fluance-protected-content.firebasestorage.app",
+            messagingSenderId: "173938686776",
+            appId: "1:173938686776:web:891caf76098a42c3579fcd",
+            measurementId: "G-CWPNXDQEYR"
+          };
+          firebase.initializeApp(firebaseConfig);
+        }
+        initComments();
+      }
+      
+      function initComments() {
       var db = firebase.firestore();
       var pageId = encodeURIComponent(window.location.origin + window.location['pathname']);
       var COMMENTS_PER_PAGE = 20;
@@ -139,6 +174,7 @@ permalink: /cours-en-ligne/5jours/j3/
         }
       }
       
+      if (db) {
       db.collection("comments").doc(pageId).collection("messages")
         .orderBy("timestamp", "desc")
         .onSnapshot(function(snapshot) {
@@ -163,6 +199,8 @@ permalink: /cours-en-ligne/5jours/j3/
         }, function(error) {
           console.error("Erreur Firestore :", error);
         });
+      }
+      }
       </script>
     </div>
   </div>

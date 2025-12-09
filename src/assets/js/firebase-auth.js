@@ -721,26 +721,9 @@ function initCommentSection(contentId) {
  * Configure la section de commentaires
  */
 function setupCommentSection(contentId) {
-  // Configuration Firebase pour les commentaires (projet séparé)
-  const firebaseConfig = {
-    apiKey: "AIzaSyDF7lpMAEaZxOajdiHFWft-Hary1RtQM2c",
-    authDomain: "owncommentsfluance.firebaseapp.com",
-    projectId: "owncommentsfluance",
-    storageBucket: "owncommentsfluance.firebasestorage.app",
-    messagingSenderId: "561599480401",
-    appId: "1:561599480401:web:e1ad00b17fb27392126e70",
-    measurementId: "G-TK4FQPTXCL"
-  };
-
-  // Initialiser Firebase uniquement si pas déjà initialisé avec ce projet
-  let commentsApp;
-  try {
-    commentsApp = firebase.app('comments');
-  } catch (e) {
-    commentsApp = firebase.initializeApp(firebaseConfig, 'comments');
-  }
-
-  const db = commentsApp.firestore();
+  // Utiliser le même projet Firebase que le reste du site (fluance-protected-content)
+  // Plus besoin d'une instance Firebase séparée, on utilise l'instance principale
+  const db = firebase.firestore();
   // Utiliser le contentId comme identifiant unique pour les commentaires de ce jour
   // Cela permet d'avoir des commentaires séparés pour chaque jour du programme
   const pageId = encodeURIComponent(window.location.origin + window.location.pathname + '|' + contentId);
@@ -806,24 +789,8 @@ function setupCommentSection(contentId) {
       const c = pageComments[i];
       const text = escapeHTML(c.text);
       const name = escapeHTML(c.name);
-      let date = '';
       
-      if (c.timestamp) {
-        try {
-          const timestamp = c.timestamp.toDate ? c.timestamp.toDate() : new Date(c.timestamp);
-          date = timestamp.toLocaleDateString('fr-FR', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-        } catch (e) {
-          // Ignorer les erreurs de date
-        }
-      }
-      
-      container.innerHTML += '<div class="border-b border-gray-200 mb-4 pb-4"><div class="flex items-start justify-between mb-2"><strong class="text-[#0f172a]">' + name + '</strong><span class="text-xs text-[#1f1f1f]/60">' + date + '</span></div><p class="text-[#1f1f1f]/80">' + text + '</p></div>';
+      container.innerHTML += '<div class="border-b border-gray-200 mb-4 pb-4"><div class="mb-2"><strong class="text-[#0f172a]">' + name + '</strong></div><p class="text-[#1f1f1f]/80">' + text + '</p></div>';
     }
     
     renderPaginationControls(page);

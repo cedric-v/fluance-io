@@ -26,10 +26,26 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Règles pour les commentaires (existant)
-    match /comments/{commentId} {
+    // Règles pour les commentaires
+    // Structure: comments/{pageId}/messages/{messageId}
+    match /comments/{pageId} {
+      // Permettre la lecture des pages de commentaires
       allow read: if true;
-      allow write: if request.auth != null;
+      
+      // Règles pour les messages (sous-collection)
+      match /messages/{messageId} {
+        // Lecture publique des commentaires
+        allow read: if true;
+        // Écriture autorisée sans authentification (commentaires publics avec nom)
+        // Les commentaires sont modérés par validation du contenu côté client
+        allow create: if request.resource.data.keys().hasAll(['name', 'text', 'timestamp'])
+                      && request.resource.data.name is string
+                      && request.resource.data.text is string
+                      && request.resource.data.name.size() > 0
+                      && request.resource.data.text.size() > 0;
+        // Pas de modification ni suppression (commentaires immuables)
+        allow update, delete: if false;
+      }
     }
 
     // Toutes les autres collections sont refusées par défaut

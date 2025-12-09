@@ -35,9 +35,8 @@
   <div id="pagination-controls" class="mt-4"></div>
 </div>
 
-<!-- Firebase App + Firestore (projet owncommentsfluance pour les commentaires) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<!-- Firebase App + Firestore (utilise le projet principal fluance-protected-content) -->
+<!-- Les scripts Firebase sont déjà chargés par firebase-auth.js -->
 
 <!-- Fonctions utilitaires -->
 <script>
@@ -54,26 +53,14 @@ function escapeHTML(str) {
 <!-- Script principal -->
 <script>
 (function() {
-  // Configuration Firebase pour les commentaires (projet séparé)
-  var firebaseConfig = {
-    apiKey: "AIzaSyDF7lpMAEaZxOajdiHFWft-Hary1RtQM2c",
-    authDomain: "owncommentsfluance.firebaseapp.com",
-    projectId: "owncommentsfluance",
-    storageBucket: "owncommentsfluance.firebasestorage.app",
-    messagingSenderId: "561599480401",
-    appId: "1:561599480401:web:e1ad00b17fb27392126e70",
-    measurementId: "G-TK4FQPTXCL"
-  };
-
-  // Initialiser Firebase uniquement si pas déjà initialisé avec ce projet
-  var commentsApp;
-  try {
-    commentsApp = firebase.app('comments');
-  } catch (e) {
-    commentsApp = firebase.initializeApp(firebaseConfig, 'comments');
+  // Utiliser le même projet Firebase que le reste du site (fluance-protected-content)
+  // Firebase est déjà initialisé par firebase-auth.js
+  if (typeof firebase === 'undefined' || !firebase.apps.length) {
+    console.error('Firebase n\'est pas initialisé. Assurez-vous que firebase-auth.js est chargé avant ce script.');
+    return;
   }
-
-  var db = commentsApp.firestore();
+  
+  var db = firebase.firestore();
   var pageId = encodeURIComponent(window.location.origin + window.location.pathname);
   var COMMENTS_PER_PAGE = 20;
   var allComments = [];
@@ -127,24 +114,8 @@ function escapeHTML(str) {
       var c = pageComments[i];
       var text = escapeHTML(c.text);
       var name = escapeHTML(c.name);
-      var date = '';
       
-      if (c.timestamp) {
-        try {
-          var timestamp = c.timestamp.toDate ? c.timestamp.toDate() : new Date(c.timestamp);
-          date = timestamp.toLocaleDateString('fr-FR', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-        } catch (e) {
-          // Ignorer les erreurs de date
-        }
-      }
-      
-      container.innerHTML += '<div class="border-b border-gray-200 mb-4 pb-4"><div class="flex items-start justify-between mb-2"><strong class="text-[#0f172a]">' + name + '</strong><span class="text-xs text-[#1f1f1f]/60">' + date + '</span></div><p class="text-[#1f1f1f]/80">' + text + '</p></div>';
+      container.innerHTML += '<div class="border-b border-gray-200 mb-4 pb-4"><div class="mb-2"><strong class="text-[#0f172a]">' + name + '</strong></div><p class="text-[#1f1f1f]/80">' + text + '</p></div>';
     }
     
     renderPaginationControls(page);

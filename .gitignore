@@ -14,6 +14,9 @@ _site/
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+*-service-account.json
+old-project-service-account.json
+new-project-service-account.json
 
 # IDE
 .vscode/
