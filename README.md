@@ -9,7 +9,7 @@ It is designed to be simple to develop locally, deploy on static hosting (GitHub
 
 - **Eleventy 3** as static site generator
 - **Nunjucks** templates
-- **Tailwind CSS 3** for styling
+- **Tailwind CSS 4** for styling (CSS-first configuration)
 - **Node.js / npm** for tooling
 
 ---
@@ -352,7 +352,28 @@ This project uses environment variables for:
 
 To keep the project healthy over time:
 
-- **Update dependencies periodically:**
+- **Automatic dependency security monitoring:**
+
+  The project uses **GitHub Dependabot** to automatically monitor dependencies for security vulnerabilities and version updates.
+
+  - **Security alerts**: Dependabot automatically scans dependencies and creates pull requests for security updates
+  - **Version updates**: Weekly checks for new versions of dependencies (minor and patch updates)
+  - **Configuration**: See `.github/dependabot.yml` for monitoring settings
+  - **Notifications**: You'll receive GitHub notifications and emails for:
+    - Security vulnerabilities (high priority)
+    - Available dependency updates (weekly summary)
+  - **Pull requests**: Dependabot creates PRs automatically with:
+    - Changelog information
+    - Labels: `dependencies`, `npm`, `functions`
+    - Grouped updates for minor/patch versions
+
+  **How to use Dependabot PRs:**
+  1. Review the PR description and changelog
+  2. Test locally if needed: `git checkout <dependabot-branch> && npm install && npm test`
+  3. Merge the PR if everything looks good
+  4. Dependabot will automatically update `package-lock.json` and `package.json`
+
+  **Manual dependency checks:**
 
   ```bash
   npm outdated   # see what is out of date
@@ -449,8 +470,10 @@ To keep the project healthy over time:
 
 ### Security and secrets
 
-- No API keys or secrets are committed to the repository.
-- Use `.env` files or CI/CD secret stores (GitHub Actions secrets) if you add external APIs later.
-- The `.gitignore` file excludes `.env` and other sensitive or generated files.
+- **Dependency security**: Automated monitoring via GitHub Dependabot (see [Maintenance](#maintenance) section)
+- **Secrets management**: No API keys or secrets are committed to the repository
+- **Environment variables**: Use `.env` files or CI/CD secret stores (GitHub Actions secrets) if you add external APIs later
+- **Git ignore**: The `.gitignore` file excludes `.env` and other sensitive or generated files
+- **Security alerts**: Check the **Security** tab in GitHub for active security advisories
 
 
