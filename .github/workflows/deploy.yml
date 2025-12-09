@@ -403,7 +403,14 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/http-server.pid ]; then
-            kill $(cat /tmp/http-server.pid) || true
+            SERVER_PID=$(cat /tmp/http-server.pid)
+            if ps -p $SERVER_PID > /dev/null 2>&1; then
+              kill $SERVER_PID 2>/dev/null || true
+              echo "✅ Serveur arrêté (PID: $SERVER_PID)"
+            else
+              echo "⚠️ Le processus serveur n'existe plus"
+            fi
+            rm -f /tmp/http-server.pid
           fi
 
   deploy:
