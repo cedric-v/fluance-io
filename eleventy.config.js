@@ -326,7 +326,7 @@ module.exports = function(eleventyConfig) {
         removeComments: true,
         collapseWhitespace: true,
         minifyCSS: true,
-        minifyJS: true,
+        minifyJS: false, // Désactivé pour éviter les problèmes avec les scripts inline contenant du HTML
       });
     }
     return content;
