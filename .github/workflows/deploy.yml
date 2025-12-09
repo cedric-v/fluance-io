@@ -264,6 +264,29 @@ jobs:
           name: build-artifact
           path: _site
 
+      - name: Verify and create required files
+        run: |
+          # Vérifier et créer .nojekyll si manquant
+          if [ ! -f "_site/.nojekyll" ]; then
+            echo "⚠️ .nojekyll manquant, création du fichier..."
+            touch "_site/.nojekyll"
+          else
+            echo "✅ .nojekyll présent"
+          fi
+          
+          # Vérifier et créer CNAME si manquant
+          if [ ! -f "_site/CNAME" ]; then
+            echo "⚠️ CNAME manquant, création du fichier..."
+            echo "fluance.io" > "_site/CNAME"
+          else
+            echo "✅ CNAME présent"
+          fi
+          
+          # Afficher les fichiers pour debug
+          echo ""
+          echo "📁 Fichiers à la racine de _site/:"
+          ls -la _site/ | head -20
+
       - name: Start local server
         run: |
           cd _site
