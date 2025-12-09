@@ -41,7 +41,14 @@ jobs:
           ELEVENTY_ENV: prod
         run: npm run build
 
-      - name: Upload artifact
+      - name: Upload artifact for smoke tests
+        uses: actions/upload-artifact@v4
+        with:
+          path: _site
+          name: build-artifact
+          retention-days: 1
+
+      - name: Upload artifact for deployment
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
