@@ -997,6 +997,9 @@ window.FluanceAuth = {
   loadProtectedContent,
   displayProtectedContent,
   getCurrentUser,
-  isAuthenticated
+  isAuthenticated,
+  sendPasswordResetEmail,
+  confirmPasswordReset,
+  verifyPasswordResetCode
 };
 

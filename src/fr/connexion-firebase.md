@@ -96,9 +96,6 @@ permalink: /connexion-firebase/
         <a href="/creer-compte" class="text-fluance hover:text-fluance/80 font-medium">Créer un compte</a>
       </p>
       <p class="text-sm text-[#1f1f1f]/60">
-        <a href="/reinitialiser-mot-de-passe" class="text-fluance hover:text-fluance/80">Mot de passe oublié ?</a>
-      </p>
-      <p class="text-sm text-[#1f1f1f]/60">
         <a href="/connexion" class="hover:text-fluance">Retour à la page de connexion principale</a>
       </p>
     </div>
