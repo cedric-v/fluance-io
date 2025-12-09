@@ -66,9 +66,17 @@ Une fois le template visible :
 1. Assurez-vous d'avoir les permissions **Owner** ou **Editor** sur le projet Firebase
 2. Les utilisateurs avec des permissions limitées peuvent ne pas voir tous les templates
 
-### Option 4 : Utiliser l'API Firebase
+### Option 4 : Le template est créé automatiquement lors du premier envoi
 
-Si le template n'apparaît toujours pas dans l'interface, il est possible qu'il soit créé automatiquement lors du premier envoi. Testez en envoyant un lien de connexion depuis votre site.
+**Important** : Firebase peut créer le template automatiquement lors du premier envoi d'email. C'est un comportement normal.
+
+1. **Testez d'abord l'envoi d'un lien de connexion** depuis votre site (même si l'email n'arrive pas encore)
+2. **Attendez quelques minutes** après l'envoi
+3. **Retournez dans l'onglet "Templates"**
+4. **Rafraîchissez la page** (F5)
+5. Le template **"Email link sign-in"** devrait maintenant apparaître
+
+**Note** : Même si le template n'apparaît pas dans l'interface, Firebase utilise un template par défaut pour envoyer les emails. Le problème est probablement ailleurs (domaines autorisés, spams, quotas).
 
 ## ✅ Vérification
 
@@ -79,11 +87,27 @@ Après activation, vous devriez voir dans **Templates** :
 - ✅ Email address change
 - ✅ Multi-factor enrolment notification
 
-## 🧪 Test
+## 🧪 Test et prochaines étapes
 
-1. Une fois le template activé et configuré
-2. Testez l'envoi d'un lien de connexion depuis votre site
-3. Vérifiez que l'email arrive (pensez à vérifier les spams)
+**Si le template n'apparaît toujours pas** :
+
+1. **Vérifiez les domaines autorisés** (priorité 1) :
+   - Authentication → Settings → Authorized domains
+   - Assurez-vous que `fluance.io` est présent
+   - C'est souvent la cause principale du problème
+
+2. **Vérifiez les spams** (priorité 2) :
+   - Les emails Firebase sont souvent filtrés
+   - Recherchez : `from:noreply@fluance-protected-content.firebaseapp.com`
+
+3. **Vérifiez les quotas Firebase** :
+   - Usage and billing → Vérifiez que vous n'avez pas dépassé 100 emails/jour
+
+4. **Le template peut apparaître après le premier envoi** :
+   - Firebase crée parfois le template automatiquement
+   - Testez l'envoi, attendez quelques minutes, puis vérifiez à nouveau les Templates
+
+**Important** : Même si le template n'apparaît pas dans l'interface, Firebase utilise un template par défaut. Si les emails n'arrivent pas, le problème est probablement dans les domaines autorisés ou les spams.
 
 ---
 
