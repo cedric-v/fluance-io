@@ -130,10 +130,18 @@ permalink: /cours-en-ligne/5jours/j1/
         if (!container) return;
         // Vider le conteneur
         container.innerHTML = '';
-        // Créer le titre
+        // Créer le titre après le formulaire
+        var form = document.getElementById("comment-form");
+        var existingTitle = form.parentElement.querySelector('h3.comments-title');
+        if (existingTitle) {
+          existingTitle.remove();
+        }
         var title = document.createElement('h3');
-        title.textContent = 'Commentaires';
-        container.appendChild(title);
+        title.className = 'comments-title';
+        title.textContent = 'Ajouter un commentaire';
+        title.style.marginTop = '1.5rem';
+        title.style.marginBottom = '1rem';
+        form.parentElement.insertBefore(title, container);
         if (allComments.length === 0) {
           var emptyMsg = document.createElement('p');
           emptyMsg.style.color = '#666';
@@ -206,11 +214,9 @@ permalink: /cours-en-ligne/5jours/j1/
         }
       }
       if (db) {
-        console.log("Chargement des commentaires pour pageId:", pageId);
         db.collection("comments").doc(pageId).collection("messages")
           .orderBy("timestamp", "desc")
           .onSnapshot(function(snapshot) {
-            console.log("Commentaires reçus:", snapshot.size);
             allComments = [];
             snapshot.forEach(function(doc) {
               allComments.push(doc.data());

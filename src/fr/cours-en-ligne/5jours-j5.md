@@ -140,7 +140,7 @@ permalink: /cours-en-ligne/5jours/j5/
         container.innerHTML = '';
         // Créer le titre
         var title = document.createElement('h3');
-        title.textContent = 'Commentaires';
+        title.textContent = 'Ajouter un commentaire';
         container.appendChild(title);
         if (allComments.length === 0) {
           var emptyMsg = document.createElement('p');

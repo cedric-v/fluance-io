@@ -137,7 +137,7 @@ permalink: /cours-en-ligne/5jours/j2/
         container.innerHTML = '';
         // Créer le titre
         var title = document.createElement('h3');
-        title.textContent = 'Commentaires';
+        title.textContent = 'Ajouter un commentaire';
         container.appendChild(title);
         if (allComments.length === 0) {
           var emptyMsg = document.createElement('p');
@@ -218,11 +218,9 @@ permalink: /cours-en-ligne/5jours/j2/
       }
 
       if (db) {
-        console.log("Chargement des commentaires pour pageId:", pageId);
         db.collection("comments").doc(pageId).collection("messages")
           .orderBy("timestamp", "desc")
           .onSnapshot(function(snapshot) {
-            console.log("Commentaires reçus:", snapshot.size);
             allComments = [];
             snapshot.forEach(function(doc) {
               allComments.push(doc.data());
