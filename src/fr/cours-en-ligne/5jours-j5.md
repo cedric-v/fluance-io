@@ -13,17 +13,17 @@ permalink: /cours-en-ligne/5jours/j5/
       et retrouvez votre calme intérieur
     </h1>
     
-    <div class="flex flex-wrap justify-center gap-4 text-lg font-semibold text-[#82153e]">
-      <a href="{{ '/cours-en-ligne/5jours/j1/' | relativeUrl }}" class="px-4 py-2 hover:bg-[#82153e]/10 rounded-full transition">Jour 1<br><span class="text-base font-normal">S'ancrer et détendre</span></a>
-      <a href="{{ '/cours-en-ligne/5jours/j2/' | relativeUrl }}" class="px-4 py-2 hover:bg-[#82153e]/10 rounded-full transition">Jour 2<br><span class="text-base font-normal">Lâcher-prise</span></a>
-      <a href="{{ '/cours-en-ligne/5jours/j3/' | relativeUrl }}" class="px-4 py-2 hover:bg-[#82153e]/10 rounded-full transition">Jour 3<br><span class="text-base font-normal">Libérer le dos</span></a>
-      <a href="{{ '/cours-en-ligne/5jours/j4/' | relativeUrl }}" class="px-4 py-2 hover:bg-[#82153e]/10 rounded-full transition">Jour 4<br><span class="text-base font-normal">Fluidité et Emotions</span></a>
-      <span class="px-4 py-2 bg-[#82153e]/10 rounded-full">Jour 5<br><span class="text-base font-normal">Harmonie</span></span>
+    <div class="flex flex-wrap justify-center gap-4 text-lg font-semibold text-fluance">
+      <a href="{{ '/cours-en-ligne/5jours/j1/' | relativeUrl }}" class="px-4 py-2 hover:bg-fluance/10 rounded-full transition">Jour 1<br><span class="text-base font-normal">S'ancrer et détendre</span></a>
+      <a href="{{ '/cours-en-ligne/5jours/j2/' | relativeUrl }}" class="px-4 py-2 hover:bg-fluance/10 rounded-full transition">Jour 2<br><span class="text-base font-normal">Lâcher-prise</span></a>
+      <a href="{{ '/cours-en-ligne/5jours/j3/' | relativeUrl }}" class="px-4 py-2 hover:bg-fluance/10 rounded-full transition">Jour 3<br><span class="text-base font-normal">Libérer le dos</span></a>
+      <a href="{{ '/cours-en-ligne/5jours/j4/' | relativeUrl }}" class="px-4 py-2 hover:bg-fluance/10 rounded-full transition">Jour 4<br><span class="text-base font-normal">Fluidité et Emotions</span></a>
+      <span class="px-4 py-2 bg-fluance/10 rounded-full">Jour 5<br><span class="text-base font-normal">Harmonie</span></span>
     </div>
   </header>
 
   <div class="section-card p-8 bg-white space-y-6">
-    <h2 class="text-2xl font-semibold text-[#82153e] text-center">Harmonie :</h2>
+    <h2 class="text-2xl font-semibold text-fluance text-center">Harmonie :</h2>
     
     <div class="aspect-video w-full max-w-3xl mx-auto rounded-lg overflow-hidden">
       <div style="position:relative;padding-top:56.25%;"><iframe src="https://iframe.mediadelivery.net/embed/25452/1fc4e0f7-4c07-4fdc-9908-8b24755624d3?autoplay=false&amp;loop=false&amp;muted=false&amp;preload=true&amp;responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true" captions="FR"></iframe></div>
@@ -43,8 +43,8 @@ permalink: /cours-en-ligne/5jours/j5/
       </p>
       <h3 class="text-xl font-semibold text-[#0f172a]">Ajouter un commentaire</h3>
       <form id="comment-form">
-        <input type="text" id="name" placeholder="Votre prénom" required="" class="w-full p-3 mb-3 border-2 border-[#82153e]/20 rounded-lg focus:border-[#82153e] focus:outline-none text-[#0f172a]">
-        <textarea id="text" placeholder="Votre commentaire" required="" rows="4" class="w-full p-3 mb-3 border-2 border-[#82153e]/20 rounded-lg focus:border-[#82153e] focus:outline-none text-[#0f172a]"></textarea>
+        <input type="text" id="name" placeholder="Votre prénom" required="" class="w-full p-3 mb-3 border-2 border-fluance/20 rounded-lg focus:border-fluance focus:outline-hidden text-[#0f172a]">
+        <textarea id="text" placeholder="Votre commentaire" required="" rows="4" class="w-full p-3 mb-3 border-2 border-fluance/20 rounded-lg focus:border-fluance focus:outline-hidden text-[#0f172a]"></textarea>
         <button type="submit" class="btn-primary w-full text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]">Envoyer</button>
       </form>
       <div id="comments-container"></div>
@@ -196,7 +196,7 @@ permalink: /cours-en-ligne/5jours/j5/
       Vous êtes guidé par <strong>Cédric Vonlanthen</strong>, enseignant de méditation depuis plus de 13 ans et fondateur de Fluance.
     </p>
     
-    <div class="pt-4 border-t border-[#82153e]/20">
+    <div class="pt-4 border-t border-fluance/20">
       <p class="text-lg text-[#0f172a]/80 text-center">
         Pour inviter votre entourage à ces 5 jours vers la détente, transmettez-leur l'adresse fluance.io
       </p>

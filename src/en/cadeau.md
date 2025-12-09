@@ -17,7 +17,7 @@ eleventyExcludeFromCollections: true
 
   <article class="prose prose-lg max-w-none space-y-12 text-[#1f1f1f]">
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e] text-center">
+      <h2 class="text-2xl font-semibold text-fluance text-center">
         What is this and how to use the videos below?
       </h2>
       <p class="text-lg text-[#0f172a]/80 text-center">
@@ -32,7 +32,7 @@ eleventyExcludeFromCollections: true
     <div class="space-y-12">
       <!-- Video 1: Recharge -->
       <div class="section-card p-8 bg-white space-y-6">
-        <h3 class="text-2xl font-semibold text-[#82153e] text-center">Recharge</h3>
+        <h3 class="text-2xl font-semibold text-fluance text-center">Recharge</h3>
         <h4 class="text-xl font-medium text-[#0f172a] text-center">Walk by the water</h4>
         <div class="relative w-full" style="padding-bottom: 56.25%;">
           <iframe 
@@ -48,7 +48,7 @@ eleventyExcludeFromCollections: true
 
       <!-- Video 2: Take a step back -->
       <div class="section-card p-8 bg-white space-y-6">
-        <h3 class="text-2xl font-semibold text-[#82153e] text-center">Take a step back</h3>
+        <h3 class="text-2xl font-semibold text-fluance text-center">Take a step back</h3>
         <h4 class="text-xl font-medium text-[#0f172a] text-center">At the summit</h4>
         <div class="relative w-full" style="padding-bottom: 56.25%;">
           <iframe 
@@ -64,7 +64,7 @@ eleventyExcludeFromCollections: true
 
       <!-- Video 3: Ground yourself -->
       <div class="section-card p-8 bg-white space-y-6">
-        <h3 class="text-2xl font-semibold text-[#82153e] text-center">Ground yourself</h3>
+        <h3 class="text-2xl font-semibold text-fluance text-center">Ground yourself</h3>
         <h4 class="text-xl font-medium text-[#0f172a] text-center">Walk in the snow</h4>
         <div class="relative w-full" style="padding-bottom: 56.25%;">
           <iframe 

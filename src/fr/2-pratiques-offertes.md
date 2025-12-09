@@ -9,7 +9,7 @@ eleventyExcludeFromCollections: true
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="text-center space-y-4">
-    <h1 class="text-4xl md:text-5xl font-semibold text-[#82153e]">Merci pour votre inscription !</h1>
+    <h1 class="text-4xl md:text-5xl font-semibold text-fluance">Merci pour votre inscription !</h1>
   </header>
 
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
@@ -19,7 +19,7 @@ eleventyExcludeFromCollections: true
 
     <div class="space-y-6">
       <div class="section-card p-8 bg-white">
-        <h2 class="text-2xl font-semibold text-[#82153e] mb-4">A. Ancrage et apaisement</h2>
+        <h2 class="text-2xl font-semibold text-fluance mb-4">A. Ancrage et apaisement</h2>
         <p class="text-[#0f172a]/75 mb-6">
           Une pratique guidée pour vous ancrer dans le moment présent et apaiser votre système nerveux.
         </p>
@@ -27,7 +27,7 @@ eleventyExcludeFromCollections: true
       </div>
 
       <div class="section-card p-8 bg-white">
-        <h2 class="text-2xl font-semibold text-[#82153e] mb-4">B. Auto-massages</h2>
+        <h2 class="text-2xl font-semibold text-fluance mb-4">B. Auto-massages</h2>
         <p class="text-[#0f172a]/75 mb-6">
           Des techniques simples d'auto-massage pour libérer les tensions et retrouver de la mobilité.
         </p>

@@ -153,7 +153,7 @@ function generateVideoHTML(title, embedCode) {
   }
   
   return `<div class="protected-video-content">
-  <h2 class="text-2xl md:text-3xl font-semibold text-[#82153e] mb-6">${title}</h2>
+  <h2 class="text-2xl md:text-3xl font-semibold text-fluance mb-6">${title}</h2>
   
   <div class="video-container mb-8" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000;">
     ${iframeCode}

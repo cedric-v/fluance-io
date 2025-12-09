@@ -9,7 +9,7 @@ eleventyExcludeFromCollections: true
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="text-center space-y-4">
-    <h1 class="text-4xl md:text-5xl font-semibold text-[#82153e]">Thank you for your registration!</h1>
+    <h1 class="text-4xl md:text-5xl font-semibold text-fluance">Thank you for your registration!</h1>
   </header>
 
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
@@ -19,7 +19,7 @@ eleventyExcludeFromCollections: true
 
     <div class="space-y-6">
       <div class="section-card p-8 bg-white">
-        <h2 class="text-2xl font-semibold text-[#82153e] mb-4">A. Grounding and Calming</h2>
+        <h2 class="text-2xl font-semibold text-fluance mb-4">A. Grounding and Calming</h2>
         <p class="text-[#0f172a]/75 mb-6">
           A guided practice to ground yourself in the present moment and calm your nervous system.
         </p>
@@ -27,7 +27,7 @@ eleventyExcludeFromCollections: true
       </div>
 
       <div class="section-card p-8 bg-white">
-        <h2 class="text-2xl font-semibold text-[#82153e] mb-4">B. Self-Massage</h2>
+        <h2 class="text-2xl font-semibold text-fluance mb-4">B. Self-Massage</h2>
         <p class="text-[#0f172a]/75 mb-6">
           Simple self-massage techniques to release tension and regain mobility.
         </p>

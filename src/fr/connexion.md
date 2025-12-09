@@ -15,7 +15,7 @@ permalink: /connexion/
     <div class="flex flex-col md:flex-row gap-6">
       <!-- Formation en ligne -->
       <div class="section-card p-8 bg-white flex-1">
-        <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Formation en ligne</h2>
+        <h2 class="text-2xl font-semibold text-fluance mb-4">Formation en ligne</h2>
         <p class="text-lg text-[#0f172a]/80 mb-6">
           Accédez à votre espace de formation en ligne pour suivre vos cours et pratiques.
         </p>
@@ -26,7 +26,7 @@ permalink: /connexion/
 
       <!-- Présentiel -->
       <div class="section-card p-8 bg-white flex-1">
-        <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Présentiel</h2>
+        <h2 class="text-2xl font-semibold text-fluance mb-4">Présentiel</h2>
         <p class="text-lg text-[#0f172a]/80 mb-6">
           Regardez le planning des prochains cours et inscrivez-vous à une séance.
         </p>

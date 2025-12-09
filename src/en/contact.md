@@ -8,7 +8,7 @@ permalink: /en/contact/
 
 <section id="contact" class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <div class="section-card p-8 bg-white text-center space-y-6">
-    <h1 class="text-3xl font-semibold text-[#82153e]">Contact Cédric</h1>
+    <h1 class="text-3xl font-semibold text-fluance">Contact Cédric</h1>
     <p class="text-lg text-[#0f172a]/80">
       Have a question? A request? Write to one of the addresses mentioned
     </p>
@@ -16,7 +16,7 @@ permalink: /en/contact/
 
   <div class="section-card p-8 bg-white space-y-6">
     <div>
-      <h2 class="text-xl font-semibold text-[#82153e] mb-3">Instant messaging</h2>
+      <h2 class="text-xl font-semibold text-fluance mb-3">Instant messaging</h2>
       <p class="text-[#0f172a]/80 mb-4">
         Text or voice messages (no calls)
       </p>
@@ -36,15 +36,15 @@ permalink: /en/contact/
       </div>
     </div>
 
-    <div class="pt-6 border-t border-[#82153e]/20">
-      <h2 class="text-xl font-semibold text-[#82153e] mb-3">Email</h2>
+    <div class="pt-6 border-t border-fluance/20">
+      <h2 class="text-xl font-semibold text-fluance mb-3">Email</h2>
       <p class="text-[#0f172a]/80">
-        <a href="#" id="contact-email-link-en" class="text-[#82153e] hover:underline"></a>
+        <a href="#" id="contact-email-link-en" class="text-fluance hover:underline"></a>
       </p>
     </div>
 
-    <div class="pt-6 border-t border-[#82153e]/20">
-      <h2 class="text-xl font-semibold text-[#82153e] mb-3">Address</h2>
+    <div class="pt-6 border-t border-fluance/20">
+      <h2 class="text-xl font-semibold text-fluance mb-3">Address</h2>
       <p class="text-[#0f172a]/80">
         Instants Zen Sàrl<br>
         Case postale<br>

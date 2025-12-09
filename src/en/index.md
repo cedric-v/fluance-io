@@ -9,7 +9,7 @@ locale: en
   <div class="absolute inset-0 z-0">
     {% image "assets/img/fond-cedric.jpg", "Cédric Vonlanthen by the lake", "w-full h-full object-cover object-center md:object-right", "eager", "high", "1280", "960" %}
     <div class="absolute inset-0 md:hidden" style="background-color: rgba(100, 142, 216, 0.8);"></div>
-    <div class="hidden md:block absolute inset-0 bg-gradient-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
+    <div class="hidden md:block absolute inset-0 bg-linear-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
   </div>
   <div class="relative z-10 max-w-2xl text-white space-y-8">
     <div class="space-y-4">
@@ -74,7 +74,7 @@ locale: en
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-10">
   <div class="text-center space-y-4">
-    <h2 class="text-3xl font-semibold text-[#82153e]">What they say</h2>
+    <h2 class="text-3xl font-semibold text-fluance">What they say</h2>
   </div>
   <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
     <div class="quote-card">
@@ -98,14 +98,14 @@ locale: en
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16">
   <div class="text-center space-y-4 mb-12">
-    <h2 class="text-3xl font-semibold text-[#82153e]">Join the movement</h2>
+    <h2 class="text-3xl font-semibold text-fluance">Join the movement</h2>
   </div>
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
     <a href="{{ '/en/contact/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col">
       <span>Try 2 liberating practices</span>
       <span class="text-sm font-normal opacity-90">online</span>
     </a>
-    <a href="{{ '/en/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-secondary border-[3px] border-[#82153e] text-[#0f172a] bg-gray-50 hover:bg-[#82153e] hover:text-white text-center font-bold shadow-lg flex flex-col">
+    <a href="{{ '/en/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-secondary border-[3px] border-fluance text-[#0f172a] bg-gray-50 hover:bg-fluance hover:text-white text-center font-bold shadow-lg flex flex-col">
       <span>Classes in Fribourg (Switzerland)</span>
       <span class="text-sm font-normal opacity-90">in-person</span>
     </a>

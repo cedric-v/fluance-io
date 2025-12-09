@@ -54,7 +54,7 @@ permalink: /cours-en-ligne/5jours/inscription/
     </p>
     
     <div class="space-y-4">
-      <p class="text-lg font-semibold text-[#82153e]">Ce que vous allez vivre :</p>
+      <p class="text-lg font-semibold text-fluance">Ce que vous allez vivre :</p>
       <ul class="space-y-3 text-[#0f172a]/80">
         <li class="flex items-start gap-3">
           <span class="text-[#8bc34a] text-xl font-bold mt-1">☑️</span>
@@ -84,7 +84,7 @@ permalink: /cours-en-ligne/5jours/inscription/
   </div>
 
   <div class="section-card p-8 bg-white space-y-6">
-    <h2 class="text-2xl font-semibold text-[#82153e] text-center">Ce qu'ils en disent</h2>
+    <h2 class="text-2xl font-semibold text-fluance text-center">Ce qu'ils en disent</h2>
     <div class="grid md:grid-cols-2 gap-6">
       <div class="quote-card">
         <p class="italic text-[#0f172a]/80">"Wow merci beaucoup, j'ai <strong>adoré</strong>, à demain !!!! 😊"</p>

@@ -15,7 +15,7 @@ permalink: /en/connexion/
     <div class="flex flex-col md:flex-row gap-6">
       <!-- Online Training -->
       <div class="section-card p-8 bg-white flex-1">
-        <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Online Training</h2>
+        <h2 class="text-2xl font-semibold text-fluance mb-4">Online Training</h2>
         <p class="text-lg text-[#0f172a]/80 mb-6">
           Access your online training space to follow your courses and practices.
         </p>
@@ -26,7 +26,7 @@ permalink: /en/connexion/
 
       <!-- In-person -->
       <div class="section-card p-8 bg-white flex-1">
-        <h2 class="text-2xl font-semibold text-[#82153e] mb-4">In-person</h2>
+        <h2 class="text-2xl font-semibold text-fluance mb-4">In-person</h2>
         <p class="text-lg text-[#0f172a]/80 mb-6">
           View the schedule of upcoming classes and register for a session.
         </p>

@@ -11,7 +11,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
   <div class="absolute inset-0 z-0">
     {% image "assets/img/bienvenue-21-jour-bandeau.jpg", "Welcome to the 21-day journey", "w-full h-full object-cover" %}
     <div class="absolute inset-0 md:hidden" style="background-color: rgba(100, 142, 216, 0.8);"></div>
-    <div class="hidden md:block absolute inset-0 bg-gradient-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
+    <div class="hidden md:block absolute inset-0 bg-linear-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
   </div>
   <div class="relative z-10 max-w-2xl text-white space-y-8">
     <div class="space-y-4">
@@ -61,7 +61,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e]">Want to go further?</h2>
+      <h2 class="text-2xl font-semibold text-fluance">Want to go further?</h2>
       <div class="space-y-4">
         <p class="text-lg text-[#0f172a]/80">
           <strong>Join <em>Fluance</em>, composed of:</strong>
@@ -71,7 +71,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
           <li><strong>a supportive community.</strong></li>
         </ol>
         <div class="space-y-2 pt-4">
-          <p class="text-lg font-semibold text-[#82153e]">For:</p>
+          <p class="text-lg font-semibold text-fluance">For:</p>
           <ul class="space-y-2 text-[#0f172a]/80">
             <li>➡️ <strong>Release</strong> daily pressure</li>
             <li>➡️ <strong>Free</strong> physical and emotional tension</li>
@@ -83,12 +83,12 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="flex flex-col md:flex-row gap-6 items-center md:items-start">
-      <div class="w-full md:w-1/3 flex-shrink-0">
+      <div class="w-full md:w-1/3 shrink-0">
         <div class="section-card overflow-hidden">
           {% image "assets/img/fondateur.png", "Cédric Vonlanthen", "w-full h-auto" %}
         </div>
       </div>
-      <div class="flex-1 bg-[#82153e]/5 border-l-4 border-[#82153e] p-6 rounded-r-lg">
+      <div class="flex-1 bg-fluance/5 border-l-4 border-fluance p-6 rounded-r-lg">
         <p class="text-lg text-[#0f172a]/80">
           You are guided by <strong>Cédric Vonlanthen</strong>, meditation teacher for over 13 years, trained in multiple martial arts and creator of the Fluance approach.
         </p>
@@ -96,7 +96,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e]">Do you experience this?</h2>
+      <h2 class="text-2xl font-semibold text-fluance">Do you experience this?</h2>
       <ul class="space-y-3 text-[#0f172a]/80">
         <li>❌ Do you sometimes feel your <strong>body stiff</strong> when you wake up?</li>
         <li>❌ Do <strong>tensions</strong> in your <strong>back</strong>, neck or shoulders appear without warning?</li>
@@ -104,7 +104,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
         <li>❌ Have you perhaps <strong>already tried yoga</strong>, gentle exercise, movement meditation, chi gong... without it really suiting you?</li>
         <li>❌ Do you perhaps recognize yourself in this <strong>feeling of having "tried everything"</strong>, without ever finding a method that really fits who you are?</li>
       </ul>
-      <p class="text-lg font-semibold text-[#82153e] pt-4">➡️ You are not alone.</p>
+      <p class="text-lg font-semibold text-fluance pt-4">➡️ You are not alone.</p>
       <p class="text-lg text-[#0f172a]/80">
         Our body changes, and we need adapted approaches: gentler, more respectful... but just as effective.
       </p>
@@ -114,7 +114,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e]">With Fluance, in 21 days:</h2>
+      <h2 class="text-2xl font-semibold text-fluance">With Fluance, in 21 days:</h2>
       <ul class="space-y-3 text-[#0f172a]/80">
         <li>✅ You <strong>release tensions</strong> accumulated in your back, neck and shoulders.</li>
         <li>✅ You <strong>regain a more flexible body</strong>, lighter, more alive.</li>
@@ -128,7 +128,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e]">Why is Fluance different?</h2>
+      <h2 class="text-2xl font-semibold text-fluance">Why is Fluance different?</h2>
       <p class="text-lg text-[#0f172a]/80">
         Unlike traditional sports programs:
       </p>
@@ -143,13 +143,13 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
       <p class="text-lg text-[#0f172a]/80">
         <strong>Each movement becomes a dialogue</strong>, not an effort. You gradually discover what suits you, what relaxes you, what makes you feel good.
       </p>
-      <p class="text-lg font-semibold text-[#82153e] pt-4">
+      <p class="text-lg font-semibold text-fluance pt-4">
         <strong>Fluance</strong> is more than a program. It's an <strong>approach to reconciliation with your body</strong>.
       </p>
     </div>
 
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e]">Some feedback from participants:</h2>
+      <h2 class="text-2xl font-semibold text-fluance">Some feedback from participants:</h2>
       <div class="space-y-4">
         <div class="quote-card">
           <p class="italic text-[#0f172a]/80">
@@ -205,7 +205,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e]">How does the basic journey work?</h2>
+      <h2 class="text-2xl font-semibold text-fluance">How does the basic journey work?</h2>
       <p class="text-lg text-[#0f172a]/80">
         <strong>21 days composed</strong> of <strong>21 mini-practices requiring 2 to 5 minutes</strong> to do in order, ideally every day after your registration.
       </p>
@@ -214,15 +214,15 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
       </p>
       <div class="space-y-4 pt-4">
         <div>
-          <p class="text-lg font-semibold text-[#82153e]">✅ Week 1: <strong>reconnect with your body</strong>, really.</p>
+          <p class="text-lg font-semibold text-fluance">✅ Week 1: <strong>reconnect with your body</strong>, really.</p>
           <p class="text-[#0f172a]/70 italic pl-4">Discover new sensations, release first blockages.</p>
         </div>
         <div>
-          <p class="text-lg font-semibold text-[#82153e]">✅ Week 2: <strong>release tensions</strong> and <strong>get out of overload</strong> through gentle and simple movements</p>
+          <p class="text-lg font-semibold text-fluance">✅ Week 2: <strong>release tensions</strong> and <strong>get out of overload</strong> through gentle and simple movements</p>
           <p class="text-[#0f172a]/70 italic pl-4">Release more tense areas.</p>
         </div>
         <div>
-          <p class="text-lg font-semibold text-[#82153e]">✅ Week 3: <strong>calm</strong> the <strong>mind</strong></p>
+          <p class="text-lg font-semibold text-fluance">✅ Week 3: <strong>calm</strong> the <strong>mind</strong></p>
           <p class="text-[#0f172a]/70 italic pl-4">Install a new lightness in daily life.</p>
         </div>
       </div>
@@ -232,7 +232,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e]">What do I need technically?</h2>
+      <h2 class="text-2xl font-semibold text-fluance">What do I need technically?</h2>
       <p class="text-lg text-[#0f172a]/80">
         To participate, you just need a mobile phone, tablet or computer.
       </p>
@@ -242,7 +242,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e]">What you receive when joining Fluance:</h2>
+      <h2 class="text-2xl font-semibold text-fluance">What you receive when joining Fluance:</h2>
       <ul class="space-y-4 text-[#0f172a]/80">
         <li>✅ The <strong>21-day journey of liberating mini-practices</strong> (2 to 5 minutes) to follow at your own pace, from home
           <ul class="list-disc list-inside pl-6 mt-2 space-y-2">
@@ -266,7 +266,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e]">Frequently asked questions</h2>
+      <h2 class="text-2xl font-semibold text-fluance">Frequently asked questions</h2>
       <div class="space-y-6">
         <div>
           <h3 class="text-lg font-semibold text-[#0f172a] mb-2">Can I join now and start later?</h3>
@@ -299,7 +299,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
       </div>
     </div>
 
-    <div class="p-8 bg-[#82153e] text-white space-y-4 rounded-2xl border border-[#82153e]/20 shadow-lg">
+    <div class="p-8 bg-fluance text-white space-y-4 rounded-2xl border border-fluance/20 shadow-lg">
       <h2 class="text-2xl font-semibold text-white">TOTAL satisfaction guarantee for 14 days.</h2>
       <p class="text-lg text-white/90">
         A simple email to customer support (support@fluance.io), without justification, is enough to get a refund.

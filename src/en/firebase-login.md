@@ -14,18 +14,18 @@ permalink: /en/firebase-login/
     </div>
 
     <!-- Tabs to choose login method -->
-    <div class="mb-6 border-b border-[#82153e]/20">
+    <div class="mb-6 border-b border-fluance/20">
       <nav class="flex -mb-px">
         <button
           id="tab-password"
-          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-[#82153e] text-[#82153e]"
+          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-fluance text-fluance"
           onclick="switchTab('password')"
         >
           Password
         </button>
         <button
           id="tab-passwordless"
-          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-[#82153e] hover:border-[#82153e]/30"
+          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
           onclick="switchTab('passwordless')"
         >
           Email login
@@ -44,7 +44,7 @@ permalink: /en/firebase-login/
           id="email"
           name="email"
           required
-          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           placeholder="your@email.com"
         />
       </div>
@@ -54,7 +54,7 @@ permalink: /en/firebase-login/
           <label for="password" class="block text-sm font-medium text-[#0f172a]">
             Password
           </label>
-          <a href="/en/reset-password" class="text-sm text-[#82153e] hover:text-[#82153e]/80">
+          <a href="/en/reset-password" class="text-sm text-fluance hover:text-fluance/80">
             Forgot password?
           </a>
         </div>
@@ -62,7 +62,7 @@ permalink: /en/firebase-login/
           type="password"
           id="password"
           name="password"
-          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           placeholder="Your password"
         />
       </div>
@@ -78,7 +78,7 @@ permalink: /en/firebase-login/
       <button
         type="submit"
         id="submit-button"
-        class="w-full bg-[#82153e] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#82153e]/90 transition-colors duration-200 flex items-center justify-center"
+        class="w-full bg-fluance text-white py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
       >
         <span id="button-text">Login</span>
         <span id="button-spinner" class="hidden ml-2">
@@ -93,18 +93,18 @@ permalink: /en/firebase-login/
     <div class="mt-6 text-center space-y-2">
       <p class="text-sm text-[#1f1f1f]/80">
         Don't have an account yet? 
-        <a href="/en/create-account" class="text-[#82153e] hover:text-[#82153e]/80 font-medium">Create an account</a>
+        <a href="/en/create-account" class="text-fluance hover:text-fluance/80 font-medium">Create an account</a>
       </p>
       <p class="text-sm text-[#1f1f1f]/60">
-        <a href="/en/connexion" class="hover:text-[#82153e]">Back to main login page</a>
+        <a href="/en/connexion" class="hover:text-fluance">Back to main login page</a>
       </p>
     </div>
 
     <!-- Help section (collapsible) -->
-    <div class="mt-8 border-t border-[#82153e]/20 pt-6">
+    <div class="mt-8 border-t border-fluance/20 pt-6">
       <button
         id="help-toggle"
-        class="w-full flex items-center justify-between text-left text-sm font-medium text-[#82153e] hover:text-[#82153e]/80 transition-colors"
+        class="w-full flex items-center justify-between text-left text-sm font-medium text-fluance hover:text-fluance/80 transition-colors"
         onclick="toggleHelp()"
       >
         <span>❓ Need help?</span>
@@ -127,7 +127,7 @@ permalink: /en/firebase-login/
         </div>
         <div>
           <p class="font-semibold text-[#0f172a] mb-1">Still need help?</p>
-          <p><a href="/en/contact" class="text-[#82153e] hover:underline">Contact us.</a></p>
+          <p><a href="/en/contact" class="text-fluance hover:underline">Contact us.</a></p>
         </div>
       </div>
     </div>
@@ -178,17 +178,17 @@ function switchTab(tab) {
   const buttonText = document.getElementById('button-text');
 
   if (tab === 'password') {
-    passwordTab.classList.add('border-[#82153e]', 'text-[#82153e]');
+    passwordTab.classList.add('border-fluance', 'text-fluance');
     passwordTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
-    passwordlessTab.classList.remove('border-[#82153e]', 'text-[#82153e]');
+    passwordlessTab.classList.remove('border-fluance', 'text-fluance');
     passwordlessTab.classList.add('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'block';
     passwordInput.required = true;
     buttonText.textContent = 'Login';
   } else {
-    passwordlessTab.classList.add('border-[#82153e]', 'text-[#82153e]');
+    passwordlessTab.classList.add('border-fluance', 'text-fluance');
     passwordlessTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
-    passwordTab.classList.remove('border-[#82153e]', 'text-[#82153e]');
+    passwordTab.classList.remove('border-fluance', 'text-fluance');
     passwordTab.classList.add('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'none';
     passwordInput.required = false;

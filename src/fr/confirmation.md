@@ -16,11 +16,11 @@ eleventyExcludeFromCollections: true
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
     <div class="section-card p-8 bg-white space-y-4">
       <div class="flex items-start gap-4">
-        <svg class="w-6 h-6 text-[#82153e] flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-6 h-6 text-fluance shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
         <div class="flex-1">
-          <h2 class="text-xl font-semibold text-[#82153e] mb-2">Vos informations de connexion</h2>
+          <h2 class="text-xl font-semibold text-fluance mb-2">Vos informations de connexion</h2>
           <p class="text-lg text-[#0f172a]/80">
             Vos <strong>informations de connexion viennent de vous être envoyées par e-mail</strong>. Dans le cas d'un paiement par PayPal elles sont envoyées à l'adresse e-mail enregistrée sur votre compte PayPal.
           </p>
@@ -33,11 +33,11 @@ eleventyExcludeFromCollections: true
 
     <div class="section-card p-8 bg-white space-y-6">
       <div class="text-center space-y-4">
-        <h2 class="text-2xl font-semibold text-[#82153e]">En guise de cadeau de bienvenue</h2>
+        <h2 class="text-2xl font-semibold text-fluance">En guise de cadeau de bienvenue</h2>
         <p class="text-lg text-[#0f172a]/80">
           Je vous invite à venir virtuellement en balade avec moi, en vous partageant quelques moments ressourçant en nature.
         </p>
-        <p class="text-lg font-semibold text-[#82153e]">
+        <p class="text-lg font-semibold text-fluance">
           Pour l'obtenir, il vous suffit de cliquer sur le lien ci-dessous :
         </p>
         <div class="pt-4">
@@ -51,11 +51,11 @@ eleventyExcludeFromCollections: true
 
     <div class="section-card p-8 bg-white space-y-6">
       <div class="flex items-start gap-4">
-        <svg class="w-6 h-6 text-[#82153e] flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-6 h-6 text-fluance shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
         <div class="flex-1">
-          <h2 class="text-xl font-semibold text-[#82153e] mb-4">Envie de partager cette aventure avec un proche que cela pourrait inspirer, aider ou soutenir ?</h2>
+          <h2 class="text-xl font-semibold text-fluance mb-4">Envie de partager cette aventure avec un proche que cela pourrait inspirer, aider ou soutenir ?</h2>
           <p class="text-lg text-[#0f172a]/80">
             Savez-vous que <em>les personnes qui suivent une formation avec une connaissance</em> ont tendance à mieux mettre en pratique les partages proposés et ainsi obtenir de <em>meilleurs résultats</em> ?
           </p>
@@ -74,14 +74,14 @@ eleventyExcludeFromCollections: true
 
     <div class="text-center space-y-4 pt-8">
       <p class="text-xl text-[#0f172a]/80 font-medium">A bientôt,</p>
-      <p class="text-xl font-semibold text-[#82153e]">Cédric Vonlanthen</p>
+      <p class="text-xl font-semibold text-fluance">Cédric Vonlanthen</p>
       <p class="text-lg text-[#0f172a]/75 italic">Heureux fondateur de Fluance.</p>
     </div>
 
-    <div class="section-card p-8 bg-[#82153e]/5 border-l-4 border-[#82153e] rounded-r-lg space-y-4">
-      <h2 class="text-xl font-semibold text-[#82153e]">Besoin d'aide ?</h2>
+    <div class="section-card p-8 bg-fluance/5 border-l-4 border-fluance rounded-r-lg space-y-4">
+      <h2 class="text-xl font-semibold text-fluance">Besoin d'aide ?</h2>
       <p class="text-[#0f172a]/80">
-        Contactez-moi via <a href="#" id="confirmation-email-link" class="text-[#82153e] font-semibold hover:underline"></a> ou <a href="{{ '/contact/' | relativeUrl }}" class="text-[#82153e] font-semibold hover:underline">cette page</a>.
+        Contactez-moi via <a href="#" id="confirmation-email-link" class="text-fluance font-semibold hover:underline"></a> ou <a href="{{ '/contact/' | relativeUrl }}" class="text-fluance font-semibold hover:underline">cette page</a>.
       </p>
     </div>
   </article>

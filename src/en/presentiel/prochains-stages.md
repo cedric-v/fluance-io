@@ -8,7 +8,7 @@ permalink: /en/presentiel/prochains-stages/
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="space-y-4 text-center">
-    <p class="cta-pill bg-[#8bc34a]/20 text-[#82153e] inline-flex">In-person</p>
+    <p class="cta-pill bg-[#8bc34a]/20 text-fluance inline-flex">In-person</p>
     <h1 class="text-4xl font-semibold text-[#0f172a]">Upcoming Workshops</h1>
   </header>
 
@@ -18,7 +18,7 @@ permalink: /en/presentiel/prochains-stages/
     </p>
 
     <div class="section-card p-8 bg-white">
-      <h2 class="text-2xl font-semibold text-[#82153e] mb-4">Upcoming Events</h2>
+      <h2 class="text-2xl font-semibold text-fluance mb-4">Upcoming Events</h2>
       <p class="text-[#0f172a]/70 mb-4">
         The dates for upcoming workshops will be announced soon. Sign up for our waiting list to be informed first.
       </p>

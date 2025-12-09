@@ -23,7 +23,7 @@ permalink: /en/create-account/
           id="token"
           name="token"
           required
-          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           placeholder="Your activation code"
         />
         <p class="mt-1 text-sm text-[#1f1f1f]/60">
@@ -40,7 +40,7 @@ permalink: /en/create-account/
           id="email"
           name="email"
           required
-          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           placeholder="your@email.com"
         />
       </div>
@@ -55,7 +55,7 @@ permalink: /en/create-account/
           name="password"
           required
           minlength="6"
-          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           placeholder="Minimum 6 characters"
         />
       </div>
@@ -70,7 +70,7 @@ permalink: /en/create-account/
           name="confirm-password"
           required
           minlength="6"
-          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           placeholder="Repeat your password"
         />
       </div>
@@ -86,7 +86,7 @@ permalink: /en/create-account/
       <button
         type="submit"
         id="submit-button"
-        class="w-full bg-[#82153e] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#82153e]/90 transition-colors duration-200 flex items-center justify-center"
+        class="w-full bg-fluance text-white py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
       >
         <span id="button-text">Create my account</span>
         <span id="button-spinner" class="hidden ml-2">
@@ -101,15 +101,15 @@ permalink: /en/create-account/
     <div class="mt-6 text-center">
       <p class="text-sm text-[#1f1f1f]/80">
         Already have an account? 
-        <a href="/en/firebase-login" class="text-[#82153e] hover:text-[#82153e]/80 font-medium">Login</a>
+        <a href="/en/firebase-login" class="text-fluance hover:text-fluance/80 font-medium">Login</a>
       </p>
     </div>
 
     <!-- Help section (collapsible) -->
-    <div class="mt-8 border-t border-[#82153e]/20 pt-6">
+    <div class="mt-8 border-t border-fluance/20 pt-6">
       <button
         id="help-toggle"
-        class="w-full flex items-center justify-between text-left text-sm font-medium text-[#82153e] hover:text-[#82153e]/80 transition-colors"
+        class="w-full flex items-center justify-between text-left text-sm font-medium text-fluance hover:text-fluance/80 transition-colors"
         onclick="toggleHelp()"
       >
         <span>❓ Need help?</span>
@@ -132,7 +132,7 @@ permalink: /en/create-account/
         </div>
         <div>
           <p class="font-semibold text-[#0f172a] mb-1">Still need help?</p>
-          <p><a href="/en/contact" class="text-[#82153e] hover:underline">Contact us.</a></p>
+          <p><a href="/en/contact" class="text-fluance hover:underline">Contact us.</a></p>
         </div>
       </div>
     </div>

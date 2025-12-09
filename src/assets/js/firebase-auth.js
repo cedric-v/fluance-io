@@ -579,18 +579,18 @@ async function displayProtectedContent(contentId, containerElement) {
             id="name-${contentId}" 
             placeholder="Votre prénom" 
             required 
-            class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+            class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           />
           <textarea 
             id="text-${contentId}" 
             placeholder="Votre commentaire" 
             required
             rows="4"
-            class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+            class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           ></textarea>
           <button 
             type="submit"
-            class="bg-[#82153e] text-white py-2 px-6 rounded-lg font-semibold hover:bg-[#82153e]/90 transition-colors duration-200"
+            class="bg-fluance text-white py-2 px-6 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200"
           >
             Envoyer
           </button>

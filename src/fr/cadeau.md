@@ -17,7 +17,7 @@ eleventyExcludeFromCollections: true
 
   <article class="prose prose-lg max-w-none space-y-12 text-[#1f1f1f]">
     <div class="section-card p-8 bg-white space-y-6">
-      <h2 class="text-2xl font-semibold text-[#82153e] text-center">
+      <h2 class="text-2xl font-semibold text-fluance text-center">
         Qu'est-ce que c'est et comment utiliser les vidéos ci-dessous ?
       </h2>
       <p class="text-lg text-[#0f172a]/80 text-center">
@@ -32,7 +32,7 @@ eleventyExcludeFromCollections: true
     <div class="space-y-12">
       <!-- Vidéo 1: Vous ressourcer -->
       <div class="section-card p-8 bg-white space-y-6">
-        <h3 class="text-2xl font-semibold text-[#82153e] text-center">Vous ressourcer</h3>
+        <h3 class="text-2xl font-semibold text-fluance text-center">Vous ressourcer</h3>
         <h4 class="text-xl font-medium text-[#0f172a] text-center">Balade au fil de l'eau</h4>
         <div class="relative w-full" style="padding-bottom: 56.25%;">
           <iframe 
@@ -48,7 +48,7 @@ eleventyExcludeFromCollections: true
 
       <!-- Vidéo 2: Prendre du recul -->
       <div class="section-card p-8 bg-white space-y-6">
-        <h3 class="text-2xl font-semibold text-[#82153e] text-center">Prendre du recul</h3>
+        <h3 class="text-2xl font-semibold text-fluance text-center">Prendre du recul</h3>
         <h4 class="text-xl font-medium text-[#0f172a] text-center">Au sommet</h4>
         <div class="relative w-full" style="padding-bottom: 56.25%;">
           <iframe 
@@ -64,7 +64,7 @@ eleventyExcludeFromCollections: true
 
       <!-- Vidéo 3: Vous ancrer -->
       <div class="section-card p-8 bg-white space-y-6">
-        <h3 class="text-2xl font-semibold text-[#82153e] text-center">Vous ancrer</h3>
+        <h3 class="text-2xl font-semibold text-fluance text-center">Vous ancrer</h3>
         <h4 class="text-xl font-medium text-[#0f172a] text-center">Marche dans la neige</h4>
         <div class="relative w-full" style="padding-bottom: 56.25%;">
           <iframe 

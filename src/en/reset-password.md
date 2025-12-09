@@ -24,7 +24,7 @@ permalink: /en/reset-password/
           id="email"
           name="email"
           required
-          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           placeholder="your@email.com"
         />
       </div>
@@ -40,7 +40,7 @@ permalink: /en/reset-password/
       <button
         type="submit"
         id="submit-button"
-        class="w-full bg-[#82153e] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#82153e]/90 transition-colors duration-200 flex items-center justify-center"
+        class="w-full bg-fluance text-white py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
       >
         <span id="button-text">Send reset link</span>
         <span id="button-spinner" class="hidden ml-2">
@@ -64,7 +64,7 @@ permalink: /en/reset-password/
           name="new-password"
           required
           minlength="6"
-          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           placeholder="At least 6 characters"
         />
         <p class="mt-1 text-xs text-[#1f1f1f]/60">Password must be at least 6 characters long</p>
@@ -80,7 +80,7 @@ permalink: /en/reset-password/
           name="confirm-password"
           required
           minlength="6"
-          class="w-full px-4 py-2 border border-[#82153e]/20 rounded-lg focus:ring-2 focus:ring-[#82153e] focus:border-[#82153e] text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           placeholder="Repeat password"
         />
       </div>
@@ -96,7 +96,7 @@ permalink: /en/reset-password/
       <button
         type="submit"
         id="confirm-submit-button"
-        class="w-full bg-[#82153e] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#82153e]/90 transition-colors duration-200 flex items-center justify-center"
+        class="w-full bg-fluance text-white py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
       >
         <span id="confirm-button-text">Reset Password</span>
         <span id="confirm-button-spinner" class="hidden ml-2">
@@ -110,7 +110,7 @@ permalink: /en/reset-password/
 
     <div class="mt-6 text-center space-y-2">
       <p class="text-sm text-[#1f1f1f]/80">
-        <a href="/en/firebase-login" class="text-[#82153e] hover:text-[#82153e]/80 font-medium">Back to login</a>
+        <a href="/en/firebase-login" class="text-fluance hover:text-fluance/80 font-medium">Back to login</a>
       </p>
     </div>
   </div>

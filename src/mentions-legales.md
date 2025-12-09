@@ -8,7 +8,7 @@ permalink: /mentions-legales/
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-12 space-y-8">
   <header class="space-y-2 text-center">
-    <p class="cta-pill bg-[#82153e]/10 text-[#82153e] inline-flex">Information légale</p>
+    <p class="cta-pill bg-fluance/10 text-fluance inline-flex">Information légale</p>
     <h1 class="text-3xl font-semibold text-[#0f172a]">Politique de confidentialité</h1>
   </header>
 
