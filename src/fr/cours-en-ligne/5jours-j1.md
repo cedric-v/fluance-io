@@ -46,7 +46,6 @@ permalink: /cours-en-ligne/5jours/j1/
       </form>
       <div id="comments-container"></div>
       <div id="pagination-controls" style="margin-top:10px;"></div>
-      
       <script>
       function escapeHTML(str) {
         var amp = String.fromCharCode(38);

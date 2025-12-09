@@ -49,7 +49,7 @@ permalink: /cours-en-ligne/5jours/j5/
       </form>
       <div id="comments-container"></div>
       <div id="pagination-controls" style="margin-top:10px;"></div>
-      
+
       <script>
       function escapeHTML(str) {
         var amp = String.fromCharCode(38);
@@ -65,7 +65,7 @@ permalink: /cours-en-ligne/5jours/j5/
           .replace(new RegExp(quot, 'g'), String.fromCharCode(38) + 'quot;')
           .replace(new RegExp(apos, 'g'), aposEntity);
       }
-      
+
       // Utiliser le projet Firebase principal (fluance-protected-content)
       // Si Firebase n'est pas déjà initialisé, l'initialiser avec le projet principal
       if (typeof firebase === 'undefined') {
@@ -109,14 +109,14 @@ permalink: /cours-en-ligne/5jours/j5/
         }
         initComments();
       }
-      
+
       function initComments() {
       var db = firebase.firestore();
       var pageId = encodeURIComponent(window.location.origin + window.location['pathname']);
       var COMMENTS_PER_PAGE = 20;
       var allComments = [];
       var currentPage = 1;
-      
+
       document.getElementById("comment-form").addEventListener("submit", function (e) {
         e.preventDefault();
         var name = document.getElementById("name").value.trim();
@@ -134,7 +134,7 @@ permalink: /cours-en-ligne/5jours/j5/
           document.getElementById("comment-form").reset();
         });
       });
-      
+
       function renderCommentsPage(page) {
         var container = document.getElementById("comments-container");
         if (!container) return;
@@ -188,7 +188,7 @@ permalink: /cours-en-ligne/5jours/j5/
         }
         renderPaginationControls(page);
       }
-      
+
       function renderPaginationControls(page) {
         var controls = document.getElementById("pagination-controls");
         var totalPages = Math.ceil(allComments.length / COMMENTS_PER_PAGE);
@@ -229,7 +229,7 @@ permalink: /cours-en-ligne/5jours/j5/
           controls.appendChild(nextBtn);
         }
       }
-      
+
       if (db) {
       db.collection("comments").doc(pageId).collection("messages")
         .orderBy("timestamp", "desc")
@@ -266,7 +266,7 @@ permalink: /cours-en-ligne/5jours/j5/
       <p class="text-xl text-[#0f172a]/80 text-center">
         5 minutes par jour durant 5 jours <strong>d'expériences intuitives et puissantes pour :</strong>
       </p>
-      
+
       <div class="flex flex-col gap-3 text-left max-w-2xl mx-auto">
         <div class="flex items-start gap-3">
           <span class="text-[#8bc34a] text-xl font-bold mt-1">☑️</span>
