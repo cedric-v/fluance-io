@@ -137,6 +137,29 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 
+  // Attendre que window.FluanceAuth soit disponible
+  await new Promise((resolve) => {
+    if (typeof window.FluanceAuth !== 'undefined' && 
+        typeof window.FluanceAuth.sendPasswordResetEmail === 'function') {
+      resolve();
+    } else {
+      const checkInterval = setInterval(() => {
+        if (typeof window.FluanceAuth !== 'undefined' && 
+            typeof window.FluanceAuth.sendPasswordResetEmail === 'function') {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        if (typeof window.FluanceAuth === 'undefined') {
+          console.error('window.FluanceAuth is not available');
+        }
+        resolve();
+      }, 5000);
+    }
+  });
+
   const requestForm = document.getElementById('reset-request-form');
   const confirmForm = document.getElementById('reset-confirm-form');
   const errorDiv = document.getElementById('error-message');
