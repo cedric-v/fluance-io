@@ -285,14 +285,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
       } else {
         // Envoi du lien passwordless
+        console.log('[Connexion] Début de l\'envoi du lien passwordless');
+        console.log('[Connexion] Email:', email);
+        console.log('[Connexion] FluanceAuth disponible:', typeof window.FluanceAuth !== 'undefined');
+        console.log('[Connexion] sendSignInLink disponible:', typeof window.FluanceAuth?.sendSignInLink === 'function');
+        
         // Sauvegarder l'email dans localStorage pour la vérification du lien
         window.localStorage.setItem('emailForSignIn', email);
+        console.log('[Connexion] Email sauvegardé dans localStorage');
         
+        console.log('[Connexion] Appel de window.FluanceAuth.sendSignInLink...');
         const result = await window.FluanceAuth.sendSignInLink(email);
+        console.log('[Connexion] Résultat de sendSignInLink:', result);
 
         if (result.success) {
+          console.log('[Connexion] ✅ Succès, affichage du message');
           showSuccess('Un lien de connexion a été envoyé à votre email. Cliquez sur le lien pour vous connecter.');
         } else {
+          console.log('[Connexion] ❌ Erreur:', result.error);
           showError(result.error || 'Erreur lors de l\'envoi du lien.');
           window.localStorage.removeItem('emailForSignIn');
         }

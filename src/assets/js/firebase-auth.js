@@ -185,10 +185,17 @@ async function signIn(email, password) {
  * Envoie un lien de connexion par email (passwordless)
  */
 async function sendSignInLink(email, actionCodeSettings = null) {
+  console.log('[Firebase Auth] ===== sendSignInLink appelée =====');
+  console.log('[Firebase Auth] Email reçu:', email);
+  console.log('[Firebase Auth] actionCodeSettings:', actionCodeSettings);
+  
   try {
     // Vérifier que auth est initialisé
     if (!auth) {
+      console.log('[Firebase Auth] auth non initialisé, initialisation...');
       auth = firebase.auth();
+    } else {
+      console.log('[Firebase Auth] auth déjà initialisé');
     }
     
     // Configuration par défaut : lien valide pour cette page
@@ -201,15 +208,20 @@ async function sendSignInLink(email, actionCodeSettings = null) {
     
     console.log('[Firebase Auth] Envoi du lien de connexion à:', email);
     console.log('[Firebase Auth] Paramètres:', settings);
+    console.log('[Firebase Auth] URL complète:', settings.url);
+    console.log('[Firebase Auth] handleCodeInApp:', settings.handleCodeInApp);
     
+    console.log('[Firebase Auth] Appel de auth.sendSignInLinkToEmail...');
     await auth.sendSignInLinkToEmail(email, settings);
     
-    console.log('[Firebase Auth] Lien de connexion envoyé avec succès');
+    console.log('[Firebase Auth] ✅ Lien de connexion envoyé avec succès');
     return { success: true };
   } catch (error) {
-    console.error('[Firebase Auth] Erreur lors de l\'envoi du lien:', error);
+    console.error('[Firebase Auth] ❌ ERREUR lors de l\'envoi du lien');
+    console.error('[Firebase Auth] Erreur complète:', error);
     console.error('[Firebase Auth] Code d\'erreur:', error.code);
     console.error('[Firebase Auth] Message d\'erreur:', error.message);
+    console.error('[Firebase Auth] Stack:', error.stack);
     
     // Messages d'erreur plus détaillés
     let errorMessage = getErrorMessage(error.code);
