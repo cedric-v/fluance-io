@@ -22,15 +22,15 @@ const firebaseConfig = {
 if (typeof firebase === 'undefined') {
   // Charger Firebase SDK si pas déjà chargé
   const script1 = document.createElement('script');
-  script1.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
+  script1.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
   document.head.appendChild(script1);
   
   const script2 = document.createElement('script');
-  script2.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js';
+  script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js';
   document.head.appendChild(script2);
   
   const script3 = document.createElement('script');
-  script3.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
+  script3.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js';
   document.head.appendChild(script3);
   
   script3.onload = () => {
@@ -101,7 +101,7 @@ async function verifyTokenAndCreateAccount(token, password, email = null) {
     // Initialiser Firebase Functions si nécessaire
     if (!firebase.functions) {
       const functionsScript = document.createElement('script');
-      functionsScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js';
+      functionsScript.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
       document.head.appendChild(functionsScript);
       await new Promise((resolve) => {
         functionsScript.onload = resolve;
@@ -387,6 +387,7 @@ async function loadProtectedContent(contentId = null) {
         product: userProduct,
         title: contentData.title || '',
         day: contentData.day,
+        commentText: contentData.commentText || null, // Texte personnalisé pour les commentaires
       };
       
       // Pour les autres produits (pas 21jours), ajouter createdAt/updatedAt
@@ -559,9 +560,16 @@ async function displayProtectedContent(contentId, containerElement) {
       const commentSection = document.createElement('div');
       commentSection.className = 'mt-8 pt-8 border-t border-gray-200';
       commentSection.setAttribute('data-comment-section', contentId);
+      
+      // Utiliser le texte personnalisé si disponible, sinon le texte par défaut
+      const commentQuestion = result.commentText || 'Quelles améliorations avez-vous ressenties suite à la pratique du jour ?';
+      
+      // Formater le texte sur plusieurs lignes si nécessaire (pour les jours 0 et 21)
+      const commentQuestionHTML = commentQuestion.split('\n').map(line => line.trim()).filter(line => line).join('<br>');
+      
       commentSection.innerHTML = `
         <h3 class="text-xl font-semibold text-[#0f172a] mb-4">
-          Quelles améliorations avez-vous ressenties suite à la pratique du jour ?
+          ${commentQuestionHTML}
         </h3>
         
         <!-- Comment Section -->
@@ -629,11 +637,11 @@ function initCommentSection(contentId) {
   if (typeof firebase === 'undefined') {
     // Charger Firebase pour les commentaires
     const script1 = document.createElement('script');
-    script1.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
+    script1.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
     document.head.appendChild(script1);
     
     const script2 = document.createElement('script');
-    script2.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
+    script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js';
     document.head.appendChild(script2);
     
     script2.onload = () => {
