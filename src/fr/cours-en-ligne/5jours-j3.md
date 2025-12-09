@@ -194,6 +194,24 @@ permalink: /cours-en-ligne/5jours/j3/
           var prevBtn = document.createElement('button');
           prevBtn.id = 'prev-page';
           prevBtn.textContent = '< Précédent';
+          prevBtn.style.cursor = 'pointer';
+          prevBtn.style.padding = '0.5rem 1rem';
+          prevBtn.style.borderRadius = '0.5rem';
+          prevBtn.style.border = '1px solid rgba(130, 21, 62, 0.2)';
+          prevBtn.style.backgroundColor = 'transparent';
+          prevBtn.style.color = '#82153e';
+          prevBtn.style.fontWeight = '500';
+          prevBtn.style.transition = 'all 0.2s ease';
+          prevBtn.onmouseenter = function() {
+            this.style.backgroundColor = 'rgba(130, 21, 62, 0.1)';
+            this.style.borderColor = 'rgba(130, 21, 62, 0.3)';
+            this.style.transform = 'translateY(-1px)';
+          };
+          prevBtn.onmouseleave = function() {
+            this.style.backgroundColor = 'transparent';
+            this.style.borderColor = 'rgba(130, 21, 62, 0.2)';
+            this.style.transform = 'translateY(0)';
+          };
           prevBtn.onclick = function() {
             currentPage--;
             renderCommentsPage(currentPage);
@@ -209,6 +227,24 @@ permalink: /cours-en-ligne/5jours/j3/
           var nextBtn = document.createElement('button');
           nextBtn.id = 'next-page';
           nextBtn.textContent = 'Suivant >';
+          nextBtn.style.cursor = 'pointer';
+          nextBtn.style.padding = '0.5rem 1rem';
+          nextBtn.style.borderRadius = '0.5rem';
+          nextBtn.style.border = '1px solid rgba(130, 21, 62, 0.2)';
+          nextBtn.style.backgroundColor = 'transparent';
+          nextBtn.style.color = '#82153e';
+          nextBtn.style.fontWeight = '500';
+          nextBtn.style.transition = 'all 0.2s ease';
+          nextBtn.onmouseenter = function() {
+            this.style.backgroundColor = 'rgba(130, 21, 62, 0.1)';
+            this.style.borderColor = 'rgba(130, 21, 62, 0.3)';
+            this.style.transform = 'translateY(-1px)';
+          };
+          nextBtn.onmouseleave = function() {
+            this.style.backgroundColor = 'transparent';
+            this.style.borderColor = 'rgba(130, 21, 62, 0.2)';
+            this.style.transform = 'translateY(0)';
+          };
           nextBtn.onclick = function() {
             currentPage++;
             renderCommentsPage(currentPage);
