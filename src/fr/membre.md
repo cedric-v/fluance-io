@@ -56,6 +56,10 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
+    // Cacher la section de connexion et afficher le conteneur
+    authRequired.classList.add('hidden');
+    contentContainer.classList.remove('hidden');
+
     try {
       const result = await window.FluanceAuth.loadProtectedContent();
       
@@ -122,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (currentDayContent) {
           contentHTML += `
-            <div class="mb-6">
+            <div class="mb-6" id="current-day-content">
               <h2 class="text-2xl font-semibold mb-4">${currentDayContent.title}</h2>
               <div class="protected-content" data-content-id="${currentDayContent.id}">
                 <div class="bg-gray-100 rounded-lg p-8 text-center">
@@ -205,18 +209,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Ajouter les listeners pour la navigation (21jours uniquement)
       if (product === '21jours') {
-        contentContainer.querySelectorAll('a[data-content-id]').forEach(link => {
-          link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const contentId = link.getAttribute('data-content-id');
-            const content = contents.find(c => c.id === contentId);
-            
-            if (!content || !content.isAccessible) {
-              return;
-            }
+        // Attendre que le DOM soit mis à jour
+        setTimeout(() => {
+          contentContainer.querySelectorAll('a[data-content-id]').forEach(link => {
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              const contentId = link.getAttribute('data-content-id');
+              const content = contents.find(c => c.id === contentId);
+              
+              if (!content) {
+                console.warn('Content not found for ID:', contentId);
+                return;
+              }
+              
+              if (!content.isAccessible) {
+                console.warn('Content not accessible:', contentId);
+                return;
+              }
 
             // Mettre à jour le contenu affiché
-            const contentSection = contentContainer.querySelector('.mb-6');
+            const contentSection = contentContainer.querySelector('#current-day-content');
             if (contentSection) {
               const titleElement = contentSection.querySelector('h2');
               const protectedElement = contentSection.querySelector('.protected-content');
@@ -230,9 +242,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 protectedElement.innerHTML = '<div class="bg-gray-100 rounded-lg p-8 text-center"><p class="text-gray-600 mb-4">Chargement du contenu...</p></div>';
                 
                 if (window.FluanceAuth && window.FluanceAuth.displayProtectedContent) {
-                  window.FluanceAuth.displayProtectedContent(content.id, protectedElement);
+                  window.FluanceAuth.displayProtectedContent(content.id, protectedElement).catch(err => {
+                    console.error('Error loading content:', err);
+                    protectedElement.innerHTML = `
+                      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p class="text-red-800 text-sm">Erreur lors du chargement</p>
+                      </div>
+                    `;
+                  });
                 }
               }
+            } else {
+              console.error('Content section not found');
             }
 
             // Mettre à jour la navigation
@@ -242,8 +263,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             link.classList.add('bg-green-600', 'text-white', 'font-semibold');
             link.classList.remove('bg-gray-100', 'text-gray-700');
+            });
           });
-        });
+        }, 100);
       }
     } catch (error) {
       console.error('Error loading user content:', error);
