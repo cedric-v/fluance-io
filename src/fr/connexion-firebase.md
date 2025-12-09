@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const linkResult = await window.FluanceAuth.handleSignInLink();
     if (linkResult.success) {
       // Connexion réussie avec le lien
-      const returnUrl = new URLSearchParams(window.location.search).get('return') || '/';
+      const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
       window.location.href = returnUrl;
       return;
     }
@@ -277,8 +277,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         const result = await window.FluanceAuth.signIn(email, password);
 
         if (result.success) {
-          // Rediriger vers la page d'origine ou la page d'accueil
-          const returnUrl = new URLSearchParams(window.location.search).get('return') || '/';
+          // Rediriger vers la page d'origine ou l'espace membre
+          const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
           window.location.href = returnUrl;
         } else {
           showError(result.error || 'Erreur lors de la connexion.');
