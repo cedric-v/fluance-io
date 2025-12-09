@@ -8,11 +8,18 @@ permalink: /membre/
 
 <section class="max-w-6xl mx-auto px-6 py-16">
   <div class="bg-white rounded-lg shadow-lg p-8 space-y-8">
-    <header class="text-center">
+    <header class="text-center relative">
       <h1 class="text-3xl font-bold text-gray-900 mb-4">Bienvenue dans l'espace client de Fluance</h1>
       <p class="text-gray-600">
         Accédez à votre contenu protégé et suivez votre progression.
       </p>
+      <button
+        id="logout-button"
+        class="hidden mt-4 text-sm text-gray-600 hover:text-fluance transition-colors underline"
+        onclick="handleLogout()"
+      >
+        Se déconnecter
+      </button>
     </header>
 
     <div id="auth-required" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center hidden">
@@ -35,6 +42,7 @@ permalink: /membre/
 document.addEventListener('DOMContentLoaded', function() {
   const authRequired = document.getElementById('auth-required');
   const contentContainer = document.getElementById('content-container');
+  const logoutButton = document.getElementById('logout-button');
   
   function checkAuthAndLoad() {
     if (typeof window.FluanceAuth !== 'undefined') {
@@ -42,9 +50,17 @@ document.addEventListener('DOMContentLoaded', function() {
       const user = window.FluanceAuth.getCurrentUser();
       
       if (isAuth && user) {
+        // Afficher le bouton de déconnexion
+        if (logoutButton) {
+          logoutButton.classList.remove('hidden');
+        }
         // Charger le contenu disponible
         loadUserContent();
       } else {
+        // Cacher le bouton de déconnexion
+        if (logoutButton) {
+          logoutButton.classList.add('hidden');
+        }
         authRequired.classList.remove('hidden');
         contentContainer.classList.add('hidden');
       }
@@ -299,5 +315,28 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+// Fonction globale pour gérer la déconnexion
+async function handleLogout() {
+  if (!window.FluanceAuth || !window.FluanceAuth.signOut) {
+    console.error('FluanceAuth.signOut is not available');
+    return;
+  }
+
+  if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+    try {
+      const result = await window.FluanceAuth.signOut();
+      if (result.success) {
+        // Rediriger vers la page d'accueil après déconnexion
+        window.location.href = '/';
+      } else {
+        alert('Erreur lors de la déconnexion : ' + (result.error || 'Erreur inconnue'));
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+      alert('Erreur lors de la déconnexion. Veuillez réessayer.');
+    }
+  }
+}
 </script>
 
