@@ -211,19 +211,27 @@ document.addEventListener('DOMContentLoaded', function() {
       if (product === '21jours') {
         // Attendre que le DOM soit mis à jour
         setTimeout(() => {
-          contentContainer.querySelectorAll('a[data-content-id]').forEach(link => {
+          const links = contentContainer.querySelectorAll('a[data-content-id]');
+          console.log('Found navigation links:', links.length);
+          
+          links.forEach(link => {
             link.addEventListener('click', (e) => {
               e.preventDefault();
+              e.stopPropagation();
               const contentId = link.getAttribute('data-content-id');
+              console.log('Clicked on content:', contentId);
               const content = contents.find(c => c.id === contentId);
               
               if (!content) {
-                console.warn('Content not found for ID:', contentId);
+                console.warn('Content not found for ID:', contentId, 'Available contents:', contents.map(c => c.id));
                 return;
               }
               
+              console.log('Content found:', content.id, 'isAccessible:', content.isAccessible);
+              
               if (!content.isAccessible) {
                 console.warn('Content not accessible:', contentId);
+                alert(`Ce contenu sera disponible dans ${content.daysRemaining} jour${content.daysRemaining > 1 ? 's' : ''}.`);
                 return;
               }
 
