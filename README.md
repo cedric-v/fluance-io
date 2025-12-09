@@ -268,9 +268,38 @@ On each push to `main`, GitHub will:
 
 ---
 
-### Quality assurance and validation reports
+### Quality assurance and validation
 
-The project includes quality checks using **Google Lighthouse** and **W3C HTML Validator**. These reports are **optional** and can be generated manually when needed (see [GENERER_RAPPORTS_VALIDATION.md](GENERER_RAPPORTS_VALIDATION.md) for instructions).
+The project includes automated quality checks to ensure the site works correctly:
+
+#### Automated smoke tests
+
+**Smoke tests** run automatically after each build to validate that critical pages are accessible and render correctly. These tests:
+
+- ✅ Verify that critical pages return HTTP 200 status
+- ✅ Check that pages contain valid HTML content (title and body tags)
+- ✅ **Block deployment** if any critical page fails
+
+**Pages tested:**
+- Homepage (root, FR, EN)
+- Contact page
+- Login page (`/connexion-firebase/`)
+- Online course pages (5 days, 21 days)
+- Member area (`/membre/`)
+
+**When smoke tests run:**
+- Automatically after each build on push to `main`
+- Before deployment (deployment is blocked if tests fail)
+
+**Viewing test results:**
+1. Go to the **Actions** tab in GitHub
+2. Click on the latest workflow run
+3. Click on the **"smoke-test"** job
+4. View the test output to see which pages passed or failed
+
+#### Optional validation reports
+
+The project also includes optional quality checks using **Google Lighthouse** and **W3C HTML Validator**. These reports are **not generated automatically** and can be triggered manually when needed (see [GENERER_RAPPORTS_VALIDATION.md](GENERER_RAPPORTS_VALIDATION.md) for instructions).
 
 #### Generating validation reports
 

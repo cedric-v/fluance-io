@@ -243,8 +243,94 @@ jobs:
           echo "📊 Contenu de l'artifact :"
           ls -lah reports/ || echo "Dossier reports non trouvé"
 
-  deploy:
+  smoke-test:
     needs: build
+    runs-on: ubuntu-latest
+    # S'exécute automatiquement après chaque build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pages-artifact
+          path: _site
+
+      - name: Start local server
+        run: |
+          cd _site
+          npx -y http-server -p 8080 --silent &
+          echo $! > /tmp/http-server.pid
+          sleep 5
+          curl -f http://localhost:8080/ || exit 1
+
+      - name: Run smoke tests
+        run: |
+          echo "🧪 Démarrage des smoke tests..."
+          
+          # Liste des pages critiques à tester
+          CRITICAL_PAGES=(
+            "/"
+            "/fr/"
+            "/en/"
+            "/contact/"
+            "/connexion-firebase/"
+            "/cours-en-ligne/5jours/j1/"
+            "/cours-en-ligne/21-jours-mouvement/"
+            "/membre/"
+          )
+          
+          FAILED_TESTS=0
+          PASSED_TESTS=0
+          
+          for page in "${CRITICAL_PAGES[@]}"; do
+            echo ""
+            echo "🔍 Test de: $page"
+            
+            # Vérifier que la page retourne un status 200
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080$page")
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              # Vérifier que la page contient du contenu HTML (au moins un titre)
+              CONTENT=$(curl -s "http://localhost:8080$page")
+              
+              if echo "$CONTENT" | grep -q "<title>" && echo "$CONTENT" | grep -q "<body"; then
+                echo "  ✅ Status: $HTTP_CODE | Contenu HTML valide"
+                PASSED_TESTS=$((PASSED_TESTS + 1))
+              else
+                echo "  ❌ Status: $HTTP_CODE | Page vide ou invalide"
+                FAILED_TESTS=$((FAILED_TESTS + 1))
+              fi
+            else
+              echo "  ❌ Status: $HTTP_CODE (attendu: 200)"
+              FAILED_TESTS=$((FAILED_TESTS + 1))
+            fi
+          done
+          
+          echo ""
+          echo "📊 Résumé des smoke tests:"
+          echo "  ✅ Tests réussis: $PASSED_TESTS"
+          echo "  ❌ Tests échoués: $FAILED_TESTS"
+          
+          if [ $FAILED_TESTS -gt 0 ]; then
+            echo ""
+            echo "❌ Certains tests ont échoué. Le déploiement sera bloqué."
+            exit 1
+          else
+            echo ""
+            echo "✅ Tous les smoke tests ont réussi !"
+          fi
+
+      - name: Stop local server
+        if: always()
+        run: |
+          if [ -f /tmp/http-server.pid ]; then
+            kill $(cat /tmp/http-server.pid) || true
+          fi
+
+  deploy:
+    needs: [build, smoke-test]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
