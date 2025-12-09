@@ -57,12 +57,13 @@ permalink: /cours-en-ligne/5jours/j5/
         var gt = String.fromCharCode(62);
         var quot = String.fromCharCode(34);
         var apos = String.fromCharCode(39);
+        var aposEntity = String.fromCharCode(38) + String.fromCharCode(35) + String.fromCharCode(51) + String.fromCharCode(57) + String.fromCharCode(59);
         return String(str)
-          .replace(new RegExp(amp, 'g'), '&amp;')
-          .replace(new RegExp(lt, 'g'), '&lt;')
-          .replace(new RegExp(gt, 'g'), '&gt;')
-          .replace(new RegExp(quot, 'g'), '&quot;')
-          .replace(new RegExp(apos, 'g'), '&#39;');
+          .replace(new RegExp(amp, 'g'), String.fromCharCode(38) + 'amp;')
+          .replace(new RegExp(lt, 'g'), String.fromCharCode(38) + 'lt;')
+          .replace(new RegExp(gt, 'g'), String.fromCharCode(38) + 'gt;')
+          .replace(new RegExp(quot, 'g'), String.fromCharCode(38) + 'quot;')
+          .replace(new RegExp(apos, 'g'), aposEntity);
       }
       
       // Utiliser le projet Firebase principal (fluance-protected-content)
