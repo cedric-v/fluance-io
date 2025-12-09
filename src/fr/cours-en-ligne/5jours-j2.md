@@ -49,12 +49,17 @@ permalink: /cours-en-ligne/5jours/j2/
       
       <script>
       function escapeHTML(str) {
+        var amp = String.fromCharCode(38);
+        var lt = String.fromCharCode(60);
+        var gt = String.fromCharCode(62);
+        var quot = String.fromCharCode(34);
+        var apos = String.fromCharCode(39);
         return String(str)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
+          .replace(new RegExp(amp, 'g'), '&amp;')
+          .replace(new RegExp(lt, 'g'), '&lt;')
+          .replace(new RegExp(gt, 'g'), '&gt;')
+          .replace(new RegExp(quot, 'g'), '&quot;')
+          .replace(new RegExp(apos, 'g'), '&#39;');
       }
       
       // Utiliser le projet Firebase principal (fluance-protected-content)

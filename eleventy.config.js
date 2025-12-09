@@ -340,6 +340,11 @@ module.exports = function(eleventyConfig) {
   // Copie de la favicon à la racine
   eleventyConfig.addPassthroughCopy({ "src/assets/img/favicon.ico": "favicon.ico" });
   
+  // Shortcode pour préserver le code JavaScript sans interprétation des entités HTML
+  eleventyConfig.addPairedShortcode("rawjs", function(content) {
+    return content;
+  });
+  
   return {
     dir: { input: "src", output: "_site" },
     markdownTemplateEngine: "njk",
