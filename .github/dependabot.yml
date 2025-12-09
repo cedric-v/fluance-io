@@ -1,0 +1,91 @@
+version: 2
+updates:
+  # Surveiller les dépendances npm du package principal
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    # Groupement des mises à jour mineures et patch
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      development-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    # Ignorer certaines mises à jour majeures qui nécessitent une migration
+    ignore:
+      # Tailwind CSS 4.x est déjà installé, ignorer les futures mises à jour majeures
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@tailwindcss/postcss"
+        update-types: ["version-update:semver-major"]
+      # ESLint 9.x est déjà installé, ignorer les futures mises à jour majeures
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+
+  # Surveiller les dépendances npm des Firebase Functions
+  - package-ecosystem: "npm"
+    directory: "/functions"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "npm"
+      - "functions"
+    commit-message:
+      prefix: "chore(functions)"
+      include: "scope"
+    # Groupement des mises à jour mineures et patch
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      development-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    # Ignorer certaines mises à jour majeures qui nécessitent une migration
+    ignore:
+      # ESLint 9.x est déjà installé, ignorer les futures mises à jour majeures
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/eslintrc"
+        update-types: ["version-update:semver-major"]
+
+  # Surveiller les GitHub Actions (workflows)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
