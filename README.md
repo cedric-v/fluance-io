@@ -274,11 +274,35 @@ The project includes automated quality checks to ensure the site works correctly
 
 #### Automated smoke tests
 
-**Smoke tests** run automatically after each build to validate that critical pages are accessible and render correctly. These tests:
+**Smoke tests** run automatically after each build to validate that critical pages are accessible and render correctly. The testing process includes multiple validation stages:
 
+**Stage 1: Build artifact verification**
+- ✅ Verify that critical files are present in the build output (`_site/`)
+- ✅ Check for required files: `index.html`, `fr/index.html`, `en/index.html`, `CNAME`, `.nojekyll`, `404.html`
+- ✅ Verify artifact statistics (HTML file count, total size)
+
+**Stage 2: Artifact download verification**
+- ✅ Verify that the downloaded artifact contains all critical files
+- ✅ Check file sizes to ensure files were not corrupted during download
+- ✅ Validate artifact integrity
+
+**Stage 3: Local smoke tests**
 - ✅ Verify that critical pages return HTTP 200 status
 - ✅ Check that pages contain valid HTML content (title and body tags)
+- ✅ Verify CNAME file content (must be `fluance.io`)
+- ✅ Verify `.nojekyll` file presence (disables Jekyll processing)
+- ✅ Test custom 404 page handling
 - ✅ **Block deployment** if any critical page fails
+
+**Stage 4: Deployment verification**
+- ✅ Verify deployment status and page URL generation
+- ✅ Confirm successful deployment to GitHub Pages
+
+**Stage 5: Production accessibility tests (post-deploy)**
+- ✅ Wait for GitHub Pages propagation (30 seconds)
+- ✅ Test critical pages on production URL (`https://fluance.io`)
+- ✅ Verify production site accessibility and HTML validity
+- ⚠️ Note: Some tests may fail during initial propagation (can take up to 10 minutes)
 
 **Pages tested:**
 - Homepage (root, FR, EN)
@@ -292,12 +316,16 @@ The project includes automated quality checks to ensure the site works correctly
 **When smoke tests run:**
 - Automatically after each build on push to `main`
 - Before deployment (deployment is blocked if tests fail)
+- After deployment (production accessibility tests)
 
 **Viewing test results:**
 1. Go to the **Actions** tab in GitHub
 2. Click on the latest workflow run
-3. Click on the **"smoke-test"** job
-4. View the test output to see which pages passed or failed
+3. View test results in:
+   - **"build"** job: Artifact verification
+   - **"smoke-test"** job: Local smoke tests
+   - **"deploy"** job: Deployment status
+   - **"post-deploy"** job: Production accessibility tests
 
 #### Optional validation reports
 

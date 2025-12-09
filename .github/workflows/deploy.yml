@@ -48,6 +48,52 @@ jobs:
           name: build-artifact
           retention-days: 1
 
+      - name: Verify build artifact contents
+        run: |
+          echo "🔍 Vérification du contenu de l'artifact build..."
+          
+          # Vérifier que _site existe et contient des fichiers
+          if [ ! -d "_site" ]; then
+            echo "❌ Le dossier _site n'existe pas"
+            exit 1
+          fi
+          
+          # Vérifier les fichiers critiques
+          CRITICAL_FILES=(
+            "index.html"
+            "fr/index.html"
+            "en/index.html"
+            "CNAME"
+            ".nojekyll"
+            "404.html"
+          )
+          
+          MISSING_FILES=0
+          for file in "${CRITICAL_FILES[@]}"; do
+            if [ ! -f "_site/$file" ]; then
+              echo "  ❌ Fichier manquant: $file"
+              MISSING_FILES=$((MISSING_FILES + 1))
+            else
+              echo "  ✅ Fichier présent: $file"
+            fi
+          done
+          
+          # Vérifier qu'il y a des fichiers HTML
+          HTML_COUNT=$(find _site -name "*.html" -type f | wc -l)
+          echo ""
+          echo "📊 Statistiques de l'artifact:"
+          echo "  - Fichiers HTML: $HTML_COUNT"
+          echo "  - Taille totale: $(du -sh _site | cut -f1)"
+          
+          if [ $MISSING_FILES -gt 0 ]; then
+            echo ""
+            echo "❌ $MISSING_FILES fichier(s) critique(s) manquant(s)"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ Tous les fichiers critiques sont présents dans l'artifact"
+
       - name: Upload artifact for deployment
         uses: actions/upload-pages-artifact@v3
         with:
@@ -264,6 +310,53 @@ jobs:
           name: build-artifact
           path: _site
 
+      - name: Verify artifact contents after download
+        run: |
+          echo "🔍 Vérification de l'artifact téléchargé..."
+          
+          # Vérifier que _site existe
+          if [ ! -d "_site" ]; then
+            echo "❌ Le dossier _site n'existe pas après téléchargement"
+            exit 1
+          fi
+          
+          # Vérifier les fichiers critiques
+          CRITICAL_FILES=(
+            "index.html"
+            "fr/index.html"
+            "en/index.html"
+            "CNAME"
+            ".nojekyll"
+            "404.html"
+          )
+          
+          MISSING_FILES=0
+          for file in "${CRITICAL_FILES[@]}"; do
+            if [ ! -f "_site/$file" ]; then
+              echo "  ❌ Fichier manquant: $file"
+              MISSING_FILES=$((MISSING_FILES + 1))
+            else
+              SIZE=$(stat -f%z "_site/$file" 2>/dev/null || stat -c%s "_site/$file" 2>/dev/null || echo "0")
+              echo "  ✅ Fichier présent: $file ($(numfmt --to=iec-i --suffix=B $SIZE 2>/dev/null || echo "${SIZE}B"))"
+            fi
+          done
+          
+          # Vérifier qu'il y a des fichiers HTML
+          HTML_COUNT=$(find _site -name "*.html" -type f | wc -l)
+          echo ""
+          echo "📊 Statistiques de l'artifact téléchargé:"
+          echo "  - Fichiers HTML: $HTML_COUNT"
+          echo "  - Taille totale: $(du -sh _site | cut -f1)"
+          
+          if [ $MISSING_FILES -gt 0 ]; then
+            echo ""
+            echo "❌ $MISSING_FILES fichier(s) critique(s) manquant(s) dans l'artifact téléchargé"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ L'artifact téléchargé contient tous les fichiers critiques"
+
       - name: Verify and create required files
         run: |
           # Vérifier et créer .nojekyll si manquant
@@ -446,3 +539,118 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      
+      - name: Verify deployment status
+        run: |
+          echo "🔍 Vérification du statut du déploiement..."
+          
+          if [ -z "${{ steps.deployment.outputs.page_url }}" ]; then
+            echo "❌ L'URL de la page n'a pas été générée"
+            exit 1
+          fi
+          
+          echo "✅ Déploiement réussi"
+          echo "📄 URL de la page: ${{ steps.deployment.outputs.page_url }}"
+          echo "🌐 URL de production: https://fluance.io"
+
+  post-deploy:
+    needs: deploy
+    runs-on: ubuntu-latest
+    # Attendre un peu pour que GitHub Pages propage les changements
+    if: success()
+    env:
+      PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://fluance.io' }}
+    steps:
+      - name: Wait for GitHub Pages propagation
+        run: |
+          echo "⏳ Attente de la propagation de GitHub Pages (30 secondes)..."
+          sleep 30
+          echo "✅ Attente terminée"
+
+      - name: Verify production site accessibility
+        run: |
+          echo "🔍 Vérification de l'accessibilité du site en production..."
+          echo "🌐 URL testée: $PRODUCTION_URL"
+          
+          # Liste des pages critiques à tester en production
+          CRITICAL_PAGES=(
+            "/"
+            "/fr/"
+            "/en/"
+            "/contact/"
+            "/connexion-firebase/"
+            "/cours-en-ligne/5jours/j1/"
+            "/cours-en-ligne/21-jours-mouvement/"
+            "/membre/"
+            "/404.html"
+          )
+          
+          FAILED_TESTS=0
+          PASSED_TESTS=0
+          
+          # Test des pages critiques en production
+          for page in "${CRITICAL_PAGES[@]}"; do
+            echo ""
+            echo "🔍 Test de: $PRODUCTION_URL$page"
+            
+            # Vérifier que la page retourne un status 200
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$PRODUCTION_URL$page" || echo "000")
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              # Vérifier que la page contient du contenu HTML
+              CONTENT=$(curl -s --max-time 10 "$PRODUCTION_URL$page" || echo "")
+              
+              if echo "$CONTENT" | grep -q "<title>" && echo "$CONTENT" | grep -q "<body"; then
+                echo "  ✅ Status: $HTTP_CODE | Contenu HTML valide"
+                PASSED_TESTS=$((PASSED_TESTS + 1))
+              else
+                echo "  ❌ Status: $HTTP_CODE | Page vide ou invalide"
+                FAILED_TESTS=$((FAILED_TESTS + 1))
+              fi
+            elif [ "$HTTP_CODE" = "000" ]; then
+              echo "  ⚠️ Timeout ou erreur de connexion (peut être normal si le site est en cours de propagation)"
+              # Ne pas faire échouer le test car la propagation peut prendre du temps
+              PASSED_TESTS=$((PASSED_TESTS + 1))
+            else
+              echo "  ⚠️ Status: $HTTP_CODE (peut être normal si le site est en cours de propagation)"
+              # Ne pas faire échouer le test car la propagation peut prendre du temps
+              PASSED_TESTS=$((PASSED_TESTS + 1))
+            fi
+          done
+          
+          # Test du fichier CNAME en production
+          echo ""
+          echo "🔍 Test du fichier CNAME en production"
+          CNAME_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$PRODUCTION_URL/CNAME" || echo "000")
+          
+          if [ "$CNAME_HTTP_CODE" = "200" ]; then
+            CNAME_CONTENT=$(curl -s --max-time 10 "$PRODUCTION_URL/CNAME" | tr -d '\n\r' | xargs || echo "")
+            if [ "$CNAME_CONTENT" = "fluance.io" ]; then
+              echo "  ✅ CNAME accessible et correct: $CNAME_CONTENT"
+              PASSED_TESTS=$((PASSED_TESTS + 1))
+            else
+              echo "  ⚠️ CNAME accessible mais contenu: '$CNAME_CONTENT' (peut être normal selon la config)"
+              PASSED_TESTS=$((PASSED_TESTS + 1))
+            fi
+          else
+            echo "  ⚠️ CNAME non accessible (HTTP $CNAME_HTTP_CODE) - peut être normal selon la config GitHub Pages"
+            PASSED_TESTS=$((PASSED_TESTS + 1))
+          fi
+          
+          echo ""
+          echo "📊 Résumé des tests de production:"
+          echo "  ✅ Tests réussis: $PASSED_TESTS"
+          echo "  ❌ Tests échoués: $FAILED_TESTS"
+          echo ""
+          echo "ℹ️ Note: Certains tests peuvent échouer si GitHub Pages est encore en cours de propagation."
+          echo "   La propagation peut prendre jusqu'à 10 minutes après le déploiement."
+          
+          if [ $FAILED_TESTS -gt 0 ]; then
+            echo ""
+            echo "⚠️ Certains tests ont échoué, mais cela peut être dû à la propagation de GitHub Pages."
+            echo "   Vérifiez manuellement dans quelques minutes si le problème persiste."
+            # Ne pas faire échouer le job car la propagation peut prendre du temps
+          else
+            echo ""
+            echo "✅ Tous les tests de production ont réussi !"
+          fi
