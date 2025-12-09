@@ -186,6 +186,11 @@ async function signIn(email, password) {
  */
 async function sendSignInLink(email, actionCodeSettings = null) {
   try {
+    // Vérifier que auth est initialisé
+    if (!auth) {
+      auth = firebase.auth();
+    }
+    
     // Configuration par défaut : lien valide pour cette page
     const defaultSettings = {
       url: window.location.origin + '/connexion-firebase',
@@ -194,11 +199,33 @@ async function sendSignInLink(email, actionCodeSettings = null) {
     
     const settings = actionCodeSettings || defaultSettings;
     
+    console.log('[Firebase Auth] Envoi du lien de connexion à:', email);
+    console.log('[Firebase Auth] Paramètres:', settings);
+    
     await auth.sendSignInLinkToEmail(email, settings);
+    
+    console.log('[Firebase Auth] Lien de connexion envoyé avec succès');
     return { success: true };
   } catch (error) {
-    console.error('Send sign in link error:', error);
-    return { success: false, error: getErrorMessage(error.code) };
+    console.error('[Firebase Auth] Erreur lors de l\'envoi du lien:', error);
+    console.error('[Firebase Auth] Code d\'erreur:', error.code);
+    console.error('[Firebase Auth] Message d\'erreur:', error.message);
+    
+    // Messages d'erreur plus détaillés
+    let errorMessage = getErrorMessage(error.code);
+    
+    // Ajouter des informations supplémentaires pour le débogage
+    if (error.code === 'auth/invalid-email') {
+      errorMessage = 'Email invalide. Vérifiez que l\'email est correct.';
+    } else if (error.code === 'auth/user-disabled') {
+      errorMessage = 'Ce compte a été désactivé. Contactez le support.';
+    } else if (error.code === 'auth/too-many-requests') {
+      errorMessage = 'Trop de tentatives. Veuillez réessayer plus tard.';
+    } else if (error.code === 'auth/operation-not-allowed') {
+      errorMessage = 'La connexion par email n\'est pas activée. Vérifiez la configuration Firebase.';
+    }
+    
+    return { success: false, error: errorMessage, code: error.code };
   }
 }
 
