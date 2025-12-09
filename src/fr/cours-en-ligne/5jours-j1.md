@@ -130,7 +130,7 @@ permalink: /cours-en-ligne/5jours/j1/
         if (!container) return;
         // Vider le conteneur
         container.innerHTML = '';
-        // Créer le titre après le formulaire
+        // Créer le titre après le formulaire (après le bouton Envoyer)
         var form = document.getElementById("comment-form");
         var existingTitle = form.parentElement.querySelector('h3.comments-title');
         if (existingTitle) {
@@ -138,10 +138,11 @@ permalink: /cours-en-ligne/5jours/j1/
         }
         var title = document.createElement('h3');
         title.className = 'comments-title';
-        title.textContent = 'Ajouter un commentaire';
+        title.textContent = 'Commentaires';
         title.style.marginTop = '1.5rem';
         title.style.marginBottom = '1rem';
-        form.parentElement.insertBefore(title, container);
+        // Insérer le titre après le formulaire (après le bouton Envoyer)
+        form.insertAdjacentElement('afterend', title);
         if (allComments.length === 0) {
           var emptyMsg = document.createElement('p');
           emptyMsg.style.color = '#666';
@@ -237,9 +238,6 @@ permalink: /cours-en-ligne/5jours/j1/
             currentPage = 1;
             renderCommentsPage(currentPage);
           }, function(error) {
-            console.error("Erreur Firestore :", error);
-            console.error("Code d'erreur:", error.code);
-            console.error("Message:", error.message);
             var container = document.getElementById("comments-container");
             if (container) {
               container.innerHTML = '';
@@ -253,8 +251,6 @@ permalink: /cours-en-ligne/5jours/j1/
               container.appendChild(errorP);
             }
           });
-      } else {
-        console.error("Firestore n'est pas initialisé");
       }
       }
       </script>

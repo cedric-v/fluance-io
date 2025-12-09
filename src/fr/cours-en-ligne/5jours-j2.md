@@ -240,9 +240,6 @@ permalink: /cours-en-ligne/5jours/j2/
             currentPage = 1;
             renderCommentsPage(currentPage);
           }, function(error) {
-            console.error("Erreur Firestore :", error);
-            console.error("Code d'erreur:", error.code);
-            console.error("Message:", error.message);
             var container = document.getElementById("comments-container");
             if (container) {
               container.innerHTML = '';
@@ -257,7 +254,6 @@ permalink: /cours-en-ligne/5jours/j2/
             }
           });
       } else {
-        console.error("Firestore n'est pas initialisé");
       }
       }
       </script>

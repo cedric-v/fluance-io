@@ -240,7 +240,6 @@ permalink: /cours-en-ligne/5jours/j4/
           currentPage = 1;
           renderCommentsPage(currentPage);
         }, function(error) {
-          console.error("Erreur Firestore :", error);
         });
       }
       }
