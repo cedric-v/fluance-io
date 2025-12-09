@@ -18,7 +18,7 @@ permalink: /contact/
     <div>
       <h2 class="text-xl font-semibold text-fluance mb-3">Messagerie instantanée</h2>
       <p class="text-[#0f172a]/80 mb-4">
-        Message textuels ou vocaux (pas d'appel)
+        Messages textuels ou vocaux (pas d'appel)
       </p>
       <div class="flex flex-col sm:flex-row gap-3">
         <a href="https://wa.me/message/J3EROZAQFOSJM1" id="whatsapp-link" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#25D366] text-white rounded-full font-semibold hover:bg-[#20BA5A] transition-colors shadow-md no-underline cursor-pointer" style="background-color: #25D366; color: white; text-decoration: none;">
