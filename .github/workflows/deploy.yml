@@ -95,7 +95,7 @@ jobs:
           echo "✅ Tous les fichiers critiques sont présents dans l'artifact"
 
       - name: Upload artifact for deployment
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
