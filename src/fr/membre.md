@@ -8,18 +8,20 @@ permalink: /membre/
 
 <section class="max-w-6xl mx-auto px-6 py-16">
   <div class="bg-white rounded-lg shadow-lg p-8 space-y-8">
-    <header class="text-center relative">
-      <h1 class="text-3xl font-bold text-gray-900 mb-4">Bienvenue dans l'espace client de Fluance</h1>
-      <p class="text-gray-600">
-        Accédez à votre contenu protégé et suivez votre progression.
-      </p>
+    <header class="relative pt-8">
       <button
         id="logout-button"
-        class="hidden mt-4 text-sm text-gray-600 hover:text-fluance transition-colors underline"
+        class="hidden absolute top-0 right-0 text-sm text-gray-600 hover:text-fluance transition-colors underline"
         onclick="handleLogout()"
       >
         Se déconnecter
       </button>
+      <div class="text-center">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Bienvenue dans l'espace client de Fluance</h1>
+        <p class="text-gray-600">
+          Accédez à votre contenu protégé et suivez votre progression.
+        </p>
+      </div>
     </header>
 
     <div id="auth-required" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center hidden">
