@@ -61,9 +61,6 @@ permalink: /cours-en-ligne/5jours/j1/
           .replace(new RegExp(quot, 'g'), String.fromCharCode(38) + 'quot;')
           .replace(new RegExp(apos, 'g'), aposEntity);
       }
-      
-      // Utiliser le projet Firebase principal (fluance-protected-content)
-      // Si Firebase n'est pas déjà initialisé, l'initialiser avec le projet principal
       // Utiliser le projet Firebase principal (fluance-protected-content)
       // Si Firebase n'est pas déjà initialisé, l'initialiser avec le projet principal
       if (typeof firebase === 'undefined') {
@@ -71,11 +68,9 @@ permalink: /cours-en-ligne/5jours/j1/
         var script1 = document.createElement('script');
         script1.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
         document.head.appendChild(script1);
-        
         var script2 = document.createElement('script');
         script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js';
         document.head.appendChild(script2);
-        
         script2.onload = function() {
           var firebaseConfig = {
             apiKey: "AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM",
@@ -107,14 +102,12 @@ permalink: /cours-en-ligne/5jours/j1/
         }
         initComments();
       }
-      
       function initComments() {
       var db = firebase.firestore();
       var pageId = encodeURIComponent(window.location.origin + window.location['pathname']);
       var COMMENTS_PER_PAGE = 20;
       var allComments = [];
       var currentPage = 1;
-      
       document.getElementById("comment-form").addEventListener("submit", function (e) {
         e.preventDefault();
         var name = document.getElementById("name").value.trim();
@@ -132,7 +125,6 @@ permalink: /cours-en-ligne/5jours/j1/
           document.getElementById("comment-form").reset();
         });
       });
-      
       function renderCommentsPage(page) {
         var container = document.getElementById("comments-container");
         if (!container) return;
@@ -186,7 +178,6 @@ permalink: /cours-en-ligne/5jours/j1/
         }
         renderPaginationControls(page);
       }
-      
       function renderPaginationControls(page) {
         var controls = document.getElementById("pagination-controls");
         var totalPages = Math.ceil(allComments.length / COMMENTS_PER_PAGE);
@@ -227,7 +218,6 @@ permalink: /cours-en-ligne/5jours/j1/
           controls.appendChild(nextBtn);
         }
       }
-      
       if (db) {
         console.log("Chargement des commentaires pour pageId:", pageId);
         db.collection("comments").doc(pageId).collection("messages")
