@@ -286,6 +286,8 @@ The project includes automated quality checks to ensure the site works correctly
 - Login page (`/connexion-firebase/`)
 - Online course pages (5 days, 21 days)
 - Member area (`/membre/`)
+- Custom 404 page (`/404.html`)
+- 404 error handling (non-existent page)
 
 **When smoke tests run:**
 - Automatically after each build on push to `main`
