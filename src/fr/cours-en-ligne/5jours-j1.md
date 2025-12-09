@@ -155,20 +155,16 @@ permalink: /cours-en-ligne/5jours/j1/
           commentDiv.style.borderBottom = '1px solid #ccc';
           commentDiv.style.marginBottom = '10px';
           commentDiv.style.paddingBottom = '10px';
-          
           // Créer le nom en gras
           var nameStrong = document.createElement('strong');
           nameStrong.textContent = name;
           commentDiv.appendChild(nameStrong);
-          
           // Créer le saut de ligne
           commentDiv.appendChild(document.createElement('br'));
-          
           // Créer le paragraphe avec le texte
           var textP = document.createElement('p');
           textP.textContent = text;
           commentDiv.appendChild(textP);
-          
           container.appendChild(commentDiv);
         }
         renderPaginationControls(page);
