@@ -334,6 +334,17 @@ jobs:
             FAILED_TESTS=$((FAILED_TESTS + 1))
           fi
 
+          # Test du fichier .nojekyll (nécessaire pour désactiver Jekyll sur GitHub Pages)
+          echo ""
+          echo "🔍 Test du fichier .nojekyll"
+          if [ -f "_site/.nojekyll" ]; then
+            echo "  ✅ .nojekyll présent (Jekyll désactivé)"
+            PASSED_TESTS=$((PASSED_TESTS + 1))
+          else
+            echo "  ❌ .nojekyll manquant dans _site/ (GitHub Pages pourrait traiter le site avec Jekyll)"
+            FAILED_TESTS=$((FAILED_TESTS + 1))
+          fi
+
           # Test de la page 404 personnalisée (page inexistante)
           echo ""
           echo "🔍 Test de la page 404 personnalisée (page inexistante)"
