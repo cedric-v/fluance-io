@@ -134,7 +134,26 @@ permalink: /cours-en-ligne/5jours/j3/
       
       function renderCommentsPage(page) {
         var container = document.getElementById("comments-container");
-        container.innerHTML = "<h3>Commentaires</h3>";
+        if (!container) return;
+        
+        // Vider le conteneur
+        container.innerHTML = '';
+        
+        // Créer le titre
+        var title = document.createElement('h3');
+        title.textContent = 'Commentaires';
+        container.appendChild(title);
+        
+        if (allComments.length === 0) {
+          var emptyMsg = document.createElement('p');
+          emptyMsg.style.color = '#666';
+          emptyMsg.style.fontStyle = 'italic';
+          emptyMsg.textContent = 'Aucun commentaire pour le moment. Soyez le premier à partager votre expérience !';
+          container.appendChild(emptyMsg);
+          renderPaginationControls(page);
+          return;
+        }
+        
         var start = (page - 1) * COMMENTS_PER_PAGE;
         var end = start + COMMENTS_PER_PAGE;
         var pageComments = allComments.slice(start, end);
@@ -142,7 +161,27 @@ permalink: /cours-en-ligne/5jours/j3/
           var c = pageComments[i];
           var text = escapeHTML(c.text);
           var name = escapeHTML(c.name);
-          container.innerHTML += '<div style="border-bottom:1px solid #ccc; margin-bottom:10px; padding-bottom:10px;"><strong>' + name + '</strong><br /><p>' + text + '</p></div>';
+          
+          // Créer le conteneur du commentaire
+          var commentDiv = document.createElement('div');
+          commentDiv.style.borderBottom = '1px solid #ccc';
+          commentDiv.style.marginBottom = '10px';
+          commentDiv.style.paddingBottom = '10px';
+          
+          // Créer le nom en gras
+          var nameStrong = document.createElement('strong');
+          nameStrong.textContent = name;
+          commentDiv.appendChild(nameStrong);
+          
+          // Créer le saut de ligne
+          commentDiv.appendChild(document.createElement('br'));
+          
+          // Créer le paragraphe avec le texte
+          var textP = document.createElement('p');
+          textP.textContent = text;
+          commentDiv.appendChild(textP);
+          
+          container.appendChild(commentDiv);
         }
         renderPaginationControls(page);
       }
@@ -154,26 +193,37 @@ permalink: /cours-en-ligne/5jours/j3/
           controls.innerHTML = '';
           return;
         }
-        var html = '';
+        
+        // Vider le conteneur
+        controls.innerHTML = '';
+        
+        // Bouton précédent
         if (page > 1) {
-          html += '<button id="prev-page">&lt; Précédent</button> ';
-        }
-        html += 'Page ' + page + ' / ' + totalPages;
-        if (page < totalPages) {
-          html += ' <button id="next-page">Suivant &gt;</button>';
-        }
-        controls.innerHTML = html;
-        if (page > 1) {
-          document.getElementById("prev-page").onclick = function() {
+          var prevBtn = document.createElement('button');
+          prevBtn.id = 'prev-page';
+          prevBtn.textContent = '< Précédent';
+          prevBtn.onclick = function() {
             currentPage--;
             renderCommentsPage(currentPage);
           };
+          controls.appendChild(prevBtn);
+          controls.appendChild(document.createTextNode(' '));
         }
+        
+        // Texte de pagination
+        controls.appendChild(document.createTextNode('Page ' + page + ' / ' + totalPages));
+        
+        // Bouton suivant
         if (page < totalPages) {
-          document.getElementById("next-page").onclick = function() {
+          controls.appendChild(document.createTextNode(' '));
+          var nextBtn = document.createElement('button');
+          nextBtn.id = 'next-page';
+          nextBtn.textContent = 'Suivant >';
+          nextBtn.onclick = function() {
             currentPage++;
             renderCommentsPage(currentPage);
           };
+          controls.appendChild(nextBtn);
         }
       }
       
