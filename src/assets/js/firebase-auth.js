@@ -355,12 +355,22 @@ async function loadProtectedContent(contentId = null) {
 
       // Pour le produit "21jours", vérifier l'accès progressif basé sur le jour
       if (userProduct === '21jours' && contentData.day !== undefined) {
-        const registrationDate = userData.registrationDate;
+        let registrationDate = userData.registrationDate;
+        
+        // Fallback : si registrationDate n'existe pas, utiliser createdAt ou date actuelle
         if (!registrationDate) {
-          return { 
-            success: false, 
-            error: 'Date d\'inscription non trouvée. Veuillez contacter le support.' 
-          };
+          registrationDate = userData.createdAt;
+          // Si createdAt n'existe pas non plus, utiliser la date actuelle (accès immédiat)
+          if (!registrationDate) {
+            console.warn('registrationDate et createdAt manquants, utilisation de la date actuelle');
+            registrationDate = { toDate: () => new Date() };
+          } else {
+            // Mettre à jour le document utilisateur avec registrationDate pour les prochaines fois
+            console.warn('registrationDate manquant, utilisation de createdAt. Mise à jour du document utilisateur...');
+            db.collection('users').doc(user.uid).update({
+              registrationDate: userData.createdAt
+            }).catch(err => console.error('Erreur lors de la mise à jour de registrationDate:', err));
+          }
         }
 
         // Calculer le nombre de jours depuis l'inscription
@@ -416,10 +426,26 @@ async function loadProtectedContent(contentId = null) {
       
       const contents = [];
       const now = new Date();
-      const registrationDate = userData.registrationDate;
+      let registrationDate = userData.registrationDate;
+      
+      // Fallback : si registrationDate n'existe pas, utiliser createdAt ou date actuelle
+      if (!registrationDate) {
+        registrationDate = userData.createdAt;
+        if (!registrationDate) {
+          console.warn('registrationDate et createdAt manquants, utilisation de la date actuelle');
+          registrationDate = { toDate: () => new Date() };
+        } else {
+          // Mettre à jour le document utilisateur avec registrationDate pour les prochaines fois
+          console.warn('registrationDate manquant, utilisation de createdAt. Mise à jour du document utilisateur...');
+          db.collection('users').doc(user.uid).update({
+            registrationDate: userData.createdAt
+          }).catch(err => console.error('Erreur lors de la mise à jour de registrationDate:', err));
+        }
+      }
+      
       const daysSinceRegistration = registrationDate 
         ? Math.floor((now - registrationDate.toDate()) / (1000 * 60 * 60 * 24))
-        : null;
+        : 0;
       
       contentsSnapshot.forEach((doc) => {
         const data = doc.data();

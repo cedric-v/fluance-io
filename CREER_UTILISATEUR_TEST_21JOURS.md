@@ -63,6 +63,7 @@ Dans Firebase Console, vérifiez :
    - Un document doit exister avec votre email
    - Le champ `product` doit être `"21jours"`
    - Le champ `registrationDate` doit être présent (timestamp)
+   - ⚠️ **Si `registrationDate` est absent** : Le code va automatiquement utiliser `createdAt` et mettre à jour le document, mais vous pouvez aussi l'ajouter manuellement (voir dépannage ci-dessous)
 
 2. **Firestore > registrationTokens** :
    - Le token doit avoir `used: true`
@@ -195,13 +196,27 @@ protectedContent/
 
 ## 🐛 Dépannage
 
+### Erreur "Date d'inscription non trouvée"
+**Solution automatique** : Le code va maintenant utiliser `createdAt` comme fallback et mettre à jour automatiquement le document.
+
+**Solution manuelle** (si nécessaire) :
+1. Allez dans **Firestore > users > [votre userId]**
+2. Vérifiez si le champ `registrationDate` existe
+3. Si absent :
+   - Cliquez sur **Ajouter un champ** / **Add field**
+   - Nom : `registrationDate`
+   - Type : **timestamp**
+   - Valeur : Utilisez `createdAt` si disponible, sinon la date actuelle
+4. Cliquez sur **Enregistrer** / **Save**
+5. Rafraîchissez la page
+
 ### Le jour 0 ne s'affiche pas
 - Vérifiez que le document `21jours-jour-0` existe dans `protectedContent`
 - Vérifiez que `product: "21jours"` (exactement, sans espaces)
 - Vérifiez que `day: 0` (nombre, pas string)
 
 ### Les jours suivants ne sont pas accessibles
-- Vérifiez que `registrationDate` existe dans le document `users`
+- Vérifiez que `registrationDate` existe dans le document `users` (ou `createdAt` comme fallback)
 - Vérifiez que la date est correcte (pas dans le futur)
 - Le jour N est accessible N jours après `registrationDate`
 
