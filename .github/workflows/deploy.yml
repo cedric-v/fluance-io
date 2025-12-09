@@ -4,6 +4,12 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      run_validation:
+        description: 'Exécuter les rapports Lighthouse et W3C'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
   contents: read
@@ -43,6 +49,8 @@ jobs:
   validate:
     needs: build
     runs-on: ubuntu-latest
+    # Ne s'exécute que si demandé manuellement via workflow_dispatch
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_validation == 'true'
     continue-on-error: true
     env:
       # URL de production du site (peut être modifiée dans les variables du repository)
