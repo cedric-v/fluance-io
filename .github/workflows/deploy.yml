@@ -41,6 +41,16 @@ jobs:
           ELEVENTY_ENV: prod
         run: npm run build
 
+      - name: Ensure .nojekyll exists before upload
+        run: |
+          # S'assurer que .nojekyll existe avant l'upload
+          if [ ! -f "_site/.nojekyll" ]; then
+            echo "⚠️ .nojekyll manquant, création du fichier..."
+            touch "_site/.nojekyll"
+          fi
+          echo "✅ .nojekyll présent avant upload"
+          ls -la _site/.nojekyll
+
       - name: Upload artifact for smoke tests
         uses: actions/upload-artifact@v4
         with:
@@ -320,6 +330,18 @@ jobs:
             exit 1
           fi
           
+          # Créer .nojekyll s'il manque (les fichiers cachés peuvent être perdus lors de l'upload/téléchargement)
+          if [ ! -f "_site/.nojekyll" ]; then
+            echo "⚠️ .nojekyll manquant après téléchargement, création du fichier..."
+            touch "_site/.nojekyll"
+          fi
+          
+          # Créer CNAME s'il manque
+          if [ ! -f "_site/CNAME" ]; then
+            echo "⚠️ CNAME manquant après téléchargement, création du fichier..."
+            echo "fluance.io" > "_site/CNAME"
+          fi
+          
           # Vérifier les fichiers critiques
           CRITICAL_FILES=(
             "index.html"
@@ -350,7 +372,7 @@ jobs:
           
           if [ $MISSING_FILES -gt 0 ]; then
             echo ""
-            echo "❌ $MISSING_FILES fichier(s) critique(s) manquant(s) dans l'artifact téléchargé"
+            echo "❌ $MISSING_FILES fichier(s) critique(s) manquant(s) dans l'artifact téléchargé (après création automatique)"
             exit 1
           fi
           
