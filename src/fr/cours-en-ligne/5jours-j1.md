@@ -128,15 +128,12 @@ permalink: /cours-en-ligne/5jours/j1/
       function renderCommentsPage(page) {
         var container = document.getElementById("comments-container");
         if (!container) return;
-        
         // Vider le conteneur
         container.innerHTML = '';
-        
         // Créer le titre
         var title = document.createElement('h3');
         title.textContent = 'Commentaires';
         container.appendChild(title);
-        
         if (allComments.length === 0) {
           var emptyMsg = document.createElement('p');
           emptyMsg.style.color = '#666';
@@ -146,7 +143,6 @@ permalink: /cours-en-ligne/5jours/j1/
           renderPaginationControls(page);
           return;
         }
-        
         var start = (page - 1) * COMMENTS_PER_PAGE;
         var end = start + COMMENTS_PER_PAGE;
         var pageComments = allComments.slice(start, end);
@@ -154,7 +150,6 @@ permalink: /cours-en-ligne/5jours/j1/
           var c = pageComments[i];
           var text = escapeHTML(c.text);
           var name = escapeHTML(c.name);
-          
           // Créer le conteneur du commentaire
           var commentDiv = document.createElement('div');
           commentDiv.style.borderBottom = '1px solid #ccc';
@@ -185,10 +180,8 @@ permalink: /cours-en-ligne/5jours/j1/
           controls.innerHTML = '';
           return;
         }
-        
         // Vider le conteneur
         controls.innerHTML = '';
-        
         // Bouton précédent
         if (page > 1) {
           var prevBtn = document.createElement('button');
@@ -201,10 +194,8 @@ permalink: /cours-en-ligne/5jours/j1/
           controls.appendChild(prevBtn);
           controls.appendChild(document.createTextNode(' '));
         }
-        
         // Texte de pagination
         controls.appendChild(document.createTextNode('Page ' + page + ' / ' + totalPages));
-        
         // Bouton suivant
         if (page < totalPages) {
           controls.appendChild(document.createTextNode(' '));

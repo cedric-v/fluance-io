@@ -70,11 +70,9 @@ permalink: /cours-en-ligne/5jours/j4/
         var script1 = document.createElement('script');
         script1.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
         document.head.appendChild(script1);
-        
         var script2 = document.createElement('script');
         script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js';
         document.head.appendChild(script2);
-        
         script2.onload = function() {
           var firebaseConfig = {
             apiKey: "AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM",
@@ -135,15 +133,12 @@ permalink: /cours-en-ligne/5jours/j4/
       function renderCommentsPage(page) {
         var container = document.getElementById("comments-container");
         if (!container) return;
-        
         // Vider le conteneur
         container.innerHTML = '';
-        
         // Créer le titre
         var title = document.createElement('h3');
         title.textContent = 'Commentaires';
         container.appendChild(title);
-        
         if (allComments.length === 0) {
           var emptyMsg = document.createElement('p');
           emptyMsg.style.color = '#666';
@@ -153,7 +148,6 @@ permalink: /cours-en-ligne/5jours/j4/
           renderPaginationControls(page);
           return;
         }
-        
         var start = (page - 1) * COMMENTS_PER_PAGE;
         var end = start + COMMENTS_PER_PAGE;
         var pageComments = allComments.slice(start, end);
@@ -193,10 +187,8 @@ permalink: /cours-en-ligne/5jours/j4/
           controls.innerHTML = '';
           return;
         }
-        
         // Vider le conteneur
         controls.innerHTML = '';
-        
         // Bouton précédent
         if (page > 1) {
           var prevBtn = document.createElement('button');
@@ -209,10 +201,8 @@ permalink: /cours-en-ligne/5jours/j4/
           controls.appendChild(prevBtn);
           controls.appendChild(document.createTextNode(' '));
         }
-        
         // Texte de pagination
         controls.appendChild(document.createTextNode('Page ' + page + ' / ' + totalPages));
-        
         // Bouton suivant
         if (page < totalPages) {
           controls.appendChild(document.createTextNode(' '));
