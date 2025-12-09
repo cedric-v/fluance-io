@@ -268,9 +268,25 @@ jobs:
         run: |
           cd _site
           npx -y http-server -p 8080 --silent &
-          echo $! > /tmp/http-server.pid
-          sleep 5
-          curl -f http://localhost:8080/ || exit 1
+          SERVER_PID=$!
+          echo $SERVER_PID > /tmp/http-server.pid
+          
+          # Attendre que le serveur soit prêt (max 30 secondes)
+          echo "⏳ Attente du démarrage du serveur..."
+          for i in {1..30}; do
+            if curl -s -f http://localhost:8080/ > /dev/null 2>&1; then
+              echo "✅ Serveur démarré avec succès (PID: $SERVER_PID)"
+              exit 0
+            fi
+            sleep 1
+          done
+          
+          echo "❌ Le serveur n'a pas démarré dans les 30 secondes"
+          if ps -p $SERVER_PID > /dev/null 2>&1; then
+            echo "Le processus existe toujours, vérification des logs..."
+            kill $SERVER_PID 2>/dev/null || true
+          fi
+          exit 1
 
       - name: Run smoke tests
         run: |
