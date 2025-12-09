@@ -14,7 +14,7 @@ const {setGlobalOptions} = require('firebase-functions/v2');
 const {HttpsError} = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
-const fetch = require('node-fetch');
+// fetch est natif dans Node.js 20+ (pas besoin de node-fetch)
 
 // Définir les options globales (région par défaut)
 setGlobalOptions({
@@ -428,12 +428,12 @@ exports.verifyToken = onCall(
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
-        
+
         // Pour le produit "21jours", ajouter la date d'inscription pour l'accès progressif
         if (tokenData.product === '21jours') {
           userData.registrationDate = admin.firestore.FieldValue.serverTimestamp();
         }
-        
+
         await db.collection('users').doc(userRecord.uid).set(userData, {merge: true});
 
         return {success: true, userId: userRecord.uid, email: email};
