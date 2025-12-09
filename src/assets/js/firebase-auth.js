@@ -846,7 +846,7 @@ function setupCommentSection(contentId) {
     const pageText = document.createElement('span');
     pageText.style.color = 'rgba(31, 31, 31, 0.8)';
     pageText.style.fontSize = '0.875rem';
-      pageText.textContent = 'Page ' + page + ' / ' + totalPages;
+    pageText.textContent = 'Page ' + page + ' / ' + totalPages;
     controls.appendChild(pageText);
     
     // Bouton suivant
