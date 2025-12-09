@@ -270,11 +270,23 @@ On each push to `main`, GitHub will:
 
 ### Quality assurance and validation reports
 
-The project includes automated quality checks using **Google Lighthouse** and **W3C HTML Validator**. These reports are generated automatically on each deployment via GitHub Actions.
+The project includes quality checks using **Google Lighthouse** and **W3C HTML Validator**. These reports are **optional** and can be generated manually when needed (see [GENERER_RAPPORTS_VALIDATION.md](GENERER_RAPPORTS_VALIDATION.md) for instructions).
+
+#### Generating validation reports
+
+Validation reports are **not generated automatically** by default. To generate them:
+
+1. Go to **Actions** tab in GitHub
+2. Select **"Deploy site to GitHub Pages"** workflow
+3. Click **"Run workflow"**
+4. **Check the box** "Exécuter les rapports Lighthouse et W3C"
+5. Click **"Run workflow"**
+
+See [GENERER_RAPPORTS_VALIDATION.md](GENERER_RAPPORTS_VALIDATION.md) for detailed instructions.
 
 #### Accessing the reports
 
-After each deployment, validation reports are generated and uploaded as GitHub Actions artifacts:
+After running the workflow with validation enabled, reports are uploaded as GitHub Actions artifacts:
 
 1. Go to your repository on GitHub
 2. Click on the **"Actions"** tab
