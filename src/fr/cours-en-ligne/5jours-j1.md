@@ -141,6 +141,8 @@ permalink: /cours-en-ligne/5jours/j1/
         title.textContent = 'Commentaires';
         title.style.marginTop = '1.5rem';
         title.style.marginBottom = '1rem';
+        title.style.fontSize = '1.25rem';
+        title.style.fontWeight = '600';
         // Insérer le titre après le formulaire (après le bouton Envoyer)
         form.insertAdjacentElement('afterend', title);
         if (allComments.length === 0) {
