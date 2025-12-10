@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Envoyer les accès 21 jours - Fluance</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #82153e;
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+    input[type="email"], textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    button {
+      background-color: #82153e;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #6b1030;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      display: none;
+    }
+    .status.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    .results {
+      margin-top: 20px;
+    }
+    .result-item {
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border-left: 4px solid;
+    }
+    .result-item.success {
+      background-color: #d4edda;
+      border-color: #28a745;
+    }
+    .result-item.error {
+      background-color: #f8d7da;
+      border-color: #dc3545;
+    }
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+    .auth-status {
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    .auth-status.not-authenticated {
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    .auth-status.authenticated {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📧 Envoyer les accès au cours 21 jours</h1>
+    
+    <div id="auth-status" class="auth-status not-authenticated">
+      ⚠️ Vous devez être connecté avec un compte admin pour envoyer les emails.
+      <br>
+      <button onclick="signIn()" style="margin-top: 10px;">Se connecter</button>
+    </div>
+
+    <form id="send-form" style="display: none;">
+      <div class="form-group">
+        <label for="emails">Emails des clients (un par ligne) :</label>
+        <textarea id="emails" placeholder="client1@example.com&#10;client2@example.com" required></textarea>
+        <div class="help-text">Entrez un email par ligne</div>
+      </div>
+
+      <div class="form-group">
+        <label for="expiration-days">Durée de validité (jours) :</label>
+        <input type="number" id="expiration-days" value="365" min="1" max="3650" required>
+        <div class="help-text">Durée pendant laquelle le lien de création de compte reste valide (défaut: 365 jours)</div>
+      </div>
+
+      <button type="submit" id="send-button">Envoyer les accès</button>
+      <button type="button" onclick="signOut()">Se déconnecter</button>
+    </form>
+
+    <div id="status" class="status"></div>
+    <div id="results" class="results"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+
+  <script>
+    // Configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM",
+      authDomain: "fluance-protected-content.firebaseapp.com",
+      projectId: "fluance-protected-content",
+      storageBucket: "fluance-protected-content.firebasestorage.app",
+      messagingSenderId: "173938686776",
+      appId: "1:173938686776:web:891caf76098a42c3579fcd",
+      measurementId: "G-CWPNXDQEYR"
+    };
+
+    // Initialiser Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const functions = firebase.functions('europe-west1');
+
+    // Vérifier l'état d'authentification
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        // Vérifier si l'utilisateur a le claim admin
+        user.getIdTokenResult().then((tokenResult) => {
+          if (tokenResult.claims.admin) {
+            document.getElementById('auth-status').className = 'auth-status authenticated';
+            document.getElementById('auth-status').innerHTML = '✅ Connecté en tant qu\'admin';
+            document.getElementById('send-form').style.display = 'block';
+          } else {
+            document.getElementById('auth-status').className = 'auth-status not-authenticated';
+            document.getElementById('auth-status').innerHTML = '❌ Votre compte n\'a pas les permissions admin. Contactez l\'administrateur.';
+            document.getElementById('send-form').style.display = 'none';
+          }
+        });
+      } else {
+        document.getElementById('auth-status').className = 'auth-status not-authenticated';
+        document.getElementById('auth-status').innerHTML = '⚠️ Vous devez être connecté avec un compte admin pour envoyer les emails.<br><button onclick="signIn()" style="margin-top: 10px;">Se connecter</button>';
+        document.getElementById('send-form').style.display = 'none';
+      }
+    });
+
+    function signIn() {
+      const email = prompt('Email admin :');
+      if (!email) return;
+      
+      // Utiliser passwordless auth
+      const actionCodeSettings = {
+        url: window.location.href,
+        handleCodeInApp: true,
+      };
+
+      auth.sendSignInLinkToEmail(email, actionCodeSettings)
+        .then(() => {
+          alert('Un lien de connexion a été envoyé à votre email. Vérifiez votre boîte de réception.');
+        })
+        .catch((error) => {
+          console.error('Erreur:', error);
+          alert('Erreur : ' + error.message);
+        });
+    }
+
+    function signOut() {
+      auth.signOut().then(() => {
+        alert('Déconnecté');
+      });
+    }
+
+    // Gérer la soumission du formulaire
+    document.getElementById('send-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const emailsText = document.getElementById('emails').value.trim();
+      const expirationDays = parseInt(document.getElementById('expiration-days').value, 10);
+      
+      if (!emailsText) {
+        showStatus('error', 'Veuillez entrer au moins un email');
+        return;
+      }
+
+      // Parser les emails
+      const emails = emailsText.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .filter(email => {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          return emailRegex.test(email);
+        });
+
+      if (emails.length === 0) {
+        showStatus('error', 'Aucun email valide trouvé');
+        return;
+      }
+
+      // Désactiver le bouton
+      const sendButton = document.getElementById('send-button');
+      sendButton.disabled = true;
+      sendButton.textContent = 'Envoi en cours...';
+
+      // Vider les résultats précédents
+      document.getElementById('results').innerHTML = '';
+      showStatus('info', `Envoi des accès à ${emails.length} client(s)...`);
+
+      const createUserToken = functions.httpsCallable('createUserToken');
+      const results = [];
+
+      // Envoyer les emails un par un
+      for (let i = 0; i < emails.length; i++) {
+        const email = emails[i];
+        try {
+          const result = await createUserToken({
+            email: email,
+            product: '21jours',
+            expirationDays: expirationDays
+          });
+
+          results.push({
+            email: email,
+            success: true,
+            token: result.data.token
+          });
+
+          addResult(email, true, 'Email envoyé avec succès');
+        } catch (error) {
+          console.error('Erreur pour', email, ':', error);
+          results.push({
+            email: email,
+            success: false,
+            error: error.message
+          });
+
+          addResult(email, false, 'Erreur : ' + error.message);
+        }
+      }
+
+      // Réactiver le bouton
+      sendButton.disabled = false;
+      sendButton.textContent = 'Envoyer les accès';
+
+      // Afficher le résumé
+      const successCount = results.filter(r => r.success).length;
+      const failCount = results.filter(r => !r.success).length;
+
+      if (successCount > 0) {
+        showStatus('success', `✅ ${successCount} email(s) envoyé(s) avec succès`);
+      }
+      if (failCount > 0) {
+        showStatus('error', `❌ ${failCount} email(s) n'ont pas pu être envoyé(s)`);
+      }
+    });
+
+    function showStatus(type, message) {
+      const statusDiv = document.getElementById('status');
+      statusDiv.className = `status ${type}`;
+      statusDiv.textContent = message;
+      statusDiv.style.display = 'block';
+    }
+
+    function addResult(email, success, message) {
+      const resultsDiv = document.getElementById('results');
+      const resultItem = document.createElement('div');
+      resultItem.className = `result-item ${success ? 'success' : 'error'}`;
+      resultItem.innerHTML = `<strong>${email}</strong><br>${message}`;
+      resultsDiv.appendChild(resultItem);
+    }
+
+    // Vérifier si on est sur la page après un clic sur le lien de connexion
+    if (auth.isSignInWithEmailLink(window.location.href)) {
+      let email = window.localStorage.getItem('emailForSignIn');
+      if (!email) {
+        email = prompt('Veuillez entrer votre email pour confirmer la connexion :');
+      }
+      
+      if (email) {
+        auth.signInWithEmailLink(email, window.location.href)
+          .then(() => {
+            window.localStorage.removeItem('emailForSignIn');
+            window.location.href = window.location.pathname;
+          })
+          .catch((error) => {
+            console.error('Erreur de connexion:', error);
+            alert('Erreur de connexion : ' + error.message);
+          });
+      }
+    }
+  </script>
+</body>
+</html>
+
