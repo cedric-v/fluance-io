@@ -119,3 +119,44 @@ locale: fr
 <iframe data-w-token="9241cb136525ee5e376e" data-w-type="trigger" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://1sqw8.mjt.lu/wgt/1sqw8/0umk/trigger?c=5715cb7f" width="100%" style="height: 0;"></iframe>
 
 <script type="text/javascript" src="https://app.mailjet.com/pas-nc-pop-in-v1.js"></script>
+
+<script>
+  // Déclencher la pop-up MailJet au clic sur les boutons avec data-w-token
+  document.addEventListener('DOMContentLoaded', function() {
+    // Attendre que le script MailJet soit chargé
+    setTimeout(function() {
+      const buttons = document.querySelectorAll('[data-w-token="9241cb136525ee5e376e"]');
+      buttons.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          // Essayer différentes méthodes MailJet
+          if (window.wjPopin && typeof window.wjPopin === 'function') {
+            window.wjPopin();
+          } else if (window.mjPopin && typeof window.mjPopin === 'function') {
+            window.mjPopin();
+          } else if (window.mjPopin && window.mjPopin.open) {
+            window.mjPopin.open();
+          } else if (window.mailjet && window.mailjet.showPopin) {
+            window.mailjet.showPopin();
+          } else {
+            // Essayer de déclencher via l'iframe trigger
+            const triggerIframe = document.querySelector('iframe[data-w-type="trigger"]');
+            if (triggerIframe && triggerIframe.contentWindow) {
+              try {
+                triggerIframe.contentWindow.postMessage('open', '*');
+              } catch (err) {
+                console.error('Erreur MailJet:', err);
+              }
+            }
+            console.log('API MailJet disponible:', {
+              wjPopin: typeof window.wjPopin,
+              mjPopin: typeof window.mjPopin,
+              mailjet: typeof window.mailjet
+            });
+          }
+        });
+      });
+    }, 500);
+  });
+</script>

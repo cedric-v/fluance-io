@@ -112,3 +112,34 @@ permalink: /a-propos/histoire-cedric/
 
 <script type="text/javascript" src="https://app.mailjet.com/pas-nc-pop-in-v1.js"></script>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      const buttons = document.querySelectorAll('[data-w-token="9241cb136525ee5e376e"]');
+      buttons.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (window.wjPopin && typeof window.wjPopin === 'function') {
+            window.wjPopin();
+          } else if (window.mjPopin && typeof window.mjPopin === 'function') {
+            window.mjPopin();
+          } else if (window.mjPopin && window.mjPopin.open) {
+            window.mjPopin.open();
+          } else if (window.mailjet && window.mailjet.showPopin) {
+            window.mailjet.showPopin();
+          } else {
+            const triggerIframe = document.querySelector('iframe[data-w-type="trigger"]');
+            if (triggerIframe && triggerIframe.contentWindow) {
+              try {
+                triggerIframe.contentWindow.postMessage('open', '*');
+              } catch (err) {
+                console.error('Erreur MailJet:', err);
+              }
+            }
+          }
+        });
+      });
+    }, 500);
+  });
+</script>
+
