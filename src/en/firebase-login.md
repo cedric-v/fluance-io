@@ -196,12 +196,19 @@ function switchTab(tab) {
     }
   });
 
+  // Hide info tooltip by default
+  const passkeyInfo = document.getElementById('passkey-info');
+  
   if (tab === 'password') {
     passwordTab.classList.add('border-fluance', 'text-fluance');
     passwordTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'block';
     passwordInput.required = true;
     buttonText.textContent = 'Login';
+    // Hide info tooltip for password tab
+    if (passkeyInfo) {
+      passkeyInfo.classList.add('hidden');
+    }
   } else if (tab === 'passwordless') {
     passwordlessTab.classList.add('border-fluance', 'text-fluance');
     passwordlessTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
@@ -209,6 +216,10 @@ function switchTab(tab) {
     passwordInput.required = false;
     passwordInput.value = '';
     buttonText.textContent = 'Send login link';
+    // Hide info tooltip for passwordless tab
+    if (passkeyInfo) {
+      passkeyInfo.classList.add('hidden');
+    }
   } else if (tab === 'passkey') {
     passkeyTab.classList.add('border-fluance', 'text-fluance');
     passkeyTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
@@ -216,16 +227,9 @@ function switchTab(tab) {
     passwordInput.required = false;
     passwordInput.value = '';
     buttonText.textContent = 'Login with passkey';
-    // Show info tooltip
-    const passkeyInfo = document.getElementById('passkey-info');
+    // Show info tooltip only for passkey tab
     if (passkeyInfo) {
       passkeyInfo.classList.remove('hidden');
-    }
-  } else {
-    // Hide info tooltip for other tabs
-    const passkeyInfo = document.getElementById('passkey-info');
-    if (passkeyInfo) {
-      passkeyInfo.classList.add('hidden');
     }
   }
   

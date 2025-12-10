@@ -83,6 +83,33 @@ permalink: /en/create-account/
         <p class="text-[#0f172a] text-sm"></p>
       </div>
 
+      <!-- Offer to add a passkey -->
+      <div id="passkey-offer" class="hidden mt-4 bg-fluance/5 border border-fluance/20 rounded-lg p-4">
+        <p class="text-sm text-[#0f172a] mb-2 font-medium">
+          ✨ Your account has been created! Would you like to also create a passkey for faster and more secure login?
+        </p>
+        <p class="text-xs text-[#1f1f1f]/60 mb-3">
+          This allows you to use your fingerprint, face, or device passcode to sign in instantly and securely.
+        </p>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            id="create-passkey-btn"
+            class="flex-1 bg-fluance text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-fluance/90 transition-colors"
+          >
+            Create passkey
+          </button>
+          <button
+            type="button"
+            id="skip-passkey-btn"
+            class="flex-1 bg-white text-fluance border border-fluance py-2 px-4 rounded-lg text-sm font-semibold hover:bg-fluance/5 transition-colors"
+          >
+            Later
+          </button>
+        </div>
+        <div id="passkey-status" class="hidden mt-2 text-sm"></div>
+      </div>
+
       <button
         type="submit"
         id="submit-button"
@@ -229,10 +256,68 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (user) {
-          console.log('✅ User authenticated:', user.email, '- Redirecting to /membre/');
-          showSuccess('Redirecting to your member area...');
-          // Immediate redirect
-          window.location.href = '/membre/';
+          console.log('✅ User authenticated:', user.email);
+          
+          // Check if WebAuthn is supported and offer to add a passkey
+          if (window.FluanceAuth && window.FluanceAuth.isWebAuthnSupported && window.FluanceAuth.isWebAuthnSupported()) {
+            // Show passkey offer
+            const passkeyOffer = document.getElementById('passkey-offer');
+            if (passkeyOffer) {
+              passkeyOffer.classList.remove('hidden');
+              
+              // Handle "Create passkey" button
+              const createPasskeyBtn = document.getElementById('create-passkey-btn');
+              const skipPasskeyBtn = document.getElementById('skip-passkey-btn');
+              const passkeyStatus = document.getElementById('passkey-status');
+              
+              createPasskeyBtn.addEventListener('click', async function() {
+                createPasskeyBtn.disabled = true;
+                createPasskeyBtn.textContent = 'Creating...';
+                passkeyStatus.classList.remove('hidden');
+                passkeyStatus.textContent = 'Creating passkey...';
+                passkeyStatus.className = 'mt-2 text-sm text-[#0f172a]';
+                
+                const linkResult = await window.FluanceAuth.linkPasskeyToAccount();
+                
+                if (linkResult.success) {
+                  passkeyStatus.textContent = '✅ Passkey created successfully!';
+                  passkeyStatus.className = 'mt-2 text-sm text-green-600';
+                  createPasskeyBtn.style.display = 'none';
+                  skipPasskeyBtn.textContent = 'Continue';
+                  
+                  // Redirect after 1 second
+                  setTimeout(() => {
+                    window.location.href = '/membre/';
+                  }, 1000);
+                } else {
+                  if (linkResult.needsExtension) {
+                    passkeyStatus.textContent = 'ℹ️ The Firebase WebAuthn extension is not yet installed. You can continue with your password.';
+                    passkeyStatus.className = 'mt-2 text-sm text-[#1f1f1f]/60';
+                    createPasskeyBtn.disabled = false;
+                    createPasskeyBtn.textContent = 'Create passkey';
+                  } else {
+                    passkeyStatus.textContent = '⚠️ ' + (linkResult.error || 'Error creating passkey.');
+                    passkeyStatus.className = 'mt-2 text-sm text-orange-600';
+                    createPasskeyBtn.disabled = false;
+                    createPasskeyBtn.textContent = 'Retry';
+                  }
+                }
+              });
+              
+              skipPasskeyBtn.addEventListener('click', function() {
+                window.location.href = '/membre/';
+              });
+            } else {
+              // If element doesn't exist, redirect directly
+              window.location.href = '/membre/';
+            }
+          } else {
+            // WebAuthn not supported, redirect directly
+            showSuccess('Redirecting to your member area...');
+            setTimeout(() => {
+              window.location.href = '/membre/';
+            }, 1000);
+          }
         } else {
           console.error('❌ User not authenticated after', maxAttempts, 'attempts');
           console.log('Firebase state:', {

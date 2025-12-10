@@ -200,12 +200,19 @@ function switchTab(tab) {
     }
   });
 
+  // Masquer l'info-bulle par défaut
+  const passkeyInfo = document.getElementById('passkey-info');
+  
   if (tab === 'password') {
     passwordTab.classList.add('border-fluance', 'text-fluance');
     passwordTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'block';
     passwordInput.required = true;
     buttonText.textContent = 'Se connecter';
+    // Masquer l'info-bulle pour l'onglet mot de passe
+    if (passkeyInfo) {
+      passkeyInfo.classList.add('hidden');
+    }
   } else if (tab === 'passwordless') {
     passwordlessTab.classList.add('border-fluance', 'text-fluance');
     passwordlessTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
@@ -213,6 +220,10 @@ function switchTab(tab) {
     passwordInput.required = false;
     passwordInput.value = '';
     buttonText.textContent = 'Envoyer le lien de connexion';
+    // Masquer l'info-bulle pour l'onglet passwordless
+    if (passkeyInfo) {
+      passkeyInfo.classList.add('hidden');
+    }
   } else if (tab === 'passkey') {
     passkeyTab.classList.add('border-fluance', 'text-fluance');
     passkeyTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
@@ -220,16 +231,9 @@ function switchTab(tab) {
     passwordInput.required = false;
     passwordInput.value = '';
     buttonText.textContent = 'Se connecter avec une clé d\'accès';
-    // Afficher l'info-bulle
-    const passkeyInfo = document.getElementById('passkey-info');
+    // Afficher l'info-bulle uniquement pour l'onglet clé d'accès
     if (passkeyInfo) {
       passkeyInfo.classList.remove('hidden');
-    }
-  } else {
-    // Masquer l'info-bulle pour les autres onglets
-    const passkeyInfo = document.getElementById('passkey-info');
-    if (passkeyInfo) {
-      passkeyInfo.classList.add('hidden');
     }
   }
   

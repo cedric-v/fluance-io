@@ -25,11 +25,8 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "extensions": {
+    "firebase-web-authn": "gavinsawyer/firebase-web-authn@10.4.2"
   }
 }
-
-
-
-
-
-
