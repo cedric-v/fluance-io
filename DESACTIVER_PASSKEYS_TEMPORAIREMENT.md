@@ -1,12 +1,16 @@
 # Désactiver temporairement l'onglet "Clé d'accès"
 
-## Contexte
+## ⚠️ Note importante
 
-L'extension Firebase WebAuthn (version 10.4.2) utilise Node.js 18 qui est décommissioné. En attendant une mise à jour de l'extension, l'onglet "Clé d'accès" a été temporairement désactivé.
+**La version 10.4.4+ de l'extension Firebase WebAuthn supporte maintenant Node.js 20.** Ce guide n'est plus nécessaire sauf si vous devez temporairement désactiver l'onglet pour une autre raison.
+
+## Contexte (historique)
+
+L'extension Firebase WebAuthn (versions 10.4.2 et antérieures) utilisait Node.js 18 qui est décommissioné. En attendant une mise à jour de l'extension, l'onglet "Clé d'accès" avait été temporairement désactivé.
 
 ## État actuel
 
-L'onglet "Clé d'accès" est **masqué** dans l'interface de connexion (`src/fr/connexion-membre.md`).
+L'onglet "Clé d'accès" est **activé** dans l'interface de connexion (`src/fr/connexion-membre.md`).
 
 ## Réactiver l'onglet "Clé d'accès"
 

@@ -6,15 +6,16 @@
 - Projet Firebase configuré
 - Authentification Firebase activée dans votre projet
 
-## ⚠️ Important : Choix de la région
+## ⚠️ Important : Version de l'extension
 
-**Ne pas utiliser `europe-west6`** - Cette région peut avoir des limitations avec Node.js 20.
+**Utilisez la version 10.4.4 ou plus récente** - Cette version supporte Node.js 20 (les versions antérieures utilisaient Node.js 18 qui est décommissioné).
 
-**Régions recommandées :**
-- ✅ **us-central1** (Iowa, USA) - **Recommandé** (région par défaut, meilleure compatibilité)
-- ✅ **europe-west1** (Belgium) - Bon pour l'Europe
+**Régions disponibles :**
+- ✅ **us-central1** (Iowa, USA) - Région par défaut, bonne compatibilité
+- ✅ **europe-west1** (Belgium) - Pour l'Europe
+- ✅ **europe-west6** (Zurich, Suisse) - Pour la Suisse et l'Europe
 
-Si vous rencontrez une erreur "Runtime nodejs18 is decommissioned", voir [RESOUDRE_ERREUR_NODEJS18_EXTENSION.md](./RESOUDRE_ERREUR_NODEJS18_EXTENSION.md)
+Si vous rencontrez une erreur "Runtime nodejs18 is decommissioned", mettez à jour l'extension vers la version 10.4.4+ (voir [RESOUDRE_ERREUR_NODEJS18_EXTENSION.md](./RESOUDRE_ERREUR_NODEJS18_EXTENSION.md))
 
 ## Installation via Firebase CLI
 
@@ -42,9 +43,11 @@ firebase ext:install gavinsawyer/firebase-web-authn
 Lors de l'installation, vous devrez fournir :
 
 #### Location (Région)
-- **Valeur recommandée** : `us-central1` (Iowa, USA) - **Recommandé** pour la meilleure compatibilité
-- **Alternative** : `europe-west1` (Belgium) - Pour l'Europe
-- ⚠️ **Ne pas utiliser** `europe-west6` - Cette région peut avoir des limitations avec Node.js 20
+- **us-central1** (Iowa, USA) - Région par défaut
+- **europe-west1** (Belgium) - Pour l'Europe
+- **europe-west6** (Zurich, Suisse) - Pour la Suisse et l'Europe (latence minimale pour la Suisse)
+
+**Note** : Toutes les régions fonctionnent avec la version 10.4.4+ de l'extension. Choisissez la région la plus proche de vos utilisateurs pour une meilleure latence.
 
 #### Relying Party ID
 - **Valeur recommandée** : `fluance.io` (votre domaine principal)

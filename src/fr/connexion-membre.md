@@ -14,8 +14,6 @@ permalink: /connexion-membre/
     </div>
 
     <!-- Onglets pour choisir la méthode de connexion -->
-    <!-- ⚠️ TEMPORAIRE : L'onglet "Clé d'accès" est désactivé car l'extension Firebase WebAuthn utilise Node.js 18 (décommissioné) -->
-    <!-- Pour réactiver : supprimez la classe "hidden" du bouton tab-passkey et la condition dans le script -->
     <div class="mb-6 border-b border-fluance/20">
       <nav class="flex -mb-px">
         <button
@@ -34,7 +32,7 @@ permalink: /connexion-membre/
         </button>
         <button
           id="tab-passkey"
-          class="hidden flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
+          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
           onclick="switchTab('passkey')"
         >
           🔐 Clé d'accès

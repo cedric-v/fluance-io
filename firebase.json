@@ -27,6 +27,6 @@
     ]
   },
   "extensions": {
-    "firebase-web-authn": "gavinsawyer/firebase-web-authn@10.4.2"
+    "firebase-web-authn": "gavinsawyer/firebase-web-authn@10.4.4"
   }
 }
