@@ -567,3 +567,130 @@ exports.sendNewsletter = onCall(
       };
     });
 
+/**
+ * Ajoute un contact à MailJet (pour newsletter/inscription)
+ * Cette fonction est publique (pas besoin d'authentification admin)
+ * Région : europe-west1 (Belgique)
+ * Utilise les secrets Firebase pour Mailjet
+ */
+exports.subscribeToNewsletter = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      cors: true, // Autoriser CORS pour toutes les origines
+    },
+    async (request) => {
+      const {email, name} = request.data;
+
+      if (!email) {
+        throw new HttpsError('invalid-argument', 'Email is required');
+      }
+
+      // Valider le format de l'email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new HttpsError('invalid-argument', 'Invalid email format');
+      }
+
+      try {
+        // Ajouter le contact à MailJet
+        // Note: Vous devrez peut-être créer une liste dans MailJet et utiliser son ID
+        // Pour l'instant, on ajoute juste le contact (il sera ajouté à la liste par défaut)
+        const url = 'https://api.mailjet.com/v3/REST/contact';
+        
+        const contactData = {
+          Email: email.toLowerCase().trim(),
+          IsExcludedFromCampaigns: false,
+        };
+
+        if (name) {
+          const nameParts = name.trim().split(' ');
+          if (nameParts.length > 0) {
+            contactData.Name = name;
+          }
+        }
+
+        const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+        
+        // Vérifier si le contact existe déjà
+        const checkUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(contactData.Email)}`;
+        let contactExists = false;
+        
+        try {
+          const checkResponse = await fetch(checkUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            },
+          });
+          
+          if (checkResponse.ok) {
+            contactExists = true;
+            // Mettre à jour le contact existant si un nom est fourni
+            if (name) {
+              const updateResponse = await fetch(checkUrl, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Basic ${auth}`,
+                },
+                body: JSON.stringify(contactData),
+              });
+              
+              if (!updateResponse.ok) {
+                const errorText = await updateResponse.text();
+                console.error('Error updating contact:', errorText);
+              }
+            }
+          }
+        } catch (err) {
+          // Contact n'existe pas, on va le créer
+          console.log('Contact does not exist, will create it');
+        }
+
+        // Créer le contact s'il n'existe pas
+        if (!contactExists) {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify(contactData),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Mailjet API error:', errorText);
+            throw new Error(`Mailjet API error: ${response.status} - ${errorText}`);
+          }
+        }
+
+        // Optionnel: Ajouter le contact à une liste spécifique
+        // Décommentez et remplacez LIST_ID par l'ID de votre liste MailJet
+        // const listId = 'LIST_ID'; // À remplacer par votre ID de liste MailJet
+        // const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
+        // await fetch(addToListUrl, {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     'Authorization': `Basic ${auth}`,
+        //   },
+        //   body: JSON.stringify({
+        //     IsUnsubscribed: false,
+        //     ContactAlt: contactData.Email,
+        //     ListID: listId,
+        //   }),
+        // });
+
+        return {
+          success: true,
+          message: 'Successfully subscribed to newsletter',
+          email: contactData.Email,
+        };
+      } catch (error) {
+        console.error('Error subscribing to newsletter:', error);
+        throw new HttpsError('internal', 'Error subscribing to newsletter: ' + error.message);
+      }
+    });
+

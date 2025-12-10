@@ -76,44 +76,35 @@ permalink: /a-propos/philosophie/
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    function tryOpenMailJet() {
-      if (window.ml && typeof window.ml.open === 'function') {
-        window.ml.open();
-        return true;
-      }
-      if (window.wjPopin && typeof window.wjPopin === 'function') {
-        window.wjPopin();
-        return true;
-      }
-      if (window.mjPopin && typeof window.mjPopin === 'function') {
-        window.mjPopin();
-        return true;
-      }
-      const triggerIframe = document.querySelector('iframe[data-w-type="trigger"]');
-      if (triggerIframe && triggerIframe.contentWindow) {
-        try {
-          triggerIframe.contentWindow.postMessage({ action: 'open', token: '9241cb136525ee5e376e' }, '*');
-        } catch (err) {
-          console.error('Erreur MailJet:', err);
-        }
-      }
-      return false;
-    }
-    
-    let attempts = 0;
-    const checkMailJet = setInterval(function() {
-      attempts++;
-      if (window.ml || attempts >= 20) {
-        clearInterval(checkMailJet);
-        const buttons = document.querySelectorAll('[data-w-token="9241cb136525ee5e376e"]');
-        buttons.forEach(function(button) {
-          button.addEventListener('click', function(e) {
-            e.preventDefault();
-            tryOpenMailJet();
-          });
+    setTimeout(function() {
+      const buttons = document.querySelectorAll('[data-w-token="9241cb136525ee5e376e"]');
+      const popinIframe = document.querySelector('iframe[data-w-type="pop-in"]');
+      
+      buttons.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          if (popinIframe) {
+            let overlay = document.getElementById('mailjet-overlay');
+            if (!overlay) {
+              overlay = document.createElement('div');
+              overlay.id = 'mailjet-overlay';
+              overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9998; display: flex; align-items: center; justify-content: center;';
+              overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                  overlay.style.display = 'none';
+                  popinIframe.style.cssText = 'height: 0;';
+                }
+              });
+              document.body.appendChild(overlay);
+            }
+            
+            popinIframe.style.cssText = 'position: relative; width: 90%; max-width: 600px; height: 500px; z-index: 9999; border: none;';
+            overlay.style.display = 'flex';
+          }
         });
-      }
-    }, 100);
+      });
+    }, 1000);
   });
 </script>
 
