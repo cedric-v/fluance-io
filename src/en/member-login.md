@@ -30,6 +30,8 @@ permalink: /en/member-login/
         >
           Email login
         </button>
+        <!-- Passkey tab temporarily disabled -->
+        <!--
         <button
           id="tab-passkey"
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
@@ -37,6 +39,7 @@ permalink: /en/member-login/
         >
           🔐 Passkey
         </button>
+        -->
       </nav>
     </div>
 
@@ -244,11 +247,11 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Attach event listeners to tabs
   const passwordTab = document.getElementById('tab-password');
   const passwordlessTab = document.getElementById('tab-passwordless');
-  const passkeyTab = document.getElementById('tab-passkey');
+  // const passkeyTab = document.getElementById('tab-passkey'); // Temporarily disabled
   
   if (passwordTab) passwordTab.addEventListener('click', () => switchTab('password'));
   if (passwordlessTab) passwordlessTab.addEventListener('click', () => switchTab('passwordless'));
-  if (passkeyTab) passkeyTab.addEventListener('click', () => switchTab('passkey'));
+  // if (passkeyTab) passkeyTab.addEventListener('click', () => switchTab('passkey')); // Temporarily disabled
   
   // Check if a passwordless link is present in the URL
   try {

@@ -30,6 +30,10 @@ permalink: /connexion-membre/
         >
           Connexion par email
         </button>
+        <!-- Onglet passkey temporairement désactivé -->
+        <!--
+        <!-- Onglet passkey temporairement désactivé -->
+        <!--
         <button
           id="tab-passkey"
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
@@ -37,6 +41,8 @@ permalink: /connexion-membre/
         >
           🔐 Clé d'accès
         </button>
+        -->
+        -->
       </nav>
     </div>
 
@@ -190,13 +196,14 @@ function switchTab(tab) {
   currentTab = tab;
   const passwordTab = document.getElementById('tab-password');
   const passwordlessTab = document.getElementById('tab-passwordless');
-  const passkeyTab = document.getElementById('tab-passkey');
+  // const passkeyTab = document.getElementById('tab-passkey'); // Temporairement désactivé
   const passwordField = document.getElementById('password-field');
   const passwordInput = document.getElementById('password');
   const buttonText = document.getElementById('button-text');
 
   // Réinitialiser tous les onglets (seulement ceux qui sont visibles)
-  [passwordTab, passwordlessTab, passkeyTab].forEach(t => {
+  // const passkeyTab = document.getElementById('tab-passkey'); // Temporairement désactivé
+  [passwordTab, passwordlessTab].forEach(t => {
     if (t && !t.classList.contains('hidden')) {
       t.classList.remove('border-fluance', 'text-fluance');
       t.classList.add('border-transparent', 'text-[#1f1f1f]/60');
@@ -227,7 +234,10 @@ function switchTab(tab) {
     if (passkeyInfo) {
       passkeyInfo.classList.add('hidden');
     }
-  } else if (tab === 'passkey') {
+  }
+  // Temporairement désactivé - onglet passkey
+  /*
+  else if (tab === 'passkey') {
     passkeyTab.classList.add('border-fluance', 'text-fluance');
     passkeyTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'none';
@@ -239,6 +249,7 @@ function switchTab(tab) {
       passkeyInfo.classList.remove('hidden');
     }
   }
+  */
   
   hideError();
   hideSuccess();
@@ -248,11 +259,11 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Attacher les event listeners aux onglets
   const passwordTab = document.getElementById('tab-password');
   const passwordlessTab = document.getElementById('tab-passwordless');
-  const passkeyTab = document.getElementById('tab-passkey');
+  // const passkeyTab = document.getElementById('tab-passkey'); // Temporairement désactivé
   
   if (passwordTab) passwordTab.addEventListener('click', () => switchTab('password'));
   if (passwordlessTab) passwordlessTab.addEventListener('click', () => switchTab('passwordless'));
-  if (passkeyTab) passkeyTab.addEventListener('click', () => switchTab('passkey'));
+  // if (passkeyTab) passkeyTab.addEventListener('click', () => switchTab('passkey')); // Temporairement désactivé
   
   // Vérifier si un lien passwordless est présent dans l'URL
   try {
@@ -336,6 +347,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
           showError(result.error || 'Erreur lors de la connexion.');
         }
+      // Temporairement désactivé - onglet passkey
+      /*
       } else if (currentTab === 'passkey') {
         // Connexion avec clé d'accès
         buttonText.textContent = 'Authentification...';
@@ -376,6 +389,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             showError(result.error || 'Erreur lors de la connexion avec la clé d\'accès.');
           }
         }
+      } else {
+      */
       } else {
         // Envoi du lien passwordless
         console.log('[Connexion] Début de l\'envoi du lien passwordless');
