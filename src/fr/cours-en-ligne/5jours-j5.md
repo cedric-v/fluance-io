@@ -125,7 +125,6 @@ permalink: /cours-en-ligne/5jours/j5/
           document.getElementById("comment-form").reset();
         });
       });
-
       function renderCommentsPage(page) {
         var container = document.getElementById("comments-container");
         if (!container) return;
@@ -254,42 +253,42 @@ permalink: /cours-en-ligne/5jours/j5/
         }
       }
       if (db) {
-      db.collection("comments").doc(pageId).collection("messages")
-        .orderBy("timestamp", "desc")
-        .onSnapshot(function(snapshot) {
+        db.collection("comments").doc(pageId).collection("messages")
+          .orderBy("timestamp", "desc")
+          .onSnapshot(function(snapshot) {
             allComments = [];
             snapshot.forEach(function(doc) {
               allComments.push(doc.data());
             });
             // Le tri est déjà fait par orderBy, mais on peut le garder pour sécurité
             allComments.sort(function(a, b) {
-            if (a.timestamp && b.timestamp) {
-              try {
-                var timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-                var timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-                return timeB - timeA;
-              } catch (e) {
-                return 0;
+              if (a.timestamp && b.timestamp) {
+                try {
+                  var timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+                  var timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+                  return timeB - timeA;
+                } catch (e) {
+                  return 0;
+                }
               }
+              return 0;
+            });
+            currentPage = 1;
+            renderCommentsPage(currentPage);
+          }, function(error) {
+            var container = document.getElementById("comments-container");
+            if (container) {
+              container.innerHTML = '';
+              var errorP = document.createElement('p');
+              errorP.style.color = 'red';
+              if (error.code === 'failed-precondition') {
+                errorP.textContent = 'Erreur : Un index Firestore est requis. Vérifiez la console pour le lien de création.';
+              } else {
+                errorP.textContent = 'Erreur lors du chargement des commentaires : ' + error.message;
+              }
+              container.appendChild(errorP);
             }
-            return 0;
           });
-          currentPage = 1;
-          renderCommentsPage(currentPage);
-        }, function(error) {
-          var container = document.getElementById("comments-container");
-          if (container) {
-            container.innerHTML = '';
-            var errorP = document.createElement('p');
-            errorP.style.color = 'red';
-            if (error.code === 'failed-precondition') {
-              errorP.textContent = 'Erreur : Un index Firestore est requis. Vérifiez la console pour le lien de création.';
-            } else {
-              errorP.textContent = 'Erreur lors du chargement des commentaires : ' + error.message;
-            }
-            container.appendChild(errorP);
-          }
-        });
       }
       }
       </script>
