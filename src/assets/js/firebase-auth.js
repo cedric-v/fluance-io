@@ -1242,9 +1242,56 @@ async function isWebAuthnExtensionAvailable() {
 
 /**
  * Créer un compte avec passkey
- * Nécessite l'extension Firebase WebAuthn
+ * Utilise la bibliothèque browser officielle @firebase-web-authn/browser
  */
 async function createAccountWithPasskey(email, displayName = null) {
+  try {
+    // Vérifier le support WebAuthn
+    if (!isWebAuthnSupported()) {
+      return { 
+        success: false, 
+        error: 'Les passkeys ne sont pas supportés par votre navigateur. Utilisez Chrome, Safari, Edge ou Firefox récent.' 
+      };
+    }
+
+    // Vérifier si la bibliothèque browser est disponible
+    if (typeof window.FirebaseWebAuthn === 'undefined' || !window.FirebaseWebAuthn.createUserWithPasskey) {
+      console.warn('Bibliothèque WebAuthn non disponible, utilisation de la méthode directe...');
+      // Fallback vers l'ancienne méthode si la bibliothèque n'est pas chargée
+      return await createAccountWithPasskeyLegacy(email, displayName);
+    }
+
+    // Utiliser la bibliothèque browser officielle
+    const { createUserWithPasskey: createUserWithPasskeyLib } = window.FirebaseWebAuthn;
+    const auth = firebase.auth();
+    const functions = firebase.app().functions('europe-west1');
+    
+    console.log('Création de compte avec passkey via bibliothèque browser...');
+    const userCredential = await createUserWithPasskeyLib(
+      auth, 
+      functions, 
+      displayName || email.split('@')[0]
+    );
+    
+    console.log('Compte créé avec passkey:', userCredential.user);
+    return {
+      success: true,
+      user: userCredential.user
+    };
+  } catch (error) {
+    console.error('Erreur lors de la création du compte avec passkey:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Une erreur est survenue lors de la création du compte avec passkey.' 
+    };
+  }
+}
+
+/**
+ * Créer un compte avec passkey (méthode legacy - fallback)
+ * Utilisée si la bibliothèque browser n'est pas disponible
+ */
+async function createAccountWithPasskeyLegacy(email, displayName = null) {
   try {
     // Vérifier le support WebAuthn
     if (!isWebAuthnSupported()) {
@@ -1337,7 +1384,7 @@ async function createAccountWithPasskey(email, displayName = null) {
 
 /**
  * Connexion avec passkey
- * Nécessite l'extension Firebase WebAuthn
+ * Utilise la bibliothèque browser officielle @firebase-web-authn/browser
  */
 async function signInWithPasskey(email) {
   try {
@@ -1349,6 +1396,51 @@ async function signInWithPasskey(email) {
       };
     }
 
+    // Vérifier si la bibliothèque browser est disponible
+    if (typeof window.FirebaseWebAuthn === 'undefined' || !window.FirebaseWebAuthn.signInWithPasskey) {
+      console.warn('Bibliothèque WebAuthn non disponible, utilisation de la méthode directe...');
+      // Fallback vers l'ancienne méthode si la bibliothèque n'est pas chargée
+      return await signInWithPasskeyLegacy(email);
+    }
+
+    // Utiliser la bibliothèque browser officielle
+    const { signInWithPasskey: signInWithPasskeyLib } = window.FirebaseWebAuthn;
+    const auth = firebase.auth();
+    const functions = firebase.app().functions('europe-west1');
+    
+    console.log('Connexion avec passkey via bibliothèque browser...');
+    const userCredential = await signInWithPasskeyLib(auth, functions);
+    
+    console.log('Connexion réussie avec passkey:', userCredential.user);
+    return {
+      success: true,
+      user: userCredential.user
+    };
+  } catch (error) {
+    console.error('Erreur lors de la connexion avec passkey:', error);
+    
+    // Si l'erreur indique qu'aucun passkey n'est trouvé, proposer de le créer
+    if (error.message?.includes('not found') || error.message?.includes('not registered') || error.message?.includes('No credentials')) {
+      return { 
+        success: false, 
+        error: 'Aucun passkey trouvé pour cet email.',
+        canCreate: true
+      };
+    }
+    
+    return { 
+      success: false, 
+      error: error.message || 'Une erreur est survenue lors de la connexion avec passkey.' 
+    };
+  }
+}
+
+/**
+ * Connexion avec passkey (méthode legacy - fallback)
+ * Utilisée si la bibliothèque browser n'est pas disponible
+ */
+async function signInWithPasskeyLegacy(email) {
+  try {
     // Vérifier si l'extension est disponible
     const extensionAvailable = await isWebAuthnExtensionAvailable();
     if (!extensionAvailable) {
@@ -1366,12 +1458,8 @@ async function signInWithPasskey(email) {
     await ensureAuthenticated();
     
     // Utiliser l'extension Firebase WebAuthn
-    // L'extension expose une fonction unique : ext-firebase-web-authn-fu06-api
-    // Essayer d'abord europe-west1 (région configurée)
-    // Dans le mode compat, on utilise firebase.app().functions('region')
     const app = firebase.app();
     let functions = app.functions('europe-west1');
-    // Utiliser la fonction api de l'extension avec l'action 'signIn'
     let apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
     
     let result;
@@ -1395,10 +1483,8 @@ async function signInWithPasskey(email) {
     }
 
     if (result.data.success) {
-      // L'utilisateur est automatiquement connecté
       return { success: true, user: auth.currentUser };
     } else {
-      // Si le passkey n'existe pas, proposer de le créer
       if (result.data.error?.includes('not found') || result.data.error?.includes('not registered')) {
         return { 
           success: false, 
@@ -1409,26 +1495,7 @@ async function signInWithPasskey(email) {
       return { success: false, error: result.data.error || 'Erreur lors de la connexion' };
     }
   } catch (error) {
-    console.error('Erreur connexion avec passkey:', error);
-    
-    // Gérer les erreurs spécifiques
-    if (error.code === 'functions/not-found') {
-      return { 
-        success: false, 
-        error: 'L\'extension Firebase WebAuthn n\'est pas installée.',
-        needsExtension: true
-      };
-    }
-    
-    // Gérer les erreurs CORS
-    if (error.code === 'internal' || error.message?.includes('CORS') || error.message?.includes('Access-Control')) {
-      return { 
-        success: false, 
-        error: 'L\'extension Firebase WebAuthn n\'est pas correctement configurée pour accepter les requêtes depuis ce domaine. Veuillez contacter le support.',
-        needsExtension: true
-      };
-    }
-    
+    console.error('Erreur connexion avec passkey (legacy):', error);
     return { 
       success: false, 
       error: error.message || 'Une erreur est survenue lors de la connexion avec passkey.' 

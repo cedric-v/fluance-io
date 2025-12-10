@@ -144,6 +144,8 @@ permalink: /en/member-login/
   </div>
 </div>
 
+<!-- Bibliothèque browser officielle pour WebAuthn -->
+<script src="https://unpkg.com/@firebase-web-authn/browser@latest/dist/index.umd.js"></script>
 <script src="/assets/js/firebase-auth.js"></script>
 <script>
 let currentTab = 'password';
