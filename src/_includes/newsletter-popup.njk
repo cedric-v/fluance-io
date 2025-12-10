@@ -19,6 +19,10 @@
       
       <div id="form-message" class="hidden text-sm"></div>
       
+      <!-- Cloudflare Turnstile -->
+      <!-- Note: 0x4AAAAAAABkMYinukE8K9X0 est une clé de test Cloudflare. Remplacez par votre Site Key en production. -->
+      <div class="cf-turnstile" data-sitekey="0x4AAAAAACF5HWhHHcGA5yJk" data-theme="light" data-size="normal" id="turnstile-widget"></div>
+      
       <button type="submit" id="submit-btn" class="w-full btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] py-3 px-6 rounded-md font-medium transition-colors">
         <span id="submit-text">Recevoir immédiatement</span>
         <span id="submit-loading" class="hidden">Envoi en cours...</span>
@@ -178,6 +182,13 @@
       document.body.style.overflow = ''; // Rétablir le scroll
       if (form) form.reset();
       if (messageDiv) messageDiv.classList.add('hidden');
+      // Réinitialiser Turnstile
+      if (window.turnstile) {
+        const widget = document.getElementById('turnstile-widget');
+        if (widget) {
+          window.turnstile.reset();
+        }
+      }
     }
     
     if (closeBtn) closeBtn.addEventListener('click', closePopup);
@@ -212,6 +223,13 @@
           return;
         }
         
+        // Vérifier que Turnstile est complété
+        const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+        if (!turnstileResponse || !turnstileResponse.value) {
+          showMessage('Veuillez compléter la vérification anti-bot', 'error');
+          return;
+        }
+        
         // Désactiver le bouton et afficher le loading
         if (submitBtn) submitBtn.disabled = true;
         if (submitText) submitText.classList.add('hidden');
@@ -239,7 +257,8 @@
           
           const functions = app.functions('europe-west1');
           const subscribeToNewsletter = functions.httpsCallable('subscribeToNewsletter');
-          const result = await subscribeToNewsletter({ email: email, name: name });
+          const turnstileToken = turnstileResponse.value;
+          const result = await subscribeToNewsletter({ email: email, name: name, turnstileToken: turnstileToken });
           
           if (result.data && result.data.success) {
             showMessage('Merci ! Votre inscription s\'est bien passée. Pensez à vérifier vos spams / courriers indésirables au besoin.', 'success');
@@ -285,3 +304,6 @@
     }
   });
 </script>
+
+<!-- Cloudflare Turnstile Script -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

@@ -576,11 +576,11 @@ exports.sendNewsletter = onCall(
 exports.subscribeToNewsletter = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'MAILJET_LIST_ID'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'MAILJET_LIST_ID', 'TURNSTILE_SECRET_KEY'],
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
-      const {email, name} = request.data;
+      const {email, name, turnstileToken} = request.data;
 
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
@@ -590,6 +590,49 @@ exports.subscribeToNewsletter = onCall(
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         throw new HttpsError('invalid-argument', 'Invalid email format');
+      }
+
+      // Valider le token Turnstile
+      if (!turnstileToken) {
+        throw new HttpsError('invalid-argument', 'Turnstile verification required');
+      }
+
+      const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+      if (turnstileSecret) {
+        try {
+          // Obtenir l'IP du client depuis les headers
+          const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
+                          request.rawRequest?.headers?.['x-real-ip'] ||
+                          '';
+
+          // Valider le token avec Cloudflare Turnstile
+          const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              secret: turnstileSecret,
+              response: turnstileToken,
+              remoteip: clientIP,
+            }),
+          });
+
+          const turnstileResult = await turnstileResponse.json();
+
+          if (!turnstileResult.success) {
+            console.error('Turnstile verification failed:', turnstileResult);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+        } catch (error) {
+          if (error instanceof HttpsError) {
+            throw error;
+          }
+          console.error('Error verifying Turnstile token:', error);
+          throw new HttpsError('internal', 'Error verifying bot protection');
+        }
+      } else {
+        console.warn('TURNSTILE_SECRET_KEY not configured. Skipping bot verification.');
       }
 
       try {
