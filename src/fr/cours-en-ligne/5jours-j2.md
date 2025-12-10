@@ -46,7 +46,6 @@ permalink: /cours-en-ligne/5jours/j2/
       </form>
       <div id="comments-container"></div>
       <div id="pagination-controls" style="margin-top:10px;"></div>
-
       <script>
       function escapeHTML(str) {
         var amp = String.fromCharCode(38);
@@ -62,7 +61,6 @@ permalink: /cours-en-ligne/5jours/j2/
           .replace(new RegExp(quot, 'g'), String.fromCharCode(38) + 'quot;')
           .replace(new RegExp(apos, 'g'), aposEntity);
       }
-
       // Utiliser le projet Firebase principal (fluance-protected-content)
       // Si Firebase n'est pas déjà initialisé, l'initialiser avec le projet principal
       if (typeof firebase === 'undefined') {
@@ -104,14 +102,12 @@ permalink: /cours-en-ligne/5jours/j2/
         }
         initComments();
       }
-
       function initComments() {
       var db = firebase.firestore();
       var pageId = encodeURIComponent(window.location.origin + window.location['pathname']);
       var COMMENTS_PER_PAGE = 20;
       var allComments = [];
       var currentPage = 1;
-
       document.getElementById("comment-form").addEventListener("submit", function (e) {
         e.preventDefault();
         var name = document.getElementById("name").value.trim();
