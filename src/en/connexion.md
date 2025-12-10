@@ -20,7 +20,7 @@ permalink: /en/connexion/
           Access your online training space to follow your courses and practices.
         </p>
         <div class="text-center">
-          <a href="/en/firebase-login/" class="btn-primary inline-flex items-center gap-2">Login <span>→</span></a>
+          <a href="/en/member-login/" class="btn-primary inline-flex items-center gap-2">Login <span>→</span></a>
         </div>
       </div>
 

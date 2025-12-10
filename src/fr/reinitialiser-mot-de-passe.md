@@ -110,7 +110,7 @@ permalink: /reinitialiser-mot-de-passe/
 
     <div class="mt-6 text-center space-y-2">
       <p class="text-sm text-[#1f1f1f]/80">
-        <a href="/connexion-firebase" class="text-fluance hover:text-fluance/80 font-medium">Retour à la connexion</a>
+        <a href="/connexion-membre" class="text-fluance hover:text-fluance/80 font-medium">Retour à la connexion</a>
       </p>
     </div>
   </div>
@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           confirmSuccessDiv.classList.remove('hidden');
           
           setTimeout(() => {
-            window.location.href = '/connexion-firebase';
+            window.location.href = '/connexion-membre';
           }, 2000);
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Erreur lors de la réinitialisation.';

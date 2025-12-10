@@ -49,7 +49,7 @@ const firebaseConfig = {
 
 ### Étape 3 : Vérifier
 
-1. Rechargez la page `/creer-compte/` ou `/connexion-firebase/`
+1. Rechargez la page `/creer-compte/` ou `/connexion-membre/`
 2. Ouvrez la console du navigateur (F12)
 3. L'erreur `API key not valid` ne devrait plus apparaître
 4. Testez la création de compte avec un code d'activation valide

@@ -65,7 +65,7 @@
 ### Code client
 - `src/assets/js/firebase-auth.js` : Authentification et accès au contenu
 - `src/fr/creer-compte.md` : Page de création de compte
-- `src/fr/connexion-firebase.md` : Page de connexion Firebase
+- `src/fr/connexion-membre.md` : Page de connexion Firebase
 - `src/_includes/protected-content.njk` : Shortcode pour contenu protégé
 
 ### Documentation
@@ -148,7 +148,7 @@ Vérifie si un utilisateur est connecté.
 ### `/creer-compte`
 Page de création de compte avec token. Accepte le paramètre `?token=XXX` dans l'URL.
 
-### `/connexion-firebase`
+### `/connexion-membre`
 Page de connexion Firebase Auth. Accepte le paramètre `?return=/path` pour rediriger après connexion.
 
 ## Utilisation dans les pages

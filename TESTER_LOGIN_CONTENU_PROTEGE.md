@@ -89,7 +89,7 @@ createTestToken().catch(console.error);
 
 ## 🧪 Étape 3 : Se connecter
 
-1. Allez sur : `https://fluance.io/connexion-firebase/`
+1. Allez sur : `https://fluance.io/connexion-membre/`
 
 2. **Option A : Connexion avec mot de passe**
    - Entrez votre email : `test@example.com`
@@ -186,7 +186,7 @@ Créez une page HTML de test :
 
 - [ ] Token créé dans Firestore (`registrationTokens`)
 - [ ] Compte créé via `/creer-compte?token=...`
-- [ ] Connexion réussie via `/connexion-firebase/`
+- [ ] Connexion réussie via `/connexion-membre/`
 - [ ] Contenu protégé ajouté dans Firestore (`protectedContent`)
 - [ ] Contenu affiché correctement sur la page
 - [ ] Aucune erreur dans la console du navigateur
@@ -222,7 +222,7 @@ Créez une page HTML de test :
 
 1. **Créer un token** : `abc123def456...` (32 caractères hex)
 2. **Créer le compte** : `https://fluance.io/creer-compte?token=abc123def456...`
-3. **Se connecter** : `https://fluance.io/connexion-firebase/`
+3. **Se connecter** : `https://fluance.io/connexion-membre/`
 4. **Ajouter le contenu** dans Firestore avec l'ID `test-video-1`
 5. **Afficher le contenu** sur une page avec `{% protectedContent "test-video-1" %}`
 

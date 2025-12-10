@@ -64,6 +64,6 @@ Après avoir mis à jour la configuration, testez :
 
 1. Ouvrez la console du navigateur (F12)
 2. Vérifiez qu'il n'y a pas d'erreurs Firebase
-3. Testez la connexion sur `/connexion-firebase`
+3. Testez la connexion sur `/connexion-membre`
 4. Testez le chargement du contenu protégé
 

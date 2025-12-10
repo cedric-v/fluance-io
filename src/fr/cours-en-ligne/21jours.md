@@ -17,7 +17,7 @@ permalink: /cours-en-ligne/21jours/
 
     <div id="auth-required" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center hidden">
       <p class="text-yellow-800 mb-4">Veuillez vous connecter pour accéder au contenu du défi.</p>
-      <a href="/connexion-firebase?return={{ '/cours-en-ligne/21jours/' | url }}" 
+      <a href="/connexion-membre?return={{ '/cours-en-ligne/21jours/' | url }}" 
          class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
         Se connecter
       </a>

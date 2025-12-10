@@ -110,7 +110,7 @@ permalink: /en/reset-password/
 
     <div class="mt-6 text-center space-y-2">
       <p class="text-sm text-[#1f1f1f]/80">
-        <a href="/en/firebase-login" class="text-fluance hover:text-fluance/80 font-medium">Back to login</a>
+        <a href="/en/member-login" class="text-fluance hover:text-fluance/80 font-medium">Back to login</a>
       </p>
     </div>
   </div>
@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           confirmSuccessDiv.classList.remove('hidden');
           
           setTimeout(() => {
-            window.location.href = '/en/firebase-login';
+            window.location.href = '/en/member-login';
           }, 2000);
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Error resetting password.';

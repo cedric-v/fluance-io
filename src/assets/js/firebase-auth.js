@@ -241,7 +241,7 @@ async function sendSignInLink(email, actionCodeSettings = null) {
     
     // Configuration par défaut : lien valide pour cette page
     const defaultSettings = {
-      url: window.location.origin + '/connexion-firebase',
+      url: window.location.origin + '/connexion-membre',
       handleCodeInApp: true
     };
     

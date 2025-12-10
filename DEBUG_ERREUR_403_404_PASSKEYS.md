@@ -80,7 +80,7 @@
 
 ### Étape 5 : Tester
 
-1. Rechargez la page `/connexion-firebase/`
+1. Rechargez la page `/connexion-membre/`
 2. Ouvrez la console du navigateur (F12)
 3. Cliquez sur l'onglet **🔐 Clé d'accès**
 4. Entrez un email

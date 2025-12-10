@@ -122,7 +122,7 @@ async function linkPasskeyToAccount() {
 Ajouter un bouton "Connexion avec passkey" dans les formulaires de connexion :
 
 ```html
-<!-- Dans connexion-firebase.md -->
+<!-- Dans connexion-membre.md -->
 <button 
   id="passkey-login-btn" 
   type="button"

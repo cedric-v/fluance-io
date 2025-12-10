@@ -122,7 +122,7 @@ Pour tester l'accès progressif, créez au moins les jours 1, 2, 3 :
 ### Étape 5 : Tester l'affichage
 
 1. **Se connecter** (si vous n'êtes pas déjà connecté) :
-   - Allez sur `https://fluance.io/connexion-firebase/`
+   - Allez sur `https://fluance.io/connexion-membre/`
    - Connectez-vous avec votre email et mot de passe
 
 2. **Accéder à la page membre** :
@@ -234,7 +234,7 @@ protectedContent/
 1. **Token** : `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`
 2. **Email** : `test-21jours@example.com`
 3. **Créer le compte** : `https://fluance.io/creer-compte?token=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`
-4. **Se connecter** : `https://fluance.io/connexion-firebase/`
+4. **Se connecter** : `https://fluance.io/connexion-membre/`
 5. **Voir le contenu** : `https://fluance.io/cours-en-ligne/21jours/` ou `https://fluance.io/membre/`
 
 ## 🔗 Ressources

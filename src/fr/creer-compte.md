@@ -128,7 +128,7 @@ permalink: /creer-compte/
     <div class="mt-6 text-center">
       <p class="text-sm text-[#1f1f1f]/80">
         Déjà un compte ? 
-        <a href="/connexion-firebase" class="text-fluance hover:text-fluance/80 font-medium">Se connecter</a>
+        <a href="/connexion-membre" class="text-fluance hover:text-fluance/80 font-medium">Se connecter</a>
       </p>
     </div>
 
@@ -327,7 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
           });
           showError('Connexion réussie mais redirection impossible. Redirection vers la page de connexion...');
           setTimeout(() => {
-            window.location.href = '/connexion-firebase/';
+            window.location.href = '/connexion-membre/';
           }, 2000);
         }
       } else {

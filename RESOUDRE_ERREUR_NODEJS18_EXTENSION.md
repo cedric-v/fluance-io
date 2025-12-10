@@ -175,7 +175,7 @@ exports.webAuthnSignIn = functions.https.onCall(async (request) => {
 
 ## État actuel de l'interface
 
-**L'onglet "Clé d'accès" est actuellement masqué** dans `src/fr/connexion-firebase.md` avec la classe CSS `hidden`.
+**L'onglet "Clé d'accès" est actuellement masqué** dans `src/fr/connexion-membre.md` avec la classe CSS `hidden`.
 
 Les utilisateurs peuvent toujours utiliser :
 - ✅ **Mot de passe** - Fonctionne normalement
@@ -188,4 +188,4 @@ Pour réactiver l'onglet une fois l'extension mise à jour, voir [DESACTIVER_PAS
 
 - ⚠️ **Ne supprimez pas** l'extension sans sauvegarder la configuration
 - ⚠️ **Attendez** 5-10 minutes après l'installation pour que les fonctions soient déployées
-- ✅ **Testez** après l'installation sur `/connexion-firebase/`
+- ✅ **Testez** après l'installation sur `/connexion-membre/`

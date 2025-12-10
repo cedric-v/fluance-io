@@ -106,7 +106,7 @@ Si vous voulez tester en dehors de votre site :
 ```javascript
 // Dans la console du navigateur sur votre site
 firebase.auth().sendSignInLinkToEmail('votre@email.com', {
-  url: 'https://fluance.io/connexion-firebase',
+  url: 'https://fluance.io/connexion-membre',
   handleCodeInApp: true
 }).then(() => {
   console.log('Email envoyé');

@@ -131,7 +131,7 @@ Les fonctions suivantes doivent être disponibles :
 
 ### Tester l'installation
 
-1. Allez sur votre page de connexion : `/connexion-firebase`
+1. Allez sur votre page de connexion : `/connexion-membre`
 2. Cliquez sur l'onglet **🔐 Passkey**
 3. Entrez un email
 4. Cliquez sur "Connexion avec passkey"

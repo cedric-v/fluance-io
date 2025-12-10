@@ -1,19 +1,21 @@
 ---
 layout: base.njk
-title: Login - Protected content
-description: Log in to access your protected Fluance content
-locale: en
-permalink: /en/firebase-login/
+title: Connexion - Contenu protégé
+description: Connectez-vous pour accéder à votre contenu protégé Fluance
+locale: fr
+permalink: /connexion-membre/
 ---
 
 <div class="min-h-screen bg-[#fdfaf6] py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 section-card">
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-[#0f172a] mb-2">Login</h1>
-      <p class="text-[#1f1f1f]/80">Access your protected Fluance content</p>
+      <h1 class="text-3xl font-bold text-[#0f172a] mb-2">Connexion</h1>
+      <p class="text-[#1f1f1f]/80">Accédez à votre contenu protégé Fluance</p>
     </div>
 
-    <!-- Tabs to choose login method -->
+    <!-- Onglets pour choisir la méthode de connexion -->
+    <!-- ⚠️ TEMPORAIRE : L'onglet "Clé d'accès" est désactivé car l'extension Firebase WebAuthn utilise Node.js 18 (décommissioné) -->
+    <!-- Pour réactiver : supprimez la classe "hidden" du bouton tab-passkey et la condition dans le script -->
     <div class="mb-6 border-b border-fluance/20">
       <nav class="flex -mb-px">
         <button
@@ -21,26 +23,26 @@ permalink: /en/firebase-login/
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-fluance text-fluance"
           onclick="switchTab('password')"
         >
-          Password
+          Mot de passe
         </button>
         <button
           id="tab-passwordless"
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
           onclick="switchTab('passwordless')"
         >
-          Email login
+          Connexion par email
         </button>
         <button
           id="tab-passkey"
-          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
+          class="hidden flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
           onclick="switchTab('passkey')"
         >
-          🔐 Passkey
+          🔐 Clé d'accès
         </button>
       </nav>
     </div>
 
-    <!-- Password form -->
+    <!-- Formulaire avec mot de passe -->
     <form id="login-form" class="space-y-6">
       <div>
         <label for="email" class="block text-sm font-medium text-[#0f172a] mb-2">
@@ -52,20 +54,20 @@ permalink: /en/firebase-login/
           name="email"
           required
           class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
-          placeholder="your@email.com"
+          placeholder="votre@email.com"
         />
         <p id="passkey-info" class="hidden mt-2 text-sm text-[#1f1f1f]/60 italic">
-          Use your fingerprint, face, or device passcode to sign in instantly and securely.
+          Utilisez votre empreinte, votre visage ou le code de votre appareil pour vous connecter instantanément et en toute sécurité.
         </p>
       </div>
 
       <div id="password-field">
         <div class="flex items-center justify-between mb-2">
           <label for="password" class="block text-sm font-medium text-[#0f172a]">
-            Password
+            Mot de passe
           </label>
-          <a href="/en/reset-password" class="text-sm text-fluance hover:text-fluance/80">
-            Forgot password?
+          <a href="/reinitialiser-mot-de-passe" class="text-sm text-fluance hover:text-fluance/80">
+            Mot de passe oublié ?
           </a>
         </div>
         <input
@@ -73,7 +75,7 @@ permalink: /en/firebase-login/
           id="password"
           name="password"
           class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
-          placeholder="Your password"
+          placeholder="Votre mot de passe"
         />
       </div>
 
@@ -90,7 +92,7 @@ permalink: /en/firebase-login/
         id="submit-button"
         class="w-full bg-fluance text-white py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
       >
-        <span id="button-text">Login</span>
+        <span id="button-text">Se connecter</span>
         <span id="button-spinner" class="hidden ml-2">
           <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -102,42 +104,46 @@ permalink: /en/firebase-login/
 
     <div class="mt-6 text-center space-y-2">
       <p class="text-sm text-[#1f1f1f]/80">
-        Don't have an account yet? 
-        <a href="/en/create-account" class="text-fluance hover:text-fluance/80 font-medium">Create an account</a>
+        Pas encore de compte ? 
+        <a href="/creer-compte" class="text-fluance hover:text-fluance/80 font-medium">Créer un compte</a>
       </p>
       <p class="text-sm text-[#1f1f1f]/60">
-        <a href="/en/connexion" class="hover:text-fluance">Back to main login page</a>
+        <a href="/connexion" class="hover:text-fluance">Retour à la page de connexion principale</a>
       </p>
     </div>
 
-    <!-- Help section (collapsible) -->
+    <!-- Section d'aide dépliable -->
     <div class="mt-8 border-t border-fluance/20 pt-6">
       <button
         id="help-toggle"
         class="w-full flex items-center justify-between text-left text-sm font-medium text-fluance hover:text-fluance/80 transition-colors"
         onclick="toggleHelp()"
       >
-        <span>❓ Need help?</span>
+        <span>❓ Besoin d'aide ?</span>
         <svg id="help-arrow" class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
       <div id="help-content" class="hidden mt-4 space-y-4 text-sm text-[#1f1f1f]/80">
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">I can't find my email/code</p>
-          <p>→ Check your spam folder.</p>
+          <p class="font-semibold text-[#0f172a] mb-1">Je ne trouve pas mon email/code</p>
+          <p>→ Vérifiez vos courriers indésirables (spams).</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">The code doesn't work</p>
-          <p>→ Make sure to copy-paste the complete code, without spaces</p>
+          <p class="font-semibold text-[#0f172a] mb-1">Le code ne fonctionne pas</p>
+          <p>→ Assurez-vous de copier-coller le code complet, sans espace</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">What is "Email login"?</p>
-          <p>It's a passwordless login method. We send you an email containing a unique, one-time-use link to identify yourself. It's simple and very secure.</p>
+          <p class="font-semibold text-[#0f172a] mb-1">Qu'est-ce que la « Connexion par e-mail » ?</p>
+          <p>C'est la méthode de connexion sans mot de passe. Nous vous envoyons un e-mail contenant un lien unique, utilisable une seule fois, pour vous identifier. C'est simple et très sécurisé.</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Still need help?</p>
-          <p><a href="/en/contact" class="text-fluance hover:underline">Contact us.</a></p>
+          <p class="font-semibold text-[#0f172a] mb-1">Qu'est-ce qu'une « Clé d'accès » ?</p>
+          <p>Une clé d'accès vous permet de vous connecter instantanément et en toute sécurité en utilisant votre empreinte digitale, votre visage ou le code de votre appareil. C'est la méthode la plus simple et la plus sécurisée.</p>
+        </div>
+        <div>
+          <p class="font-semibold text-[#0f172a] mb-1">Encore besoin d'aide ?</p>
+          <p><a href="/contact" class="text-fluance hover:underline">Contactez-nous.</a></p>
         </div>
       </div>
     </div>
@@ -147,9 +153,9 @@ permalink: /en/firebase-login/
 <script src="/assets/js/firebase-auth.js"></script>
 <script>
 let currentTab = 'password';
-let errorDiv, successDiv; // Global variables for error/success divs
+let errorDiv, successDiv; // Variables globales pour les divs d'erreur/succès
 
-// Global functions to handle error/success messages
+// Fonctions globales pour gérer les messages d'erreur/succès
 function showError(message) {
   if (errorDiv && successDiv) {
     errorDiv.querySelector('p').textContent = message;
@@ -178,7 +184,7 @@ function hideSuccess() {
   }
 }
 
-// Function to switch tabs
+// Fonction pour changer d'onglet
 function switchTab(tab) {
   currentTab = tab;
   const passwordTab = document.getElementById('tab-password');
@@ -188,15 +194,15 @@ function switchTab(tab) {
   const passwordInput = document.getElementById('password');
   const buttonText = document.getElementById('button-text');
 
-  // Reset all tabs
+  // Réinitialiser tous les onglets (seulement ceux qui sont visibles)
   [passwordTab, passwordlessTab, passkeyTab].forEach(t => {
-    if (t) {
+    if (t && !t.classList.contains('hidden')) {
       t.classList.remove('border-fluance', 'text-fluance');
       t.classList.add('border-transparent', 'text-[#1f1f1f]/60');
     }
   });
 
-  // Hide info tooltip by default
+  // Masquer l'info-bulle par défaut
   const passkeyInfo = document.getElementById('passkey-info');
   
   if (tab === 'password') {
@@ -204,8 +210,8 @@ function switchTab(tab) {
     passwordTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'block';
     passwordInput.required = true;
-    buttonText.textContent = 'Login';
-    // Hide info tooltip for password tab
+    buttonText.textContent = 'Se connecter';
+    // Masquer l'info-bulle pour l'onglet mot de passe
     if (passkeyInfo) {
       passkeyInfo.classList.add('hidden');
     }
@@ -215,8 +221,8 @@ function switchTab(tab) {
     passwordField.style.display = 'none';
     passwordInput.required = false;
     passwordInput.value = '';
-    buttonText.textContent = 'Send login link';
-    // Hide info tooltip for passwordless tab
+    buttonText.textContent = 'Envoyer le lien de connexion';
+    // Masquer l'info-bulle pour l'onglet passwordless
     if (passkeyInfo) {
       passkeyInfo.classList.add('hidden');
     }
@@ -226,8 +232,8 @@ function switchTab(tab) {
     passwordField.style.display = 'none';
     passwordInput.required = false;
     passwordInput.value = '';
-    buttonText.textContent = 'Login with passkey';
-    // Show info tooltip only for passkey tab
+    buttonText.textContent = 'Se connecter avec une clé d\'accès';
+    // Afficher l'info-bulle uniquement pour l'onglet clé d'accès
     if (passkeyInfo) {
       passkeyInfo.classList.remove('hidden');
     }
@@ -238,7 +244,7 @@ function switchTab(tab) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-  // Check if a passwordless link is present in the URL
+  // Vérifier si un lien passwordless est présent dans l'URL
   try {
     await new Promise((resolve) => {
       if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
@@ -255,7 +261,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const linkResult = await window.FluanceAuth.handleSignInLink();
     if (linkResult.success) {
-      // Login successful with link
+      // Connexion réussie avec le lien
       const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
       window.location.href = returnUrl;
       return;
@@ -265,8 +271,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 
   const form = document.getElementById('login-form');
-  errorDiv = document.getElementById('error-message'); // Assign to global variable
-  successDiv = document.getElementById('success-message'); // Assign to global variable
+  errorDiv = document.getElementById('error-message'); // Assigner à la variable globale
+  successDiv = document.getElementById('success-message'); // Assigner à la variable globale
   const submitButton = document.getElementById('submit-button');
   const buttonText = document.getElementById('button-text');
   const buttonSpinner = document.getElementById('button-spinner');
@@ -278,30 +284,24 @@ document.addEventListener('DOMContentLoaded', async function() {
     const password = document.getElementById('password').value;
 
     if (!email) {
-      showError('Please enter your email.');
+      showError('Veuillez entrer votre email.');
       return;
     }
 
     if (currentTab === 'password' && !password) {
-      showError('Please enter your password.');
+      showError('Veuillez entrer votre mot de passe.');
       return;
     }
 
-    // Disable button and show spinner
+    // Désactiver le bouton et afficher le spinner
     submitButton.disabled = true;
-    if (currentTab === 'password') {
-      buttonText.textContent = 'Logging in...';
-    } else if (currentTab === 'passkey') {
-      buttonText.textContent = 'Authenticating...';
-    } else {
-      buttonText.textContent = 'Sending...';
-    }
+    buttonText.textContent = currentTab === 'password' ? 'Connexion...' : 'Envoi...';
     buttonSpinner.classList.remove('hidden');
     hideError();
     hideSuccess();
 
     try {
-      // Wait for Firebase to be initialized
+      // Attendre que Firebase soit initialisé
       await new Promise((resolve) => {
         if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
           resolve();
@@ -316,91 +316,101 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
 
       if (currentTab === 'password') {
-        // Login with password
+        // Connexion avec mot de passe
         const result = await window.FluanceAuth.signIn(email, password);
 
         if (result.success) {
-          // Redirect to original page or member area
+          // Rediriger vers la page d'origine ou l'espace membre
           const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
           window.location.href = returnUrl;
         } else {
-          showError(result.error || 'Login error.');
+          showError(result.error || 'Erreur lors de la connexion.');
         }
       } else if (currentTab === 'passkey') {
-        // Login with passkey
-        buttonText.textContent = 'Authenticating...';
+        // Connexion avec clé d'accès
+        buttonText.textContent = 'Authentification...';
         
-        // Check if WebAuthn is supported
+        // Vérifier si WebAuthn est supporté
         if (!window.FluanceAuth.isWebAuthnSupported()) {
-          showError('Passkeys are not supported by your browser. Please use Chrome, Safari, Edge, or a recent Firefox.');
+          showError('Les clés d\'accès ne sont pas supportées par votre navigateur. Utilisez Chrome, Safari, Edge ou Firefox récent.');
           return;
         }
 
         const result = await window.FluanceAuth.signInWithPasskey(email);
 
         if (result.success) {
-          // Redirect to original page or member area
+          // Rediriger vers la page d'origine ou l'espace membre
           const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
           window.location.href = returnUrl;
         } else {
-          // If passkey doesn't exist, offer to create one
+          // Si la clé d'accès n'existe pas, proposer de la créer
           if (result.canCreate) {
-            const create = confirm('No passkey found for this email. Would you like to create one? This will create an account if you don\'t have one yet.');
+            const create = confirm('Aucune clé d\'accès trouvée pour cet email. Voulez-vous en créer une ? Cela créera un compte si vous n\'en avez pas encore.');
             if (create) {
-              buttonText.textContent = 'Creating passkey...';
+              buttonText.textContent = 'Création de la clé d\'accès...';
               const createResult = await window.FluanceAuth.createAccountWithPasskey(email);
               if (createResult.success) {
                 const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
                 window.location.href = returnUrl;
               } else {
                 if (createResult.needsExtension) {
-                  showError('The Firebase WebAuthn extension is not yet installed. Please use another login method for now.');
+                  showError('L\'extension Firebase WebAuthn n\'est pas encore installée. Veuillez utiliser une autre méthode de connexion pour le moment.');
                 } else {
-                  showError(createResult.error || 'Error creating passkey.');
+                  showError(createResult.error || 'Erreur lors de la création de la clé d\'accès.');
                 }
               }
             }
           } else if (result.needsExtension) {
-            showError('The Firebase WebAuthn extension is not yet installed. Please use another login method for now.');
+            showError('L\'extension Firebase WebAuthn n\'est pas encore installée. Veuillez utiliser une autre méthode de connexion pour le moment.');
           } else {
-            showError(result.error || 'Error logging in with passkey.');
+            showError(result.error || 'Erreur lors de la connexion avec la clé d\'accès.');
           }
         }
       } else {
-        // Send passwordless link
-        // Save email in localStorage for link verification
-        window.localStorage.setItem('emailForSignIn', email);
+        // Envoi du lien passwordless
+        console.log('[Connexion] Début de l\'envoi du lien passwordless');
+        console.log('[Connexion] Email:', email);
+        console.log('[Connexion] FluanceAuth disponible:', typeof window.FluanceAuth !== 'undefined');
+        console.log('[Connexion] sendSignInLink disponible:', typeof window.FluanceAuth?.sendSignInLink === 'function');
         
+        // Sauvegarder l'email dans localStorage pour la vérification du lien
+        window.localStorage.setItem('emailForSignIn', email);
+        console.log('[Connexion] Email sauvegardé dans localStorage');
+        
+        console.log('[Connexion] Appel de window.FluanceAuth.sendSignInLink...');
         const result = await window.FluanceAuth.sendSignInLink(email);
+        console.log('[Connexion] Résultat de sendSignInLink:', result);
 
         if (result.success) {
-          showSuccess('A login link has been sent to your email. Click on the link to log in.');
+          console.log('[Connexion] ✅ Succès, affichage du message');
+          showSuccess('Un lien de connexion a été envoyé à votre email. Cliquez sur le lien pour vous connecter.');
         } else {
-          showError(result.error || 'Error sending link.');
+          console.log('[Connexion] ❌ Erreur:', result.error);
+          showError(result.error || 'Erreur lors de l\'envoi du lien.');
           window.localStorage.removeItem('emailForSignIn');
         }
       }
     } catch (error) {
       console.error('Error:', error);
-      showError('An error occurred. Please try again.');
+      showError('Une erreur est survenue. Veuillez réessayer.');
       if (currentTab === 'passwordless') {
         window.localStorage.removeItem('emailForSignIn');
       }
     } finally {
       submitButton.disabled = false;
       if (currentTab === 'password') {
-        buttonText.textContent = 'Login';
+        buttonText.textContent = 'Se connecter';
       } else if (currentTab === 'passkey') {
-        buttonText.textContent = 'Login with passkey';
+        buttonText.textContent = 'Se connecter avec une clé d\'accès';
       } else {
-        buttonText.textContent = 'Send login link';
+        buttonText.textContent = 'Envoyer le lien de connexion';
       }
       buttonSpinner.classList.add('hidden');
     }
   });
 
-  // Functions showError, hideError, showSuccess, hideSuccess are already defined globally
-  // Function to toggle help section
+  // Les fonctions showError, hideError, showSuccess, hideSuccess sont déjà définies globalement
+  // Fonction pour toggle la section d'aide
   function toggleHelp() {
     const helpContent = document.getElementById('help-content');
     const helpArrow = document.getElementById('help-arrow');
@@ -412,4 +422,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   window.toggleHelp = toggleHelp;
 });
 </script>
+
+
 

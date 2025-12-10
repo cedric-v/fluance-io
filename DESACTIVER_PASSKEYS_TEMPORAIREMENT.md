@@ -6,7 +6,7 @@ L'extension Firebase WebAuthn (version 10.4.2) utilise Node.js 18 qui est décom
 
 ## État actuel
 
-L'onglet "Clé d'accès" est **masqué** dans l'interface de connexion (`src/fr/connexion-firebase.md`).
+L'onglet "Clé d'accès" est **masqué** dans l'interface de connexion (`src/fr/connexion-membre.md`).
 
 ## Réactiver l'onglet "Clé d'accès"
 
@@ -14,7 +14,7 @@ Une fois que l'extension Firebase WebAuthn sera mise à jour pour supporter Node
 
 ### Étape 1 : Retirer la classe `hidden`
 
-Éditez `src/fr/connexion-firebase.md` et trouvez le bouton de l'onglet "Clé d'accès" :
+Éditez `src/fr/connexion-membre.md` et trouvez le bouton de l'onglet "Clé d'accès" :
 
 **Avant (désactivé) :**
 ```html
@@ -46,7 +46,7 @@ Une fois que l'extension Firebase WebAuthn sera mise à jour pour supporter Node
 
 ### Étape 3 : Tester
 
-1. Rechargez la page `/connexion-firebase/`
+1. Rechargez la page `/connexion-membre/`
 2. Vérifiez que l'onglet "Clé d'accès" est visible
 3. Testez la connexion avec une clé d'accès
 

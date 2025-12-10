@@ -307,7 +307,7 @@ The project includes automated quality checks to ensure the site works correctly
 **Pages tested:**
 - Homepage (root, FR, EN)
 - Contact page
-- Login page (`/connexion-firebase/`)
+- Login page (`/connexion-membre/`)
 - Online course pages (5 days, 21 days)
 - Member area (`/membre/`)
 - Custom 404 page (`/404.html`)
