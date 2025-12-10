@@ -30,8 +30,7 @@ permalink: /en/member-login/
         >
           Email login
         </button>
-        <!-- Passkey tab temporarily disabled -->
-        <!--
+        <!-- Passkey tab temporarily disabled
         <button
           id="tab-passkey"
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
