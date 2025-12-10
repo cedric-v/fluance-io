@@ -597,7 +597,7 @@ exports.subscribeToNewsletter = onCall(
         // Note: Vous devrez peut-être créer une liste dans MailJet et utiliser son ID
         // Pour l'instant, on ajoute juste le contact (il sera ajouté à la liste par défaut)
         const url = 'https://api.mailjet.com/v3/REST/contact';
-        
+
         const contactData = {
           Email: email.toLowerCase().trim(),
           IsExcludedFromCampaigns: false,
@@ -611,11 +611,11 @@ exports.subscribeToNewsletter = onCall(
         }
 
         const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
-        
+
         // Vérifier si le contact existe déjà
         const checkUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(contactData.Email)}`;
         let contactExists = false;
-        
+
         try {
           const checkResponse = await fetch(checkUrl, {
             method: 'GET',
@@ -623,7 +623,7 @@ exports.subscribeToNewsletter = onCall(
               'Authorization': `Basic ${auth}`,
             },
           });
-          
+
           if (checkResponse.ok) {
             contactExists = true;
             // Mettre à jour le contact existant si un nom est fourni
@@ -636,14 +636,14 @@ exports.subscribeToNewsletter = onCall(
                 },
                 body: JSON.stringify(contactData),
               });
-              
+
               if (!updateResponse.ok) {
                 const errorText = await updateResponse.text();
                 console.error('Error updating contact:', errorText);
               }
             }
           }
-        } catch (err) {
+        } catch {
           // Contact n'existe pas, on va le créer
           console.log('Contact does not exist, will create it');
         }
