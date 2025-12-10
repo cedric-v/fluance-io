@@ -1,0 +1,287 @@
+<!-- Pop-up personnalisée pour inscription newsletter -->
+<div id="newsletter-popup" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0, 0, 0, 0.5);">
+  <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 md:p-8 relative">
+    <button id="close-popup" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl leading-none" aria-label="Fermer">&times;</button>
+    
+    <h2 class="text-2xl md:text-3xl font-semibold text-[#0f172a] mb-2">Recevez 2 pratiques Fluance</h2>
+    <p class="text-gray-600 mb-6">Il suffit de remplir le formulaire ci-dessous :</p>
+    
+    <form id="newsletter-form" class="space-y-4" autocomplete="off" data-form-type="newsletter" data-1p-ignore="true" data-lastpass-ignore="true">
+      <div>
+        <label for="newsletter-name" class="block text-sm font-medium text-gray-700 mb-2">Prénom <span class="text-red-500">*</span></label>
+        <input type="text" id="newsletter-name" name="newsletter-name" required autocomplete="given-name" data-lpignore="true" data-1p-ignore="true" data-lastpass-ignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#648ED8] focus:border-transparent">
+      </div>
+      
+      <div>
+        <label for="newsletter-email" class="block text-sm font-medium text-gray-700 mb-2">Email <span class="text-red-500">*</span></label>
+        <input type="email" id="newsletter-email" name="newsletter-email" required autocomplete="email" data-lpignore="true" data-1p-ignore="true" data-lastpass-ignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#648ED8] focus:border-transparent">
+      </div>
+      
+      <div id="form-message" class="hidden text-sm"></div>
+      
+      <button type="submit" id="submit-btn" class="w-full btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] py-3 px-6 rounded-md font-medium transition-colors">
+        <span id="submit-text">Recevoir immédiatement</span>
+        <span id="submit-loading" class="hidden">Envoi en cours...</span>
+      </button>
+      
+      <div class="text-xs text-gray-500 mt-4">
+        En soumettant ce formulaire, j'accepte que mes informations soient utilisées dans le cadre de ma demande et de la relation commerciale éthique et personnalisée qui peut en découler. Pour connaître et exercer mes droits, notamment pour annuler mon consentement, je consulte les <a href="/mentions-legales" class="text-[#648ED8] hover:underline" target="_blank">mentions légales et la politique de confidentialité</a>.
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Pop-up newsletter personnalisée avec Firebase Functions
+  document.addEventListener('DOMContentLoaded', function() {
+    const popup = document.getElementById('newsletter-popup');
+    if (!popup) return; // Si la pop-up n'existe pas, ne pas initialiser
+    
+    const closeBtn = document.getElementById('close-popup');
+    const form = document.getElementById('newsletter-form');
+    const messageDiv = document.getElementById('form-message');
+    const submitBtn = document.getElementById('submit-btn');
+    const submitText = document.getElementById('submit-text');
+    const submitLoading = document.getElementById('submit-loading');
+    
+    // Fonction pour charger Firebase et Firebase Functions
+    async function loadFirebaseFunctions() {
+      return new Promise((resolve, reject) => {
+        // Configuration Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM",
+          authDomain: "fluance-protected-content.firebaseapp.com",
+          projectId: "fluance-protected-content",
+          storageBucket: "fluance-protected-content.firebasestorage.app",
+          messagingSenderId: "173938686776",
+          appId: "1:173938686776:web:891caf76098a42c3579fcd",
+          measurementId: "G-CWPNXDQEYR"
+        };
+        
+        // Vérifier si Firebase est déjà chargé et initialisé
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+          // Firebase est déjà initialisé, charger Functions si nécessaire
+          if (firebase.functions) {
+            resolve();
+          } else {
+            loadFunctionsModule(resolve, reject);
+          }
+          return;
+        }
+        
+        // Charger Firebase de manière séquentielle (app-compat d'abord, puis functions-compat)
+        const appScriptUrl = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
+        const functionsScriptUrl = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+        
+        // Vérifier si app-compat est déjà chargé
+        if (document.querySelector(`script[src="${appScriptUrl}"]`)) {
+          // App est déjà chargé, vérifier si initialisé
+          if (typeof firebase !== 'undefined') {
+            if (!firebase.apps.length) {
+              firebase.initializeApp(firebaseConfig);
+            }
+            // Charger Functions
+            loadFunctionsScript();
+          } else {
+            // Attendre que firebase soit disponible
+            waitForFirebase();
+          }
+        } else {
+          // Charger app-compat d'abord
+          const appScript = document.createElement('script');
+          appScript.src = appScriptUrl;
+          appScript.onload = () => {
+            // Attendre un peu pour que le module soit prêt
+            setTimeout(() => {
+              if (typeof firebase === 'undefined') {
+                reject(new Error('Firebase App n\'a pas pu être chargé'));
+                return;
+              }
+              
+              // Initialiser Firebase
+              if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+              }
+              
+              // Maintenant charger Functions
+              loadFunctionsScript();
+            }, 100);
+          };
+          appScript.onerror = () => reject(new Error('Erreur lors du chargement de Firebase App'));
+          document.head.appendChild(appScript);
+        }
+        
+        function loadFunctionsScript() {
+          // Vérifier si functions-compat est déjà chargé
+          if (document.querySelector(`script[src="${functionsScriptUrl}"]`)) {
+            // Functions est déjà chargé, vérifier qu'il est disponible
+            loadFunctionsModule(resolve, reject);
+          } else {
+            // Charger functions-compat
+            const functionsScript = document.createElement('script');
+            functionsScript.src = functionsScriptUrl;
+            functionsScript.onload = () => {
+              // Attendre que Functions soit disponible
+              loadFunctionsModule(resolve, reject);
+            };
+            functionsScript.onerror = () => reject(new Error('Erreur lors du chargement de Firebase Functions'));
+            document.head.appendChild(functionsScript);
+          }
+        }
+        
+        function waitForFirebase() {
+          let attempts = 0;
+          const checkFirebase = setInterval(() => {
+            attempts++;
+            if (typeof firebase !== 'undefined') {
+              clearInterval(checkFirebase);
+              if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+              }
+              loadFunctionsScript();
+            } else if (attempts > 50) {
+              clearInterval(checkFirebase);
+              reject(new Error('Timeout: Firebase n\'a pas pu être chargé'));
+            }
+          }, 100);
+        }
+        
+        function loadFunctionsModule(resolve, reject) {
+          let attempts = 0;
+          const checkFunctions = setInterval(() => {
+            attempts++;
+            if (firebase.functions) {
+              clearInterval(checkFunctions);
+              resolve();
+            } else if (attempts > 50) { // 5 secondes max
+              clearInterval(checkFunctions);
+              reject(new Error('Firebase Functions n\'a pas pu être initialisé'));
+            }
+          }, 100);
+        }
+      });
+    }
+    
+    // Ouvrir la pop-up au clic sur les boutons
+    const buttons = document.querySelectorAll('[data-w-token="9241cb136525ee5e376e"]');
+    buttons.forEach(function(button) {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        popup.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Empêcher le scroll
+      });
+    });
+    
+    // Fermer la pop-up
+    function closePopup() {
+      popup.classList.add('hidden');
+      document.body.style.overflow = ''; // Rétablir le scroll
+      if (form) form.reset();
+      if (messageDiv) messageDiv.classList.add('hidden');
+    }
+    
+    if (closeBtn) closeBtn.addEventListener('click', closePopup);
+    popup.addEventListener('click', function(e) {
+      if (e.target === popup) {
+        closePopup();
+      }
+    });
+    
+    // Soumettre le formulaire
+    if (form) {
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('newsletter-email').value.trim();
+        const name = document.getElementById('newsletter-name').value.trim();
+        
+        if (!name) {
+          showMessage('Veuillez entrer votre prénom', 'error');
+          return;
+        }
+        
+        if (!email) {
+          showMessage('Veuillez entrer votre email', 'error');
+          return;
+        }
+        
+        // Validation du format de l'email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          showMessage('Veuillez entrer une adresse email valide', 'error');
+          return;
+        }
+        
+        // Désactiver le bouton et afficher le loading
+        if (submitBtn) submitBtn.disabled = true;
+        if (submitText) submitText.classList.add('hidden');
+        if (submitLoading) submitLoading.classList.remove('hidden');
+        if (messageDiv) messageDiv.classList.add('hidden');
+        
+        try {
+          // Charger Firebase Functions
+          await loadFirebaseFunctions();
+          
+          // Vérifier que Firebase est complètement initialisé
+          if (typeof firebase === 'undefined' || !firebase.apps || firebase.apps.length === 0) {
+            throw new Error('Firebase n\'est pas initialisé');
+          }
+          
+          if (!firebase.functions) {
+            throw new Error('Firebase Functions n\'est pas disponible');
+          }
+          
+          // Appeler la fonction Firebase
+          const app = firebase.app();
+          if (!app) {
+            throw new Error('Impossible d\'obtenir l\'instance Firebase');
+          }
+          
+          const functions = app.functions('europe-west1');
+          const subscribeToNewsletter = functions.httpsCallable('subscribeToNewsletter');
+          const result = await subscribeToNewsletter({ email: email, name: name });
+          
+          if (result.data && result.data.success) {
+            showMessage('Merci ! Votre inscription s\'est bien passée. Pensez à vérifier vos spams / courriers indésirables au besoin.', 'success');
+            // Rediriger vers la page 2-pratiques-offertes après 1.5 secondes
+            setTimeout(() => {
+              window.location.href = '/2-pratiques-offertes/';
+            }, 1500);
+          } else {
+            showMessage('Une erreur est survenue. Veuillez réessayer.', 'error');
+          }
+        } catch (error) {
+          console.error('Erreur lors de l\'inscription:', error);
+          
+          // Gérer les erreurs spécifiques
+          let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
+          
+          if (error.code === 'functions/not-found') {
+            errorMessage = 'La fonction n\'est pas encore déployée. Veuillez déployer la fonction subscribeToNewsletter.';
+          } else if (error.code === 'functions/unavailable') {
+            errorMessage = 'Le service est temporairement indisponible. Veuillez réessayer plus tard.';
+          } else if (error.message) {
+            errorMessage = error.message;
+          } else if (error.code) {
+            errorMessage = `Erreur: ${error.code}`;
+          }
+          
+          showMessage(errorMessage, 'error');
+        } finally {
+          // Réactiver le bouton
+          if (submitBtn) submitBtn.disabled = false;
+          if (submitText) submitText.classList.remove('hidden');
+          if (submitLoading) submitLoading.classList.add('hidden');
+        }
+      });
+    }
+    
+    function showMessage(text, type) {
+      if (messageDiv) {
+        messageDiv.textContent = text;
+        messageDiv.className = 'text-sm ' + (type === 'success' ? 'text-green-600' : 'text-red-600');
+        messageDiv.classList.remove('hidden');
+      }
+    }
+  });
+</script>

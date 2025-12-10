@@ -66,54 +66,5 @@ permalink: /en/a-propos/philosophie/
   </div>
 </section>
 
-<!-- MailJet Pop-in Form -->
-<iframe data-w-token="9241cb136525ee5e376e" data-w-type="pop-in" frameborder="0" scrolling="yes" marginheight="0" marginwidth="0" src="https://1sqw8.mjt.lu/wgt/1sqw8/0umk/form?c=5239e5a1" width="100%" style="height: 0;"></iframe>
-
-<!-- MailJet Trigger -->
-<iframe data-w-token="9241cb136525ee5e376e" data-w-type="trigger" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://1sqw8.mjt.lu/wgt/1sqw8/0umk/trigger?c=5715cb7f" width="100%" style="height: 0;"></iframe>
-
-<script type="text/javascript" src="https://app.mailjet.com/pas-nc-pop-in-v1.js"></script>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    function tryOpenMailJet() {
-      if (window.ml && typeof window.ml.open === 'function') {
-        window.ml.open();
-        return true;
-      }
-      if (window.wjPopin && typeof window.wjPopin === 'function') {
-        window.wjPopin();
-        return true;
-      }
-      if (window.mjPopin && typeof window.mjPopin === 'function') {
-        window.mjPopin();
-        return true;
-      }
-      const triggerIframe = document.querySelector('iframe[data-w-type="trigger"]');
-      if (triggerIframe && triggerIframe.contentWindow) {
-        try {
-          triggerIframe.contentWindow.postMessage({ action: 'open', token: '9241cb136525ee5e376e' }, '*');
-        } catch (err) {
-          console.error('Erreur MailJet:', err);
-        }
-      }
-      return false;
-    }
-    
-    let attempts = 0;
-    const checkMailJet = setInterval(function() {
-      attempts++;
-      if (window.ml || attempts >= 20) {
-        clearInterval(checkMailJet);
-        const buttons = document.querySelectorAll('[data-w-token="9241cb136525ee5e376e"]');
-        buttons.forEach(function(button) {
-          button.addEventListener('click', function(e) {
-            e.preventDefault();
-            tryOpenMailJet();
-          });
-        });
-      }
-    }, 100);
-  });
-</script>
+{% include "newsletter-popup.njk" %}
 

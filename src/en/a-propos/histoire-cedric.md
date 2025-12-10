@@ -104,45 +104,5 @@ permalink: /en/a-propos/histoire-cedric/
   </div>
 </section>
 
-<!-- MailJet Pop-in Form -->
-<iframe data-w-token="9241cb136525ee5e376e" data-w-type="pop-in" frameborder="0" scrolling="yes" marginheight="0" marginwidth="0" src="https://1sqw8.mjt.lu/wgt/1sqw8/0umk/form?c=5239e5a1" width="100%" style="height: 0;"></iframe>
-
-<!-- MailJet Trigger -->
-<iframe data-w-token="9241cb136525ee5e376e" data-w-type="trigger" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://1sqw8.mjt.lu/wgt/1sqw8/0umk/trigger?c=5715cb7f" width="100%" style="height: 0;"></iframe>
-
-<script type="text/javascript" src="https://app.mailjet.com/pas-nc-pop-in-v1.js"></script>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() {
-      const buttons = document.querySelectorAll('[data-w-token="9241cb136525ee5e376e"]');
-      const popinIframe = document.querySelector('iframe[data-w-type="pop-in"]');
-      
-      buttons.forEach(function(button) {
-        button.addEventListener('click', function(e) {
-          e.preventDefault();
-          
-          if (popinIframe) {
-            let overlay = document.getElementById('mailjet-overlay');
-            if (!overlay) {
-              overlay = document.createElement('div');
-              overlay.id = 'mailjet-overlay';
-              overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9998; display: flex; align-items: center; justify-content: center;';
-              overlay.addEventListener('click', function(e) {
-                if (e.target === overlay) {
-                  overlay.style.display = 'none';
-                  popinIframe.style.cssText = 'height: 0;';
-                }
-              });
-              document.body.appendChild(overlay);
-            }
-            
-            popinIframe.style.cssText = 'position: relative; width: 90%; max-width: 600px; height: 500px; z-index: 9999; border: none;';
-            overlay.style.display = 'flex';
-          }
-        });
-      });
-    }, 1000);
-  });
-</script>
+{% include "newsletter-popup.njk" %}
 
