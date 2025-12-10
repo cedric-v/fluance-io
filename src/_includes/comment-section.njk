@@ -40,6 +40,12 @@
 
 <!-- Fonctions utilitaires -->
 <script>
+function decodeHTML(str) {
+  if (!str) return '';
+  var textarea = document.createElement('textarea');
+  textarea.innerHTML = str;
+  return textarea.value;
+}
 function escapeHTML(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -112,8 +118,11 @@ function escapeHTML(str) {
     
     for (var i = 0; i < pageComments.length; i++) {
       var c = pageComments[i];
-      var text = escapeHTML(c.text);
-      var name = escapeHTML(c.name);
+      // Décoder d'abord les entités HTML existantes, puis échapper pour sécurité
+      var decodedText = decodeHTML(c.text);
+      var decodedName = decodeHTML(c.name);
+      var text = escapeHTML(decodedText);
+      var name = escapeHTML(decodedName);
       
       container.innerHTML += '<div class="border-b border-gray-200 mb-4 pb-4"><div class="mb-2"><strong class="text-[#0f172a]">' + name + '</strong></div><p class="text-[#1f1f1f]/80">' + text + '</p></div>';
     }

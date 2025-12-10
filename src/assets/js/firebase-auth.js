@@ -772,6 +772,13 @@ function setupCommentSection(contentId) {
   let allComments = [];
   let currentPage = 1;
 
+  // Fonction pour décoder les entités HTML
+  function decodeHTML(str) {
+    if (!str) return '';
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = str;
+    return textarea.value;
+  }
   // Fonction pour échapper le HTML
   function escapeHTML(str) {
     return String(str)
@@ -828,8 +835,11 @@ function setupCommentSection(contentId) {
     
     for (let i = 0; i < pageComments.length; i++) {
       const c = pageComments[i];
-      const text = escapeHTML(c.text);
-      const name = escapeHTML(c.name);
+      // Décoder d'abord les entités HTML existantes, puis échapper pour sécurité
+      const decodedText = decodeHTML(c.text);
+      const decodedName = decodeHTML(c.name);
+      const text = escapeHTML(decodedText);
+      const name = escapeHTML(decodedName);
       
       container.innerHTML += '<div class="border-b border-gray-200 mb-4 pb-4"><div class="mb-2"><strong class="text-[#0f172a]">' + name + '</strong></div><p class="text-[#1f1f1f]/80">' + text + '</p></div>';
     }

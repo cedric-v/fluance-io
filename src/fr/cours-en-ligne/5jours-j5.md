@@ -50,6 +50,12 @@ permalink: /cours-en-ligne/5jours/j5/
       <div id="comments-container"></div>
       <div id="pagination-controls" style="margin-top:10px;"></div>
       <script>
+      function decodeHTML(str) {
+        if (!str) return '';
+        var textarea = document.createElement('textarea');
+        textarea.innerHTML = str;
+        return textarea.value;
+      }
       function escapeHTML(str) {
         var amp = String.fromCharCode(38);
         var lt = String.fromCharCode(60);
@@ -159,8 +165,11 @@ permalink: /cours-en-ligne/5jours/j5/
         var pageComments = allComments.slice(start, end);
         for (var i = 0; i < pageComments.length; i++) {
           var c = pageComments[i];
-          var text = escapeHTML(c.text);
-          var name = escapeHTML(c.name);
+          // Décoder d'abord les entités HTML existantes, puis échapper pour sécurité
+          var decodedText = decodeHTML(c.text);
+          var decodedName = decodeHTML(c.name);
+          var text = escapeHTML(decodedText);
+          var name = escapeHTML(decodedName);
           // Créer le conteneur du commentaire
           var commentDiv = document.createElement('div');
           commentDiv.style.borderBottom = '1px solid #ccc';
