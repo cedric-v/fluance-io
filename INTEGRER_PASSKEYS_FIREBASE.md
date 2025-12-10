@@ -33,6 +33,9 @@ L'extension nécessite :
 - **Relying Party ID** : Votre domaine (ex: `fluance.io`)
 - **Relying Party Name** : Nom de votre application (ex: "Fluance")
 - **Relying Party Origins** : Origines autorisées (ex: `https://fluance.io`, `https://www.fluance.io`)
+- **Authenticator Attachment** : `any` (recommandé pour la flexibilité)
+- **Authenticator Attachment for Secondary Passkeys (2FA)** : `platform` (pour iOS/Android)
+- **User Verification Requirement** : `preferred` (équilibre sécurité/flexibilité)
 
 #### 3. Mise à jour du code client
 

@@ -48,6 +48,30 @@ Lors de l'installation, vous devrez fournir :
 - **Format** : Une origine par ligne
 - **Important** : Doit inclure toutes les URLs où les passkeys seront utilisés
 
+#### Authenticator Attachment
+- **Valeur recommandée** : `any`
+- **Options** :
+  - `platform` : Uniquement les passkeys intégrés à l'appareil (empreinte, Face ID, etc.)
+  - `cross-platform` : Uniquement les clés USB externes (YubiKey, etc.)
+  - `any` : Les deux types (recommandé pour la flexibilité)
+- **Recommandation** : `any` pour permettre aux utilisateurs d'utiliser soit leur appareil, soit une clé USB
+
+#### Authenticator Attachment for Secondary Passkeys (2FA)
+- **Valeur recommandée** : `platform`
+- **Options disponibles** :
+  - `platform` : Uniquement les passkeys intégrés à l'appareil (empreinte, Face ID, etc.)
+  - `cross-platform` : Uniquement les clés USB externes (YubiKey, etc.)
+- **Note** : L'option `any` n'est pas disponible pour les passkeys secondaires (2FA)
+- **Recommandation** : `platform` pour une meilleure expérience utilisateur sur iOS et Android, où les passkeys intégrés sont les plus pratiques et courants
+
+#### User Verification Requirement
+- **Valeur recommandée** : `preferred`
+- **Options** :
+  - `required` : Vérification utilisateur obligatoire (biométrie, PIN) - Plus sécurisé mais moins flexible
+  - `preferred` : Vérification préférée mais pas obligatoire - **Équilibre entre sécurité et flexibilité**
+  - `discouraged` : Pas de vérification - Non recommandé pour la sécurité
+- **Recommandation** : `preferred` pour un bon équilibre entre sécurité et expérience utilisateur, en utilisant la vérification quand elle est disponible sans bloquer les utilisateurs
+
 ### 5. Vérifier l'installation
 
 Après l'installation, vérifiez que les Cloud Functions suivantes ont été créées :

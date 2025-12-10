@@ -348,8 +348,13 @@ async function verifyPasswordResetCode(actionCode) {
  */
 async function handleSignInLink() {
   try {
+    // S'assurer que auth est initialisé
+    if (!auth) {
+      auth = firebase.auth();
+    }
+    
     // Vérifier si un lien de connexion est présent dans l'URL
-    if (auth.isSignInWithEmailLink(window.location.href)) {
+    if (auth && auth.isSignInWithEmailLink && auth.isSignInWithEmailLink(window.location.href)) {
       let email = window.localStorage.getItem('emailForSignIn');
       
       // Si l'email n'est pas dans localStorage, demander à l'utilisateur
@@ -1111,13 +1116,33 @@ async function isWebAuthnExtensionAvailable() {
     
     // Vérifier si les fonctions de l'extension sont disponibles
     // L'extension expose des fonctions via Firebase Functions
-    const functions = firebase.functions();
-    const checkExtension = functions.httpsCallable('webAuthn-checkExtension');
-    const result = await checkExtension();
-    return result.data.available === true;
+    // Utiliser la région us-central1 par défaut (l'extension peut être déployée ailleurs)
+    const app = firebase.app();
+    // Essayer d'abord us-central1 (région par défaut de l'extension)
+    let functions = app.functions('us-central1');
+    let checkExtension = functions.httpsCallable('webAuthn-checkExtension');
+    
+    try {
+      const result = await checkExtension();
+      return result.data.available === true;
+    } catch (regionError) {
+      // Si us-central1 échoue, essayer europe-west1
+      if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found')) {
+        functions = app.functions('europe-west1');
+        checkExtension = functions.httpsCallable('webAuthn-checkExtension');
+        const result = await checkExtension();
+        return result.data.available === true;
+      }
+      throw regionError;
+    }
   } catch (error) {
     // Si l'erreur indique que la fonction n'existe pas, l'extension n'est pas installée
     if (error.code === 'functions/not-found' || error.message?.includes('not found')) {
+      return false;
+    }
+    // Gérer les erreurs CORS - l'extension n'est peut-être pas configurée correctement
+    if (error.code === 'internal' || error.message?.includes('CORS') || error.message?.includes('Access-Control')) {
+      console.warn('Erreur CORS lors de la vérification de l\'extension WebAuthn. L\'extension doit être configurée pour accepter les requêtes depuis fluance.io:', error);
       return false;
     }
     // Autre erreur, on assume que l'extension n'est pas disponible
@@ -1154,13 +1179,30 @@ async function createAccountWithPasskey(email, displayName = null) {
     await ensureFunctionsLoaded();
     
     // Utiliser l'extension Firebase WebAuthn
-    const functions = firebase.functions();
-    const createUser = functions.httpsCallable('webAuthn-createUser');
+    // Essayer d'abord us-central1 (région par défaut de l'extension)
+    const app = firebase.app();
+    let functions = app.functions('us-central1');
+    let createUser = functions.httpsCallable('webAuthn-createUser');
     
-    const result = await createUser({
-      email: email,
-      displayName: displayName || email.split('@')[0]
-    });
+    let result;
+    try {
+      result = await createUser({
+        email: email,
+        displayName: displayName || email.split('@')[0]
+      });
+    } catch (regionError) {
+      // Si us-central1 échoue, essayer europe-west1
+      if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found') || regionError.code === 'internal') {
+        functions = app.functions('europe-west1');
+        createUser = functions.httpsCallable('webAuthn-createUser');
+        result = await createUser({
+          email: email,
+          displayName: displayName || email.split('@')[0]
+        });
+      } else {
+        throw regionError;
+      }
+    }
 
     if (result.data.success) {
       // L'utilisateur est automatiquement connecté après la création
@@ -1176,6 +1218,15 @@ async function createAccountWithPasskey(email, displayName = null) {
       return { 
         success: false, 
         error: 'L\'extension Firebase WebAuthn n\'est pas installée.',
+        needsExtension: true
+      };
+    }
+    
+    // Gérer les erreurs CORS
+    if (error.code === 'internal' || error.message?.includes('CORS') || error.message?.includes('Access-Control')) {
+      return { 
+        success: false, 
+        error: 'L\'extension Firebase WebAuthn n\'est pas correctement configurée pour accepter les requêtes depuis ce domaine. Veuillez contacter le support.',
         needsExtension: true
       };
     }
@@ -1215,10 +1266,24 @@ async function signInWithPasskey(email) {
     await ensureFunctionsLoaded();
     
     // Utiliser l'extension Firebase WebAuthn
-    const functions = firebase.functions();
-    const signIn = functions.httpsCallable('webAuthn-signIn');
+    // Essayer d'abord us-central1 (région par défaut de l'extension)
+    const app = firebase.app();
+    let functions = app.functions('us-central1');
+    let signIn = functions.httpsCallable('webAuthn-signIn');
     
-    const result = await signIn({ email: email });
+    let result;
+    try {
+      result = await signIn({ email: email });
+    } catch (regionError) {
+      // Si us-central1 échoue, essayer europe-west1
+      if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found') || regionError.code === 'internal') {
+        functions = app.functions('europe-west1');
+        signIn = functions.httpsCallable('webAuthn-signIn');
+        result = await signIn({ email: email });
+      } else {
+        throw regionError;
+      }
+    }
 
     if (result.data.success) {
       // L'utilisateur est automatiquement connecté
@@ -1242,6 +1307,15 @@ async function signInWithPasskey(email) {
       return { 
         success: false, 
         error: 'L\'extension Firebase WebAuthn n\'est pas installée.',
+        needsExtension: true
+      };
+    }
+    
+    // Gérer les erreurs CORS
+    if (error.code === 'internal' || error.message?.includes('CORS') || error.message?.includes('Access-Control')) {
+      return { 
+        success: false, 
+        error: 'L\'extension Firebase WebAuthn n\'est pas correctement configurée pour accepter les requêtes depuis ce domaine. Veuillez contacter le support.',
         needsExtension: true
       };
     }
@@ -1290,10 +1364,24 @@ async function linkPasskeyToAccount() {
     await ensureFunctionsLoaded();
     
     // Utiliser l'extension Firebase WebAuthn
-    const functions = firebase.functions();
-    const linkPasskey = functions.httpsCallable('webAuthn-linkPasskey');
+    // Essayer d'abord us-central1 (région par défaut de l'extension)
+    const app = firebase.app();
+    let functions = app.functions('us-central1');
+    let linkPasskey = functions.httpsCallable('webAuthn-linkPasskey');
     
-    const result = await linkPasskey();
+    let result;
+    try {
+      result = await linkPasskey();
+    } catch (regionError) {
+      // Si us-central1 échoue, essayer europe-west1
+      if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found') || regionError.code === 'internal') {
+        functions = app.functions('europe-west1');
+        linkPasskey = functions.httpsCallable('webAuthn-linkPasskey');
+        result = await linkPasskey();
+      } else {
+        throw regionError;
+      }
+    }
 
     if (result.data.success) {
       return { success: true };
@@ -1307,6 +1395,15 @@ async function linkPasskeyToAccount() {
       return { 
         success: false, 
         error: 'L\'extension Firebase WebAuthn n\'est pas installée.',
+        needsExtension: true
+      };
+    }
+    
+    // Gérer les erreurs CORS
+    if (error.code === 'internal' || error.message?.includes('CORS') || error.message?.includes('Access-Control')) {
+      return { 
+        success: false, 
+        error: 'L\'extension Firebase WebAuthn n\'est pas correctement configurée pour accepter les requêtes depuis ce domaine. Veuillez contacter le support.',
         needsExtension: true
       };
     }
