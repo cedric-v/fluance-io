@@ -39,6 +39,8 @@ Les webhooks Stripe/PayPal doivent pointer vers vos Firebase Functions :
 - Stripe : `https://europe-west1-fluance-protected-content.cloudfunctions.net/webhookStripe`
 - PayPal : `https://europe-west1-fluance-protected-content.cloudfunctions.net/webhookPayPal`
 
+⚠️ **Fonctions v2** : Ces URLs fonctionnent pour les fonctions Firebase v2. Pour vérifier les URLs exactes, voir `VERIFIER_URLS_WEBHOOKS.md`.
+
 ---
 
 ## Configuration directe Stripe/PayPal
@@ -118,6 +120,7 @@ const session = await stripe.checkout.sessions.create({
 
 1. Allez dans **Developers** > **Webhooks**
 2. Configurez votre webhook pour pointer vers : `https://europe-west1-fluance-protected-content.cloudfunctions.net/webhookStripe`
+   - ⚠️ **Fonction v2** : Cette URL fonctionne pour les fonctions Firebase v2
 3. Sélectionnez les événements : `checkout.session.completed` et `payment_intent.succeeded`
 
 ## 🟠 Configuration dans PayPal
@@ -175,6 +178,7 @@ const order = await paypal.orders.create({
 
 1. Allez dans **Developers** > **Webhooks**
 2. Configurez votre webhook pour pointer vers : `https://europe-west1-fluance-protected-content.cloudfunctions.net/webhookPayPal`
+   - ⚠️ **Fonction v2** : Cette URL fonctionne pour les fonctions Firebase v2
 3. Sélectionnez les événements : `PAYMENT.CAPTURE.COMPLETED` et `CHECKOUT.ORDER.APPROVED`
 
 ## 🔗 Relier les libellés aux identifiants internes

@@ -58,7 +58,9 @@ Utiliser des métadonnées dans les sessions/commandes pour identifier quel syst
 3. Cliquez sur **Add endpoint** (Ajouter un endpoint)
 4. Configurez le nouvel endpoint :
    - **Endpoint URL** : `https://europe-west1-fluance-protected-content.cloudfunctions.net/webhookStripe`
-   - **Description** : `Firebase Functions - Nouveau système`
+     - ⚠️ **Fonction v2** : Cette URL fonctionne pour les fonctions Firebase v2
+     - Pour vérifier l'URL exacte, voir `VERIFIER_URLS_WEBHOOKS.md`
+   - **Description** : `Firebase Functions v2 - Nouveau système`
    - **Events to send** : Sélectionnez les mêmes événements que l'ancien endpoint :
      - `checkout.session.completed`
      - `payment_intent.succeeded`
@@ -81,6 +83,8 @@ Utiliser des métadonnées dans les sessions/commandes pour identifier quel syst
 5. Cliquez sur **Add webhook** (Ajouter un webhook)
 6. Configurez le nouveau webhook :
    - **Webhook URL** : `https://europe-west1-fluance-protected-content.cloudfunctions.net/webhookPayPal`
+     - ⚠️ **Fonction v2** : Cette URL fonctionne pour les fonctions Firebase v2
+     - Pour vérifier l'URL exacte, voir `VERIFIER_URLS_WEBHOOKS.md`
    - **Event types** : Sélectionnez les mêmes événements que l'ancien webhook :
      - `PAYMENT.CAPTURE.COMPLETED`
      - `CHECKOUT.ORDER.APPROVED`

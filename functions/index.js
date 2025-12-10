@@ -576,7 +576,7 @@ exports.sendNewsletter = onCall(
 exports.subscribeToNewsletter = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'MAILJET_LIST_ID'],
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
@@ -666,22 +666,44 @@ exports.subscribeToNewsletter = onCall(
           }
         }
 
-        // Optionnel: Ajouter le contact à une liste spécifique
-        // Décommentez et remplacez LIST_ID par l'ID de votre liste MailJet
-        // const listId = 'LIST_ID'; // À remplacer par votre ID de liste MailJet
-        // const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
-        // await fetch(addToListUrl, {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //     'Authorization': `Basic ${auth}`,
-        //   },
-        //   body: JSON.stringify({
-        //     IsUnsubscribed: false,
-        //     ContactAlt: contactData.Email,
-        //     ListID: listId,
-        //   }),
-        // });
+        // Ajouter le contact à une liste spécifique MailJet
+        const listId = process.env.MAILJET_LIST_ID;
+        if (listId) {
+          const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
+
+          try {
+            const listResponse = await fetch(addToListUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${auth}`,
+              },
+              body: JSON.stringify({
+                IsUnsubscribed: false,
+                ContactAlt: contactData.Email,
+                ListID: parseInt(listId, 10), // L'ID de liste doit être un nombre
+              }),
+            });
+
+            if (!listResponse.ok) {
+              const errorText = await listResponse.text();
+              // Si le contact est déjà dans la liste, ce n'est pas une erreur critique
+              if (listResponse.status === 400 && errorText.includes('already')) {
+                console.log(`Contact ${contactData.Email} is already in list ${listId}`);
+              } else {
+                console.error('Error adding contact to MailJet list:', errorText);
+                // On continue quand même, le contact a été créé/mis à jour
+              }
+            } else {
+              console.log(`Contact ${contactData.Email} successfully added to list ${listId}`);
+            }
+          } catch (listError) {
+            console.error('Error adding contact to MailJet list:', listError);
+            // On continue quand même, le contact a été créé/mis à jour
+          }
+        } else {
+          console.warn('MAILJET_LIST_ID not configured. Contact added to MailJet but not to a specific list.');
+        }
 
         return {
           success: true,

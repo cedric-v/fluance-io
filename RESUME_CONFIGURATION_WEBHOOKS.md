@@ -11,6 +11,8 @@ Stripe et PayPal permettent de configurer **plusieurs endpoints** pour les même
 1. Allez sur [Stripe Dashboard > Webhooks](https://dashboard.stripe.com/webhooks)
 2. Cliquez sur **Add endpoint**
 3. URL : `https://europe-west1-fluance-protected-content.cloudfunctions.net/webhookStripe`
+   - ⚠️ **Fonction v2** : Cette URL fonctionne pour les fonctions Firebase v2
+   - Pour vérifier l'URL exacte, voir `VERIFIER_URLS_WEBHOOKS.md`
 4. Événements : `checkout.session.completed`, `payment_intent.succeeded`
 5. **Copiez le Signing secret** et ajoutez-le à Firebase :
    ```bash
@@ -22,6 +24,8 @@ Stripe et PayPal permettent de configurer **plusieurs endpoints** pour les même
 1. Allez sur [PayPal Dashboard > Webhooks](https://developer.paypal.com/dashboard/applications)
 2. Cliquez sur **Add webhook**
 3. URL : `https://europe-west1-fluance-protected-content.cloudfunctions.net/webhookPayPal`
+   - ⚠️ **Fonction v2** : Cette URL fonctionne pour les fonctions Firebase v2
+   - Pour vérifier l'URL exacte, voir `VERIFIER_URLS_WEBHOOKS.md`
 4. Événements : `PAYMENT.CAPTURE.COMPLETED`, `CHECKOUT.ORDER.APPROVED`
 
 ### 3. Utiliser les métadonnées

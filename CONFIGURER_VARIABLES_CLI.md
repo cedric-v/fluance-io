@@ -12,6 +12,7 @@ Pour chaque variable sensible, créez un secret :
 # Secrets Mailjet
 echo -n "VOTRE_CLE_API_MAILJET" | firebase functions:secrets:set MAILJET_API_KEY
 echo -n "VOTRE_SECRET_API_MAILJET" | firebase functions:secrets:set MAILJET_API_SECRET
+echo -n "VOTRE_ID_LISTE_MAILJET" | firebase functions:secrets:set MAILJET_LIST_ID
 
 # Secrets Stripe (si utilisé)
 echo -n "VOTRE_CLE_SECRETE_STRIPE" | firebase functions:secrets:set STRIPE_SECRET_KEY
