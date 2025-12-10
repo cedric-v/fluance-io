@@ -6,6 +6,16 @@
 - Projet Firebase configuré
 - Authentification Firebase activée dans votre projet
 
+## ⚠️ Important : Choix de la région
+
+**Ne pas utiliser `europe-west6`** - Cette région peut avoir des limitations avec Node.js 20.
+
+**Régions recommandées :**
+- ✅ **us-central1** (Iowa, USA) - **Recommandé** (région par défaut, meilleure compatibilité)
+- ✅ **europe-west1** (Belgium) - Bon pour l'Europe
+
+Si vous rencontrez une erreur "Runtime nodejs18 is decommissioned", voir [RESOUDRE_ERREUR_NODEJS18_EXTENSION.md](./RESOUDRE_ERREUR_NODEJS18_EXTENSION.md)
+
 ## Installation via Firebase CLI
 
 ### 1. Se connecter à Firebase
@@ -30,6 +40,11 @@ firebase ext:install gavinsawyer/firebase-web-authn
 ### 4. Configuration de l'extension
 
 Lors de l'installation, vous devrez fournir :
+
+#### Location (Région)
+- **Valeur recommandée** : `us-central1` (Iowa, USA) - **Recommandé** pour la meilleure compatibilité
+- **Alternative** : `europe-west1` (Belgium) - Pour l'Europe
+- ⚠️ **Ne pas utiliser** `europe-west6` - Cette région peut avoir des limitations avec Node.js 20
 
 #### Relying Party ID
 - **Valeur recommandée** : `fluance.io` (votre domaine principal)

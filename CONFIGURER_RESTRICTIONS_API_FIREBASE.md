@@ -27,12 +27,14 @@ Google a détecté votre clé API Firebase dans le code source public. C'est **n
 ```
 fluance.io/*
 *.fluance.io/*
+https://fluance-protected-content.firebaseapp.com/*
 ```
 
 **Option 2 : Avec développement local (si vous développez localement)**
 ```
 fluance.io/*
 *.fluance.io/*
+https://fluance-protected-content.firebaseapp.com/*
 localhost:8080
 localhost:3000
 127.0.0.1:8080
@@ -47,6 +49,7 @@ localhost:3000
 **Format exact à utiliser :**
 - `fluance.io/*` - Pour le domaine principal
 - `*.fluance.io/*` - Pour tous les sous-domaines
+- `https://fluance-protected-content.firebaseapp.com/*` - **IMPORTANT** : Domaine Firebase par défaut (nécessaire pour l'authentification)
 - `localhost:8080` - Pour le développement local sur le port 8080 (plus sécurisé que `localhost:*`)
 - `127.0.0.1:8080` - Pour le développement local sur le port 8080 (IP)
 
@@ -105,6 +108,7 @@ Autoriser `localhost:*` permet à **n'importe quel développeur** d'utiliser vot
    ```
    fluance.io/*
    *.fluance.io/*
+   https://fluance-protected-content.firebaseapp.com/*
    ```
 
 2. **Pour le développement** : 
