@@ -129,16 +129,26 @@ permalink: /cours-en-ligne/5jours/j2/
           document.getElementById("comment-form").reset();
         });
       });
-
       function renderCommentsPage(page) {
         var container = document.getElementById("comments-container");
         if (!container) return;
         // Vider le conteneur
         container.innerHTML = '';
-        // Créer le titre
+        // Créer le titre après le formulaire (après le bouton Envoyer)
+        var form = document.getElementById("comment-form");
+        var existingTitle = form.parentElement.querySelector('h3.comments-title');
+        if (existingTitle) {
+          existingTitle.remove();
+        }
         var title = document.createElement('h3');
-        title.textContent = 'Ajouter un commentaire';
-        container.appendChild(title);
+        title.className = 'comments-title';
+        title.textContent = 'Commentaires';
+        title.style.marginTop = '1.5rem';
+        title.style.marginBottom = '1rem';
+        title.style.fontSize = '1.25rem';
+        title.style.fontWeight = '600';
+        // Insérer le titre après le formulaire (après le bouton Envoyer)
+        form.insertAdjacentElement('afterend', title);
         if (allComments.length === 0) {
           var emptyMsg = document.createElement('p');
           emptyMsg.style.color = '#666';

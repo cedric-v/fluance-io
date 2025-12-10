@@ -138,10 +138,21 @@ permalink: /cours-en-ligne/5jours/j5/
         if (!container) return;
         // Vider le conteneur
         container.innerHTML = '';
-        // Créer le titre
+        // Créer le titre après le formulaire (après le bouton Envoyer)
+        var form = document.getElementById("comment-form");
+        var existingTitle = form.parentElement.querySelector('h3.comments-title');
+        if (existingTitle) {
+          existingTitle.remove();
+        }
         var title = document.createElement('h3');
-        title.textContent = 'Ajouter un commentaire';
-        container.appendChild(title);
+        title.className = 'comments-title';
+        title.textContent = 'Commentaires';
+        title.style.marginTop = '1.5rem';
+        title.style.marginBottom = '1rem';
+        title.style.fontSize = '1.25rem';
+        title.style.fontWeight = '600';
+        // Insérer le titre après le formulaire (après le bouton Envoyer)
+        form.insertAdjacentElement('afterend', title);
         if (allComments.length === 0) {
           var emptyMsg = document.createElement('p');
           emptyMsg.style.color = '#666';
@@ -279,6 +290,18 @@ permalink: /cours-en-ligne/5jours/j5/
           currentPage = 1;
           renderCommentsPage(currentPage);
         }, function(error) {
+          var container = document.getElementById("comments-container");
+          if (container) {
+            container.innerHTML = '';
+            var errorP = document.createElement('p');
+            errorP.style.color = 'red';
+            if (error.code === 'failed-precondition') {
+              errorP.textContent = 'Erreur : Un index Firestore est requis. Vérifiez la console pour le lien de création.';
+            } else {
+              errorP.textContent = 'Erreur lors du chargement des commentaires : ' + error.message;
+            }
+            container.appendChild(errorP);
+          }
         });
       }
       }
