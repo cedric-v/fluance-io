@@ -1113,16 +1113,22 @@ function ensureFunctionsLoaded() {
 async function ensureAuthenticated() {
   const currentUser = firebase.auth().currentUser;
   if (currentUser) {
+    console.log('Utilisateur déjà authentifié:', currentUser.uid, currentUser.isAnonymous ? '(anonyme)' : '(connecté)');
     return currentUser;
   }
   
   // S'authentifier anonymement si pas déjà authentifié
   try {
+    console.log('Authentification anonyme en cours...');
     const userCredential = await firebase.auth().signInAnonymously();
+    console.log('Authentification anonyme réussie:', userCredential.user.uid);
     return userCredential.user;
   } catch (error) {
     console.error('Erreur lors de l\'authentification anonyme:', error);
-    throw new Error('Impossible de s\'authentifier. Vérifiez que l\'authentification anonyme est activée dans Firebase Console.');
+    if (error.code === 'auth/operation-not-allowed') {
+      throw new Error('L\'authentification anonyme n\'est pas activée. Activez-la dans Firebase Console > Authentication > Sign-in method.');
+    }
+    throw error;
   }
 }
 
@@ -1148,12 +1154,42 @@ async function isWebAuthnExtensionAvailable() {
     let checkExtension = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
     
     try {
+      // Vérifier que l'utilisateur est bien authentifié avant l'appel
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        throw new Error('Aucun utilisateur authentifié avant l\'appel à l\'extension');
+      }
+      console.log('Appel à l\'extension avec utilisateur:', user.uid, user.isAnonymous ? '(anonyme)' : '(connecté)');
+      
       // La fonction api accepte un paramètre 'action' pour différentes opérations
       const result = await checkExtension({ action: 'check' });
+      console.log('Résultat de l\'extension:', result);
       return result.data?.available === true || result.data?.success === true;
     } catch (regionError) {
+      console.error('Erreur lors de l\'appel à l\'extension (europe-west1):', regionError);
+      
+      // Si l'erreur est "Unauthenticated", vérifier l'authentification
+      if (regionError.code === 'unauthenticated' || regionError.message?.includes('Unauthenticated')) {
+        const user = firebase.auth().currentUser;
+        if (!user) {
+          throw new Error('L\'utilisateur n\'est pas authentifié. L\'authentification anonyme a peut-être échoué.');
+        }
+        console.error('Erreur Unauthenticated malgré l\'authentification. Utilisateur:', user.uid, 'Token:', user.accessToken ? 'présent' : 'absent');
+        // Réessayer avec un nouveau token
+        try {
+          const token = await user.getIdToken(true); // Force refresh
+          console.log('Nouveau token obtenu, nouvel essai...');
+          const result = await checkExtension({ action: 'check' });
+          return result.data?.available === true || result.data?.success === true;
+        } catch (retryError) {
+          console.error('Erreur après refresh du token:', retryError);
+          throw retryError;
+        }
+      }
+      
       // Si europe-west1 échoue, essayer us-central1 (fallback)
       if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found')) {
+        console.log('Tentative avec us-central1...');
         functions = app.functions('us-central1');
         checkExtension = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
         const result = await checkExtension({ action: 'check' });
@@ -1169,6 +1205,15 @@ async function isWebAuthnExtensionAvailable() {
     // Gérer les erreurs d'authentification
     if (error.code === 'auth/operation-not-allowed' || error.message?.includes('anonymous')) {
       console.warn('L\'authentification anonyme n\'est pas activée. Activez-la dans Firebase Console > Authentication > Sign-in method.');
+      return false;
+    }
+    // Gérer les erreurs "Unauthenticated" de manière spécifique
+    if (error.code === 'unauthenticated' || error.message?.includes('Unauthenticated')) {
+      console.error('Erreur Unauthenticated lors de l\'appel à l\'extension:', error);
+      console.error('Vérifiez que:');
+      console.error('1. L\'authentification anonyme est activée dans Firebase Console');
+      console.error('2. Les règles Firestore permettent l\'accès aux utilisateurs anonymes si nécessaire');
+      console.error('3. L\'extension est correctement configurée');
       return false;
     }
     // Gérer les erreurs CORS - l'extension n'est peut-être pas configurée correctement
