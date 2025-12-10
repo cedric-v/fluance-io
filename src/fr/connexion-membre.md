@@ -425,8 +425,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       submitButton.disabled = false;
       if (currentTab === 'password') {
         buttonText.textContent = 'Se connecter';
-      } else if (currentTab === 'passkey') {
-        buttonText.textContent = 'Se connecter avec une clé d\'accès';
+      // } else if (currentTab === 'passkey') {
+      //   buttonText.textContent = 'Se connecter avec une clé d\'accès';
       } else {
         buttonText.textContent = 'Envoyer le lien de connexion';
       }

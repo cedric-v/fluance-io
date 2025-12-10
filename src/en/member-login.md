@@ -189,13 +189,13 @@ function switchTab(tab) {
   currentTab = tab;
   const passwordTab = document.getElementById('tab-password');
   const passwordlessTab = document.getElementById('tab-passwordless');
-  const passkeyTab = document.getElementById('tab-passkey');
+  // const passkeyTab = document.getElementById('tab-passkey'); // Temporarily disabled
   const passwordField = document.getElementById('password-field');
   const passwordInput = document.getElementById('password');
   const buttonText = document.getElementById('button-text');
 
   // Reset all tabs
-  [passwordTab, passwordlessTab, passkeyTab].forEach(t => {
+  [passwordTab, passwordlessTab].forEach(t => {
     if (t) {
       t.classList.remove('border-fluance', 'text-fluance');
       t.classList.add('border-transparent', 'text-[#1f1f1f]/60');
@@ -226,7 +226,10 @@ function switchTab(tab) {
     if (passkeyInfo) {
       passkeyInfo.classList.add('hidden');
     }
-  } else if (tab === 'passkey') {
+  }
+  // Temporarily disabled - passkey tab
+  /*
+  else if (tab === 'passkey') {
     passkeyTab.classList.add('border-fluance', 'text-fluance');
     passkeyTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'none';
@@ -238,6 +241,7 @@ function switchTab(tab) {
       passkeyInfo.classList.remove('hidden');
     }
   }
+  */
   
   hideError();
   hideSuccess();
