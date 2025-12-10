@@ -775,9 +775,17 @@ function setupCommentSection(contentId) {
   // Fonction pour décoder les entités HTML
   function decodeHTML(str) {
     if (!str) return '';
+    // Décoder récursivement pour gérer le double encodage
     const textarea = document.createElement('textarea');
-    textarea.innerHTML = str;
-    return textarea.value;
+    let decoded = str;
+    let previous = '';
+    // Décoder jusqu'à ce qu'il n'y ait plus de changement (max 5 itérations pour éviter les boucles infinies)
+    for (let i = 0; i < 5 && decoded !== previous; i++) {
+      previous = decoded;
+      textarea.innerHTML = decoded;
+      decoded = textarea.value;
+    }
+    return decoded;
   }
   // Fonction pour échapper le HTML
   function escapeHTML(str) {

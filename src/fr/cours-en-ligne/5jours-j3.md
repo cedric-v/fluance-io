@@ -49,9 +49,17 @@ permalink: /cours-en-ligne/5jours/j3/
       <script>
       function decodeHTML(str) {
         if (!str) return '';
+        // Décoder récursivement pour gérer le double encodage
         var textarea = document.createElement('textarea');
-        textarea.innerHTML = str;
-        return textarea.value;
+        var decoded = str;
+        var previous = '';
+        // Décoder jusqu'à ce qu'il n'y ait plus de changement (max 5 itérations pour éviter les boucles infinies)
+        for (var i = 0; i < 5 && decoded !== previous; i++) {
+          previous = decoded;
+          textarea.innerHTML = decoded;
+          decoded = textarea.value;
+        }
+        return decoded;
       }
       function escapeHTML(str) {
         var amp = String.fromCharCode(38);
@@ -162,11 +170,9 @@ permalink: /cours-en-ligne/5jours/j3/
         var pageComments = allComments.slice(start, end);
         for (var i = 0; i < pageComments.length; i++) {
           var c = pageComments[i];
-          // Décoder d'abord les entités HTML existantes, puis échapper pour sécurité
-          var decodedText = decodeHTML(c.text);
-          var decodedName = decodeHTML(c.name);
-          var text = escapeHTML(decodedText);
-          var name = escapeHTML(decodedName);
+          // Décoder les entités HTML existantes (textContent est sûr, pas besoin d'échapper)
+          var text = decodeHTML(c.text || '');
+          var name = decodeHTML(c.name || '');
           // Créer le conteneur du commentaire
           var commentDiv = document.createElement('div');
           commentDiv.style.borderBottom = '1px solid #ccc';
