@@ -1161,10 +1161,23 @@ async function isWebAuthnExtensionAvailable() {
       }
       console.log('Appel à l\'extension avec utilisateur:', user.uid, user.isAnonymous ? '(anonyme)' : '(connecté)');
       
-      // La fonction api accepte un paramètre 'action' pour différentes opérations
-      const result = await checkExtension({ action: 'check' });
-      console.log('Résultat de l\'extension:', result);
-      return result.data?.available === true || result.data?.success === true;
+      // Forcer le refresh du token avant l'appel pour s'assurer qu'il est valide
+      await user.getIdToken(true);
+      console.log('Token rafraîchi avant l\'appel');
+      
+      // La fonction api peut accepter différents formats
+      // Essayer d'abord sans paramètre action (certaines versions de l'extension)
+      let result;
+      try {
+        result = await checkExtension({});
+        console.log('Résultat de l\'extension (sans action):', result);
+      } catch (noActionError) {
+        // Si ça échoue, essayer avec action: 'check'
+        console.log('Essai avec action: check...');
+        result = await checkExtension({ action: 'check' });
+        console.log('Résultat de l\'extension (avec action):', result);
+      }
+      return result.data?.available === true || result.data?.success === true || result.data === true;
     } catch (regionError) {
       console.error('Erreur lors de l\'appel à l\'extension (europe-west1):', regionError);
       
