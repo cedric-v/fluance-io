@@ -1062,6 +1062,262 @@ function isAuthenticated() {
   return !!user;
 }
 
+/**
+ * Vérifie si WebAuthn/Passkeys est supporté
+ */
+function isWebAuthnSupported() {
+  return typeof window.PublicKeyCredential !== 'undefined' && 
+         typeof navigator.credentials !== 'undefined' &&
+         typeof navigator.credentials.create !== 'undefined';
+}
+
+/**
+ * Vérifie si Firebase Functions est disponible
+ */
+function ensureFunctionsLoaded() {
+  if (!firebase.functions) {
+    // Charger Firebase Functions si pas déjà chargé
+    const functionsScript = document.createElement('script');
+    functionsScript.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+    document.head.appendChild(functionsScript);
+    
+    return new Promise((resolve, reject) => {
+      functionsScript.onload = () => {
+        if (firebase.functions) {
+          resolve();
+        } else {
+          reject(new Error('Firebase Functions n\'a pas pu être chargé'));
+        }
+      };
+      functionsScript.onerror = () => {
+        reject(new Error('Erreur lors du chargement de Firebase Functions'));
+      };
+      // Timeout après 10 secondes
+      setTimeout(() => {
+        reject(new Error('Timeout lors du chargement de Firebase Functions'));
+      }, 10000);
+    });
+  }
+  return Promise.resolve();
+}
+
+/**
+ * Vérifie si l'extension Firebase WebAuthn est disponible
+ */
+async function isWebAuthnExtensionAvailable() {
+  try {
+    // S'assurer que Firebase Functions est chargé
+    await ensureFunctionsLoaded();
+    
+    // Vérifier si les fonctions de l'extension sont disponibles
+    // L'extension expose des fonctions via Firebase Functions
+    const functions = firebase.functions();
+    const checkExtension = functions.httpsCallable('webAuthn-checkExtension');
+    const result = await checkExtension();
+    return result.data.available === true;
+  } catch (error) {
+    // Si l'erreur indique que la fonction n'existe pas, l'extension n'est pas installée
+    if (error.code === 'functions/not-found' || error.message?.includes('not found')) {
+      return false;
+    }
+    // Autre erreur, on assume que l'extension n'est pas disponible
+    console.warn('Erreur lors de la vérification de l\'extension WebAuthn:', error);
+    return false;
+  }
+}
+
+/**
+ * Créer un compte avec passkey
+ * Nécessite l'extension Firebase WebAuthn
+ */
+async function createAccountWithPasskey(email, displayName = null) {
+  try {
+    // Vérifier le support WebAuthn
+    if (!isWebAuthnSupported()) {
+      return { 
+        success: false, 
+        error: 'Les passkeys ne sont pas supportés par votre navigateur. Utilisez Chrome, Safari, Edge ou Firefox récent.' 
+      };
+    }
+
+    // Vérifier si l'extension est disponible
+    const extensionAvailable = await isWebAuthnExtensionAvailable();
+    if (!extensionAvailable) {
+      return { 
+        success: false, 
+        error: 'L\'extension Firebase WebAuthn n\'est pas installée. Veuillez contacter le support ou utiliser une autre méthode de connexion.',
+        needsExtension: true
+      };
+    }
+
+    // S'assurer que Firebase Functions est chargé
+    await ensureFunctionsLoaded();
+    
+    // Utiliser l'extension Firebase WebAuthn
+    const functions = firebase.functions();
+    const createUser = functions.httpsCallable('webAuthn-createUser');
+    
+    const result = await createUser({
+      email: email,
+      displayName: displayName || email.split('@')[0]
+    });
+
+    if (result.data.success) {
+      // L'utilisateur est automatiquement connecté après la création
+      return { success: true, user: auth.currentUser };
+    } else {
+      return { success: false, error: result.data.error || 'Erreur lors de la création du compte' };
+    }
+  } catch (error) {
+    console.error('Erreur création compte avec passkey:', error);
+    
+    // Gérer les erreurs spécifiques
+    if (error.code === 'functions/not-found') {
+      return { 
+        success: false, 
+        error: 'L\'extension Firebase WebAuthn n\'est pas installée.',
+        needsExtension: true
+      };
+    }
+    
+    return { 
+      success: false, 
+      error: error.message || 'Une erreur est survenue lors de la création du compte avec passkey.' 
+    };
+  }
+}
+
+/**
+ * Connexion avec passkey
+ * Nécessite l'extension Firebase WebAuthn
+ */
+async function signInWithPasskey(email) {
+  try {
+    // Vérifier le support WebAuthn
+    if (!isWebAuthnSupported()) {
+      return { 
+        success: false, 
+        error: 'Les passkeys ne sont pas supportés par votre navigateur. Utilisez Chrome, Safari, Edge ou Firefox récent.' 
+      };
+    }
+
+    // Vérifier si l'extension est disponible
+    const extensionAvailable = await isWebAuthnExtensionAvailable();
+    if (!extensionAvailable) {
+      return { 
+        success: false, 
+        error: 'L\'extension Firebase WebAuthn n\'est pas installée. Veuillez contacter le support ou utiliser une autre méthode de connexion.',
+        needsExtension: true
+      };
+    }
+
+    // S'assurer que Firebase Functions est chargé
+    await ensureFunctionsLoaded();
+    
+    // Utiliser l'extension Firebase WebAuthn
+    const functions = firebase.functions();
+    const signIn = functions.httpsCallable('webAuthn-signIn');
+    
+    const result = await signIn({ email: email });
+
+    if (result.data.success) {
+      // L'utilisateur est automatiquement connecté
+      return { success: true, user: auth.currentUser };
+    } else {
+      // Si le passkey n'existe pas, proposer de le créer
+      if (result.data.error?.includes('not found') || result.data.error?.includes('not registered')) {
+        return { 
+          success: false, 
+          error: 'Aucun passkey trouvé pour cet email.',
+          canCreate: true
+        };
+      }
+      return { success: false, error: result.data.error || 'Erreur lors de la connexion' };
+    }
+  } catch (error) {
+    console.error('Erreur connexion avec passkey:', error);
+    
+    // Gérer les erreurs spécifiques
+    if (error.code === 'functions/not-found') {
+      return { 
+        success: false, 
+        error: 'L\'extension Firebase WebAuthn n\'est pas installée.',
+        needsExtension: true
+      };
+    }
+    
+    return { 
+      success: false, 
+      error: error.message || 'Une erreur est survenue lors de la connexion avec passkey.' 
+    };
+  }
+}
+
+/**
+ * Lier un passkey à un compte existant
+ * Nécessite l'extension Firebase WebAuthn et un utilisateur connecté
+ */
+async function linkPasskeyToAccount() {
+  try {
+    // Vérifier qu'un utilisateur est connecté
+    const user = auth.currentUser;
+    if (!user) {
+      return { 
+        success: false, 
+        error: 'Vous devez être connecté pour lier un passkey à votre compte.' 
+      };
+    }
+
+    // Vérifier le support WebAuthn
+    if (!isWebAuthnSupported()) {
+      return { 
+        success: false, 
+        error: 'Les passkeys ne sont pas supportés par votre navigateur.' 
+      };
+    }
+
+    // Vérifier si l'extension est disponible
+    const extensionAvailable = await isWebAuthnExtensionAvailable();
+    if (!extensionAvailable) {
+      return { 
+        success: false, 
+        error: 'L\'extension Firebase WebAuthn n\'est pas installée.',
+        needsExtension: true
+      };
+    }
+
+    // S'assurer que Firebase Functions est chargé
+    await ensureFunctionsLoaded();
+    
+    // Utiliser l'extension Firebase WebAuthn
+    const functions = firebase.functions();
+    const linkPasskey = functions.httpsCallable('webAuthn-linkPasskey');
+    
+    const result = await linkPasskey();
+
+    if (result.data.success) {
+      return { success: true };
+    } else {
+      return { success: false, error: result.data.error || 'Erreur lors de la liaison du passkey' };
+    }
+  } catch (error) {
+    console.error('Erreur liaison passkey:', error);
+    
+    if (error.code === 'functions/not-found') {
+      return { 
+        success: false, 
+        error: 'L\'extension Firebase WebAuthn n\'est pas installée.',
+        needsExtension: true
+      };
+    }
+    
+    return { 
+      success: false, 
+      error: error.message || 'Une erreur est survenue lors de la liaison du passkey.' 
+    };
+  }
+}
+
 // Exporter les fonctions pour utilisation globale
 window.FluanceAuth = {
   signIn,
@@ -1075,6 +1331,11 @@ window.FluanceAuth = {
   isAuthenticated,
   sendPasswordResetEmail,
   confirmPasswordReset,
-  verifyPasswordResetCode
+  verifyPasswordResetCode,
+  // Fonctions passkey
+  isWebAuthnSupported,
+  createAccountWithPasskey,
+  signInWithPasskey,
+  linkPasskeyToAccount
 };
 

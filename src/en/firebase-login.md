@@ -30,6 +30,13 @@ permalink: /en/firebase-login/
         >
           Email login
         </button>
+        <button
+          id="tab-passkey"
+          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
+          onclick="switchTab('passkey')"
+        >
+          🔐 Passkey
+        </button>
       </nav>
     </div>
 
@@ -47,6 +54,9 @@ permalink: /en/firebase-login/
           class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
           placeholder="your@email.com"
         />
+        <p id="passkey-info" class="hidden mt-2 text-sm text-[#1f1f1f]/60 italic">
+          Use your fingerprint, face, or device passcode to sign in instantly and securely.
+        </p>
       </div>
 
       <div id="password-field">
@@ -173,27 +183,50 @@ function switchTab(tab) {
   currentTab = tab;
   const passwordTab = document.getElementById('tab-password');
   const passwordlessTab = document.getElementById('tab-passwordless');
+  const passkeyTab = document.getElementById('tab-passkey');
   const passwordField = document.getElementById('password-field');
   const passwordInput = document.getElementById('password');
   const buttonText = document.getElementById('button-text');
 
+  // Reset all tabs
+  [passwordTab, passwordlessTab, passkeyTab].forEach(t => {
+    if (t) {
+      t.classList.remove('border-fluance', 'text-fluance');
+      t.classList.add('border-transparent', 'text-[#1f1f1f]/60');
+    }
+  });
+
   if (tab === 'password') {
     passwordTab.classList.add('border-fluance', 'text-fluance');
     passwordTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
-    passwordlessTab.classList.remove('border-fluance', 'text-fluance');
-    passwordlessTab.classList.add('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'block';
     passwordInput.required = true;
     buttonText.textContent = 'Login';
-  } else {
+  } else if (tab === 'passwordless') {
     passwordlessTab.classList.add('border-fluance', 'text-fluance');
     passwordlessTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
-    passwordTab.classList.remove('border-fluance', 'text-fluance');
-    passwordTab.classList.add('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'none';
     passwordInput.required = false;
     passwordInput.value = '';
     buttonText.textContent = 'Send login link';
+  } else if (tab === 'passkey') {
+    passkeyTab.classList.add('border-fluance', 'text-fluance');
+    passkeyTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
+    passwordField.style.display = 'none';
+    passwordInput.required = false;
+    passwordInput.value = '';
+    buttonText.textContent = 'Login with passkey';
+    // Show info tooltip
+    const passkeyInfo = document.getElementById('passkey-info');
+    if (passkeyInfo) {
+      passkeyInfo.classList.remove('hidden');
+    }
+  } else {
+    // Hide info tooltip for other tabs
+    const passkeyInfo = document.getElementById('passkey-info');
+    if (passkeyInfo) {
+      passkeyInfo.classList.add('hidden');
+    }
   }
   
   hideError();
@@ -252,7 +285,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Disable button and show spinner
     submitButton.disabled = true;
-    buttonText.textContent = currentTab === 'password' ? 'Logging in...' : 'Sending...';
+    if (currentTab === 'password') {
+      buttonText.textContent = 'Logging in...';
+    } else if (currentTab === 'passkey') {
+      buttonText.textContent = 'Authenticating...';
+    } else {
+      buttonText.textContent = 'Sending...';
+    }
     buttonSpinner.classList.remove('hidden');
     hideError();
     hideSuccess();
@@ -283,6 +322,46 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
           showError(result.error || 'Login error.');
         }
+      } else if (currentTab === 'passkey') {
+        // Login with passkey
+        buttonText.textContent = 'Authenticating...';
+        
+        // Check if WebAuthn is supported
+        if (!window.FluanceAuth.isWebAuthnSupported()) {
+          showError('Passkeys are not supported by your browser. Please use Chrome, Safari, Edge, or a recent Firefox.');
+          return;
+        }
+
+        const result = await window.FluanceAuth.signInWithPasskey(email);
+
+        if (result.success) {
+          // Redirect to original page or member area
+          const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
+          window.location.href = returnUrl;
+        } else {
+          // If passkey doesn't exist, offer to create one
+          if (result.canCreate) {
+            const create = confirm('No passkey found for this email. Would you like to create one? This will create an account if you don\'t have one yet.');
+            if (create) {
+              buttonText.textContent = 'Creating passkey...';
+              const createResult = await window.FluanceAuth.createAccountWithPasskey(email);
+              if (createResult.success) {
+                const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
+                window.location.href = returnUrl;
+              } else {
+                if (createResult.needsExtension) {
+                  showError('The Firebase WebAuthn extension is not yet installed. Please use another login method for now.');
+                } else {
+                  showError(createResult.error || 'Error creating passkey.');
+                }
+              }
+            }
+          } else if (result.needsExtension) {
+            showError('The Firebase WebAuthn extension is not yet installed. Please use another login method for now.');
+          } else {
+            showError(result.error || 'Error logging in with passkey.');
+          }
+        }
       } else {
         // Send passwordless link
         // Save email in localStorage for link verification
@@ -305,7 +384,13 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
     } finally {
       submitButton.disabled = false;
-      buttonText.textContent = currentTab === 'password' ? 'Login' : 'Send login link';
+      if (currentTab === 'password') {
+        buttonText.textContent = 'Login';
+      } else if (currentTab === 'passkey') {
+        buttonText.textContent = 'Login with passkey';
+      } else {
+        buttonText.textContent = 'Send login link';
+      }
       buttonSpinner.classList.add('hidden');
     }
   });
