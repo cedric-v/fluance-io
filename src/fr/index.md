@@ -25,7 +25,7 @@ locale: fr
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col mailjet-trigger-btn" data-mailjet-trigger="9241cb136525ee5e376e">
+      <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col" data-w-token="9241cb136525ee5e376e">
         <span>Essayer 2 pratiques libératrices</span>
         <span class="text-sm font-normal opacity-90">en ligne</span>
       </a>
@@ -101,7 +101,7 @@ locale: fr
     <h2 class="text-3xl font-semibold text-fluance">Rejoignez le mouvement</h2>
   </div>
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col mailjet-trigger-btn" data-mailjet-trigger="9241cb136525ee5e376e">
+    <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col" data-w-token="9241cb136525ee5e376e">
       <span>Essayer 2 pratiques libératrices</span>
       <span class="text-sm font-normal opacity-90">en ligne</span>
     </a>

@@ -88,7 +88,7 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
       <a href="{{ '/a-propos/histoire-cedric/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         L'histoire de Cédric
       </a>
-      <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center mailjet-trigger-btn">
+      <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center" data-w-token="9241cb136525ee5e376e">
         Recevoir une pratique
       </a>
     </div>
@@ -102,32 +102,4 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
 <iframe data-w-token="9241cb136525ee5e376e" data-w-type="trigger" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://1sqw8.mjt.lu/wgt/1sqw8/0umk/trigger?c=5715cb7f" width="100%" style="height: 0;"></iframe>
 
 <script type="text/javascript" src="https://app.mailjet.com/pas-nc-pop-in-v1.js"></script>
-
-<script>
-  // Déclencher la pop-up MailJet au clic sur les boutons
-  document.addEventListener('DOMContentLoaded', function() {
-    const checkMailJet = setInterval(function() {
-      if (typeof window.mjPopin !== 'undefined' || typeof window.mailjet !== 'undefined' || typeof mjPopin !== 'undefined') {
-        clearInterval(checkMailJet);
-        
-        const triggerButtons = document.querySelectorAll('.mailjet-trigger-btn');
-        triggerButtons.forEach(button => {
-          button.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (typeof mjPopin !== 'undefined' && mjPopin.open) {
-              mjPopin.open();
-            } else if (window.mjPopin && window.mjPopin.open) {
-              window.mjPopin.open();
-            } else if (window.mailjet && window.mailjet.showPopin) {
-              window.mailjet.showPopin();
-            } else if (window.mailjet && window.mailjet.open) {
-              window.mailjet.open();
-            }
-          });
-        });
-      }
-    }, 100);
-    setTimeout(function() { clearInterval(checkMailJet); }, 5000);
-  });
-</script>
 
