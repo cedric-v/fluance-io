@@ -25,7 +25,7 @@ locale: fr
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col">
+      <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col mailjet-trigger-btn">
         <span>Essayer 2 pratiques libératrices</span>
         <span class="text-sm font-normal opacity-90">en ligne</span>
       </a>
@@ -101,7 +101,7 @@ locale: fr
     <h2 class="text-3xl font-semibold text-fluance">Rejoignez le mouvement</h2>
   </div>
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col">
+    <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col mailjet-trigger-btn">
       <span>Essayer 2 pratiques libératrices</span>
       <span class="text-sm font-normal opacity-90">en ligne</span>
     </a>
@@ -112,4 +112,33 @@ locale: fr
   </div>
 </section>
 
-<script type="text/javascript" async="true" src="https://app.ontraport.com/js/ontraport/opt_assets/drivers/opf.js" data-opf-uid="p2c27119f1412" data-opf-params="borderColor=#8bc34a&borderSize=5px&formHeight=466&formWidth=40%&popPosition=mc&instance=n1809873346"></script>
+<!-- MailJet Pop-in Form -->
+<iframe data-w-token="9241cb136525ee5e376e" data-w-type="pop-in" frameborder="0" scrolling="yes" marginheight="0" marginwidth="0" src="https://1sqw8.mjt.lu/wgt/1sqw8/0umk/form?c=5239e5a1" width="100%" style="height: 0;"></iframe>
+
+<!-- MailJet Trigger -->
+<iframe data-w-token="9241cb136525ee5e376e" data-w-type="trigger" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://1sqw8.mjt.lu/wgt/1sqw8/0umk/trigger?c=5715cb7f" width="100%" style="height: 0;"></iframe>
+
+<script type="text/javascript" src="https://app.mailjet.com/pas-nc-pop-in-v1.js"></script>
+
+<script>
+  // Déclencher la pop-up MailJet au clic sur les boutons
+  document.addEventListener('DOMContentLoaded', function() {
+    const triggerButtons = document.querySelectorAll('.mailjet-trigger-btn');
+    triggerButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        // Essayer différentes méthodes pour déclencher la pop-up MailJet
+        if (typeof mjPopin !== 'undefined' && mjPopin.open) {
+          mjPopin.open();
+        } else if (window.mjPopin && window.mjPopin.open) {
+          window.mjPopin.open();
+        } else if (window.mailjet && window.mailjet.showPopin) {
+          window.mailjet.showPopin();
+        } else {
+          // Si aucune méthode ne fonctionne, le script MailJet devrait détecter automatiquement les clics
+          console.log('MailJet pop-in script chargé, déclenchement automatique attendu');
+        }
+      });
+    });
+  });
+</script>

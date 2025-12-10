@@ -88,12 +88,18 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
       <a href="{{ '/a-propos/histoire-cedric/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
         L'histoire de Cédric
       </a>
-      <a href="javascript://" data-opf-trigger="p2c27119f1412" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center mailjet-trigger-btn">
         Recevoir une pratique
       </a>
     </div>
   </div>
 </section>
 
-<script type="text/javascript" async="true" src="https://app.ontraport.com/js/ontraport/opt_assets/drivers/opf.js" data-opf-uid="p2c27119f1412" data-opf-params="borderColor=#8bc34a&borderSize=5px&formHeight=466&formWidth=40%&popPosition=mc&instance=n1809873346"></script>
+<!-- MailJet Pop-in Form -->
+<iframe data-w-token="9241cb136525ee5e376e" data-w-type="pop-in" frameborder="0" scrolling="yes" marginheight="0" marginwidth="0" src="https://1sqw8.mjt.lu/wgt/1sqw8/0umk/form?c=5239e5a1" width="100%" style="height: 0;"></iframe>
+
+<!-- MailJet Trigger -->
+<iframe data-w-token="9241cb136525ee5e376e" data-w-type="trigger" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://1sqw8.mjt.lu/wgt/1sqw8/0umk/trigger?c=5715cb7f" width="100%" style="height: 0;"></iframe>
+
+<script type="text/javascript" src="https://app.mailjet.com/pas-nc-pop-in-v1.js"></script>
 
