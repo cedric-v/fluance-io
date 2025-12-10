@@ -1256,10 +1256,18 @@ async function createAccountWithPasskey(email, displayName = null) {
 
     // Vérifier si la bibliothèque browser est disponible
     // La bibliothèque peut être exposée sous différents noms selon la version
+    // Attendre un peu pour que le script se charge si nécessaire
     let webAuthnLib = window.FirebaseWebAuthn || window.firebaseWebAuthn || window['@firebase-web-authn/browser'];
     
+    // Si pas disponible, attendre un peu et réessayer (le script peut être en cours de chargement)
     if (!webAuthnLib || !webAuthnLib.createUserWithPasskey) {
-      console.warn('Bibliothèque WebAuthn non disponible, utilisation de la méthode directe...');
+      console.log('Bibliothèque WebAuthn non disponible immédiatement, attente...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      webAuthnLib = window.FirebaseWebAuthn || window.firebaseWebAuthn || window['@firebase-web-authn/browser'];
+    }
+    
+    if (!webAuthnLib || !webAuthnLib.createUserWithPasskey) {
+      console.warn('Bibliothèque WebAuthn non disponible après attente, utilisation de la méthode directe...');
       console.warn('Variables disponibles:', Object.keys(window).filter(k => k.toLowerCase().includes('webauthn')));
       // Fallback vers l'ancienne méthode si la bibliothèque n'est pas chargée
       return await createAccountWithPasskeyLegacy(email, displayName);
@@ -1402,10 +1410,18 @@ async function signInWithPasskey(email) {
 
     // Vérifier si la bibliothèque browser est disponible
     // La bibliothèque peut être exposée sous différents noms selon la version
+    // Attendre un peu pour que le script se charge si nécessaire
     let webAuthnLib = window.FirebaseWebAuthn || window.firebaseWebAuthn || window['@firebase-web-authn/browser'];
     
+    // Si pas disponible, attendre un peu et réessayer (le script peut être en cours de chargement)
     if (!webAuthnLib || !webAuthnLib.signInWithPasskey) {
-      console.warn('Bibliothèque WebAuthn non disponible, utilisation de la méthode directe...');
+      console.log('Bibliothèque WebAuthn non disponible immédiatement, attente...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      webAuthnLib = window.FirebaseWebAuthn || window.firebaseWebAuthn || window['@firebase-web-authn/browser'];
+    }
+    
+    if (!webAuthnLib || !webAuthnLib.signInWithPasskey) {
+      console.warn('Bibliothèque WebAuthn non disponible après attente, utilisation de la méthode directe...');
       console.warn('Variables disponibles:', Object.keys(window).filter(k => k.toLowerCase().includes('webauthn')));
       // Fallback vers l'ancienne méthode si la bibliothèque n'est pas chargée
       return await signInWithPasskeyLegacy(email);

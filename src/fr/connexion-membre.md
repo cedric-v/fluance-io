@@ -149,7 +149,21 @@ permalink: /connexion-membre/
 </div>
 
 <!-- Bibliothèque browser officielle pour WebAuthn -->
-<script src="https://unpkg.com/@firebase-web-authn/browser@latest/dist/index.umd.js"></script>
+<script>
+  // Charger la bibliothèque WebAuthn de manière asynchrone
+  (function() {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/@firebase-web-authn/browser@latest/dist/index.umd.js';
+    script.async = true;
+    script.onload = function() {
+      console.log('Bibliothèque WebAuthn chargée:', window.FirebaseWebAuthn || window.firebaseWebAuthn || window['@firebase-web-authn/browser']);
+    };
+    script.onerror = function() {
+      console.error('Erreur lors du chargement de la bibliothèque WebAuthn');
+    };
+    document.head.appendChild(script);
+  })();
+</script>
 <script src="/assets/js/firebase-auth.js"></script>
 <script>
 let currentTab = 'password';
