@@ -109,9 +109,13 @@ Selon la [documentation officielle](https://extensions.dev/extensions/gavinsawye
    - ✅ Service Account Token Creator
    - ✅ Service Usage Consumer
 4. Si manquants, ajoutez-les :
-   - Cliquez sur "Edit" (crayon)
-   - Cliquez sur "Add Another Role"
-   - Ajoutez les deux rôles
+   - Cliquez sur "Grant Access" ou "Add Principal"
+   - Dans "New principals", entrez : **`ext-firebase-web-authn@fluance-protected-content.iam.gserviceaccount.com`**
+     - ⚠️ **Important** : Utilisez le format email complet, pas juste `ext-firebase-web-authn`
+   - Ajoutez les deux rôles :
+     - `Service Account Token Creator`
+     - `Service Usage Consumer`
+   - Cliquez sur "Save"
 
 ## Est-ce vraiment nécessaire ?
 

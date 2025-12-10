@@ -22,7 +22,7 @@
     "rewrites": [
       {
         "source": "/firebase-web-authn-api",
-        "function": "ext-firebase-web-authn-api"
+        "function": "ext-firebase-web-authn-fu06-api"
       },
       {
         "source": "**",
@@ -31,6 +31,6 @@
     ]
   },
   "extensions": {
-    "firebase-web-authn": "gavinsawyer/firebase-web-authn@10.4.4"
+    "firebase-web-authn-fu06": "gavinsawyer/firebase-web-authn@10.4.4"
   }
 }

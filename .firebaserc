@@ -1,8 +1,13 @@
 {
   "projects": {
     "default": "fluance-protected-content"
+  },
+  "targets": {},
+  "etags": {
+    "fluance-protected-content": {
+      "extensionInstances": {
+        "firebase-web-authn-fu06": "68b59835b53c2a745b847eb0c0789009fc0801077204cc7552980a9b11b14929"
+      }
+    }
   }
 }
-
-
-

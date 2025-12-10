@@ -1115,23 +1115,25 @@ async function isWebAuthnExtensionAvailable() {
     await ensureFunctionsLoaded();
     
     // Vérifier si les fonctions de l'extension sont disponibles
-    // L'extension expose des fonctions via Firebase Functions
-    // Utiliser la région europe-west1 (configurée dans extensions/firebase-web-authn.env)
-    const app = firebase.app();
+    // L'extension expose une fonction unique : ext-firebase-web-authn-fu06-api
+    // Utiliser la région europe-west1 (configurée dans extensions/firebase-web-authn-fu06.env)
+    // Dans le mode compat, on utilise firebase.functions('region')
     // Essayer d'abord europe-west1 (région configurée)
-    let functions = app.functions('europe-west1');
-    let checkExtension = functions.httpsCallable('webAuthn-checkExtension');
+    let functions = firebase.functions('europe-west1');
+    // L'extension expose une fonction unique avec le nom de l'instance
+    let checkExtension = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
     
     try {
-      const result = await checkExtension();
-      return result.data.available === true;
+      // La fonction api accepte un paramètre 'action' pour différentes opérations
+      const result = await checkExtension({ action: 'check' });
+      return result.data?.available === true || result.data?.success === true;
     } catch (regionError) {
       // Si europe-west1 échoue, essayer us-central1 (fallback)
       if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found')) {
-        functions = app.functions('us-central1');
-        checkExtension = functions.httpsCallable('webAuthn-checkExtension');
-        const result = await checkExtension();
-        return result.data.available === true;
+        functions = firebase.functions('us-central1');
+        checkExtension = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
+        const result = await checkExtension({ action: 'check' });
+        return result.data?.available === true || result.data?.success === true;
       }
       throw regionError;
     }
@@ -1179,23 +1181,27 @@ async function createAccountWithPasskey(email, displayName = null) {
     await ensureFunctionsLoaded();
     
     // Utiliser l'extension Firebase WebAuthn
+    // L'extension expose une fonction unique : ext-firebase-web-authn-fu06-api
     // Essayer d'abord europe-west1 (région configurée)
-    const app = firebase.app();
-    let functions = app.functions('europe-west1');
-    let createUser = functions.httpsCallable('webAuthn-createUser');
+    // Dans le mode compat, on utilise firebase.functions('region')
+    let functions = firebase.functions('europe-west1');
+    // Utiliser la fonction api de l'extension avec l'action 'createUser'
+    let apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
     
     let result;
     try {
-      result = await createUser({
+      result = await apiFunction({
+        action: 'createUser',
         email: email,
         displayName: displayName || email.split('@')[0]
       });
     } catch (regionError) {
       // Si europe-west1 échoue, essayer us-central1 (fallback)
       if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found') || regionError.code === 'internal') {
-        functions = app.functions('us-central1');
-        createUser = functions.httpsCallable('webAuthn-createUser');
-        result = await createUser({
+        functions = firebase.functions('us-central1');
+        apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
+        result = await apiFunction({
+          action: 'createUser',
           email: email,
           displayName: displayName || email.split('@')[0]
         });
@@ -1266,20 +1272,28 @@ async function signInWithPasskey(email) {
     await ensureFunctionsLoaded();
     
     // Utiliser l'extension Firebase WebAuthn
+    // L'extension expose une fonction unique : ext-firebase-web-authn-fu06-api
     // Essayer d'abord europe-west1 (région configurée)
-    const app = firebase.app();
-    let functions = app.functions('europe-west1');
-    let signIn = functions.httpsCallable('webAuthn-signIn');
+    // Dans le mode compat, on utilise firebase.functions('region')
+    let functions = firebase.functions('europe-west1');
+    // Utiliser la fonction api de l'extension avec l'action 'signIn'
+    let apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
     
     let result;
     try {
-      result = await signIn({ email: email });
+      result = await apiFunction({
+        action: 'signIn',
+        email: email
+      });
     } catch (regionError) {
       // Si europe-west1 échoue, essayer us-central1 (fallback)
       if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found') || regionError.code === 'internal') {
-        functions = app.functions('us-central1');
-        signIn = functions.httpsCallable('webAuthn-signIn');
-        result = await signIn({ email: email });
+        functions = firebase.functions('us-central1');
+        apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
+        result = await apiFunction({
+          action: 'signIn',
+          email: email
+        });
       } else {
         throw regionError;
       }
@@ -1364,20 +1378,26 @@ async function linkPasskeyToAccount() {
     await ensureFunctionsLoaded();
     
     // Utiliser l'extension Firebase WebAuthn
+    // L'extension expose une fonction unique : ext-firebase-web-authn-fu06-api
     // Essayer d'abord europe-west1 (région configurée)
-    const app = firebase.app();
-    let functions = app.functions('europe-west1');
-    let linkPasskey = functions.httpsCallable('webAuthn-linkPasskey');
+    // Dans le mode compat, on utilise firebase.functions('region')
+    let functions = firebase.functions('europe-west1');
+    // Utiliser la fonction api de l'extension avec l'action 'linkPasskey'
+    let apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
     
     let result;
     try {
-      result = await linkPasskey();
+      result = await apiFunction({
+        action: 'linkPasskey'
+      });
     } catch (regionError) {
       // Si europe-west1 échoue, essayer us-central1 (fallback)
       if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found') || regionError.code === 'internal') {
-        functions = app.functions('us-central1');
-        linkPasskey = functions.httpsCallable('webAuthn-linkPasskey');
-        result = await linkPasskey();
+        functions = firebase.functions('us-central1');
+        apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
+        result = await apiFunction({
+          action: 'linkPasskey'
+        });
       } else {
         throw regionError;
       }
