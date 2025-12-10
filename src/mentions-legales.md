@@ -64,7 +64,7 @@ En vous inscrivant, vous consentez à ce que vos commentaires et/ou votre image 
 
 Vous disposez d’un droit d’accès, de rectification, d’effacement, de limitation, de portabilité, d’opposition (y compris à la prospection commerciale) et d’un droit de retrait du consentement. Vous pouvez définir des directives post-mortem et introduire une réclamation auprès de la CNIL.
 
-Les demandes sont à adresser à : support@fluance.io, avec justification d’identité et, le cas échéant, de vos motifs. L’exercice de certains droits peut perturber voire interrompre la fourniture de services (ex : commande en cours).
+Les demandes sont à adresser à : support arobase fluance point io, avec justification d’identité et, le cas échéant, de vos motifs. L’exercice de certains droits peut perturber voire interrompre la fourniture de services (ex : commande en cours).
 
 Plus d’informations : https://www.cnil.fr/fr/les-droits-pour-maitriser-vos-donnees-personnelles
 
@@ -110,17 +110,24 @@ Instants Zen, société à responsabilité limitée (Sàrl) enregistrée en Suis
 
 **Siège social :** Case postale, 1782 Belfaux, Suisse
 
-**Tél. :** +33 (0)9 72 13 33 88
+**Tél. :** +41 (0)76 673 83 11
 
-**Email :** support@fluance.io
+**Email :** support arobase fluance point io
 
 2/ **Directeur ou Responsable de publication :** Monsieur Cédric Vonlanthen
 
 3/ **Hébergements et services techniques :**
 
-- Pages Web : GitHub Pages (GitHub, Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107, États-Unis).
-- Base de données et authentification : Firebase (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande). Les données sont stockées dans des centres de données situés à Zurich (Suisse) ou en Belgique, conformément aux réglementations européennes sur la protection des données.
-- Envois d’e-mails : Mailjet SAS, 13-13 bis, rue de l’Aubrac, 75012 Paris, France.
+**Pages Web :**
+GitHub Pages (GitHub, Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107, États-Unis).
+
+**Base de données et authentification :**
+Firebase (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande).
+
+Les données sont stockées dans des centres de données situés à Zurich (Suisse) ou en Belgique, conformément aux réglementations européennes sur la protection des données.
+
+**Envois d'e-mails :**
+Mailjet SAS, 13-13 bis, rue de l'Aubrac, 75012 Paris, France.
 
 4/ **Propriété intellectuelle :** L’Editeur est titulaire des droits sur l’ensemble des contenus du site. Toute reproduction totale ou partielle est interdite sans autorisation préalable. Les bases de données sont protégées par le droit sui generis des producteurs.
 
