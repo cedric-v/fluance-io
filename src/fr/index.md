@@ -121,42 +121,68 @@ locale: fr
 <script type="text/javascript" src="https://app.mailjet.com/pas-nc-pop-in-v1.js"></script>
 
 <script>
-  // Déclencher la pop-up MailJet au clic sur les boutons avec data-w-token
+  // Déclencher la pop-up MailJet au clic sur les boutons
   document.addEventListener('DOMContentLoaded', function() {
     // Attendre que le script MailJet soit chargé
-    setTimeout(function() {
-      const buttons = document.querySelectorAll('[data-w-token="9241cb136525ee5e376e"]');
-      buttons.forEach(function(button) {
-        button.addEventListener('click', function(e) {
-          e.preventDefault();
-          
-          // Essayer différentes méthodes MailJet
-          if (window.wjPopin && typeof window.wjPopin === 'function') {
-            window.wjPopin();
-          } else if (window.mjPopin && typeof window.mjPopin === 'function') {
-            window.mjPopin();
-          } else if (window.mjPopin && window.mjPopin.open) {
-            window.mjPopin.open();
-          } else if (window.mailjet && window.mailjet.showPopin) {
-            window.mailjet.showPopin();
-          } else {
-            // Essayer de déclencher via l'iframe trigger
-            const triggerIframe = document.querySelector('iframe[data-w-type="trigger"]');
-            if (triggerIframe && triggerIframe.contentWindow) {
-              try {
-                triggerIframe.contentWindow.postMessage('open', '*');
-              } catch (err) {
-                console.error('Erreur MailJet:', err);
-              }
+    function tryOpenMailJet() {
+      // Méthode principale: window.ml.open() (API MailJet standard)
+      if (window.ml && typeof window.ml.open === 'function') {
+        window.ml.open();
+        return true;
+      }
+      
+      // Méthodes alternatives
+      if (window.wjPopin && typeof window.wjPopin === 'function') {
+        window.wjPopin();
+        return true;
+      }
+      
+      if (window.mjPopin && typeof window.mjPopin === 'function') {
+        window.mjPopin();
+        return true;
+      }
+      
+      if (window.mjPopin && window.mjPopin.open) {
+        window.mjPopin.open();
+        return true;
+      }
+      
+      // Essayer via l'iframe trigger
+      const triggerIframe = document.querySelector('iframe[data-w-type="trigger"]');
+      if (triggerIframe && triggerIframe.contentWindow) {
+        try {
+          triggerIframe.contentWindow.postMessage({ action: 'open', token: '9241cb136525ee5e376e' }, '*');
+        } catch (err) {
+          console.error('Erreur postMessage:', err);
+        }
+      }
+      
+      return false;
+    }
+    
+    // Attendre que le script soit chargé
+    let attempts = 0;
+    const checkMailJet = setInterval(function() {
+      attempts++;
+      if (window.ml || attempts >= 20) {
+        clearInterval(checkMailJet);
+        
+        const buttons = document.querySelectorAll('[data-w-token="9241cb136525ee5e376e"]');
+        buttons.forEach(function(button) {
+          button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const opened = tryOpenMailJet();
+            if (!opened) {
+              console.log('API MailJet disponible:', {
+                ml: typeof window.ml,
+                wjPopin: typeof window.wjPopin,
+                mjPopin: typeof window.mjPopin,
+                mailjet: typeof window.mailjet
+              });
             }
-            console.log('API MailJet disponible:', {
-              wjPopin: typeof window.wjPopin,
-              mjPopin: typeof window.mjPopin,
-              mailjet: typeof window.mailjet
-            });
-          }
+          });
         });
-      });
-    }, 500);
+      }
+    }, 100);
   });
 </script>
