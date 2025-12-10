@@ -1255,14 +1255,18 @@ async function createAccountWithPasskey(email, displayName = null) {
     }
 
     // Vérifier si la bibliothèque browser est disponible
-    if (typeof window.FirebaseWebAuthn === 'undefined' || !window.FirebaseWebAuthn.createUserWithPasskey) {
+    // La bibliothèque peut être exposée sous différents noms selon la version
+    let webAuthnLib = window.FirebaseWebAuthn || window.firebaseWebAuthn || window['@firebase-web-authn/browser'];
+    
+    if (!webAuthnLib || !webAuthnLib.createUserWithPasskey) {
       console.warn('Bibliothèque WebAuthn non disponible, utilisation de la méthode directe...');
+      console.warn('Variables disponibles:', Object.keys(window).filter(k => k.toLowerCase().includes('webauthn')));
       // Fallback vers l'ancienne méthode si la bibliothèque n'est pas chargée
       return await createAccountWithPasskeyLegacy(email, displayName);
     }
 
     // Utiliser la bibliothèque browser officielle
-    const { createUserWithPasskey: createUserWithPasskeyLib } = window.FirebaseWebAuthn;
+    const { createUserWithPasskey: createUserWithPasskeyLib } = webAuthnLib;
     const auth = firebase.auth();
     const functions = firebase.app().functions('europe-west1');
     
@@ -1397,14 +1401,18 @@ async function signInWithPasskey(email) {
     }
 
     // Vérifier si la bibliothèque browser est disponible
-    if (typeof window.FirebaseWebAuthn === 'undefined' || !window.FirebaseWebAuthn.signInWithPasskey) {
+    // La bibliothèque peut être exposée sous différents noms selon la version
+    let webAuthnLib = window.FirebaseWebAuthn || window.firebaseWebAuthn || window['@firebase-web-authn/browser'];
+    
+    if (!webAuthnLib || !webAuthnLib.signInWithPasskey) {
       console.warn('Bibliothèque WebAuthn non disponible, utilisation de la méthode directe...');
+      console.warn('Variables disponibles:', Object.keys(window).filter(k => k.toLowerCase().includes('webauthn')));
       // Fallback vers l'ancienne méthode si la bibliothèque n'est pas chargée
       return await signInWithPasskeyLegacy(email);
     }
 
     // Utiliser la bibliothèque browser officielle
-    const { signInWithPasskey: signInWithPasskeyLib } = window.FirebaseWebAuthn;
+    const { signInWithPasskey: signInWithPasskeyLib } = webAuthnLib;
     const auth = firebase.auth();
     const functions = firebase.app().functions('europe-west1');
     

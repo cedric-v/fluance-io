@@ -19,21 +19,21 @@ permalink: /en/member-login/
         <button
           id="tab-password"
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-fluance text-fluance"
-          onclick="switchTab('password')"
+          data-tab="password"
         >
           Password
         </button>
         <button
           id="tab-passwordless"
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
-          onclick="switchTab('passwordless')"
+          data-tab="passwordless"
         >
           Email login
         </button>
         <button
           id="tab-passkey"
           class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
-          onclick="switchTab('passkey')"
+          data-tab="passkey"
         >
           🔐 Passkey
         </button>
@@ -240,6 +240,15 @@ function switchTab(tab) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+  // Attach event listeners to tabs
+  const passwordTab = document.getElementById('tab-password');
+  const passwordlessTab = document.getElementById('tab-passwordless');
+  const passkeyTab = document.getElementById('tab-passkey');
+  
+  if (passwordTab) passwordTab.addEventListener('click', () => switchTab('password'));
+  if (passwordlessTab) passwordlessTab.addEventListener('click', () => switchTab('passwordless'));
+  if (passkeyTab) passkeyTab.addEventListener('click', () => switchTab('passkey'));
+  
   // Check if a passwordless link is present in the URL
   try {
     await new Promise((resolve) => {
