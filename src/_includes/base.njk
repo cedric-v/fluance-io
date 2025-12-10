@@ -75,10 +75,13 @@
     <link rel="preload" href="{{ '/assets/css/styles.css' | url }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="{{ '/assets/css/styles.css' | url }}"></noscript>
     
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <!-- Favicons selon les bonnes pratiques modernes -->
     <link rel="icon" type="image/x-icon" href="{{ '/assets/img/favicon.ico' | url }}">
-    <link rel="shortcut icon" href="/favicon.ico">
-    <link rel="apple-touch-icon" href="{{ '/assets/img/favicon.ico' | url }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ '/assets/img/favicon-16x16.png' | url }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/img/favicon-32x32.png' | url }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ '/assets/img/apple-touch-icon.png' | url }}">
+    <link rel="manifest" href="{{ '/site.webmanifest' | url }}">
+    <meta name="theme-color" content="#82153e">
     
     <!-- Schema.org JSON-LD -->
     {% schemaOrg locale %}
