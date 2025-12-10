@@ -310,8 +310,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     submitButton.disabled = true;
     if (currentTab === 'password') {
       buttonText.textContent = 'Logging in...';
-    } else if (currentTab === 'passkey') {
-      buttonText.textContent = 'Authenticating...';
+    // } else if (currentTab === 'passkey') {
+    //   buttonText.textContent = 'Authenticating...';
     } else {
       buttonText.textContent = 'Sending...';
     }
@@ -345,6 +345,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
           showError(result.error || 'Login error.');
         }
+      // Temporarily disabled - passkey tab
+      /*
       } else if (currentTab === 'passkey') {
         // Login with passkey
         buttonText.textContent = 'Authenticating...';
@@ -386,6 +388,8 @@ document.addEventListener('DOMContentLoaded', async function() {
           }
         }
       } else {
+      */
+      } else {
         // Send passwordless link
         // Save email in localStorage for link verification
         window.localStorage.setItem('emailForSignIn', email);
@@ -409,8 +413,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       submitButton.disabled = false;
       if (currentTab === 'password') {
         buttonText.textContent = 'Login';
-      } else if (currentTab === 'passkey') {
-        buttonText.textContent = 'Login with passkey';
+      // } else if (currentTab === 'passkey') {
+      //   buttonText.textContent = 'Login with passkey';
       } else {
         buttonText.textContent = 'Send login link';
       }
