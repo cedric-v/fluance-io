@@ -9,11 +9,39 @@ Runtime nodejs18 is decommissioned and no longer allowed.
 Please use the latest Node.js runtime for Cloud Functions.
 ```
 
+**⚠️ IMPORTANT** : Ce problème n'est **PAS** lié à la région. L'extension elle-même (version 10.4.2) est codée pour utiliser Node.js 18 dans son code source. Changer la région ne résoudra pas le problème.
+
 ## Solutions
 
-### Solution 1 : Changer la région (Recommandé)
+### Solution 1 : Vérifier s'il existe une version plus récente (À essayer en premier)
 
-La région `europe-west6` peut avoir des limitations. Utilisez une région mieux supportée comme `us-central1` ou `europe-west1`.
+Vérifiez si une version plus récente de l'extension supporte Node.js 20 :
+
+```bash
+# Vérifier les versions disponibles
+firebase ext:info gavinsawyer/firebase-web-authn
+
+# Vérifier la dernière version sur extensions.dev
+# https://extensions.dev/extensions/gavinsawyer/firebase-web-authn
+```
+
+**Note** : Au moment de la rédaction (décembre 2025), la version 10.4.2 utilise encore Node.js 18. Si une version plus récente existe, mettez à jour :
+
+```bash
+firebase ext:update firebase-web-authn
+```
+
+### Solution 2 : Contacter le développeur de l'extension
+
+Si aucune version plus récente n'existe :
+
+1. Ouvrez une issue sur le dépôt GitHub de l'extension (si disponible)
+2. Contactez le développeur via [extensions.dev](https://extensions.dev/extensions/gavinsawyer/firebase-web-authn)
+3. Demandez une mise à jour pour supporter Node.js 20
+
+### Solution 3 : Implémenter WebAuthn manuellement (Solution de contournement)
+
+Si l'extension n'est pas mise à jour rapidement, vous pouvez implémenter WebAuthn manuellement avec Cloud Functions en utilisant Node.js 20.
 
 #### Étape 1 : Désinstaller l'extension actuelle
 
@@ -78,82 +106,83 @@ firebase ext:install gavinsawyer/firebase-web-authn
 
 Lors des prompts, sélectionnez `us-central1` ou `europe-west1` pour la région.
 
-### Solution 2 : Mettre à jour l'extension
+#### Étape 2 : Créer des Cloud Functions personnalisées
 
-Vérifiez si une version plus récente de l'extension supporte Node.js 20 :
+Créez vos propres Cloud Functions pour gérer WebAuthn avec Node.js 20. Voir la section "Implémentation manuelle" ci-dessous.
 
-```bash
-# Vérifier les versions disponibles
-firebase ext:info gavinsawyer/firebase-web-authn
+### Solution 4 : Attendre une mise à jour (Temporaire)
 
-# Mettre à jour l'extension
-firebase ext:update firebase-web-authn
+Si vous n'avez pas besoin des passkeys immédiatement, vous pouvez :
+1. Désactiver temporairement l'onglet "Clé d'accès" dans l'interface
+2. Utiliser uniquement les méthodes d'authentification existantes (email/password, passwordless)
+3. Surveiller les mises à jour de l'extension
+
+## Implémentation manuelle de WebAuthn (Solution de contournement)
+
+Si vous devez absolument utiliser les passkeys maintenant, vous pouvez implémenter WebAuthn manuellement avec Cloud Functions en utilisant Node.js 20.
+
+### Étapes
+
+1. **Créer des Cloud Functions personnalisées** dans `functions/index.js` avec Node.js 20
+2. **Utiliser une bibliothèque WebAuthn** comme `@simplewebauthn/server` ou `fido2-lib`
+3. **Stocker les credentials** dans Firestore
+4. **Mettre à jour le code client** pour utiliser vos fonctions personnalisées
+
+**Exemple de structure :**
+
+```javascript
+// functions/index.js
+const functions = require('firebase-functions/v2');
+const { initializeApp } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
+const { getFirestore } = require('firebase-admin/firestore');
+
+initializeApp();
+
+exports.webAuthnCheckExtension = functions.https.onCall(async (request) => {
+  return { available: true };
+});
+
+exports.webAuthnCreateUser = functions.https.onCall(async (request) => {
+  // Implémentation de la création d'utilisateur avec passkey
+  // Utiliser @simplewebauthn/server ou fido2-lib
+});
+
+exports.webAuthnSignIn = functions.https.onCall(async (request) => {
+  // Implémentation de la connexion avec passkey
+});
 ```
 
-Puis mettez à jour `firebase.json` si nécessaire :
+**Note** : Cette implémentation nécessite une bonne compréhension de WebAuthn et peut prendre plusieurs heures à développer et tester.
 
-```json
-{
-  "extensions": {
-    "firebase-web-authn": "gavinsawyer/firebase-web-authn@latest"
-  }
-}
-```
+### Ressources
 
-### Solution 3 : Vérifier la configuration dans firebase.json
+- [@simplewebauthn/server](https://github.com/MasterKale/SimpleWebAuthn) - Bibliothèque WebAuthn pour Node.js
+- [WebAuthn Guide](https://webauthn.guide/) - Guide complet sur WebAuthn
+- [Firebase Functions v2](https://firebase.google.com/docs/functions/v2) - Documentation Firebase Functions avec Node.js 20
 
-Assurez-vous que votre `firebase.json` spécifie le bon runtime pour les fonctions (même si cela ne s'applique pas directement aux extensions, cela peut aider) :
+## État actuel (Décembre 2025)
 
-```json
-{
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs20",
-    "predeploy": [
-      "npm --prefix \"$RESOURCE_DIR\" run lint"
-    ]
-  }
-}
-```
+- ❌ **L'extension version 10.4.2 utilise Node.js 18** (décommissioné)
+- ⏳ **Aucune version avec Node.js 20 disponible** au moment de la rédaction
+- 📝 **Le développeur doit mettre à jour l'extension** pour supporter Node.js 20
 
-## Régions recommandées
+## Recommandations
 
-Les régions suivantes sont bien supportées pour Firebase Functions :
+1. **✅ Solution immédiate (DÉJÀ FAIT)** : L'onglet "Clé d'accès" est temporairement désactivé dans l'interface
+2. **Solution à moyen terme** : Surveiller les mises à jour de l'extension sur [extensions.dev](https://extensions.dev/extensions/gavinsawyer/firebase-web-authn)
+3. **Solution à long terme** : Si l'extension n'est pas mise à jour, implémenter WebAuthn manuellement ou chercher une alternative
 
-- ✅ **us-central1** (Iowa, USA) - **Recommandé** (région par défaut, meilleure compatibilité)
-- ✅ **europe-west1** (Belgium) - Bon pour l'Europe
-- ✅ **asia-east1** (Taiwan) - Pour l'Asie
-- ⚠️ **europe-west6** - Peut avoir des limitations
+## État actuel de l'interface
 
-## Vérification après installation
+**L'onglet "Clé d'accès" est actuellement masqué** dans `src/fr/connexion-firebase.md` avec la classe CSS `hidden`.
 
-1. Allez dans **Functions** > **Functions**
-2. Vérifiez que les fonctions suivantes existent :
-   - `ext-firebase-web-authn-api` (ou `webAuthn-checkExtension`)
-   - `ext-firebase-web-authn-createUser` (ou `webAuthn-createUser`)
-   - `ext-firebase-web-authn-signIn` (ou `webAuthn-signIn`)
-   - `ext-firebase-web-authn-linkPasskey` (ou `webAuthn-linkPasskey`)
+Les utilisateurs peuvent toujours utiliser :
+- ✅ **Mot de passe** - Fonctionne normalement
+- ✅ **Connexion par email** (passwordless) - Fonctionne normalement
+- ❌ **Clé d'accès** - Temporairement désactivé
 
-3. Vérifiez que le runtime est Node.js 20 ou plus récent :
-   - Cliquez sur une fonction
-   - Vérifiez la section **Configuration** > **Runtime**
-
-## Mise à jour du code si nécessaire
-
-Si vous changez de région, vous devrez peut-être mettre à jour le code dans `firebase-auth.js` pour utiliser la bonne région. Le code actuel essaie déjà `us-central1` puis `europe-west1`, donc si vous utilisez `us-central1`, cela devrait fonctionner automatiquement.
-
-## Si le problème persiste
-
-1. **Vérifiez les logs** dans Firebase Console > Functions > Logs
-2. **Vérifiez la version de l'extension** : L'extension doit être à jour
-3. **Contactez le support** : Si l'extension ne supporte toujours pas Node.js 20, contactez le développeur de l'extension ou utilisez une alternative
-
-## Alternative : Utiliser une autre extension
-
-Si l'extension Firebase WebAuthn continue à avoir des problèmes, vous pouvez :
-- Attendre une mise à jour de l'extension
-- Implémenter WebAuthn manuellement avec Cloud Functions
-- Utiliser une autre solution d'authentification
+Pour réactiver l'onglet une fois l'extension mise à jour, voir [DESACTIVER_PASSKEYS_TEMPORAIREMENT.md](./DESACTIVER_PASSKEYS_TEMPORAIREMENT.md)
 
 ## Notes importantes
 
