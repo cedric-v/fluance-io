@@ -161,31 +161,25 @@ permalink: /cours-en-ligne/5jours/j4/
           var c = pageComments[i];
           var text = escapeHTML(c.text);
           var name = escapeHTML(c.name);
-          
           // Créer le conteneur du commentaire
           var commentDiv = document.createElement('div');
           commentDiv.style.borderBottom = '1px solid #ccc';
           commentDiv.style.marginBottom = '10px';
           commentDiv.style.paddingBottom = '10px';
-          
           // Créer le nom en gras
           var nameStrong = document.createElement('strong');
           nameStrong.textContent = name;
           commentDiv.appendChild(nameStrong);
-          
           // Créer le saut de ligne
           commentDiv.appendChild(document.createElement('br'));
-          
           // Créer le paragraphe avec le texte
           var textP = document.createElement('p');
           textP.textContent = text;
           commentDiv.appendChild(textP);
-          
           container.appendChild(commentDiv);
         }
         renderPaginationControls(page);
       }
-
       function renderPaginationControls(page) {
         var controls = document.getElementById("pagination-controls");
         var totalPages = Math.ceil(allComments.length / COMMENTS_PER_PAGE);
@@ -258,16 +252,16 @@ permalink: /cours-en-ligne/5jours/j4/
           controls.appendChild(nextBtn);
         }
       }
-
       if (db) {
       db.collection("comments").doc(pageId).collection("messages")
         .orderBy("timestamp", "desc")
         .onSnapshot(function(snapshot) {
-          allComments = [];
-          snapshot.forEach(function(doc) {
-            allComments.push(doc.data());
-          });
-          allComments.sort(function(a, b) {
+            allComments = [];
+            snapshot.forEach(function(doc) {
+              allComments.push(doc.data());
+            });
+            // Le tri est déjà fait par orderBy, mais on peut le garder pour sécurité
+            allComments.sort(function(a, b) {
             if (a.timestamp && b.timestamp) {
               try {
                 var timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
