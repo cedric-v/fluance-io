@@ -1,6 +1,18 @@
 # Déboguer l'API de l'extension Firebase WebAuthn
 
-## Problème
+## Problèmes courants
+
+### Erreur 401 (Unauthorized)
+
+**Symptôme** : `POST https://europe-west1-fluance-protected-content.cloudfunctions.net/ext-firebase-web-authn-fu06-api 401 (Unauthorized)`
+
+**Cause** : L'extension nécessite une authentification pour appeler ses fonctions. Même pour créer un compte ou se connecter, l'utilisateur doit être authentifié anonymement.
+
+**Solution** :
+1. Vérifiez que l'authentification anonyme est activée dans Firebase Console > Authentication > Sign-in method
+2. Le code doit s'authentifier anonymement avant d'appeler les fonctions de l'extension (déjà implémenté dans `firebase-auth.js`)
+
+### Erreur 404 (Not Found)
 
 L'erreur 404 indique que la fonction `webAuthn-checkExtension` n'existe pas. L'extension expose `ext-firebase-web-authn-fu06-api` mais la structure de l'API n'est pas claire.
 
@@ -10,34 +22,95 @@ Ouvrez la console du navigateur (F12) sur `/connexion-membre/` et testez :
 
 ### Test 1 : Vérifier si la fonction existe comme callable
 
-**Important** : Dans le mode compat de Firebase, utilisez `firebase.functions('region')` et non `firebase.app().functions('region')`.
+**Important** : Dans le mode compat de Firebase, utilisez `firebase.app().functions('region')` et non `firebase.functions('region')`.
+
+**Note** : Pour tester dans la console, utilisez une fonction async ou des `.then()` au lieu de `await` en haut niveau.
 
 ```javascript
-// S'assurer que Firebase Functions est chargé
-if (!firebase.functions) {
-  const script = document.createElement('script');
-  script.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
-  document.head.appendChild(script);
-  await new Promise(resolve => script.onload = resolve);
-}
+// Test avec .then() (fonctionne directement dans la console)
+// ⚠️ IMPORTANT : L'extension nécessite une authentification (anonyme si pas déjà connecté)
+(function() {
+  // S'assurer qu'un utilisateur est authentifié
+  const currentUser = firebase.auth().currentUser;
+  if (!currentUser) {
+    firebase.auth().signInAnonymously().then(() => {
+      testExtension();
+    }).catch(err => {
+      console.error('Erreur authentification anonyme:', err);
+    });
+  } else {
+    testExtension();
+  }
+  
+  function testExtension() {
+    // S'assurer que Firebase Functions est chargé
+    if (!firebase.functions) {
+      const script = document.createElement('script');
+      script.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+      document.head.appendChild(script);
+      script.onload = () => {
+        const app = firebase.app();
+        const functions = app.functions('europe-west1');
+        const apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
+        apiFunction({ action: 'check' }).then(console.log).catch(console.error);
+      };
+    } else {
+      const app = firebase.app();
+      const functions = app.functions('europe-west1');
+      const apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
+      apiFunction({ action: 'check' }).then(console.log).catch(console.error);
+    }
+  }
+})();
+```
 
-const functions = firebase.functions('europe-west1');
-const apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
-apiFunction({ action: 'check' }).then(console.log).catch(console.error);
+**OU avec async/await dans une fonction** :
+
+```javascript
+(async function() {
+  // S'assurer qu'un utilisateur est authentifié
+  if (!firebase.auth().currentUser) {
+    await firebase.auth().signInAnonymously();
+  }
+  
+  if (!firebase.functions) {
+    const script = document.createElement('script');
+    script.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+    document.head.appendChild(script);
+    await new Promise(resolve => script.onload = resolve);
+  }
+  const app = firebase.app();
+  const functions = app.functions('europe-west1');
+  const apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
+  const result = await apiFunction({ action: 'check' });
+  console.log(result);
+})().catch(console.error);
 ```
 
 ### Test 2 : Essayer différents noms de fonctions
 
 ```javascript
-const functions = firebase.functions('europe-west1');
+// ⚠️ IMPORTANT : S'authentifier anonymement d'abord si pas déjà connecté
+if (!firebase.auth().currentUser) {
+  firebase.auth().signInAnonymously().then(() => {
+    testFunctions();
+  }).catch(console.error);
+} else {
+  testFunctions();
+}
 
-// Essayer avec le nom complet
-const func1 = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
-func1({}).then(console.log).catch(console.error);
+function testFunctions() {
+  const app = firebase.app();
+  const functions = app.functions('europe-west1');
 
-// Essayer avec des noms alternatifs
-const func2 = functions.httpsCallable('ext-firebase-web-authn-fu06-checkExtension');
-func2({}).then(console.log).catch(console.error);
+  // Essayer avec le nom complet
+  const func1 = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
+  func1({ action: 'check' }).then(console.log).catch(console.error);
+
+  // Essayer avec des noms alternatifs
+  const func2 = functions.httpsCallable('ext-firebase-web-authn-fu06-checkExtension');
+  func2({}).then(console.log).catch(console.error);
+}
 ```
 
 ### Test 3 : Utiliser le rewrite HTTP

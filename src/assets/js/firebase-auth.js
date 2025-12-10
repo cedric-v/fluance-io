@@ -1107,6 +1107,26 @@ function ensureFunctionsLoaded() {
 }
 
 /**
+ * S'assure qu'un utilisateur est authentifié (anonymement si nécessaire)
+ * L'extension WebAuthn nécessite une authentification pour appeler ses fonctions
+ */
+async function ensureAuthenticated() {
+  const currentUser = firebase.auth().currentUser;
+  if (currentUser) {
+    return currentUser;
+  }
+  
+  // S'authentifier anonymement si pas déjà authentifié
+  try {
+    const userCredential = await firebase.auth().signInAnonymously();
+    return userCredential.user;
+  } catch (error) {
+    console.error('Erreur lors de l\'authentification anonyme:', error);
+    throw new Error('Impossible de s\'authentifier. Vérifiez que l\'authentification anonyme est activée dans Firebase Console.');
+  }
+}
+
+/**
  * Vérifie si l'extension Firebase WebAuthn est disponible
  */
 async function isWebAuthnExtensionAvailable() {
@@ -1114,12 +1134,16 @@ async function isWebAuthnExtensionAvailable() {
     // S'assurer que Firebase Functions est chargé
     await ensureFunctionsLoaded();
     
+    // S'assurer qu'un utilisateur est authentifié (anonymement si nécessaire)
+    await ensureAuthenticated();
+    
     // Vérifier si les fonctions de l'extension sont disponibles
     // L'extension expose une fonction unique : ext-firebase-web-authn-fu06-api
     // Utiliser la région europe-west1 (configurée dans extensions/firebase-web-authn-fu06.env)
-    // Dans le mode compat, on utilise firebase.functions('region')
+    // Dans le mode compat, on utilise firebase.app().functions('region')
+    const app = firebase.app();
     // Essayer d'abord europe-west1 (région configurée)
-    let functions = firebase.functions('europe-west1');
+    let functions = app.functions('europe-west1');
     // L'extension expose une fonction unique avec le nom de l'instance
     let checkExtension = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
     
@@ -1130,7 +1154,7 @@ async function isWebAuthnExtensionAvailable() {
     } catch (regionError) {
       // Si europe-west1 échoue, essayer us-central1 (fallback)
       if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found')) {
-        functions = firebase.functions('us-central1');
+        functions = app.functions('us-central1');
         checkExtension = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
         const result = await checkExtension({ action: 'check' });
         return result.data?.available === true || result.data?.success === true;
@@ -1140,6 +1164,11 @@ async function isWebAuthnExtensionAvailable() {
   } catch (error) {
     // Si l'erreur indique que la fonction n'existe pas, l'extension n'est pas installée
     if (error.code === 'functions/not-found' || error.message?.includes('not found')) {
+      return false;
+    }
+    // Gérer les erreurs d'authentification
+    if (error.code === 'auth/operation-not-allowed' || error.message?.includes('anonymous')) {
+      console.warn('L\'authentification anonyme n\'est pas activée. Activez-la dans Firebase Console > Authentication > Sign-in method.');
       return false;
     }
     // Gérer les erreurs CORS - l'extension n'est peut-être pas configurée correctement
@@ -1180,11 +1209,15 @@ async function createAccountWithPasskey(email, displayName = null) {
     // S'assurer que Firebase Functions est chargé
     await ensureFunctionsLoaded();
     
+    // S'assurer qu'un utilisateur est authentifié (anonymement si nécessaire)
+    await ensureAuthenticated();
+    
     // Utiliser l'extension Firebase WebAuthn
     // L'extension expose une fonction unique : ext-firebase-web-authn-fu06-api
     // Essayer d'abord europe-west1 (région configurée)
-    // Dans le mode compat, on utilise firebase.functions('region')
-    let functions = firebase.functions('europe-west1');
+    // Dans le mode compat, on utilise firebase.app().functions('region')
+    const app = firebase.app();
+    let functions = app.functions('europe-west1');
     // Utiliser la fonction api de l'extension avec l'action 'createUser'
     let apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
     
@@ -1198,7 +1231,7 @@ async function createAccountWithPasskey(email, displayName = null) {
     } catch (regionError) {
       // Si europe-west1 échoue, essayer us-central1 (fallback)
       if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found') || regionError.code === 'internal') {
-        functions = firebase.functions('us-central1');
+        functions = app.functions('us-central1');
         apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
         result = await apiFunction({
           action: 'createUser',
@@ -1271,11 +1304,15 @@ async function signInWithPasskey(email) {
     // S'assurer que Firebase Functions est chargé
     await ensureFunctionsLoaded();
     
+    // S'assurer qu'un utilisateur est authentifié (anonymement si nécessaire)
+    await ensureAuthenticated();
+    
     // Utiliser l'extension Firebase WebAuthn
     // L'extension expose une fonction unique : ext-firebase-web-authn-fu06-api
     // Essayer d'abord europe-west1 (région configurée)
-    // Dans le mode compat, on utilise firebase.functions('region')
-    let functions = firebase.functions('europe-west1');
+    // Dans le mode compat, on utilise firebase.app().functions('region')
+    const app = firebase.app();
+    let functions = app.functions('europe-west1');
     // Utiliser la fonction api de l'extension avec l'action 'signIn'
     let apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
     
@@ -1288,7 +1325,7 @@ async function signInWithPasskey(email) {
     } catch (regionError) {
       // Si europe-west1 échoue, essayer us-central1 (fallback)
       if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found') || regionError.code === 'internal') {
-        functions = firebase.functions('us-central1');
+        functions = app.functions('us-central1');
         apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
         result = await apiFunction({
           action: 'signIn',
@@ -1377,11 +1414,15 @@ async function linkPasskeyToAccount() {
     // S'assurer que Firebase Functions est chargé
     await ensureFunctionsLoaded();
     
+    // S'assurer qu'un utilisateur est authentifié (anonymement si nécessaire)
+    await ensureAuthenticated();
+    
     // Utiliser l'extension Firebase WebAuthn
     // L'extension expose une fonction unique : ext-firebase-web-authn-fu06-api
     // Essayer d'abord europe-west1 (région configurée)
-    // Dans le mode compat, on utilise firebase.functions('region')
-    let functions = firebase.functions('europe-west1');
+    // Dans le mode compat, on utilise firebase.app().functions('region')
+    const app = firebase.app();
+    let functions = app.functions('europe-west1');
     // Utiliser la fonction api de l'extension avec l'action 'linkPasskey'
     let apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
     
@@ -1393,7 +1434,7 @@ async function linkPasskeyToAccount() {
     } catch (regionError) {
       // Si europe-west1 échoue, essayer us-central1 (fallback)
       if (regionError.code === 'functions/not-found' || regionError.message?.includes('not found') || regionError.code === 'internal') {
-        functions = firebase.functions('us-central1');
+        functions = app.functions('us-central1');
         apiFunction = functions.httpsCallable('ext-firebase-web-authn-fu06-api');
         result = await apiFunction({
           action: 'linkPasskey'

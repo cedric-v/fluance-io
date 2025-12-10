@@ -1,6 +1,19 @@
-# Corriger les erreurs 403 et 404 avec les Passkeys
+# Corriger les erreurs 403, 404 et 401 avec les Passkeys
 
 ## Erreurs identifiées
+
+### Erreur 401 : "Unauthorized" ou "FirebaseError: Unauthenticated"
+
+**Cause** : L'extension nécessite une authentification pour appeler ses fonctions. Même pour créer un compte ou se connecter, l'utilisateur doit être authentifié anonymement.
+
+**Solution** :
+1. Vérifiez que l'authentification anonyme est activée dans Firebase Console > Authentication > Sign-in method
+2. Le code doit s'authentifier anonymement avant d'appeler les fonctions de l'extension (déjà implémenté dans `firebase-auth.js` via `ensureAuthenticated()`)
+
+**Vérification** :
+- Firebase Console > Authentication > Sign-in method
+- Vérifiez que "Anonymous" est activé (toggle en haut)
+- Si non, activez-le et enregistrez
 
 ### Erreur 403 : "Requests from referer https://fluance-protected-content.firebaseapp.com/ are blocked"
 
