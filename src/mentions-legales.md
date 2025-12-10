@@ -116,11 +116,11 @@ Instants Zen, société à responsabilité limitée (Sàrl) enregistrée en Suis
 
 2/ **Directeur ou Responsable de publication :** Monsieur Cédric Vonlanthen
 
-3/ **Hébergements :**
+3/ **Hébergements et services techniques :**
 
-- Pages Web : Infomaniak Network SA, Av. de la Praille 26, 1227 Carouge, Suisse, Tèl. (+41) 022 / 820 35 55 & Ontraport, 2030 Alameda Padre Serra, Suite 200, Santa Barbara, CA 93103.
-- Envois d’e-mails : Ontraport, 2030 Alameda Padre Serra, Suite 200, Santa Barbara, CA 93103.
-- Lors d’inscription à nos webinaires/webconférences : GetResponse Sp. z o.o., Arkonska 6/A3, 80-387 Gdansk, Poland & Twilio Inc. (SendGrid), 101 Spear Street, Ste 500, San Francisco, CA 94105 & WebinarJam de Genesis Digital LLC, 4730 S. Fort Apache Rd. Suite 300, Las Vegas, NV 89147-7947.
+- Pages Web : GitHub Pages (GitHub, Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107, États-Unis).
+- Base de données et authentification : Firebase (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande). Les données sont stockées dans des centres de données situés à Zurich (Suisse) ou en Belgique, conformément aux réglementations européennes sur la protection des données.
+- Envois d’e-mails : Mailjet SAS, 13-13 bis, rue de l’Aubrac, 75012 Paris, France.
 
 4/ **Propriété intellectuelle :** L’Editeur est titulaire des droits sur l’ensemble des contenus du site. Toute reproduction totale ou partielle est interdite sans autorisation préalable. Les bases de données sont protégées par le droit sui generis des producteurs.
 
