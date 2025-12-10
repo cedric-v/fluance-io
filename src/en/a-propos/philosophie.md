@@ -74,3 +74,31 @@ permalink: /en/a-propos/philosophie/
 
 <script type="text/javascript" src="https://app.mailjet.com/pas-nc-pop-in-v1.js"></script>
 
+<script>
+  // Déclencher la pop-up MailJet au clic sur les boutons
+  document.addEventListener('DOMContentLoaded', function() {
+    const checkMailJet = setInterval(function() {
+      if (typeof window.mjPopin !== 'undefined' || typeof window.mailjet !== 'undefined' || typeof mjPopin !== 'undefined') {
+        clearInterval(checkMailJet);
+        
+        const triggerButtons = document.querySelectorAll('.mailjet-trigger-btn');
+        triggerButtons.forEach(button => {
+          button.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeof mjPopin !== 'undefined' && mjPopin.open) {
+              mjPopin.open();
+            } else if (window.mjPopin && window.mjPopin.open) {
+              window.mjPopin.open();
+            } else if (window.mailjet && window.mailjet.showPopin) {
+              window.mailjet.showPopin();
+            } else if (window.mailjet && window.mailjet.open) {
+              window.mailjet.open();
+            }
+          });
+        });
+      }
+    }, 100);
+    setTimeout(function() { clearInterval(checkMailJet); }, 5000);
+  });
+</script>
+

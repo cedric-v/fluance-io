@@ -25,7 +25,7 @@ locale: fr
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col mailjet-trigger-btn">
+      <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col mailjet-trigger-btn" data-mailjet-trigger="9241cb136525ee5e376e">
         <span>Essayer 2 pratiques libératrices</span>
         <span class="text-sm font-normal opacity-90">en ligne</span>
       </a>
@@ -101,7 +101,7 @@ locale: fr
     <h2 class="text-3xl font-semibold text-fluance">Rejoignez le mouvement</h2>
   </div>
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col mailjet-trigger-btn">
+    <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col mailjet-trigger-btn" data-mailjet-trigger="9241cb136525ee5e376e">
       <span>Essayer 2 pratiques libératrices</span>
       <span class="text-sm font-normal opacity-90">en ligne</span>
     </a>
@@ -123,22 +123,69 @@ locale: fr
 <script>
   // Déclencher la pop-up MailJet au clic sur les boutons
   document.addEventListener('DOMContentLoaded', function() {
-    const triggerButtons = document.querySelectorAll('.mailjet-trigger-btn');
-    triggerButtons.forEach(button => {
-      button.addEventListener('click', function(e) {
-        e.preventDefault();
-        // Essayer différentes méthodes pour déclencher la pop-up MailJet
-        if (typeof mjPopin !== 'undefined' && mjPopin.open) {
-          mjPopin.open();
-        } else if (window.mjPopin && window.mjPopin.open) {
-          window.mjPopin.open();
-        } else if (window.mailjet && window.mailjet.showPopin) {
-          window.mailjet.showPopin();
-        } else {
-          // Si aucune méthode ne fonctionne, le script MailJet devrait détecter automatiquement les clics
-          console.log('MailJet pop-in script chargé, déclenchement automatique attendu');
+    // Attendre que le script MailJet soit chargé
+    const checkMailJet = setInterval(function() {
+      // Vérifier si le script MailJet a créé une API globale
+      const mailjetAPI = window.mjPopin || window.mailjet || window.mj || mjPopin;
+      
+      if (mailjetAPI) {
+        clearInterval(checkMailJet);
+        console.log('API MailJet détectée:', Object.keys(mailjetAPI));
+        
+        const triggerButtons = document.querySelectorAll('.mailjet-trigger-btn');
+        triggerButtons.forEach(button => {
+          button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Essayer différentes méthodes pour déclencher la pop-up
+            if (mailjetAPI.open) {
+              mailjetAPI.open();
+            } else if (mailjetAPI.showPopin) {
+              mailjetAPI.showPopin();
+            } else if (mailjetAPI.show) {
+              mailjetAPI.show();
+            } else if (mailjetAPI.trigger) {
+              mailjetAPI.trigger();
+            } else {
+              // Essayer de déclencher via l'iframe trigger en envoyant un message
+              const triggerIframe = document.querySelector('iframe[data-w-type="trigger"]');
+              if (triggerIframe && triggerIframe.contentWindow) {
+                try {
+                  triggerIframe.contentWindow.postMessage({ action: 'open' }, '*');
+                } catch (err) {
+                  console.error('Erreur postMessage:', err);
+                }
+              }
+              // Afficher toutes les propriétés disponibles pour debug
+              console.log('Méthodes disponibles sur mailjetAPI:', Object.keys(mailjetAPI));
+            }
+          });
+        });
+      }
+    }, 100);
+    
+    // Timeout après 5 secondes
+    setTimeout(function() {
+      clearInterval(checkMailJet);
+      // Si après 5 secondes, essayer quand même d'attacher les event listeners
+      const triggerButtons = document.querySelectorAll('.mailjet-trigger-btn');
+      triggerButtons.forEach(button => {
+        if (!button.hasAttribute('data-listener-attached')) {
+          button.setAttribute('data-listener-attached', 'true');
+          button.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Essayer de déclencher via l'iframe
+            const triggerIframe = document.querySelector('iframe[data-w-type="trigger"]');
+            if (triggerIframe && triggerIframe.contentWindow) {
+              try {
+                triggerIframe.contentWindow.postMessage({ action: 'open', token: '9241cb136525ee5e376e' }, '*');
+              } catch (err) {
+                console.error('Erreur:', err);
+              }
+            }
+          });
         }
       });
-    });
+    }, 5000);
   });
 </script>
