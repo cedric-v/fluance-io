@@ -1060,3 +1060,364 @@ exports.confirmNewsletterOptIn = onCall(
       }
     });
 
+/**
+ * Inscription à la newsletter 5 jours (liste MailJet spécifique)
+ * Cette fonction est publique (pas besoin d'authentification admin)
+ * Région : europe-west1 (Belgique)
+ * Utilise les secrets Firebase pour Mailjet
+ * Liste MailJet : 10524236
+ */
+exports.subscribeTo5Days = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'TURNSTILE_SECRET_KEY'],
+      cors: true,
+    },
+    async (request) => {
+      const {email, name, turnstileToken, isLocalhost} = request.data;
+
+      if (!email) {
+        throw new HttpsError('invalid-argument', 'Email is required');
+      }
+
+      // Valider le format de l'email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new HttpsError('invalid-argument', 'Invalid email format');
+      }
+
+      // Valider le token Turnstile (sauf en développement local)
+      if (!isLocalhost && !turnstileToken) {
+        throw new HttpsError('invalid-argument', 'Turnstile verification required');
+      }
+
+      const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+      // Valider Turnstile seulement si pas en localhost et si le secret est configuré
+      if (!isLocalhost && turnstileSecret && turnstileToken) {
+        try {
+          const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
+                          request.rawRequest?.headers?.['x-real-ip'] ||
+                          '';
+
+          const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              secret: turnstileSecret,
+              response: turnstileToken,
+              remoteip: clientIP,
+            }),
+          });
+
+          const turnstileResult = await turnstileResponse.json();
+
+          if (!turnstileResult.success) {
+            console.error('Turnstile verification failed:', turnstileResult);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+        } catch (error) {
+          if (error instanceof HttpsError) {
+            throw error;
+          }
+          console.error('Error verifying Turnstile token:', error);
+          throw new HttpsError('internal', 'Error verifying bot protection');
+        }
+      } else if (!isLocalhost && !turnstileSecret) {
+        console.warn('TURNSTILE_SECRET_KEY not configured. Skipping bot verification.');
+      } else if (isLocalhost) {
+        console.log('Skipping Turnstile verification in localhost environment.');
+      }
+
+      try {
+        // Générer un token de confirmation unique pour le double opt-in
+        const confirmationToken = generateUniqueToken();
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 7); // Token valide 7 jours
+
+        // Stocker le token de confirmation dans Firestore
+        await db.collection('newsletterConfirmations').doc(confirmationToken).set({
+          email: email.toLowerCase().trim(),
+          name: name || '',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: expirationDate,
+          confirmed: false,
+          listId: '10524236', // Liste spécifique pour les 5 jours
+        });
+
+        // Ajouter le contact à MailJet
+        const url = 'https://api.mailjet.com/v3/REST/contact';
+
+        const contactData = {
+          Email: email.toLowerCase().trim(),
+          IsExcludedFromCampaigns: false,
+        };
+
+        if (name) {
+          const nameParts = name.trim().split(' ');
+          if (nameParts.length > 0) {
+            contactData.Name = name;
+          }
+        }
+
+        const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+
+        // Vérifier si le contact existe déjà
+        const checkUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(contactData.Email)}`;
+        let contactExists = false;
+
+        try {
+          const checkResponse = await fetch(checkUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            },
+          });
+
+          if (checkResponse.ok) {
+            contactExists = true;
+            // Mettre à jour le contact existant si un nom est fourni
+            if (name) {
+              const updateResponse = await fetch(checkUrl, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Basic ${auth}`,
+                },
+                body: JSON.stringify(contactData),
+              });
+
+              if (!updateResponse.ok) {
+                const errorText = await updateResponse.text();
+                console.error('Error updating contact:', errorText);
+              }
+            }
+          }
+        } catch {
+          console.log('Contact does not exist, will create it');
+        }
+
+        // Créer le contact s'il n'existe pas
+        if (!contactExists) {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify(contactData),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Mailjet API error:', errorText);
+            throw new Error(`Mailjet API error: ${response.status} - ${errorText}`);
+          }
+        }
+
+        // Ajouter le contact à la liste spécifique 5 jours (10524236)
+        const listId = '10524236';
+        const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
+
+        try {
+          const listResponse = await fetch(addToListUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify({
+              IsUnsubscribed: false,
+              ContactAlt: contactData.Email,
+              ListID: parseInt(listId, 10),
+            }),
+          });
+
+          if (!listResponse.ok) {
+            const errorText = await listResponse.text();
+            if (listResponse.status === 400 && errorText.includes('already')) {
+              console.log(`Contact ${contactData.Email} is already in list ${listId}`);
+            } else {
+              console.error('Error adding contact to MailJet list:', errorText);
+            }
+          } else {
+            console.log(`Contact ${contactData.Email} successfully added to list ${listId}`);
+          }
+        } catch (listError) {
+          console.error('Error adding contact to MailJet list:', listError);
+        }
+
+        // Envoyer l'email de confirmation avec le template MailJet
+        console.log('📧 Starting email confirmation process for 5 jours:', contactData.Email);
+        const confirmationUrl = `https://fluance.io/confirm?email=${encodeURIComponent(contactData.Email)}&token=${confirmationToken}`;
+
+        let emailSent = false;
+        let emailError = null;
+
+        console.log('📧 About to send confirmation email, token:', confirmationToken);
+        try {
+          const emailPayload = {
+            Messages: [
+              {
+                From: {
+                  Email: 'support@actu.fluance.io',
+                  Name: 'Cédric de Fluance',
+                },
+                To: [
+                  {
+                    Email: contactData.Email,
+                    Name: name || contactData.Email,
+                  },
+                ],
+                TemplateID: 7571938,
+                TemplateLanguage: true,
+                TemplateErrorDeliver: true,
+                TemplateErrorReporting: 'support@actu.fluance.io',
+                Subject: 'Dernière étape indispensable [[data:firstname:""]]',
+                Variables: {
+                  token: confirmationToken,
+                  email: contactData.Email,
+                  firstname: name || '',
+                },
+              },
+            ],
+          };
+
+          console.log('Sending confirmation email with payload:', JSON.stringify(emailPayload, null, 2));
+
+          const emailResponse = await fetch('https://api.mailjet.com/v3.1/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify(emailPayload),
+          });
+
+          // Lire la réponse même en cas d'erreur pour avoir les détails
+          let responseData;
+          try {
+            const responseText = await emailResponse.text();
+            responseData = responseText ? JSON.parse(responseText) : {};
+          } catch (parseError) {
+            console.error('Failed to parse MailJet response as JSON:', parseError);
+            try {
+              const responseClone = emailResponse.clone();
+              const rawText = await responseClone.text();
+              responseData = {error: 'Failed to parse response', raw: rawText};
+            } catch {
+              responseData = {error: 'Failed to parse response and cannot read raw text'};
+            }
+          }
+
+          if (!emailResponse.ok) {
+            emailError = `MailJet API error: ${emailResponse.status} - ${JSON.stringify(responseData)}`;
+            console.error('❌ Error sending confirmation email:', emailError);
+            console.error('Response status:', emailResponse.status);
+            console.error('Response headers:', Object.fromEntries(emailResponse.headers.entries()));
+            console.error('Response data:', JSON.stringify(responseData, null, 2));
+
+            // Essayer d'envoyer un email simple en fallback si le template échoue
+            if (emailResponse.status === 400 || emailResponse.status === 404) {
+              console.log('⚠️ Template may not exist or be invalid. Attempting fallback email...');
+              try {
+                const fallbackHtml = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head><meta charset="UTF-8"></head>
+                  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2>Dernière étape indispensable ${name ? name : ''}</h2>
+                    <p>Merci de confirmer votre inscription aux 5 pratiques Fluance.</p>
+                    <p>Cliquez sur le lien ci-dessous pour confirmer :</p>
+                    <p>
+                      <a href="${confirmationUrl}" style="display: inline-block; padding: 12px 24px;
+                        background-color: #ffce2d; color: #0f172a; text-decoration: none;
+                        border-radius: 4px; font-weight: bold;">
+                        Confirmer mon inscription
+                      </a>
+                    </p>
+                    <p>Ou copiez ce lien dans votre navigateur :</p>
+                    <p style="word-break: break-all;">${confirmationUrl}</p>
+                    <p>Ce lien est valide pendant 7 jours.</p>
+                  </body>
+                  </html>
+                `;
+
+                const fallbackResponse = await fetch('https://api.mailjet.com/v3.1/send', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${auth}`,
+                  },
+                  body: JSON.stringify({
+                    Messages: [
+                      {
+                        From: {
+                          Email: 'support@actu.fluance.io',
+                          Name: 'Cédric de Fluance',
+                        },
+                        To: [
+                          {
+                            Email: contactData.Email,
+                            Name: name || contactData.Email,
+                          },
+                        ],
+                        Subject: `Dernière étape indispensable ${name ? name : ''}`,
+                        HTMLPart: fallbackHtml,
+                        TextPart: `Merci de confirmer votre inscription. Cliquez sur ce lien : ${confirmationUrl}`,
+                      },
+                    ],
+                  }),
+                });
+
+                const fallbackData = await fallbackResponse.json();
+                if (fallbackResponse.ok) {
+                  emailSent = true;
+                  emailError = null;
+                  console.log('✅ Fallback email sent successfully');
+                } else {
+                  console.error('❌ Fallback email also failed:', JSON.stringify(fallbackData, null, 2));
+                }
+              } catch (fallbackErr) {
+                console.error('❌ Exception sending fallback email:', fallbackErr);
+              }
+            }
+          } else {
+            emailSent = true;
+            emailError = null;
+            console.log(`✅ Confirmation email sent successfully to ${contactData.Email}`);
+            console.log('MailJet response:', JSON.stringify(responseData, null, 2));
+
+            // Vérifier que l'email est bien dans la réponse
+            if (responseData.Messages && responseData.Messages.length > 0) {
+              const messageStatus = responseData.Messages[0];
+              console.log('Message status:', JSON.stringify(messageStatus, null, 2));
+              if (messageStatus.Errors && messageStatus.Errors.length > 0) {
+                console.error('⚠️ MailJet reported errors in message:', messageStatus.Errors);
+                emailError = `MailJet message errors: ${JSON.stringify(messageStatus.Errors)}`;
+                emailSent = false;
+              }
+            }
+          }
+        } catch (err) {
+          emailError = `Exception: ${err.message}`;
+          console.error('Exception sending confirmation email:', emailError);
+          console.error('Stack trace:', err.stack);
+        }
+
+        return {
+          success: true,
+          message: emailSent ?
+            'Confirmation email sent. Please check your inbox.' :
+            'Contact created but confirmation email may not have been sent. Please check logs.',
+          email: contactData.Email,
+          emailSent: emailSent,
+          emailError: emailError || null,
+        };
+      } catch (error) {
+        console.error('Error subscribing to 5 days:', error);
+        throw new HttpsError('internal', 'Error subscribing to 5 days: ' + error.message);
+      }
+    });
+

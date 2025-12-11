@@ -6,6 +6,8 @@ locale: fr
 permalink: /cours-en-ligne/5jours/inscription/
 ---
 
+{% include "newsletter-popup-5jours.njk" %}
+
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="text-center space-y-6">
     <h1 class="text-4xl md:text-5xl font-semibold text-[#0f172a] leading-tight">
@@ -41,7 +43,7 @@ permalink: /cours-en-ligne/5jours/inscription/
     </p>
     
     <div class="text-center">
-      <a href="javascript://" data-opf-trigger="p2c27119f1360" class="btn-primary inline-flex items-center gap-2 text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]">
+      <a href="javascript://" data-open-popup-5jours class="btn-primary inline-flex items-center gap-2 text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]">
         <span>Participer et vivre votre première pratique tout de suite</span>
         <span>→</span>
       </a>
@@ -76,7 +78,7 @@ permalink: /cours-en-ligne/5jours/inscription/
     </p>
     
     <div class="text-center pt-4">
-      <a href="javascript://" data-opf-trigger="p2c27119f1360" class="btn-primary flex flex-col items-center gap-1 text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]">
+      <a href="javascript://" data-open-popup-5jours class="btn-primary flex flex-col items-center gap-1 text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]">
         <span class="inline-flex items-center gap-2">Je participe maintenant <span>→</span></span>
         <span class="text-sm font-normal opacity-90">Accès immédiat et gratuit</span>
       </a>
@@ -117,12 +119,13 @@ permalink: /cours-en-ligne/5jours/inscription/
     <p class="text-lg text-[#0f172a]/80">
       <strong>Cliquez ici pour recevoir la première pratique.</strong>
     </p>
-    <a href="javascript://" data-opf-trigger="p2c27119f1360" class="btn-primary inline-flex items-center gap-2 text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]">
+    <a href="javascript://" data-open-popup-5jours class="btn-primary inline-flex items-center gap-2 text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]">
       <span>Je participe maintenant</span>
       <span>→</span>
     </a>
   </div>
 </section>
 
-<script type="text/javascript" async="true" src="https://app.ontraport.com/js/ontraport/opt_assets/drivers/opf.js" data-opf-uid="p2c27119f1360" data-opf-params="borderColor=#8bc34a&borderSize=5px&formHeight=493&formWidth=40%&popPosition=mc&instance=n791421916"></script>
+<!-- Cloudflare Turnstile Script -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
