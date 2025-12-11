@@ -34,8 +34,10 @@ L'email de réinitialisation de mot de passe n'arrive pas à l'utilisateur.
 5. **Important** : Cliquez sur **"Edit template"** et vérifiez :
    - Le sujet de l'email
    - Le contenu HTML
-   - Que le lien est bien présent dans le template
-   - Que le lien pointe vers `fluance.io/reinitialiser-mot-de-passe` (ou `/en/reset-password`)
+   - **CRITIQUE** : Le lien dans le template doit utiliser la variable `%LINK%` (ou `__LINK__` selon la version)
+   - ❌ **NE PAS** utiliser une URL hardcodée comme `https://fluance-protected-content.firebaseapp.com/__/auth/action?mode=action&oobCode=code`
+   - ✅ **UTILISER** : `%LINK%` qui sera automatiquement remplacé par Firebase avec l'URL configurée dans `actionCodeSettings`
+   - Exemple de lien correct dans le template : `<a href="%LINK%">Réinitialiser mon mot de passe</a>`
 
 ### 3. Vérifier les domaines autorisés
 
@@ -102,16 +104,27 @@ Ouvrez la console du navigateur (F12) et vérifiez :
 
 ## 🔧 Solutions possibles
 
-### Solution 1 : Réinitialiser le template d'email
+### Solution 1 : Corriger le template d'email
 
 1. Dans **Authentication > Sign-in method > Email/Password**
 2. Cliquez sur **"Email templates"**
 3. Cliquez sur **"Password reset"**
-4. Cliquez sur **"Reset to default"** (si disponible)
-5. Personnalisez le template si nécessaire
-6. **Important** : Vérifiez que le lien dans le template pointe vers :
-   - `https://fluance.io/reinitialiser-mot-de-passe?mode=resetPassword&oobCode=__OOB_CODE__&apiKey=__API_KEY__`
-7. Cliquez sur **"Save"**
+4. Cliquez sur **"Edit template"**
+5. **CRITIQUE** : Dans le contenu HTML du template, recherchez le lien
+6. **Remplacez** toute URL hardcodée par la variable `%LINK%`
+   - ❌ **MAUVAIS** : `https://fluance-protected-content.firebaseapp.com/__/auth/action?mode=action&oobCode=code`
+   - ✅ **BON** : `%LINK%`
+7. Exemple de lien correct dans le template :
+   ```html
+   <a href="%LINK%">Réinitialiser mon mot de passe</a>
+   ```
+8. **Note** : Firebase remplacera automatiquement `%LINK%` par l'URL configurée dans `actionCodeSettings` (qui pointe vers `fluance.io/reinitialiser-mot-de-passe`)
+9. Cliquez sur **"Save"**
+
+**Alternative** : Si vous ne trouvez pas `%LINK%`, essayez :
+- `__LINK__` (double underscore)
+- `{{LINK}}` (accolades)
+- Ou utilisez le bouton "Reset to default" puis personnalisez uniquement le texte, pas le lien
 
 ### Solution 2 : Vérifier le domaine personnalisé
 

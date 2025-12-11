@@ -315,8 +315,13 @@ async function sendPasswordResetEmail(email) {
     const resetPath = isEnglish ? '/en/reset-password' : '/reinitialiser-mot-de-passe';
 
     // Configuration pour le lien de réinitialisation
+    // Utiliser fluance.io explicitement pour garantir la bonne URL
+    const baseUrl = window.location.hostname === 'fluance.io' 
+      ? 'https://fluance.io' 
+      : window.location.origin;
+    
     const actionCodeSettings = {
-      url: window.location.origin + resetPath,
+      url: baseUrl + resetPath,
       handleCodeInApp: true
     };
 
