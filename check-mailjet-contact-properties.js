@@ -97,7 +97,21 @@ async function checkContactProperties() {
     }
 
     const contactData = response.Data[0];
-    const properties = contactData.Data || {};
+    // Convertir le tableau Data en objet pour faciliter l'accès
+    let properties = {};
+    if (contactData.Data) {
+      if (Array.isArray(contactData.Data)) {
+        // Format standard Mailjet: tableau de {Name, Value}
+        contactData.Data.forEach((item) => {
+          if (item.Name && item.Value !== undefined) {
+            properties[item.Name] = item.Value;
+          }
+        });
+      } else if (typeof contactData.Data === 'object') {
+        // Format alternatif: objet direct
+        properties = contactData.Data;
+      }
+    }
 
     console.log('✅ Contact properties trouvées\n');
     console.log('='.repeat(80));

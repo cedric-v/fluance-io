@@ -362,7 +362,8 @@ async function createTokenAndSendEmail(
 
       // Calculer les nouvelles valeurs
       const now = new Date();
-      const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+      // Format ISO 8601 complet avec heure pour les propriétés datetime Mailjet
+      const dateStr = now.toISOString(); // Format: YYYY-MM-DDTHH:MM:SS.sssZ
 
       const currentProducts = currentProperties.produits_achetes || '';
       const productsList = currentProducts ? currentProducts.split(',').map((p) => p.trim()).filter((p) => p) : [];
@@ -1055,7 +1056,8 @@ exports.subscribeToNewsletter = onCall(
 
         // Définir les contact properties pour l'opt-in 2 pratiques
         const now = new Date();
-        const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+        // Format ISO 8601 complet avec heure pour les propriétés datetime Mailjet
+        const dateStr = now.toISOString(); // Format: YYYY-MM-DDTHH:MM:SS.sssZ
 
         const properties = {
           statut: 'prospect',
@@ -1064,12 +1066,15 @@ exports.subscribeToNewsletter = onCall(
           est_client: 'False',
         };
 
+        console.log('📋 Starting MailJet contact properties update for 2 pratiques:', contactData.Email);
+        console.log('📋 Properties to set:', JSON.stringify(properties));
         await updateMailjetContactProperties(
             contactData.Email,
             properties,
             process.env.MAILJET_API_KEY,
             process.env.MAILJET_API_SECRET,
         );
+        console.log('📋 MailJet contact properties update completed for:', contactData.Email);
 
         // Envoyer l'email de confirmation avec le template MailJet
         console.log('📧 Starting email confirmation process for:', contactData.Email);
@@ -1557,7 +1562,8 @@ exports.subscribeTo5Days = onCall(
         console.log('📋 Starting MailJet contact properties update for 5 jours:', contactData.Email);
         await ensureMailjetContactProperties(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
         const now = new Date();
-        const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+        // Format ISO 8601 complet avec heure pour les propriétés datetime Mailjet
+        const dateStr = now.toISOString(); // Format: YYYY-MM-DDTHH:MM:SS.sssZ
 
         // Récupérer les properties actuelles pour ne pas écraser source_optin si déjà défini
         let currentProperties = {};
@@ -1614,8 +1620,19 @@ exports.subscribeTo5Days = onCall(
         };
 
         // Si date_optin existe déjà et est plus ancienne, la conserver
-        if (currentProperties.date_optin && currentProperties.date_optin < dateStr) {
-          properties.date_optin = currentProperties.date_optin;
+        // Comparer les dates au format ISO (YYYY-MM-DD) ou ancien format (JJ/MM/AAAA)
+        if (currentProperties.date_optin) {
+          const currentDate = currentProperties.date_optin;
+          // Convertir l'ancien format JJ/MM/AAAA en YYYY-MM-DD si nécessaire
+          let currentDateISO = currentDate;
+          if (currentDate.includes('/')) {
+            const [day, month, year] = currentDate.split('/');
+            currentDateISO = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          }
+          // Comparer les dates ISO
+          if (currentDateISO < dateStr) {
+            properties.date_optin = currentDateISO; // Utiliser le format ISO
+          }
         }
 
         console.log('📋 Updating MailJet contact properties with:', JSON.stringify(properties));
