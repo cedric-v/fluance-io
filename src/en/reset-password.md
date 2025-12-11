@@ -229,21 +229,22 @@ document.addEventListener('DOMContentLoaded', async function() {
           // Clean URL to prevent Firebase Auth from auto-redirecting
           window.history.replaceState({}, document.title, '/en/reset-password');
           
-          // Automatically sign in with the new password
-          // This allows password managers to detect the fluance.io domain
+          // Store credentials temporarily for automatic login on the login page
+          // This allows Safari to detect the fluance.io domain when submitting the form
           if (userEmail) {
             try {
-              const loginResult = await window.FluanceAuth.signIn(userEmail, newPassword);
-              if (loginResult.success) {
-                // Redirect to member page
-                window.location.replace('/membre');
-              } else {
-                // If automatic login fails, redirect to login page
-                console.warn('Automatic login failed, redirecting to login page');
-                window.location.replace('/en/member-login');
-              }
+              // Store in sessionStorage for automatic login
+              sessionStorage.setItem('autoLoginEmail', userEmail);
+              sessionStorage.setItem('autoLoginPassword', newPassword);
+              sessionStorage.setItem('autoLoginTimestamp', Date.now().toString());
+              
+              // Wait a short delay for Safari to "forget" the Firebase context
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              // Redirect to login page which will detect credentials and login automatically
+              window.location.replace('/en/member-login');
             } catch (loginError) {
-              console.error('Error during automatic login:', loginError);
+              console.error('Error preparing automatic login:', loginError);
               // On error, redirect to login page
               window.location.replace('/en/member-login');
             }

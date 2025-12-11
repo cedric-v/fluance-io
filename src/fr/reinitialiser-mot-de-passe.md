@@ -229,21 +229,22 @@ document.addEventListener('DOMContentLoaded', async function() {
           // Nettoyer l'URL pour éviter que Firebase Auth ne redirige automatiquement
           window.history.replaceState({}, document.title, '/reinitialiser-mot-de-passe');
           
-          // Se connecter automatiquement avec le nouveau mot de passe
-          // Cela permet aux gestionnaires de mots de passe de détecter le domaine fluance.io
+          // Stocker temporairement les credentials pour la connexion automatique sur la page de connexion
+          // Cela permet à Safari de détecter le domaine fluance.io lors de la soumission du formulaire
           if (userEmail) {
             try {
-              const loginResult = await window.FluanceAuth.signIn(userEmail, newPassword);
-              if (loginResult.success) {
-                // Rediriger vers la page membre
-                window.location.replace('/membre');
-              } else {
-                // Si la connexion automatique échoue, rediriger vers la page de connexion
-                console.warn('Connexion automatique échouée, redirection vers la page de connexion');
-                window.location.replace('/connexion-membre');
-              }
+              // Stocker dans sessionStorage pour la connexion automatique
+              sessionStorage.setItem('autoLoginEmail', userEmail);
+              sessionStorage.setItem('autoLoginPassword', newPassword);
+              sessionStorage.setItem('autoLoginTimestamp', Date.now().toString());
+              
+              // Attendre un court délai pour que Safari "oublie" le contexte Firebase
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              // Rediriger vers la page de connexion qui détectera les credentials et se connectera automatiquement
+              window.location.replace('/connexion-membre');
             } catch (loginError) {
-              console.error('Erreur lors de la connexion automatique:', loginError);
+              console.error('Erreur lors de la préparation de la connexion automatique:', loginError);
               // En cas d'erreur, rediriger vers la page de connexion
               window.location.replace('/connexion-membre');
             }

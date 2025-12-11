@@ -334,6 +334,79 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.error('Error handling sign in link:', error);
   }
 
+  // Vérifier si une connexion automatique est demandée (après réinitialisation de mot de passe)
+  const autoLoginEmail = sessionStorage.getItem('autoLoginEmail');
+  const autoLoginPassword = sessionStorage.getItem('autoLoginPassword');
+  const autoLoginTimestamp = sessionStorage.getItem('autoLoginTimestamp');
+  
+  if (autoLoginEmail && autoLoginPassword && autoLoginTimestamp) {
+    // Vérifier que le timestamp n'est pas trop ancien (max 5 minutes)
+    const timestamp = parseInt(autoLoginTimestamp, 10);
+    const now = Date.now();
+    if (now - timestamp < 5 * 60 * 1000) {
+      // Nettoyer sessionStorage
+      sessionStorage.removeItem('autoLoginEmail');
+      sessionStorage.removeItem('autoLoginPassword');
+      sessionStorage.removeItem('autoLoginTimestamp');
+      
+      // Pré-remplir le formulaire et se connecter automatiquement
+      // Utiliser le formulaire HTML réel pour que Safari détecte le domaine fluance.io
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const form = document.getElementById('login-form');
+      
+      if (emailInput && passwordInput && form) {
+        // S'assurer que l'onglet mot de passe est actif
+        switchTab('password');
+        
+        // Pré-remplir les champs
+        emailInput.value = autoLoginEmail;
+        passwordInput.value = autoLoginPassword;
+        
+        // Attendre un court délai pour que Safari détecte les champs remplis
+        setTimeout(async () => {
+          try {
+            // Attendre que Firebase soit initialisé
+            await new Promise((resolve) => {
+              if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                resolve();
+              } else {
+                const checkInterval = setInterval(() => {
+                  if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                    clearInterval(checkInterval);
+                    resolve();
+                  }
+                }, 100);
+              }
+            });
+            
+            // Se connecter via l'API (le formulaire HTML permettra à Safari de détecter le domaine)
+            const result = await window.FluanceAuth.signIn(autoLoginEmail, autoLoginPassword);
+            
+            if (result.success) {
+              // Rediriger vers la page membre
+              window.location.replace('/membre');
+            } else {
+              // En cas d'erreur, afficher le message d'erreur
+              showError(result.error || 'Erreur lors de la connexion automatique.', result);
+            }
+          } catch (error) {
+            console.error('Erreur lors de la connexion automatique:', error);
+            showError('Une erreur est survenue lors de la connexion automatique.');
+          }
+        }, 300);
+        
+        // Ne pas continuer avec le reste du script
+        return;
+      }
+    } else {
+      // Nettoyer les credentials expirés
+      sessionStorage.removeItem('autoLoginEmail');
+      sessionStorage.removeItem('autoLoginPassword');
+      sessionStorage.removeItem('autoLoginTimestamp');
+    }
+  }
+
   const form = document.getElementById('login-form');
   errorDiv = document.getElementById('error-message'); // Assigner à la variable globale
   successDiv = document.getElementById('success-message'); // Assigner à la variable globale
