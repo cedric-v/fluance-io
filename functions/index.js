@@ -653,13 +653,15 @@ exports.subscribeToNewsletter = onCall(
           confirmed: false,
         });
 
-        // Ajouter le contact à MailJet avec IsOptInPending: true pour le double opt-in
+        // Ajouter le contact à MailJet
+        // Note: IsOptInPending ne peut pas être défini directement via l'API
+        // Il sera géré automatiquement par MailJet lors du processus de double opt-in
         const url = 'https://api.mailjet.com/v3/REST/contact';
 
         const contactData = {
           Email: email.toLowerCase().trim(),
           IsExcludedFromCampaigns: false,
-          IsOptInPending: true, // Activer le double opt-in
+          // IsOptInPending ne peut pas être défini ici - MailJet le gère automatiquement
         };
 
         if (name) {
@@ -765,11 +767,13 @@ exports.subscribeToNewsletter = onCall(
         }
 
         // Envoyer l'email de confirmation avec le template MailJet
+        console.log('📧 Starting email confirmation process for:', contactData.Email);
         const confirmationUrl = `https://fluance.io/confirm?email=${encodeURIComponent(contactData.Email)}&token=${confirmationToken}`;
-        
+
         let emailSent = false;
         let emailError = null;
-        
+
+        console.log('📧 About to send confirmation email, token:', confirmationToken);
         try {
           const emailPayload = {
             Messages: [
@@ -809,17 +813,111 @@ exports.subscribeToNewsletter = onCall(
             body: JSON.stringify(emailPayload),
           });
 
-          const responseData = await emailResponse.json();
-          
+          // Lire la réponse même en cas d'erreur pour avoir les détails
+          let responseData;
+          try {
+            const responseText = await emailResponse.text();
+            responseData = responseText ? JSON.parse(responseText) : {};
+          } catch (parseError) {
+            console.error('Failed to parse MailJet response as JSON:', parseError);
+            // Si on ne peut pas parser, essayer de relire (mais ça peut échouer)
+            try {
+              const responseClone = emailResponse.clone();
+              const rawText = await responseClone.text();
+              responseData = {error: 'Failed to parse response', raw: rawText};
+            } catch {
+              responseData = {error: 'Failed to parse response and cannot read raw text'};
+            }
+          }
+
           if (!emailResponse.ok) {
             emailError = `MailJet API error: ${emailResponse.status} - ${JSON.stringify(responseData)}`;
-            console.error('Error sending confirmation email:', emailError);
+            console.error('❌ Error sending confirmation email:', emailError);
             console.error('Response status:', emailResponse.status);
-            console.error('Response data:', responseData);
+            console.error('Response headers:', Object.fromEntries(emailResponse.headers.entries()));
+            console.error('Response data:', JSON.stringify(responseData, null, 2));
+
+            // Essayer d'envoyer un email simple en fallback si le template échoue
+            if (emailResponse.status === 400 || emailResponse.status === 404) {
+              console.log('⚠️ Template may not exist or be invalid. Attempting fallback email...');
+              try {
+                const fallbackHtml = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head><meta charset="UTF-8"></head>
+                  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2>Dernière étape indispensable ${name ? name : ''}</h2>
+                    <p>Merci de confirmer votre inscription à la newsletter Fluance.</p>
+                    <p>Cliquez sur le lien ci-dessous pour confirmer :</p>
+                    <p>
+                      <a href="${confirmationUrl}" style="display: inline-block; padding: 12px 24px;
+                        background-color: #ffce2d; color: #0f172a; text-decoration: none;
+                        border-radius: 4px; font-weight: bold;">
+                        Confirmer mon inscription
+                      </a>
+                    </p>
+                    <p>Ou copiez ce lien dans votre navigateur :</p>
+                    <p style="word-break: break-all;">${confirmationUrl}</p>
+                    <p>Ce lien est valide pendant 7 jours.</p>
+                  </body>
+                  </html>
+                `;
+
+                const fallbackResponse = await fetch('https://api.mailjet.com/v3.1/send', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${auth}`,
+                  },
+                  body: JSON.stringify({
+                    Messages: [
+                      {
+                        From: {
+                          Email: 'support@actu.fluance.io',
+                          Name: 'Cédric de Fluance',
+                        },
+                        To: [
+                          {
+                            Email: contactData.Email,
+                            Name: name || contactData.Email,
+                          },
+                        ],
+                        Subject: `Dernière étape indispensable ${name ? name : ''}`,
+                        HTMLPart: fallbackHtml,
+                        TextPart: `Merci de confirmer votre inscription. Cliquez sur ce lien : ${confirmationUrl}`,
+                      },
+                    ],
+                  }),
+                });
+
+                const fallbackData = await fallbackResponse.json();
+                if (fallbackResponse.ok) {
+                  emailSent = true;
+                  emailError = null;
+                  console.log('✅ Fallback email sent successfully');
+                } else {
+                  console.error('❌ Fallback email also failed:', JSON.stringify(fallbackData, null, 2));
+                }
+              } catch (fallbackErr) {
+                console.error('❌ Exception sending fallback email:', fallbackErr);
+              }
+            }
           } else {
             emailSent = true;
-            console.log(`Confirmation email sent successfully to ${contactData.Email}`);
+            emailError = null;
+            console.log(`✅ Confirmation email sent successfully to ${contactData.Email}`);
             console.log('MailJet response:', JSON.stringify(responseData, null, 2));
+
+            // Vérifier que l'email est bien dans la réponse
+            if (responseData.Messages && responseData.Messages.length > 0) {
+              const messageStatus = responseData.Messages[0];
+              console.log('Message status:', JSON.stringify(messageStatus, null, 2));
+              if (messageStatus.Errors && messageStatus.Errors.length > 0) {
+                console.error('⚠️ MailJet reported errors in message:', messageStatus.Errors);
+                emailError = `MailJet message errors: ${JSON.stringify(messageStatus.Errors)}`;
+                emailSent = false;
+              }
+            }
           }
         } catch (err) {
           emailError = `Exception: ${err.message}`;
@@ -829,9 +927,9 @@ exports.subscribeToNewsletter = onCall(
 
         return {
           success: true,
-          message: emailSent 
-            ? 'Confirmation email sent. Please check your inbox.' 
-            : 'Contact created but confirmation email may not have been sent. Please check logs.',
+          message: emailSent ?
+            'Confirmation email sent. Please check your inbox.' :
+            'Contact created but confirmation email may not have been sent. Please check logs.',
           email: contactData.Email,
           emailSent: emailSent,
           emailError: emailError || null,
@@ -901,25 +999,11 @@ exports.confirmNewsletterOptIn = onCall(
 
         const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
 
-        // Confirmer l'opt-in dans MailJet (mettre IsOptInPending à false)
-        const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(email.toLowerCase().trim())}`;
-        
-        const updateResponse = await fetch(contactUrl, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${auth}`,
-          },
-          body: JSON.stringify({
-            IsOptInPending: false,
-          }),
-        });
-
-        if (!updateResponse.ok) {
-          const errorText = await updateResponse.text();
-          console.error('Error confirming opt-in in MailJet:', errorText);
-          throw new Error(`Mailjet API error: ${updateResponse.status} - ${errorText}`);
-        }
+        // Note: MailJet ne permet pas de modifier IsOptInPending directement via l'API
+        // Le statut d'opt-in est géré automatiquement par MailJet
+        // On se contente de marquer le token comme confirmé dans Firestore
+        // et d'ajouter le contact à la liste si nécessaire
+        console.log(`Confirming opt-in for ${email} - MailJet will handle IsOptInPending automatically`);
 
         // Marquer le token comme confirmé dans Firestore
         await db.collection('newsletterConfirmations').doc(token).update({
