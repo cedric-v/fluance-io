@@ -17,7 +17,11 @@ Ce guide explique comment configurer Cloudflare Turnstile pour protéger le form
    - **Domain** : `fluance.io` (ou votre domaine)
    - **Widget mode** : `Managed` (recommandé) ou `Non-interactive` (plus discret)
    - **Widget appearance** : `Always visible` ou `Execute managed challenge only`
-5. Cliquez sur **Create** (Créer)
+5. **Important** : Dans la section **Allowed Domains**, ajoutez :
+   - `fluance.io`
+   - `www.fluance.io`
+   - `localhost` (pour le développement local - optionnel)
+6. Cliquez sur **Create** (Créer)
 
 ## 🔑 Étape 2 : Récupérer les clés Turnstile
 
@@ -78,6 +82,8 @@ firebase functions:secrets:access TURNSTILE_SECRET_KEY
 - **Mode Non-interactive** : Plus discret, mais peut nécessiter des défis supplémentaires
 - **Widget visible** : Le widget est toujours visible (meilleure UX)
 - **Widget invisible** : Le widget n'apparaît que si un bot est détecté (moins intrusif)
+- **Détection automatique** : Le code détecte automatiquement si vous êtes en localhost et utilise la clé de test Cloudflare (`0x4AAAAAAABkMYinukE8K9X0`) qui fonctionne partout
+- **En production** : Utilise automatiquement votre clé de production configurée
 
 ## 🔧 Dépannage
 
@@ -86,6 +92,22 @@ firebase functions:secrets:access TURNSTILE_SECRET_KEY
 1. Vérifiez que la Site Key est correcte dans `newsletter-popup.njk`
 2. Vérifiez que le script Turnstile est chargé (dans la console du navigateur)
 3. Vérifiez que le domaine est bien configuré dans Cloudflare Turnstile
+4. En localhost, le code utilise automatiquement la clé de test Cloudflare - pas besoin de configuration supplémentaire
+
+### Erreur 110200 (Domain not authorized)
+
+Cette erreur signifie que le domaine utilisé n'est pas autorisé pour la clé Turnstile.
+
+**Solution** :
+1. Allez dans Cloudflare Dashboard > Turnstile
+2. Sélectionnez votre site Turnstile
+3. Dans **Allowed Domains**, ajoutez tous les domaines où vous utilisez Turnstile :
+   - `fluance.io`
+   - `www.fluance.io`
+   - `localhost` (si vous voulez tester en local avec votre clé de production)
+4. Sauvegardez
+
+**Note** : Le code détecte automatiquement localhost et utilise la clé de test Cloudflare, donc cette erreur ne devrait pas apparaître en développement local.
 
 ### Erreur "Turnstile verification failed"
 

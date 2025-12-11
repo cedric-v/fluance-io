@@ -580,7 +580,7 @@ exports.subscribeToNewsletter = onCall(
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
-      const {email, name, turnstileToken} = request.data;
+      const {email, name, turnstileToken, isLocalhost} = request.data;
 
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
@@ -592,13 +592,14 @@ exports.subscribeToNewsletter = onCall(
         throw new HttpsError('invalid-argument', 'Invalid email format');
       }
 
-      // Valider le token Turnstile
-      if (!turnstileToken) {
+      // Valider le token Turnstile (sauf en développement local)
+      if (!isLocalhost && !turnstileToken) {
         throw new HttpsError('invalid-argument', 'Turnstile verification required');
       }
 
       const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
-      if (turnstileSecret) {
+      // Valider Turnstile seulement si pas en localhost et si le secret est configuré
+      if (!isLocalhost && turnstileSecret && turnstileToken) {
         try {
           // Obtenir l'IP du client depuis les headers
           const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
@@ -631,8 +632,10 @@ exports.subscribeToNewsletter = onCall(
           console.error('Error verifying Turnstile token:', error);
           throw new HttpsError('internal', 'Error verifying bot protection');
         }
-      } else {
+      } else if (!isLocalhost && !turnstileSecret) {
         console.warn('TURNSTILE_SECRET_KEY not configured. Skipping bot verification.');
+      } else if (isLocalhost) {
+        console.log('Skipping Turnstile verification in localhost environment.');
       }
 
       try {

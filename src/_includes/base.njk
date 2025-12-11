@@ -83,6 +83,38 @@
     <link rel="manifest" href="{{ '/site.webmanifest' | url }}">
     <meta name="theme-color" content="#82153e">
     
+    <!-- Content Security Policy pour autoriser Turnstile et autres scripts -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' 
+        https://www.googletagmanager.com 
+        https://www.gstatic.com 
+        https://challenges.cloudflare.com 
+        https://*.cloudflare.com;
+      style-src 'self' 'unsafe-inline' 
+        https://fonts.googleapis.com;
+      font-src 'self' 
+        https://fonts.gstatic.com;
+      img-src 'self' data: https: blob:;
+      connect-src 'self' 
+        https://www.google-analytics.com 
+        https://*.googleapis.com 
+        https://*.gstatic.com 
+        https://challenges.cloudflare.com 
+        https://*.cloudflare.com
+        https://europe-west1-fluance-protected-content.cloudfunctions.net
+        https://fluance-protected-content.firebaseapp.com
+        https://*.firebaseio.com
+        https://*.firebaseapp.com;
+      frame-src 'self' 
+        https://www.googletagmanager.com 
+        https://challenges.cloudflare.com 
+        https://*.cloudflare.com;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    ">
+    
     <!-- Schema.org JSON-LD -->
     {% schemaOrg locale %}
 

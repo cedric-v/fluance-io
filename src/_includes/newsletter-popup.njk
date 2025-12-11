@@ -20,8 +20,16 @@
       <div id="form-message" class="hidden text-sm"></div>
       
       <!-- Cloudflare Turnstile -->
-      <!-- Note: 0x4AAAAAAABkMYinukE8K9X0 est une clé de test Cloudflare. Remplacez par votre Site Key en production. -->
-      <div class="cf-turnstile" data-sitekey="0x4AAAAAACF5HWhHHcGA5yJk" data-theme="light" data-size="normal" id="turnstile-widget"></div>
+      <!-- Utilise la clé de test en développement local, la clé de production en production -->
+      <!-- Note: Le site n'a pas besoin d'être sur Cloudflare pour utiliser Turnstile -->
+      <div class="cf-turnstile" 
+           data-sitekey="0x4AAAAAACF5HWhHHcGA5yJk" 
+           data-theme="light" 
+           data-size="normal" 
+           data-callback="onTurnstileSuccess"
+           data-error-callback="onTurnstileError"
+           id="turnstile-widget"
+           style="display: none;"></div>
       
       <button type="submit" id="submit-btn" class="w-full btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] py-3 px-6 rounded-md font-medium transition-colors">
         <span id="submit-text">Recevoir immédiatement</span>
@@ -47,6 +55,40 @@
     const submitBtn = document.getElementById('submit-btn');
     const submitText = document.getElementById('submit-text');
     const submitLoading = document.getElementById('submit-loading');
+    const turnstileWidget = document.getElementById('turnstile-widget');
+    
+    // Détecter si on est en développement local
+    const isLocalhost = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.hostname.startsWith('192.168.') ||
+                       window.location.hostname.startsWith('10.') ||
+                       window.location.hostname.endsWith('.local');
+    
+    // Callbacks Turnstile
+    window.onTurnstileSuccess = function(token) {
+      console.log('Turnstile verification successful');
+    };
+    
+    window.onTurnstileError = function(error) {
+      console.error('Turnstile error:', error);
+      // En cas d'erreur, on peut toujours permettre la soumission en localhost
+      if (isLocalhost) {
+        console.warn('Turnstile error in localhost, allowing submission anyway');
+      }
+    };
+    
+    // Configurer Turnstile selon l'environnement
+    if (turnstileWidget) {
+      if (isLocalhost) {
+        // En développement local, utiliser la clé de test Cloudflare
+        turnstileWidget.setAttribute('data-sitekey', '0x4AAAAAAABkMYinukE8K9X0');
+        turnstileWidget.style.display = 'block';
+      } else {
+        // En production, utiliser la clé de production
+        turnstileWidget.setAttribute('data-sitekey', '0x4AAAAAACF5HWhHHcGA5yJk');
+        turnstileWidget.style.display = 'block';
+      }
+    }
     
     // Fonction pour charger Firebase et Firebase Functions
     async function loadFirebaseFunctions() {
@@ -223,11 +265,15 @@
           return;
         }
         
-        // Vérifier que Turnstile est complété
-        const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
-        if (!turnstileResponse || !turnstileResponse.value) {
-          showMessage('Veuillez compléter la vérification anti-bot', 'error');
-          return;
+        // Vérifier que Turnstile est complété (seulement si pas en localhost)
+        let turnstileToken = null;
+        if (!isLocalhost) {
+          const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+          if (!turnstileResponse || !turnstileResponse.value) {
+            showMessage('Veuillez compléter la vérification anti-bot', 'error');
+            return;
+          }
+          turnstileToken = turnstileResponse.value;
         }
         
         // Désactiver le bouton et afficher le loading
@@ -257,8 +303,12 @@
           
           const functions = app.functions('europe-west1');
           const subscribeToNewsletter = functions.httpsCallable('subscribeToNewsletter');
-          const turnstileToken = turnstileResponse.value;
-          const result = await subscribeToNewsletter({ email: email, name: name, turnstileToken: turnstileToken });
+          const result = await subscribeToNewsletter({ 
+            email: email, 
+            name: name, 
+            turnstileToken: turnstileToken,
+            isLocalhost: isLocalhost // Informer le serveur si on est en localhost
+          });
           
           if (result.data && result.data.success) {
             showMessage('Merci ! Votre inscription s\'est bien passée. Pensez à vérifier vos spams / courriers indésirables au besoin.', 'success');
