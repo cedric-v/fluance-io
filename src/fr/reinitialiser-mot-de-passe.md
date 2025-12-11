@@ -223,9 +223,14 @@ document.addEventListener('DOMContentLoaded', async function() {
           confirmSuccessDiv.querySelector('p').textContent = 'Votre mot de passe a été réinitialisé avec succès. Vous allez être redirigé vers la page de connexion...';
           confirmSuccessDiv.classList.remove('hidden');
           
+          // Nettoyer l'URL pour éviter que Firebase Auth ne redirige automatiquement
+          window.history.replaceState({}, document.title, '/reinitialiser-mot-de-passe');
+          
           // Rediriger immédiatement vers la page de connexion
           // Utiliser replace pour éviter que l'utilisateur puisse revenir en arrière
-          window.location.replace('/connexion-membre');
+          setTimeout(() => {
+            window.location.replace('/connexion-membre');
+          }, 100);
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Erreur lors de la réinitialisation.';
           confirmErrorDiv.classList.remove('hidden');

@@ -223,9 +223,14 @@ document.addEventListener('DOMContentLoaded', async function() {
           confirmSuccessDiv.querySelector('p').textContent = 'Your password has been reset successfully. You will be redirected to the login page...';
           confirmSuccessDiv.classList.remove('hidden');
           
+          // Clean URL to prevent Firebase Auth from auto-redirecting
+          window.history.replaceState({}, document.title, '/en/reset-password');
+          
           // Redirect immediately to login page
           // Use replace to prevent user from going back
-          window.location.replace('/en/member-login');
+          setTimeout(() => {
+            window.location.replace('/en/member-login');
+          }, 100);
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Error resetting password.';
           confirmErrorDiv.classList.remove('hidden');
