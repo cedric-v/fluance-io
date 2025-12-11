@@ -26,9 +26,15 @@ eleventyExcludeFromCollections: true
       <p class="text-xl text-[#0f172a]/80">
         Thank you for confirming your subscription. You will now receive our emails.
       </p>
-      <div class="pt-6">
-        <a href="{{ '/en/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] inline-block">
-          Access the 2 free practices
+      <p class="text-lg text-[#0f172a]/70">
+        Access the 2 free liberating practices now:
+      </p>
+      <div class="pt-4">
+        <a href="{{ '/en/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
+          <span>Access the 2 free practices</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+          </svg>
         </a>
       </div>
     </div>
