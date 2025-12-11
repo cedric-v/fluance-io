@@ -1839,10 +1839,13 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
       }
 
       try {
+        // Utiliser admin.auth() directement pour éviter les problèmes d'initialisation
+        const adminAuth = admin.auth();
+
         // Vérifier que l'utilisateur existe
         try {
           // eslint-disable-next-line no-unused-vars
-          const userRecord = await auth.getUserByEmail(email.toLowerCase().trim());
+          const userRecord = await adminAuth.getUserByEmail(email.toLowerCase().trim());
         } catch (error) {
           if (error.code === 'auth/user-not-found') {
             // Pour des raisons de sécurité, ne pas révéler si l'utilisateur existe ou non
@@ -1857,7 +1860,7 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
         }
 
         // Générer le lien de réinitialisation Firebase
-        const resetLink = await auth.generatePasswordResetLink(email.toLowerCase().trim(), {
+        const resetLink = await adminAuth.generatePasswordResetLink(email.toLowerCase().trim(), {
           url: 'https://fluance.io/reinitialiser-mot-de-passe',
           handleCodeInApp: true,
         });
