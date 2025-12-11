@@ -162,6 +162,8 @@ async function ensureMailjetContactProperties(apiKey, apiSecret) {
     'valeur_client',
     'nombre_achats',
     'est_client',
+    '5jours_serie_debut',
+    '5jours_serie_status',
   ];
 
   console.log(`📋 Ensuring ${properties.length} MailJet contact properties exist`);
@@ -1355,6 +1357,61 @@ exports.confirmNewsletterOptIn = onCall(
           console.error('Error adding contact to MailJet list');
         }
 
+        // Si c'est une confirmation pour les 5 jours, mettre à jour le statut de la série
+        if (tokenData.sourceOptin === '5joursofferts') {
+          try {
+            const now = new Date();
+            const dateStr = now.toISOString();
+            const properties = {
+              '5jours_serie_status': 'started', // Série démarrée après confirmation
+            };
+
+            // Récupérer les propriétés actuelles pour vérifier si 5jours_serie_debut existe
+            const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
+            const getResponse = await fetch(contactDataUrl, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${auth}`,
+              },
+            });
+
+            if (getResponse.ok) {
+              const getData = await getResponse.json();
+              if (getData.Data && getData.Data.length > 0) {
+                const contactData = getData.Data[0];
+                if (contactData.Data) {
+                  let currentProperties = {};
+                  if (Array.isArray(contactData.Data)) {
+                    contactData.Data.forEach((item) => {
+                      if (item.Name && item.Value !== undefined) {
+                        currentProperties[item.Name] = item.Value;
+                      }
+                    });
+                  } else if (typeof contactData.Data === 'object') {
+                    currentProperties = contactData.Data;
+                  }
+
+                  // Si 5jours_serie_debut n'existe pas, l'ajouter maintenant
+                  if (!currentProperties['5jours_serie_debut']) {
+                    properties['5jours_serie_debut'] = dateStr;
+                  }
+                }
+              }
+            }
+
+            await updateMailjetContactProperties(
+                email.toLowerCase().trim(),
+                properties,
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+            console.log(`Updated 5jours_serie_status to 'started' for ${email}`);
+          } catch (error) {
+            console.error('Error updating 5jours series status:', error);
+            // Ne pas faire échouer la confirmation si la mise à jour du statut échoue
+          }
+        }
+
         return {
           success: true,
           message: 'Email confirmed successfully',
@@ -1632,6 +1689,19 @@ exports.subscribeTo5Days = onCall(
           // Comparer les dates ISO
           if (currentDateISO < dateStr) {
             properties.date_optin = currentDateISO; // Utiliser le format ISO
+          }
+        }
+
+        // Gérer les propriétés de la série des 5 jours
+        // Ne définir 5jours_serie_debut que si elle n'existe pas déjà (pour ne pas réinitialiser une série en cours)
+        if (!currentProperties['5jours_serie_debut']) {
+          properties['5jours_serie_debut'] = dateStr;
+          properties['5jours_serie_status'] = 'pending'; // Statut initial : en attente de confirmation
+        } else {
+          // Si la série a déjà commencé, ne pas réinitialiser
+          // Mais mettre à jour le statut si nécessaire
+          if (!currentProperties['5jours_serie_status'] || currentProperties['5jours_serie_status'] === 'cancelled') {
+            properties['5jours_serie_status'] = 'pending';
           }
         }
 
