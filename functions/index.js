@@ -210,7 +210,7 @@ async function sendMailjetEmail(to, subject, htmlContent, textContent = null, ap
     Messages: [
       {
         From: {
-          Email: 'support@fluance.io',
+          Email: 'support@actu.fluance.io',
           Name: 'Fluance',
         },
         To: [
@@ -1863,6 +1863,51 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
         });
 
         console.log(`Password reset link generated for ${email}`);
+
+        // Créer ou mettre à jour le contact dans MailJet pour qu'il apparaisse dans l'historique
+        const normalizedEmail = email.toLowerCase().trim();
+        const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+        const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
+
+        try {
+          // Vérifier si le contact existe
+          const checkResponse = await fetch(contactUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            },
+          });
+
+          if (!checkResponse.ok) {
+            // Créer le contact s'il n'existe pas
+            const createUrl = 'https://api.mailjet.com/v3/REST/contact';
+            const contactData = {
+              Email: normalizedEmail,
+              IsExcludedFromCampaigns: false,
+            };
+
+            const createResponse = await fetch(createUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${auth}`,
+              },
+              body: JSON.stringify(contactData),
+            });
+
+            if (createResponse.ok) {
+              console.log(`Contact created in MailJet: ${normalizedEmail}`);
+            } else {
+              const errorText = await createResponse.text();
+              console.warn(`Could not create contact in MailJet (may already exist): ${errorText}`);
+            }
+          } else {
+            console.log(`Contact already exists in MailJet: ${normalizedEmail}`);
+          }
+        } catch (contactError) {
+          console.warn(`Error managing contact in MailJet (continuing anyway):`, contactError);
+          // Continuer même si la création du contact échoue
+        }
 
         // Envoyer l'email via Mailjet
         const emailSubject = 'Réinitialisation de votre mot de passe Fluance';

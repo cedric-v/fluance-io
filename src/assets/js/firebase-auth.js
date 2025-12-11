@@ -334,13 +334,77 @@ async function sendPasswordResetEmail(email) {
     console.log('[Firebase Auth] Tentative d\'envoi via Mailjet (méthode principale)...');
     
     try {
-      // Appeler la fonction Firebase qui envoie via Mailjet
-      if (!firebase.functions) {
-        throw new Error('Firebase Functions n\'est pas disponible');
+      console.log('[Firebase Auth] Début du bloc Mailjet...');
+      // Charger Firebase Functions si nécessaire
+      let app;
+      try {
+        app = firebase.app();
+        console.log('[Firebase Auth] App Firebase obtenue:', app);
+      } catch (appError) {
+        console.error('[Firebase Auth] Erreur lors de l\'obtention de l\'app Firebase:', appError);
+        throw new Error('Impossible d\'obtenir l\'app Firebase: ' + appError.message);
       }
       
-      const functions = firebase.functions();
+      console.log('[Firebase Auth] app.functions type:', typeof app.functions);
+      
+      // Vérifier si le script Functions est déjà chargé
+      let functionsScript = document.querySelector('script[src*="firebase-functions-compat"]');
+      console.log('[Firebase Auth] Script Functions déjà présent:', !!functionsScript);
+      
+      if (!functionsScript) {
+        console.log('[Firebase Auth] Chargement du script Firebase Functions...');
+        // Charger le script Firebase Functions
+        functionsScript = document.createElement('script');
+        functionsScript.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+        document.head.appendChild(functionsScript);
+        
+        // Attendre que le script se charge
+        await new Promise((resolve, reject) => {
+          let timeoutId;
+          functionsScript.onload = () => {
+            console.log('[Firebase Auth] Script Functions chargé');
+            if (timeoutId) clearTimeout(timeoutId);
+            resolve();
+          };
+          functionsScript.onerror = () => {
+            console.error('[Firebase Auth] Erreur lors du chargement du script Functions');
+            if (timeoutId) clearTimeout(timeoutId);
+            reject(new Error('Erreur lors du chargement de Firebase Functions'));
+          };
+          timeoutId = setTimeout(() => {
+            console.error('[Firebase Auth] Timeout lors du chargement du script Functions');
+            reject(new Error('Timeout lors du chargement de Firebase Functions'));
+          }, 10000);
+        });
+        
+        // Attendre un peu pour que Functions soit initialisé
+        console.log('[Firebase Auth] Attente de l\'initialisation de Functions...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('[Firebase Auth] app.functions après chargement:', typeof app.functions);
+      } else {
+        console.log('[Firebase Auth] Script Functions déjà chargé, app.functions:', typeof app.functions);
+      }
+      
+      // Vérifier que app.functions est disponible
+      if (typeof app.functions !== 'function') {
+        console.error('[Firebase Auth] app.functions n\'est pas une fonction, type:', typeof app.functions);
+        throw new Error('Firebase Functions n\'est pas disponible après chargement du script');
+      }
+      
+      // Appeler la fonction Firebase qui envoie via Mailjet
+      // La fonction est dans la région europe-west1
+      console.log('[Firebase Auth] Création de l\'instance Functions pour europe-west1...');
+      let functions;
+      try {
+        functions = app.functions('europe-west1');
+        console.log('[Firebase Auth] Instance Functions créée:', functions);
+      } catch (functionsError) {
+        console.error('[Firebase Auth] Erreur lors de la création de l\'instance Functions:', functionsError);
+        throw new Error('Firebase Functions n\'est pas disponible: ' + functionsError.message);
+      }
+      
       const sendPasswordResetViaMailjet = functions.httpsCallable('sendPasswordResetEmailViaMailjet');
+      console.log('[Firebase Auth] Fonction callable créée:', sendPasswordResetViaMailjet);
       
       console.log('[Firebase Auth] Appel de sendPasswordResetEmailViaMailjet...');
       const result = await sendPasswordResetViaMailjet({ email });
@@ -1314,30 +1378,63 @@ function isWebAuthnSupported() {
  * Vérifie si Firebase Functions est disponible
  */
 function ensureFunctionsLoaded() {
-  if (!firebase.functions) {
-    // Charger Firebase Functions si pas déjà chargé
-    const functionsScript = document.createElement('script');
-    functionsScript.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
-    document.head.appendChild(functionsScript);
-    
+  // Vérifier si Firebase Functions est disponible via app.functions() (mode compat)
+  const app = firebase.app();
+  if (app && typeof app.functions === 'function') {
+    return Promise.resolve();
+  }
+  
+  // Si pas disponible, vérifier si le script est déjà en cours de chargement
+  const existingScript = document.querySelector('script[src*="firebase-functions-compat"]');
+  if (existingScript) {
+    // Attendre que le script se charge
     return new Promise((resolve, reject) => {
-      functionsScript.onload = () => {
-        if (firebase.functions) {
+      existingScript.onload = () => {
+        if (app && typeof app.functions === 'function') {
           resolve();
         } else {
           reject(new Error('Firebase Functions n\'a pas pu être chargé'));
         }
       };
-      functionsScript.onerror = () => {
+      existingScript.onerror = () => {
         reject(new Error('Erreur lors du chargement de Firebase Functions'));
       };
-      // Timeout après 10 secondes
       setTimeout(() => {
-        reject(new Error('Timeout lors du chargement de Firebase Functions'));
+        if (app && typeof app.functions === 'function') {
+          resolve();
+        } else {
+          reject(new Error('Timeout lors du chargement de Firebase Functions'));
+        }
       }, 10000);
     });
   }
-  return Promise.resolve();
+  
+  // Charger Firebase Functions si pas déjà chargé
+  const functionsScript = document.createElement('script');
+  functionsScript.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+  document.head.appendChild(functionsScript);
+  
+  return new Promise((resolve, reject) => {
+    functionsScript.onload = () => {
+      // Vérifier que app.functions() est maintenant disponible
+      if (app && typeof app.functions === 'function') {
+        resolve();
+      } else {
+        reject(new Error('Firebase Functions n\'a pas pu être chargé'));
+      }
+    };
+    functionsScript.onerror = () => {
+      reject(new Error('Erreur lors du chargement de Firebase Functions'));
+    };
+    // Timeout après 10 secondes
+    setTimeout(() => {
+      if (app && typeof app.functions === 'function') {
+        resolve();
+      } else {
+        reject(new Error('Timeout lors du chargement de Firebase Functions'));
+      }
+    }, 10000);
+  });
 }
 
 /**
