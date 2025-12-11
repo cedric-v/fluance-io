@@ -274,10 +274,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         const result = await window.FluanceAuth.sendPasswordResetEmail(email);
 
         if (result.success) {
-          successDiv.querySelector('p').textContent = 'A password reset email has been sent to ' + email + '. Check your inbox and click the link to reset your password.';
+          const message = result.message || 'A password reset email has been sent to ' + email + '. Check your inbox and spam folder, then click the link to reset your password.';
+          successDiv.querySelector('p').textContent = message;
           successDiv.classList.remove('hidden');
         } else {
-          errorDiv.querySelector('p').textContent = result.error || 'Error sending email.';
+          // Display error with suggestion if available
+          let errorHTML = result.error || 'Error sending email.';
+          if (result.suggestion) {
+            errorHTML += '<br><br><strong>💡 Suggestion:</strong> ' + result.suggestion;
+          }
+          if (result.errorCode) {
+            errorHTML += '<br><small class="text-red-600">Code: ' + result.errorCode + '</small>';
+          }
+          errorDiv.querySelector('p').innerHTML = errorHTML;
           errorDiv.classList.remove('hidden');
         }
       } catch (error) {

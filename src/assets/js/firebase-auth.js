@@ -300,8 +300,14 @@ async function sendSignInLink(email, actionCodeSettings = null) {
  */
 async function sendPasswordResetEmail(email) {
   try {
+    console.log('[Firebase Auth] ===== sendPasswordResetEmail appelée =====');
+    console.log('[Firebase Auth] Email reçu:', email);
+    
     if (!auth) {
+      console.log('[Firebase Auth] auth non initialisé, initialisation...');
       auth = firebase.auth();
+    } else {
+      console.log('[Firebase Auth] auth déjà initialisé');
     }
 
     // Détecter la langue depuis l'URL ou le chemin
@@ -314,11 +320,53 @@ async function sendPasswordResetEmail(email) {
       handleCodeInApp: true
     };
 
+    console.log('[Firebase Auth] Configuration du lien de réinitialisation:');
+    console.log('[Firebase Auth]   URL:', actionCodeSettings.url);
+    console.log('[Firebase Auth]   handleCodeInApp:', actionCodeSettings.handleCodeInApp);
+    console.log('[Firebase Auth]   Origin:', window.location.origin);
+
+    console.log('[Firebase Auth] Appel de auth.sendPasswordResetEmail...');
     await auth.sendPasswordResetEmail(email, actionCodeSettings);
-    return { success: true };
+    
+    console.log('[Firebase Auth] ✅ Email de réinitialisation envoyé avec succès');
+    console.log('[Firebase Auth] 💡 Note: L\'email est envoyé par Firebase Auth, pas par Mailjet');
+    console.log('[Firebase Auth] 💡 Vérifiez votre boîte de réception et le dossier spam');
+    console.log('[Firebase Auth] 💡 L\'expéditeur est généralement: noreply@[PROJECT_ID].firebaseapp.com');
+    
+    return { 
+      success: true,
+      message: 'Un email de réinitialisation a été envoyé. Vérifiez votre boîte de réception et le dossier spam.'
+    };
   } catch (error) {
-    console.error('Send password reset email error:', error);
-    return { success: false, error: getErrorMessage(error.code) };
+    console.error('[Firebase Auth] ❌ ERREUR lors de l\'envoi de l\'email de réinitialisation');
+    console.error('[Firebase Auth] Erreur complète:', error);
+    console.error('[Firebase Auth] Code d\'erreur:', error.code);
+    console.error('[Firebase Auth] Message d\'erreur:', error.message);
+    
+    // Messages d'erreur plus détaillés
+    let errorMessage = getErrorMessage(error.code);
+    
+    // Ajouter des informations supplémentaires selon le type d'erreur
+    if (error.code === 'auth/user-not-found') {
+      errorMessage = 'Aucun compte trouvé avec cet email. Vérifiez que l\'email est correct.';
+    } else if (error.code === 'auth/invalid-email') {
+      errorMessage = 'Format d\'email invalide. Vérifiez que l\'email est correct.';
+    } else if (error.code === 'auth/too-many-requests') {
+      errorMessage = 'Trop de tentatives. Pour votre sécurité, veuillez attendre quelques minutes avant de réessayer.';
+    } else if (error.code === 'auth/operation-not-allowed') {
+      errorMessage = 'La réinitialisation de mot de passe n\'est pas activée. Veuillez contacter le support.';
+    }
+    
+    return { 
+      success: false, 
+      error: errorMessage,
+      errorCode: error.code,
+      suggestion: error.code === 'auth/user-not-found' 
+        ? 'Vérifiez que l\'email est correct ou créez un compte si vous n\'en avez pas encore.'
+        : error.code === 'auth/too-many-requests'
+        ? 'Attendez quelques minutes avant de réessayer. Pour votre sécurité, les tentatives sont temporairement limitées.'
+        : 'Si le problème persiste, contactez le support.'
+    };
   }
 }
 
