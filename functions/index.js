@@ -72,16 +72,28 @@ async function updateMailjetContactProperties(email, properties, apiKey, apiSecr
       },
     });
 
-    let currentData = {};
+    // Construire un objet pour faciliter la fusion
+    const currentDataMap = {};
     if (getResponse.ok) {
       const getData = await getResponse.json();
       if (getData.Data && getData.Data.length > 0) {
-        currentData = getData.Data[0].Data || {};
+        // Convertir le tableau Data en objet pour faciliter la fusion
+        getData.Data.forEach((item) => {
+          if (item.Name && item.Value !== undefined) {
+            currentDataMap[item.Name] = item.Value;
+          }
+        });
       }
     }
 
     // Fusionner les nouvelles properties avec les existantes
-    const updatedData = {...currentData, ...properties};
+    const updatedDataMap = {...currentDataMap, ...properties};
+
+    // Convertir l'objet en tableau au format MailJet (Name/Value)
+    const dataArray = Object.keys(updatedDataMap).map((key) => ({
+      Name: key,
+      Value: String(updatedDataMap[key]),
+    }));
 
     // Mettre à jour les properties
     const updateResponse = await fetch(contactUrl, {
@@ -91,7 +103,7 @@ async function updateMailjetContactProperties(email, properties, apiKey, apiSecr
         'Authorization': `Basic ${auth}`,
       },
       body: JSON.stringify({
-        Data: updatedData,
+        Data: dataArray,
       }),
     });
 
@@ -106,6 +118,59 @@ async function updateMailjetContactProperties(email, properties, apiKey, apiSecr
     console.error(`Exception updating MailJet contact properties for ${email}:`, error);
     // Ne pas throw, juste logger l'erreur
   }
+}
+
+/**
+ * Crée les contact properties MailJet si elles n'existent pas encore
+ * @param {string} apiKey - Clé API MailJet
+ * @param {string} apiSecret - Secret API MailJet
+ */
+async function ensureMailjetContactProperties(apiKey, apiSecret) {
+  const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
+  const properties = [
+    'statut',
+    'source_optin',
+    'date_optin',
+    'produits_achetes',
+    'date_premier_achat',
+    'date_dernier_achat',
+    'valeur_client',
+    'nombre_achats',
+    'est_client',
+  ];
+
+  console.log(`📋 Ensuring ${properties.length} MailJet contact properties exist`);
+  for (let i = 0; i < properties.length; i++) {
+    const prop = properties[i];
+    console.log(`📋 Checking property ${i + 1}/${properties.length}: ${prop}`);
+    try {
+      const response = await fetch('https://api.mailjet.com/v3/REST/contactmetadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${auth}`,
+        },
+        body: JSON.stringify({
+          Name: prop,
+          Datatype: 'str',
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`📋 Created MailJet contact property: ${prop}`);
+      } else {
+        const errorText = await response.text();
+        if (response.status === 400 && errorText.includes('already exists')) {
+          console.log(`📋 MailJet contact property already exists: ${prop}`);
+        } else {
+          console.error(`Error creating MailJet contact property ${prop}:`, errorText);
+        }
+      }
+    } catch (error) {
+      console.error(`Exception creating MailJet contact property ${prop}:`, error);
+    }
+  }
+  console.log('📋 Finished ensuring all MailJet contact properties exist');
 }
 
 async function sendMailjetEmail(to, subject, htmlContent, textContent = null, apiKey, apiSecret) {
@@ -1417,8 +1482,8 @@ exports.subscribeTo5Days = onCall(
           }
         }
 
-        // Ajouter le contact à la liste spécifique 5 jours (10524236)
-        const listId = '10524236';
+        // Ajouter le contact à la liste principale MailJet (10524140)
+        const listId = '10524140';
         const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
 
         try {
@@ -1448,6 +1513,66 @@ exports.subscribeTo5Days = onCall(
         } catch (listError) {
           console.error('Error adding contact to MailJet list:', listError.message);
         }
+
+        // Définir les contact properties pour l'opt-in 5 jours
+        console.log('📋 Starting MailJet contact properties update for 5 jours:', contactData.Email);
+        await ensureMailjetContactProperties(process.env.MAILJET_API_KEY, process.env.MAILJET_API_SECRET);
+        const now = new Date();
+        const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+
+        // Récupérer les properties actuelles pour ne pas écraser source_optin si déjà défini
+        let currentProperties = {};
+        try {
+          const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(contactData.Email)}`;
+          console.log('📋 Fetching current contact properties from:', contactDataUrl);
+          const getResponse = await fetch(contactDataUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            },
+          });
+          if (getResponse.ok) {
+            const getData = await getResponse.json();
+            if (getData.Data && getData.Data.length > 0) {
+              currentProperties = getData.Data[0].Data || {};
+              console.log('📋 Current properties found:', JSON.stringify(currentProperties));
+            } else {
+              console.log('📋 No existing properties found');
+            }
+          } else {
+            console.log('📋 Contact properties not found (status:', getResponse.status, ')');
+          }
+        } catch (error) {
+          console.log('📋 Error fetching contact properties, will create new ones:', error.message);
+        }
+
+        // Si source_optin existe déjà, l'ajouter à la liste (séparée par virgules)
+        const currentSourceOptin = currentProperties.source_optin || '';
+        const sourceOptinListBase = currentSourceOptin ? currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
+        const sourceOptinList = sourceOptinListBase.includes('5joursofferts') ?
+          sourceOptinListBase :
+          [...sourceOptinListBase, '5joursofferts'];
+
+        const properties = {
+          statut: 'prospect',
+          source_optin: sourceOptinList.join(','),
+          date_optin: dateStr,
+          est_client: 'False',
+        };
+
+        // Si date_optin existe déjà et est plus ancienne, la conserver
+        if (currentProperties.date_optin && currentProperties.date_optin < dateStr) {
+          properties.date_optin = currentProperties.date_optin;
+        }
+
+        console.log('📋 Updating MailJet contact properties with:', JSON.stringify(properties));
+        await updateMailjetContactProperties(
+            contactData.Email,
+            properties,
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+        console.log('📋 MailJet contact properties update completed for:', contactData.Email);
 
         // Envoyer l'email de confirmation avec le template MailJet
         console.log('📧 Starting email confirmation process for 5 jours:', contactData.Email);
