@@ -1930,12 +1930,15 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
         }
 
         // Générer le lien de réinitialisation Firebase
-        // L'URL pointe vers la page de réinitialisation pour afficher le formulaire
-        // Après confirmation, le JavaScript redirigera vers /connexion-membre
-        const resetLink = await adminAuth.generatePasswordResetLink(email.toLowerCase().trim(), {
-          url: 'https://fluance.io/reinitialiser-mot-de-passe',
-          handleCodeInApp: true,
-        });
+        // L'URL pointe vers la page de connexion, qui redirigera vers la page de réinitialisation
+        // si un code est présent. Après confirmation, l'utilisateur sera sur la page de connexion
+        const resetLink = await adminAuth.generatePasswordResetLink(
+            email.toLowerCase().trim(),
+            {
+              url: 'https://fluance.io/connexion-membre',
+              handleCodeInApp: true,
+            },
+        );
 
         console.log(`Password reset link generated for ${email}`);
 

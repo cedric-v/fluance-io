@@ -247,6 +247,18 @@ function switchTab(tab) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+  // Check if a password reset code is present in the URL
+  // If so, redirect to the reset password page
+  const urlParams = new URLSearchParams(window.location.search);
+  const actionCode = urlParams.get('oobCode');
+  const mode = urlParams.get('mode');
+  
+  if (actionCode && mode === 'resetPassword') {
+    // Redirect to the reset password page with the code
+    window.location.replace(`/en/reset-password?oobCode=${actionCode}&mode=${mode}`);
+    return;
+  }
+  
   // Attach event listeners to tabs
   const passwordTab = document.getElementById('tab-password');
   const passwordlessTab = document.getElementById('tab-passwordless');

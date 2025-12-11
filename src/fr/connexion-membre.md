@@ -287,6 +287,18 @@ function switchTab(tab) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+  // Vérifier si un code de réinitialisation de mot de passe est présent dans l'URL
+  // Si c'est le cas, rediriger vers la page de réinitialisation
+  const urlParams = new URLSearchParams(window.location.search);
+  const actionCode = urlParams.get('oobCode');
+  const mode = urlParams.get('mode');
+  
+  if (actionCode && mode === 'resetPassword') {
+    // Rediriger vers la page de réinitialisation avec le code
+    window.location.replace(`/reinitialiser-mot-de-passe?oobCode=${actionCode}&mode=${mode}`);
+    return;
+  }
+  
   // Attacher les event listeners aux onglets
   const passwordTab = document.getElementById('tab-password');
   const passwordlessTab = document.getElementById('tab-passwordless');

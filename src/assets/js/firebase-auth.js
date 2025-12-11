@@ -312,16 +312,17 @@ async function sendPasswordResetEmail(email) {
 
     // Détecter la langue depuis l'URL ou le chemin
     const isEnglish = window.location.pathname.startsWith('/en/');
-    const resetPath = isEnglish ? '/en/reset-password' : '/reinitialiser-mot-de-passe';
+    const loginPath = isEnglish ? '/en/member-login' : '/connexion-membre';
 
     // Configuration pour le lien de réinitialisation
+    // L'URL pointe vers la page de connexion, qui redirigera vers la page de réinitialisation si un code est présent
     // Utiliser fluance.io explicitement pour garantir la bonne URL
     const baseUrl = window.location.hostname === 'fluance.io' 
       ? 'https://fluance.io' 
       : window.location.origin;
     
     const actionCodeSettings = {
-      url: baseUrl + resetPath,
+      url: baseUrl + loginPath,
       handleCodeInApp: true
     };
 

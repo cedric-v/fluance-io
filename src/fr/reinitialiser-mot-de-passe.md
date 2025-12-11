@@ -177,12 +177,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     requestForm.classList.add('hidden');
     confirmForm.classList.remove('hidden');
 
-    // Vérifier que le code est valide
+    // Vérifier que le code est valide et récupérer l'email
+    let userEmail = null;
     const verifyResult = await window.FluanceAuth.verifyPasswordResetCode(actionCode);
     if (!verifyResult.success) {
       confirmErrorDiv.querySelector('p').textContent = verifyResult.error || 'Code de réinitialisation invalide ou expiré.';
       confirmErrorDiv.classList.remove('hidden');
       confirmForm.querySelector('button').disabled = true;
+    } else {
+      userEmail = verifyResult.email;
     }
 
     // Gérer la soumission du formulaire de confirmation
@@ -220,17 +223,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         const result = await window.FluanceAuth.confirmPasswordReset(actionCode, newPassword);
 
         if (result.success) {
-          confirmSuccessDiv.querySelector('p').textContent = 'Votre mot de passe a été réinitialisé avec succès. Vous allez être redirigé vers la page de connexion...';
+          confirmSuccessDiv.querySelector('p').textContent = 'Votre mot de passe a été réinitialisé avec succès. Connexion en cours...';
           confirmSuccessDiv.classList.remove('hidden');
           
           // Nettoyer l'URL pour éviter que Firebase Auth ne redirige automatiquement
           window.history.replaceState({}, document.title, '/reinitialiser-mot-de-passe');
           
-          // Rediriger immédiatement vers la page de connexion
-          // Utiliser replace pour éviter que l'utilisateur puisse revenir en arrière
-          setTimeout(() => {
+          // Se connecter automatiquement avec le nouveau mot de passe
+          // Cela permet aux gestionnaires de mots de passe de détecter le domaine fluance.io
+          if (userEmail) {
+            try {
+              const loginResult = await window.FluanceAuth.signIn(userEmail, newPassword);
+              if (loginResult.success) {
+                // Rediriger vers la page membre
+                window.location.replace('/membre');
+              } else {
+                // Si la connexion automatique échoue, rediriger vers la page de connexion
+                console.warn('Connexion automatique échouée, redirection vers la page de connexion');
+                window.location.replace('/connexion-membre');
+              }
+            } catch (loginError) {
+              console.error('Erreur lors de la connexion automatique:', loginError);
+              // En cas d'erreur, rediriger vers la page de connexion
+              window.location.replace('/connexion-membre');
+            }
+          } else {
+            // Si l'email n'est pas disponible, rediriger vers la page de connexion
             window.location.replace('/connexion-membre');
-          }, 100);
+          }
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Erreur lors de la réinitialisation.';
           confirmErrorDiv.classList.remove('hidden');

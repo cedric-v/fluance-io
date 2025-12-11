@@ -177,12 +177,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     requestForm.classList.add('hidden');
     confirmForm.classList.remove('hidden');
 
-    // Verify code is valid
+    // Verify code is valid and get email
+    let userEmail = null;
     const verifyResult = await window.FluanceAuth.verifyPasswordResetCode(actionCode);
     if (!verifyResult.success) {
       confirmErrorDiv.querySelector('p').textContent = verifyResult.error || 'Invalid or expired reset code.';
       confirmErrorDiv.classList.remove('hidden');
       confirmForm.querySelector('button').disabled = true;
+    } else {
+      userEmail = verifyResult.email;
     }
 
     // Handle confirmation form submission
@@ -220,17 +223,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         const result = await window.FluanceAuth.confirmPasswordReset(actionCode, newPassword);
 
         if (result.success) {
-          confirmSuccessDiv.querySelector('p').textContent = 'Your password has been reset successfully. You will be redirected to the login page...';
+          confirmSuccessDiv.querySelector('p').textContent = 'Your password has been reset successfully. Logging in...';
           confirmSuccessDiv.classList.remove('hidden');
           
           // Clean URL to prevent Firebase Auth from auto-redirecting
           window.history.replaceState({}, document.title, '/en/reset-password');
           
-          // Redirect immediately to login page
-          // Use replace to prevent user from going back
-          setTimeout(() => {
+          // Automatically sign in with the new password
+          // This allows password managers to detect the fluance.io domain
+          if (userEmail) {
+            try {
+              const loginResult = await window.FluanceAuth.signIn(userEmail, newPassword);
+              if (loginResult.success) {
+                // Redirect to member page
+                window.location.replace('/membre');
+              } else {
+                // If automatic login fails, redirect to login page
+                console.warn('Automatic login failed, redirecting to login page');
+                window.location.replace('/en/member-login');
+              }
+            } catch (loginError) {
+              console.error('Error during automatic login:', loginError);
+              // On error, redirect to login page
+              window.location.replace('/en/member-login');
+            }
+          } else {
+            // If email is not available, redirect to login page
             window.location.replace('/en/member-login');
-          }, 100);
+          }
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Error resetting password.';
           confirmErrorDiv.classList.remove('hidden');
