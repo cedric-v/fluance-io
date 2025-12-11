@@ -77,13 +77,30 @@ async function updateMailjetContactProperties(email, properties, apiKey, apiSecr
     if (getResponse.ok) {
       const getData = await getResponse.json();
       if (getData.Data && getData.Data.length > 0) {
-        // Convertir le tableau Data en objet pour faciliter la fusion
-        getData.Data.forEach((item) => {
-          if (item.Name && item.Value !== undefined) {
-            currentDataMap[item.Name] = item.Value;
+        // La structure de l'API Mailjet est: { Data: [{ ContactID: ..., Data: [{ Name: ..., Value: ... }] }] }
+        const contactData = getData.Data[0];
+        if (contactData.Data) {
+          // Si Data est un tableau (format standard)
+          if (Array.isArray(contactData.Data)) {
+            contactData.Data.forEach((item) => {
+              if (item.Name && item.Value !== undefined) {
+                currentDataMap[item.Name] = item.Value;
+              }
+            });
+          } else if (typeof contactData.Data === 'object') {
+            // Si Data est un objet (format alternatif possible)
+            Object.keys(contactData.Data).forEach((key) => {
+              currentDataMap[key] = contactData.Data[key];
+            });
           }
-        });
+        }
       }
+    } else if (getResponse.status === 404) {
+      // Contact properties n'existent pas encore, c'est normal
+      console.log(`Contact properties not found for ${email}, will create new ones`);
+    } else {
+      const errorText = await getResponse.text();
+      console.error(`Error fetching MailJet contact properties for ${email}: ${getResponse.status} - ${errorText}`);
     }
 
     // Fusionner les nouvelles properties avec les existantes
@@ -109,10 +126,18 @@ async function updateMailjetContactProperties(email, properties, apiKey, apiSecr
 
     if (!updateResponse.ok) {
       const errorText = await updateResponse.text();
-      console.error(`Error updating MailJet contact properties for ${email}:`, errorText);
+      console.error(`❌ Error updating MailJet contact properties for ${email}:`, errorText);
+      console.error(`   Status: ${updateResponse.status}`);
+      console.error(`   Properties attempted:`, JSON.stringify(properties));
+      console.error(`   Data array sent:`, JSON.stringify(dataArray));
       // Ne pas throw, juste logger l'erreur pour ne pas bloquer le processus
     } else {
-      console.log(`MailJet contact properties updated for ${email}:`, JSON.stringify(properties));
+      const responseData = await updateResponse.json().catch(() => ({}));
+      console.log(`✅ MailJet contact properties updated successfully for ${email}`);
+      console.log(`   Properties set:`, JSON.stringify(properties));
+      if (responseData.Data) {
+        console.log(`   Response:`, JSON.stringify(responseData));
+      }
     }
   } catch (error) {
     console.error(`Exception updating MailJet contact properties for ${email}:`, error);
@@ -314,7 +339,21 @@ async function createTokenAndSendEmail(
         if (getResponse.ok) {
           const getData = await getResponse.json();
           if (getData.Data && getData.Data.length > 0) {
-            currentProperties = getData.Data[0].Data || {};
+            const contactData = getData.Data[0];
+            if (contactData.Data) {
+              // Si Data est un tableau (format standard Mailjet)
+              if (Array.isArray(contactData.Data)) {
+                // Convertir le tableau [{Name, Value}] en objet {name: value}
+                contactData.Data.forEach((item) => {
+                  if (item.Name && item.Value !== undefined) {
+                    currentProperties[item.Name] = item.Value;
+                  }
+                });
+              } else if (typeof contactData.Data === 'object') {
+                // Si Data est déjà un objet (format alternatif)
+                currentProperties = contactData.Data;
+              }
+            }
           }
         }
       } catch {
@@ -1534,7 +1573,21 @@ exports.subscribeTo5Days = onCall(
           if (getResponse.ok) {
             const getData = await getResponse.json();
             if (getData.Data && getData.Data.length > 0) {
-              currentProperties = getData.Data[0].Data || {};
+              const contactData = getData.Data[0];
+              if (contactData.Data) {
+                // Si Data est un tableau (format standard Mailjet)
+                if (Array.isArray(contactData.Data)) {
+                  // Convertir le tableau [{Name, Value}] en objet {name: value}
+                  contactData.Data.forEach((item) => {
+                    if (item.Name && item.Value !== undefined) {
+                      currentProperties[item.Name] = item.Value;
+                    }
+                  });
+                } else if (typeof contactData.Data === 'object') {
+                  // Si Data est déjà un objet (format alternatif)
+                  currentProperties = contactData.Data;
+                }
+              }
               console.log('📋 Current properties found:', JSON.stringify(currentProperties));
             } else {
               console.log('📋 No existing properties found');

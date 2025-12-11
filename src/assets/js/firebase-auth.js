@@ -218,7 +218,20 @@ async function signIn(email, password) {
     return { success: true, user: userCredential.user };
   } catch (error) {
     console.error('Sign in error:', error);
-    return { success: false, error: getErrorMessage(error.code) };
+    const errorMessage = getErrorMessage(error.code);
+    return { 
+      success: false, 
+      error: errorMessage,
+      errorCode: error.code,
+      // Ajouter des suggestions spécifiques selon le type d'erreur
+      suggestion: error.code === 'auth/user-not-found' 
+        ? 'Vérifiez que l\'email est correct ou créez un compte si vous n\'en avez pas encore.'
+        : error.code === 'auth/wrong-password'
+        ? 'Si vous avez oublié votre mot de passe, utilisez le lien "Mot de passe oublié" ci-dessous.'
+        : error.code === 'auth/too-many-requests'
+        ? 'Attendez quelques minutes avant de réessayer. Pour votre sécurité, les tentatives sont temporairement limitées.'
+        : 'Vérifiez vos identifiants et réessayez. Si le problème persiste, contactez le support.'
+    };
   }
 }
 
@@ -405,17 +418,37 @@ async function loadProtectedContent(contentId = null) {
   try {
     const user = auth.currentUser;
     if (!user) {
-      return { success: false, error: 'Non authentifié' };
+      return { 
+        success: false, 
+        error: 'Vous n\'êtes pas connecté. Veuillez vous connecter pour accéder au contenu protégé.',
+        errorCode: 'NOT_AUTHENTICATED',
+        suggestion: 'Connectez-vous depuis la page de connexion.'
+      };
     }
 
     // Récupérer les informations de l'utilisateur depuis Firestore
     const userDoc = await db.collection('users').doc(user.uid).get();
     if (!userDoc.exists) {
-      return { success: false, error: 'Utilisateur non trouvé' };
+      return { 
+        success: false, 
+        error: 'Votre compte n\'a pas été trouvé dans notre système. Cela peut arriver si le compte a été créé récemment. Veuillez contacter le support si le problème persiste.',
+        errorCode: 'USER_NOT_FOUND',
+        suggestion: 'Contactez le support avec votre email: ' + user.email
+      };
     }
 
     const userData = userDoc.data();
     const userProduct = userData.product;
+    
+    // Vérifier que le produit est défini
+    if (!userProduct) {
+      return { 
+        success: false, 
+        error: 'Votre compte n\'a pas de produit associé. Veuillez contacter le support pour résoudre ce problème.',
+        errorCode: 'NO_PRODUCT',
+        suggestion: 'Contactez le support avec votre email: ' + user.email
+      };
+    }
     
     // Si un contentId est spécifié, charger ce contenu spécifique
     if (contentId) {
@@ -424,7 +457,9 @@ async function loadProtectedContent(contentId = null) {
       if (!contentDoc.exists) {
         return { 
           success: false, 
-          error: `Contenu non trouvé (ID: ${contentId}). Vérifiez que le document existe dans Firestore avec le produit "${userProduct}".` 
+          error: `Le contenu demandé n'existe pas ou n'est plus disponible.`,
+          errorCode: 'CONTENT_NOT_FOUND',
+          suggestion: 'Essayez d\'accéder au contenu depuis la page principale de votre formation.'
         };
       }
 
@@ -434,7 +469,9 @@ async function loadProtectedContent(contentId = null) {
       if (contentData.product !== userProduct) {
         return { 
           success: false, 
-          error: `Accès non autorisé. Ce contenu est pour le produit "${contentData.product || 'inconnu'}", mais vous avez accès à "${userProduct}".` 
+          error: `Vous n'avez pas accès à ce contenu. Ce contenu fait partie d'une autre formation que celle à laquelle vous êtes inscrit(e).`,
+          errorCode: 'PRODUCT_MISMATCH',
+          suggestion: `Vous êtes inscrit(e) à la formation "${userProduct}". Accédez au contenu depuis votre espace membre.`
         };
       }
 
@@ -471,7 +508,11 @@ async function loadProtectedContent(contentId = null) {
           const daysRemaining = dayNumber - daysSinceRegistration - 1;
           return { 
             success: false, 
-            error: `Ce contenu sera disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}. Vous êtes au jour ${daysSinceRegistration + 1} du défi.` 
+            error: `Ce contenu sera disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}. Vous êtes actuellement au jour ${daysSinceRegistration + 1} du défi de 21 jours.`,
+            errorCode: 'CONTENT_NOT_AVAILABLE_YET',
+            suggestion: 'Continuez à suivre le programme jour par jour. Le contenu se débloque automatiquement chaque jour.',
+            daysRemaining: daysRemaining,
+            currentDay: daysSinceRegistration + 1
           };
         }
       }
@@ -622,7 +663,9 @@ async function loadProtectedContent(contentId = null) {
           console.error('Error loading protected content (fallback):', fallbackError);
           return { 
             success: false, 
-            error: 'L\'index Firestore est en cours de construction. Veuillez réessayer dans quelques minutes.' 
+            error: 'Le système est en cours de mise à jour. Veuillez réessayer dans quelques minutes.',
+            errorCode: 'INDEX_BUILDING',
+            suggestion: 'Cette opération est temporaire. Attendez 2-3 minutes et rafraîchissez la page.'
           };
         }
       }
@@ -638,11 +681,39 @@ async function loadProtectedContent(contentId = null) {
         error.message.includes('index is currently building')) {
       return { 
         success: false, 
-        error: 'L\'index Firestore est en cours de construction. Veuillez réessayer dans quelques minutes.' 
+        error: 'Le système est en cours de mise à jour. Veuillez réessayer dans quelques minutes.',
+        errorCode: 'INDEX_BUILDING',
+        suggestion: 'Cette opération est temporaire. Attendez 2-3 minutes et rafraîchissez la page.'
       };
     }
     
-    return { success: false, error: error.message };
+    // Erreur de permission
+    if (error.code === 'permission-denied') {
+      return {
+        success: false,
+        error: 'Vous n\'avez pas la permission d\'accéder à ce contenu. Vérifiez que vous êtes bien connecté(e).',
+        errorCode: 'PERMISSION_DENIED',
+        suggestion: 'Déconnectez-vous et reconnectez-vous, puis réessayez.'
+      };
+    }
+    
+    // Erreur réseau
+    if (error.code === 'unavailable' || error.message?.includes('network') || error.message?.includes('fetch')) {
+      return {
+        success: false,
+        error: 'Erreur de connexion. Vérifiez votre connexion internet et réessayez.',
+        errorCode: 'NETWORK_ERROR',
+        suggestion: 'Vérifiez votre connexion internet et rafraîchissez la page.'
+      };
+    }
+    
+    // Message d'erreur générique mais utile
+    return { 
+      success: false, 
+      error: error.message || 'Une erreur est survenue lors du chargement du contenu. Veuillez réessayer.',
+      errorCode: error.code || 'UNKNOWN_ERROR',
+      suggestion: 'Si le problème persiste, contactez le support avec le code d\'erreur ci-dessus.'
+    };
   }
 }
 
@@ -654,11 +725,57 @@ async function displayProtectedContent(contentId, containerElement) {
     const result = await loadProtectedContent(contentId);
     
     if (!result.success) {
-      containerElement.innerHTML = `
-        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p class="text-red-800">Erreur : ${result.error}</p>
+      let errorHTML = `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3 flex-1">
+              <h3 class="text-sm font-medium text-red-800 mb-2">Erreur d'accès au contenu</h3>
+              <p class="text-sm text-red-700 mb-3">${result.error}</p>
+      `;
+      
+      // Ajouter le code d'erreur si disponible (pour le support)
+      if (result.errorCode) {
+        errorHTML += `
+              <p class="text-xs text-red-600 mb-3">
+                <span class="font-mono bg-red-100 px-2 py-1 rounded">Code: ${result.errorCode}</span>
+              </p>
+        `;
+      }
+      
+      // Ajouter la suggestion si disponible
+      if (result.suggestion) {
+        errorHTML += `
+              <div class="bg-yellow-50 border border-yellow-200 rounded p-3 mt-3">
+                <p class="text-sm text-yellow-800">
+                  <strong>💡 Suggestion :</strong> ${result.suggestion}
+                </p>
+              </div>
+        `;
+      }
+      
+      // Ajouter des informations supplémentaires pour certains types d'erreurs
+      if (result.errorCode === 'CONTENT_NOT_AVAILABLE_YET' && result.daysRemaining !== undefined) {
+        errorHTML += `
+              <div class="bg-blue-50 border border-blue-200 rounded p-3 mt-3">
+                <p class="text-sm text-blue-800">
+                  <strong>📅 Progression :</strong> Vous êtes au jour ${result.currentDay} sur 21. Ce contenu sera disponible dans ${result.daysRemaining} jour${result.daysRemaining > 1 ? 's' : ''}.
+                </p>
+              </div>
+        `;
+      }
+      
+      errorHTML += `
+            </div>
+          </div>
         </div>
       `;
+      
+      containerElement.innerHTML = errorHTML;
       return;
     }
 
@@ -1028,16 +1145,39 @@ function updateUIForUnauthenticatedUser() {
  */
 function getErrorMessage(errorCode) {
   const errorMessages = {
-    'auth/user-not-found': 'Aucun compte trouvé avec cet email.',
-    'auth/wrong-password': 'Mot de passe incorrect.',
-    'auth/email-already-in-use': 'Cet email est déjà utilisé.',
-    'auth/weak-password': 'Le mot de passe est trop faible.',
-    'auth/invalid-email': 'Email invalide.',
-    'auth/too-many-requests': 'Trop de tentatives. Veuillez réessayer plus tard.',
-    'auth/network-request-failed': 'Erreur de connexion. Vérifiez votre connexion internet.'
+    'auth/user-not-found': 'Aucun compte trouvé avec cet email. Vérifiez que l\'email est correct ou créez un compte.',
+    'auth/wrong-password': 'Mot de passe incorrect. Si vous avez oublié votre mot de passe, utilisez le lien "Mot de passe oublié".',
+    'auth/email-already-in-use': 'Cet email est déjà utilisé. Essayez de vous connecter ou utilisez "Mot de passe oublié" si vous ne vous souvenez plus de votre mot de passe.',
+    'auth/weak-password': 'Le mot de passe est trop faible. Utilisez au moins 6 caractères.',
+    'auth/invalid-email': 'Format d\'email invalide. Vérifiez que l\'email est correct (exemple: nom@domaine.com).',
+    'auth/too-many-requests': 'Trop de tentatives de connexion. Pour votre sécurité, veuillez attendre quelques minutes avant de réessayer.',
+    'auth/network-request-failed': 'Erreur de connexion. Vérifiez votre connexion internet et réessayez.',
+    'auth/user-disabled': 'Ce compte a été désactivé. Veuillez contacter le support pour plus d\'informations.',
+    'auth/operation-not-allowed': 'Cette méthode de connexion n\'est pas activée. Veuillez contacter le support.',
+    'auth/invalid-credential': 'Email ou mot de passe incorrect. Vérifiez vos identifiants et réessayez.',
+    'auth/invalid-verification-code': 'Code de vérification invalide ou expiré. Demandez un nouveau code.',
+    'auth/invalid-verification-id': 'Lien de vérification invalide ou expiré. Demandez un nouveau lien.',
+    'auth/code-expired': 'Le code de vérification a expiré. Demandez un nouveau code.',
+    'auth/session-cookie-expired': 'Votre session a expiré. Veuillez vous reconnecter.',
+    'auth/requires-recent-login': 'Pour des raisons de sécurité, veuillez vous reconnecter avant d\'effectuer cette action.',
+    'auth/credential-already-in-use': 'Ces identifiants sont déjà utilisés par un autre compte.',
+    'auth/account-exists-with-different-credential': 'Un compte existe déjà avec cet email mais avec une autre méthode de connexion.',
+    'Non authentifié': 'Vous n\'êtes pas connecté. Veuillez vous connecter pour accéder à ce contenu.',
+    'Utilisateur non trouvé': 'Votre compte n\'a pas été trouvé dans notre système. Veuillez contacter le support si le problème persiste.',
   };
   
-  return errorMessages[errorCode] || 'Une erreur est survenue. Veuillez réessayer.';
+  // Si c'est un code d'erreur connu, retourner le message
+  if (errorMessages[errorCode]) {
+    return errorMessages[errorCode];
+  }
+  
+  // Si c'est un code d'erreur Firebase Auth (commence par auth/), donner un message générique mais utile
+  if (errorCode && errorCode.startsWith('auth/')) {
+    return `Erreur d'authentification: ${errorCode}. Si le problème persiste, contactez le support.`;
+  }
+  
+  // Message par défaut
+  return 'Une erreur est survenue. Veuillez réessayer. Si le problème persiste, contactez le support.';
 }
 
 /**

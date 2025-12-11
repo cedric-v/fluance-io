@@ -83,8 +83,20 @@ permalink: /connexion-membre/
         <p class="text-[#0f172a] text-sm"></p>
       </div>
 
-      <div id="error-message" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">
-        <p class="text-red-800 text-sm"></p>
+      <div id="error-message" class="hidden bg-red-50 border border-red-200 rounded-lg p-6">
+        <div class="flex items-start">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3 flex-1">
+            <h3 class="text-sm font-medium text-red-800 mb-2">Erreur de connexion</h3>
+            <p class="text-sm text-red-700 mb-2" id="error-text"></p>
+            <p class="text-xs text-red-600 mb-2 hidden" id="error-code"></p>
+            <p class="text-sm text-yellow-800 bg-yellow-50 border border-yellow-200 rounded p-3 mt-3 hidden" id="error-suggestion"></p>
+          </div>
+        </div>
       </div>
 
       <button
@@ -159,9 +171,32 @@ let currentTab = 'password';
 let errorDiv, successDiv; // Variables globales pour les divs d'erreur/succès
 
 // Fonctions globales pour gérer les messages d'erreur/succès
-function showError(message) {
+function showError(message, errorData = null) {
   if (errorDiv && successDiv) {
-    errorDiv.querySelector('p').textContent = message;
+    const errorText = errorDiv.querySelector('#error-text');
+    const errorCode = errorDiv.querySelector('#error-code');
+    const errorSuggestion = errorDiv.querySelector('#error-suggestion');
+    
+    if (errorText) {
+      errorText.textContent = message || 'Une erreur est survenue.';
+    }
+    
+    // Afficher le code d'erreur si disponible
+    if (errorCode && errorData && errorData.errorCode) {
+      errorCode.textContent = `Code d'erreur: ${errorData.errorCode}`;
+      errorCode.classList.remove('hidden');
+    } else if (errorCode) {
+      errorCode.classList.add('hidden');
+    }
+    
+    // Afficher la suggestion si disponible
+    if (errorSuggestion && errorData && errorData.suggestion) {
+      errorSuggestion.innerHTML = `<strong>💡 Suggestion :</strong> ${errorData.suggestion}`;
+      errorSuggestion.classList.remove('hidden');
+    } else if (errorSuggestion) {
+      errorSuggestion.classList.add('hidden');
+    }
+    
     errorDiv.classList.remove('hidden');
     successDiv.classList.add('hidden');
   }
@@ -341,7 +376,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
           window.location.href = returnUrl;
         } else {
-          showError(result.error || 'Erreur lors de la connexion.');
+          showError(result.error || 'Erreur lors de la connexion.', result);
         }
       // Temporairement désactivé - onglet passkey
       /*
@@ -382,7 +417,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           } else if (result.needsExtension) {
             showError('L\'extension Firebase WebAuthn n\'est pas encore installée. Veuillez utiliser une autre méthode de connexion pour le moment.');
           } else {
-            showError(result.error || 'Erreur lors de la connexion avec la clé d\'accès.');
+            showError(result.error || 'Erreur lors de la connexion avec la clé d\'accès.', result);
           }
         }
       } else {
@@ -407,7 +442,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           showSuccess('Un lien de connexion a été envoyé à votre email. Cliquez sur le lien pour vous connecter.');
         } else {
           console.log('[Connexion] ❌ Erreur:', result.error);
-          showError(result.error || 'Erreur lors de l\'envoi du lien.');
+          showError(result.error || 'Erreur lors de l\'envoi du lien.', result);
           window.localStorage.removeItem('emailForSignIn');
         }
       }
