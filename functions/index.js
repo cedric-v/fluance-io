@@ -52,6 +52,62 @@ function generateUniqueToken() {
  * @param {string} apiKey - Clé API Mailjet (depuis les secrets)
  * @param {string} apiSecret - Secret API Mailjet (depuis les secrets)
  */
+/**
+ * Met à jour les contact properties MailJet pour un contact
+ * @param {string} email - Email du contact
+ * @param {object} properties - Objet avec les properties à mettre à jour
+ * @param {string} apiKey - Clé API MailJet
+ * @param {string} apiSecret - Secret API MailJet
+ */
+async function updateMailjetContactProperties(email, properties, apiKey, apiSecret) {
+  const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
+  const contactUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
+
+  try {
+    // Récupérer les properties actuelles
+    const getResponse = await fetch(contactUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+      },
+    });
+
+    let currentData = {};
+    if (getResponse.ok) {
+      const getData = await getResponse.json();
+      if (getData.Data && getData.Data.length > 0) {
+        currentData = getData.Data[0].Data || {};
+      }
+    }
+
+    // Fusionner les nouvelles properties avec les existantes
+    const updatedData = {...currentData, ...properties};
+
+    // Mettre à jour les properties
+    const updateResponse = await fetch(contactUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${auth}`,
+      },
+      body: JSON.stringify({
+        Data: updatedData,
+      }),
+    });
+
+    if (!updateResponse.ok) {
+      const errorText = await updateResponse.text();
+      console.error(`Error updating MailJet contact properties for ${email}:`, errorText);
+      // Ne pas throw, juste logger l'erreur pour ne pas bloquer le processus
+    } else {
+      console.log(`MailJet contact properties updated for ${email}:`, JSON.stringify(properties));
+    }
+  } catch (error) {
+    console.error(`Exception updating MailJet contact properties for ${email}:`, error);
+    // Ne pas throw, juste logger l'erreur
+  }
+}
+
 async function sendMailjetEmail(to, subject, htmlContent, textContent = null, apiKey, apiSecret) {
   // Vérifier que les credentials Mailjet sont configurés
   if (!apiKey || !apiSecret) {
@@ -100,13 +156,22 @@ async function sendMailjetEmail(to, subject, htmlContent, textContent = null, ap
 
 /**
  * Crée un token dans Firestore et envoie l'email
+ * Met également à jour les contact properties MailJet pour les achats
  * @param {string} email - Email du client
  * @param {string} product - Nom du produit
  * @param {number} expirationDays - Nombre de jours avant expiration (défaut: 30)
  * @param {string} mailjetApiKey - Clé API Mailjet (depuis les secrets)
  * @param {string} mailjetApiSecret - Secret API Mailjet (depuis les secrets)
+ * @param {number} amount - Montant de l'achat en CHF (optionnel, pour mettre à jour les properties)
  */
-async function createTokenAndSendEmail(email, product, expirationDays = 30, mailjetApiKey, mailjetApiSecret) {
+async function createTokenAndSendEmail(
+    email,
+    product,
+    expirationDays = 30,
+    mailjetApiKey,
+    mailjetApiSecret,
+    amount = null,
+) {
   const token = generateUniqueToken();
   const expirationDate = new Date();
   expirationDate.setDate(expirationDate.getDate() + expirationDays);
@@ -165,6 +230,89 @@ async function createTokenAndSendEmail(email, product, expirationDays = 30, mail
 
   // Envoyer l'email
   await sendMailjetEmail(email, emailSubject, emailHtml, null, mailjetApiKey, mailjetApiSecret);
+
+  // Mettre à jour les contact properties MailJet pour les achats
+  if (amount !== null && amount !== undefined) {
+    try {
+      // Récupérer les properties actuelles pour calculer les totaux
+      const auth = Buffer.from(`${mailjetApiKey}:${mailjetApiSecret}`).toString('base64');
+      const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
+
+      let currentProperties = {};
+      try {
+        const getResponse = await fetch(contactDataUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+          },
+        });
+        if (getResponse.ok) {
+          const getData = await getResponse.json();
+          if (getData.Data && getData.Data.length > 0) {
+            currentProperties = getData.Data[0].Data || {};
+          }
+        }
+      } catch {
+        console.log('Contact properties not found, will create new ones');
+      }
+
+      // Calculer les nouvelles valeurs
+      const now = new Date();
+      const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+
+      const currentProducts = currentProperties.produits_achetes || '';
+      const productsList = currentProducts ? currentProducts.split(',').map((p) => p.trim()).filter((p) => p) : [];
+      if (!productsList.includes(product)) {
+        productsList.push(product);
+      }
+
+      const currentValeur = parseFloat(currentProperties.valeur_client || '0') || 0;
+      const currentNombreAchats = parseInt(currentProperties.nombre_achats || '0') || 0;
+
+      const isFirstPurchase = !currentProperties.date_premier_achat;
+
+      const updatedProperties = {
+        statut: 'client',
+        produits_achetes: productsList.join(','),
+        date_dernier_achat: dateStr,
+        valeur_client: (currentValeur + amount).toFixed(2),
+        nombre_achats: currentNombreAchats + 1,
+        est_client: 'True',
+      };
+
+      // Si c'est le premier achat, définir date_premier_achat
+      if (isFirstPurchase) {
+        updatedProperties.date_premier_achat = dateStr;
+      }
+
+      // Mettre à jour les properties
+      await updateMailjetContactProperties(email, updatedProperties, mailjetApiKey, mailjetApiSecret);
+
+      // Ajouter le contact à la liste principale si pas déjà dedans
+      const listId = '10524140';
+      const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
+      try {
+        await fetch(addToListUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${auth}`,
+          },
+          body: JSON.stringify({
+            IsUnsubscribed: false,
+            ContactAlt: email.toLowerCase().trim(),
+            ListID: parseInt(listId, 10),
+          }),
+        });
+      } catch {
+        // Ignorer si déjà dans la liste
+        console.log('Contact may already be in list or error adding to list');
+      }
+    } catch (error) {
+      console.error('Error updating MailJet contact properties after purchase:', error.message);
+      // Ne pas bloquer le processus si la mise à jour des properties échoue
+    }
+  }
 
   return token;
 }
@@ -233,14 +381,33 @@ exports.webhookStripe = onRequest(
         }
 
         try {
+          // Récupérer le montant en CHF
+          const amountTotal = session.amount_total || 0;
+          const currency = (session.currency || 'chf').toUpperCase();
+          let amountCHF = 0;
+
+          // Convertir en CHF si nécessaire (taux approximatifs)
+          if (currency === 'CHF') {
+            amountCHF = amountTotal / 100; // Stripe utilise les centimes
+          } else if (currency === 'EUR') {
+            amountCHF = (amountTotal / 100) * 1.05; // Approximation 1 EUR = 1.05 CHF
+          } else if (currency === 'USD') {
+            amountCHF = (amountTotal / 100) * 0.95; // Approximation 1 USD = 0.95 CHF
+          } else {
+            amountCHF = amountTotal / 100; // Par défaut, considérer comme CHF
+          }
+
           await createTokenAndSendEmail(
               customerEmail,
               product,
               30,
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
+              amountCHF,
           );
-          console.log(`Token created and email sent to ${customerEmail} for product ${product}`);
+          console.log(
+              `Token created and email sent to ${customerEmail} for product ${product}, amount: ${amountCHF} CHF`,
+          );
           return res.status(200).json({received: true});
         } catch (error) {
           console.error('Error creating token:', error);
@@ -297,14 +464,35 @@ exports.webhookPayPal = onRequest(
         }
 
         try {
+          // Récupérer le montant en CHF depuis PayPal
+          const purchaseUnits = resource.purchase_units || [];
+          const amount = purchaseUnits[0]?.amount || {};
+          const value = parseFloat(amount.value || 0);
+          const currency = (amount.currency_code || 'CHF').toUpperCase();
+          let amountCHF = 0;
+
+          // Convertir en CHF si nécessaire (taux approximatifs)
+          if (currency === 'CHF') {
+            amountCHF = value;
+          } else if (currency === 'EUR') {
+            amountCHF = value * 1.05; // Approximation 1 EUR = 1.05 CHF
+          } else if (currency === 'USD') {
+            amountCHF = value * 0.95; // Approximation 1 USD = 0.95 CHF
+          } else {
+            amountCHF = value; // Par défaut, considérer comme CHF
+          }
+
           await createTokenAndSendEmail(
               customerEmail,
               product,
               30,
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
+              amountCHF,
           );
-          console.log(`Token created and email sent to ${customerEmail} for product ${product}`);
+          console.log(
+              `Token created and email sent to ${customerEmail} for product ${product}, amount: ${amountCHF} CHF`,
+          );
           return res.status(200).json({received: true});
         } catch (error) {
           console.error('Error creating token:', error);
@@ -576,7 +764,7 @@ exports.sendNewsletter = onCall(
 exports.subscribeToNewsletter = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'MAILJET_LIST_ID', 'TURNSTILE_SECRET_KEY'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'TURNSTILE_SECRET_KEY'],
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
@@ -727,44 +915,56 @@ exports.subscribeToNewsletter = onCall(
           }
         }
 
-        // Ajouter le contact à une liste spécifique MailJet
-        const listId = process.env.MAILJET_LIST_ID;
-        if (listId) {
-          const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
+        // Ajouter le contact à la liste principale MailJet (10524140)
+        const listId = '10524140';
+        const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
 
-          try {
-            const listResponse = await fetch(addToListUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${auth}`,
-              },
-              body: JSON.stringify({
-                IsUnsubscribed: false,
-                ContactAlt: contactData.Email,
-                ListID: parseInt(listId, 10), // L'ID de liste doit être un nombre
-              }),
-            });
+        try {
+          const listResponse = await fetch(addToListUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify({
+              IsUnsubscribed: false,
+              ContactAlt: contactData.Email,
+              ListID: parseInt(listId, 10),
+            }),
+          });
 
-            if (!listResponse.ok) {
-              const errorText = await listResponse.text();
-              // Si le contact est déjà dans la liste, ce n'est pas une erreur critique
-              if (listResponse.status === 400 && errorText.includes('already')) {
-                console.log(`Contact ${contactData.Email} is already in list ${listId}`);
-              } else {
-                console.error('Error adding contact to MailJet list:', errorText);
-                // On continue quand même, le contact a été créé/mis à jour
-              }
+          if (!listResponse.ok) {
+            const errorText = await listResponse.text();
+            // Si le contact est déjà dans la liste, ce n'est pas une erreur critique
+            if (listResponse.status === 400 && errorText.includes('already')) {
+              console.log(`Contact ${contactData.Email} is already in list ${listId}`);
             } else {
-              console.log(`Contact ${contactData.Email} successfully added to list ${listId}`);
+              console.error('Error adding contact to MailJet list:', errorText);
             }
-          } catch (listError) {
-            console.error('Error adding contact to MailJet list:', listError);
-            // On continue quand même, le contact a été créé/mis à jour
+          } else {
+            console.log(`Contact ${contactData.Email} successfully added to list ${listId}`);
           }
-        } else {
-          console.warn('MAILJET_LIST_ID not configured. Contact added to MailJet but not to a specific list.');
+        } catch {
+          console.error('Error adding contact to MailJet list');
         }
+
+        // Définir les contact properties pour l'opt-in 2 pratiques
+        const now = new Date();
+        const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+
+        const properties = {
+          statut: 'prospect',
+          source_optin: '2pratiques',
+          date_optin: dateStr,
+          est_client: 'False',
+        };
+
+        await updateMailjetContactProperties(
+            contactData.Email,
+            properties,
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
 
         // Envoyer l'email de confirmation avec le template MailJet
         console.log('📧 Starting email confirmation process for:', contactData.Email);
@@ -949,7 +1149,7 @@ exports.subscribeToNewsletter = onCall(
 exports.confirmNewsletterOptIn = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'MAILJET_LIST_ID'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
@@ -1011,39 +1211,37 @@ exports.confirmNewsletterOptIn = onCall(
           confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
-        // Ajouter le contact à la liste spécifique si configurée
-        const listId = process.env.MAILJET_LIST_ID;
-        if (listId) {
-          const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
+        // Ajouter le contact à la liste principale MailJet (10524140)
+        const listId = '10524140';
+        const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
 
-          try {
-            const listResponse = await fetch(addToListUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${auth}`,
-              },
-              body: JSON.stringify({
-                IsUnsubscribed: false,
-                ContactAlt: email.toLowerCase().trim(),
-                ListID: parseInt(listId, 10),
-              }),
-            });
+        try {
+          const listResponse = await fetch(addToListUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify({
+              IsUnsubscribed: false,
+              ContactAlt: email.toLowerCase().trim(),
+              ListID: parseInt(listId, 10),
+            }),
+          });
 
-            if (!listResponse.ok) {
-              const errorText = await listResponse.text();
-              // Si le contact est déjà dans la liste, ce n'est pas une erreur critique
-              if (listResponse.status === 400 && errorText.includes('already')) {
-                console.log(`Contact ${email} is already in list ${listId}`);
-              } else {
-                console.error('Error adding contact to MailJet list:', errorText);
-              }
+          if (!listResponse.ok) {
+            const errorText = await listResponse.text();
+            // Si le contact est déjà dans la liste, ce n'est pas une erreur critique
+            if (listResponse.status === 400 && errorText.includes('already')) {
+              console.log(`Contact ${email} is already in list ${listId}`);
             } else {
-              console.log(`Contact ${email} successfully added to list ${listId}`);
+              console.error('Error adding contact to MailJet list:', errorText);
             }
-          } catch (listError) {
-            console.error('Error adding contact to MailJet list:', listError);
+          } else {
+            console.log(`Contact ${email} successfully added to list ${listId}`);
           }
+        } catch {
+          console.error('Error adding contact to MailJet list');
         }
 
         return {
@@ -1143,7 +1341,7 @@ exports.subscribeTo5Days = onCall(
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           expiresAt: expirationDate,
           confirmed: false,
-          listId: '10524236', // Liste spécifique pour les 5 jours
+          sourceOptin: '5joursofferts',
         });
 
         // Ajouter le contact à MailJet
@@ -1245,7 +1443,7 @@ exports.subscribeTo5Days = onCall(
             console.log(`Contact ${contactData.Email} successfully added to list ${listId}`);
           }
         } catch (listError) {
-          console.error('Error adding contact to MailJet list:', listError);
+          console.error('Error adding contact to MailJet list:', listError.message);
         }
 
         // Envoyer l'email de confirmation avec le template MailJet
