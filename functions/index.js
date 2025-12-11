@@ -162,8 +162,8 @@ async function ensureMailjetContactProperties(apiKey, apiSecret) {
     'valeur_client',
     'nombre_achats',
     'est_client',
-    '5jours_serie_debut',
-    '5jours_serie_status',
+    'serie_5jours_debut',
+    'serie_5jours_status',
   ];
 
   console.log(`📋 Ensuring ${properties.length} MailJet contact properties exist`);
@@ -1363,10 +1363,10 @@ exports.confirmNewsletterOptIn = onCall(
             const now = new Date();
             const dateStr = now.toISOString();
             const properties = {
-              '5jours_serie_status': 'started', // Série démarrée après confirmation
+              'serie_5jours_status': 'started', // Série démarrée après confirmation
             };
 
-            // Récupérer les propriétés actuelles pour vérifier si 5jours_serie_debut existe
+            // Récupérer les propriétés actuelles pour vérifier si serie_5jours_debut existe
             const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
             const getResponse = await fetch(contactDataUrl, {
               method: 'GET',
@@ -1391,9 +1391,9 @@ exports.confirmNewsletterOptIn = onCall(
                     currentProperties = contactData.Data;
                   }
 
-                  // Si 5jours_serie_debut n'existe pas, l'ajouter maintenant
-                  if (!currentProperties['5jours_serie_debut']) {
-                    properties['5jours_serie_debut'] = dateStr;
+                  // Si serie_5jours_debut n'existe pas, l'ajouter maintenant
+                  if (!currentProperties['serie_5jours_debut']) {
+                    properties['serie_5jours_debut'] = dateStr;
                   }
                 }
               }
@@ -1405,7 +1405,7 @@ exports.confirmNewsletterOptIn = onCall(
                 process.env.MAILJET_API_KEY,
                 process.env.MAILJET_API_SECRET,
             );
-            console.log(`Updated 5jours_serie_status to 'started' for ${email}`);
+            console.log(`Updated serie_5jours_status to 'started' for ${email}`);
           } catch (error) {
             console.error('Error updating 5jours series status:', error);
             // Ne pas faire échouer la confirmation si la mise à jour du statut échoue
@@ -1693,15 +1693,15 @@ exports.subscribeTo5Days = onCall(
         }
 
         // Gérer les propriétés de la série des 5 jours
-        // Ne définir 5jours_serie_debut que si elle n'existe pas déjà (pour ne pas réinitialiser une série en cours)
-        if (!currentProperties['5jours_serie_debut']) {
-          properties['5jours_serie_debut'] = dateStr;
-          properties['5jours_serie_status'] = 'pending'; // Statut initial : en attente de confirmation
+        // Ne définir serie_5jours_debut que si elle n'existe pas déjà (pour ne pas réinitialiser une série en cours)
+        if (!currentProperties['serie_5jours_debut']) {
+          properties['serie_5jours_debut'] = dateStr;
+          properties['serie_5jours_status'] = 'pending'; // Statut initial : en attente de confirmation
         } else {
           // Si la série a déjà commencé, ne pas réinitialiser
           // Mais mettre à jour le statut si nécessaire
-          if (!currentProperties['5jours_serie_status'] || currentProperties['5jours_serie_status'] === 'cancelled') {
-            properties['5jours_serie_status'] = 'pending';
+          if (!currentProperties['serie_5jours_status'] || currentProperties['serie_5jours_status'] === 'cancelled') {
+            properties['serie_5jours_status'] = 'pending';
           }
         }
 
