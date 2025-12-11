@@ -223,9 +223,9 @@ document.addEventListener('DOMContentLoaded', async function() {
           confirmSuccessDiv.querySelector('p').textContent = 'Votre mot de passe a été réinitialisé avec succès. Vous allez être redirigé vers la page de connexion...';
           confirmSuccessDiv.classList.remove('hidden');
           
-          setTimeout(() => {
-            window.location.href = '/connexion-membre';
-          }, 2000);
+          // Rediriger immédiatement vers la page de connexion
+          // Utiliser replace pour éviter que l'utilisateur puisse revenir en arrière
+          window.location.replace('/connexion-membre');
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Erreur lors de la réinitialisation.';
           confirmErrorDiv.classList.remove('hidden');

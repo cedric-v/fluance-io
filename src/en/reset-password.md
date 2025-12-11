@@ -223,9 +223,9 @@ document.addEventListener('DOMContentLoaded', async function() {
           confirmSuccessDiv.querySelector('p').textContent = 'Your password has been reset successfully. You will be redirected to the login page...';
           confirmSuccessDiv.classList.remove('hidden');
           
-          setTimeout(() => {
-            window.location.href = '/en/member-login';
-          }, 2000);
+          // Redirect immediately to login page
+          // Use replace to prevent user from going back
+          window.location.replace('/en/member-login');
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Error resetting password.';
           confirmErrorDiv.classList.remove('hidden');
