@@ -223,35 +223,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         const result = await window.FluanceAuth.confirmPasswordReset(actionCode, newPassword);
 
         if (result.success) {
-          confirmSuccessDiv.querySelector('p').textContent = 'Votre mot de passe a été réinitialisé avec succès. Connexion en cours...';
+          confirmSuccessDiv.querySelector('p').textContent = 'Votre mot de passe a été réinitialisé avec succès. Vous allez être redirigé vers la page de connexion...';
           confirmSuccessDiv.classList.remove('hidden');
           
           // Nettoyer l'URL pour éviter que Firebase Auth ne redirige automatiquement
           window.history.replaceState({}, document.title, '/reinitialiser-mot-de-passe');
           
-          // Stocker temporairement les credentials pour la connexion automatique sur la page de connexion
-          // Cela permet à Safari de détecter le domaine fluance.io lors de la soumission du formulaire
-          if (userEmail) {
-            try {
-              // Stocker dans sessionStorage pour la connexion automatique
-              sessionStorage.setItem('autoLoginEmail', userEmail);
-              sessionStorage.setItem('autoLoginPassword', newPassword);
-              sessionStorage.setItem('autoLoginTimestamp', Date.now().toString());
-              
-              // Attendre un court délai pour que Safari "oublie" le contexte Firebase
-              await new Promise(resolve => setTimeout(resolve, 500));
-              
-              // Rediriger vers la page de connexion qui détectera les credentials et se connectera automatiquement
-              window.location.replace('/connexion-membre');
-            } catch (loginError) {
-              console.error('Erreur lors de la préparation de la connexion automatique:', loginError);
-              // En cas d'erreur, rediriger vers la page de connexion
-              window.location.replace('/connexion-membre');
-            }
-          } else {
-            // Si l'email n'est pas disponible, rediriger vers la page de connexion
+          // Rediriger vers la page de connexion
+          // L'utilisateur pourra se connecter avec son nouveau mot de passe
+          // Safari détectera correctement le domaine fluance.io lors de la connexion manuelle
+          setTimeout(() => {
             window.location.replace('/connexion-membre');
-          }
+          }, 1500);
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Erreur lors de la réinitialisation.';
           confirmErrorDiv.classList.remove('hidden');

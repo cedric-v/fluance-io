@@ -223,35 +223,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         const result = await window.FluanceAuth.confirmPasswordReset(actionCode, newPassword);
 
         if (result.success) {
-          confirmSuccessDiv.querySelector('p').textContent = 'Your password has been reset successfully. Logging in...';
+          confirmSuccessDiv.querySelector('p').textContent = 'Your password has been reset successfully. You will be redirected to the login page...';
           confirmSuccessDiv.classList.remove('hidden');
           
           // Clean URL to prevent Firebase Auth from auto-redirecting
           window.history.replaceState({}, document.title, '/en/reset-password');
           
-          // Store credentials temporarily for automatic login on the login page
-          // This allows Safari to detect the fluance.io domain when submitting the form
-          if (userEmail) {
-            try {
-              // Store in sessionStorage for automatic login
-              sessionStorage.setItem('autoLoginEmail', userEmail);
-              sessionStorage.setItem('autoLoginPassword', newPassword);
-              sessionStorage.setItem('autoLoginTimestamp', Date.now().toString());
-              
-              // Wait a short delay for Safari to "forget" the Firebase context
-              await new Promise(resolve => setTimeout(resolve, 500));
-              
-              // Redirect to login page which will detect credentials and login automatically
-              window.location.replace('/en/member-login');
-            } catch (loginError) {
-              console.error('Error preparing automatic login:', loginError);
-              // On error, redirect to login page
-              window.location.replace('/en/member-login');
-            }
-          } else {
-            // If email is not available, redirect to login page
+          // Redirect to login page
+          // User can log in with their new password
+          // Safari will correctly detect the fluance.io domain during manual login
+          setTimeout(() => {
             window.location.replace('/en/member-login');
-          }
+          }, 1500);
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Error resetting password.';
           confirmErrorDiv.classList.remove('hidden');
