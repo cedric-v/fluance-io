@@ -767,55 +767,74 @@ exports.subscribeToNewsletter = onCall(
         // Envoyer l'email de confirmation avec le template MailJet
         const confirmationUrl = `https://fluance.io/confirm?email=${encodeURIComponent(contactData.Email)}&token=${confirmationToken}`;
         
+        let emailSent = false;
+        let emailError = null;
+        
         try {
+          const emailPayload = {
+            Messages: [
+              {
+                From: {
+                  Email: 'support@actu.fluance.io',
+                  Name: 'Cédric de Fluance',
+                },
+                To: [
+                  {
+                    Email: contactData.Email,
+                    Name: name || contactData.Email,
+                  },
+                ],
+                TemplateID: 7571938,
+                TemplateLanguage: true,
+                TemplateErrorDeliver: true, // Envoyer même en cas d'erreur de template
+                TemplateErrorReporting: 'support@actu.fluance.io', // Recevoir les erreurs de template
+                Subject: 'Dernière étape indispensable [[data:firstname:""]]',
+                Variables: {
+                  token: confirmationToken,
+                  email: contactData.Email,
+                  firstname: name || '',
+                },
+              },
+            ],
+          };
+
+          console.log('Sending confirmation email with payload:', JSON.stringify(emailPayload, null, 2));
+
           const emailResponse = await fetch('https://api.mailjet.com/v3.1/send', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Basic ${auth}`,
             },
-            body: JSON.stringify({
-              Messages: [
-                {
-                  From: {
-                    Email: 'support@actu.fluance.io',
-                    Name: 'Cédric de Fluance',
-                  },
-                  To: [
-                    {
-                      Email: contactData.Email,
-                      Name: name || contactData.Email,
-                    },
-                  ],
-                  TemplateID: 7571938,
-                  TemplateLanguage: true,
-                  Subject: 'Dernière étape indispensable [[data:firstname:""]]',
-                  Variables: {
-                    token: confirmationToken,
-                    email: contactData.Email,
-                    firstname: name || '',
-                  },
-                },
-              ],
-            }),
+            body: JSON.stringify(emailPayload),
           });
 
+          const responseData = await emailResponse.json();
+          
           if (!emailResponse.ok) {
-            const errorText = await emailResponse.text();
-            console.error('Error sending confirmation email:', errorText);
-            // On continue quand même, le contact a été créé
+            emailError = `MailJet API error: ${emailResponse.status} - ${JSON.stringify(responseData)}`;
+            console.error('Error sending confirmation email:', emailError);
+            console.error('Response status:', emailResponse.status);
+            console.error('Response data:', responseData);
           } else {
-            console.log(`Confirmation email sent to ${contactData.Email}`);
+            emailSent = true;
+            console.log(`Confirmation email sent successfully to ${contactData.Email}`);
+            console.log('MailJet response:', JSON.stringify(responseData, null, 2));
           }
-        } catch (emailError) {
-          console.error('Error sending confirmation email:', emailError);
-          // On continue quand même, le contact a été créé
+        } catch (err) {
+          emailError = `Exception: ${err.message}`;
+          console.error('Exception sending confirmation email:', emailError);
+          console.error('Stack trace:', err.stack);
         }
 
         return {
           success: true,
-          message: 'Confirmation email sent. Please check your inbox.',
+          message: emailSent 
+            ? 'Confirmation email sent. Please check your inbox.' 
+            : 'Contact created but confirmation email may not have been sent. Please check logs.',
           email: contactData.Email,
+          emailSent: emailSent,
+          emailError: emailError || null,
         };
       } catch (error) {
         console.error('Error subscribing to newsletter:', error);
