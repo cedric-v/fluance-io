@@ -23,15 +23,13 @@ eleventyExcludeFromCollections: true
         </svg>
       </div>
       <h1 class="text-4xl font-semibold text-[#0f172a]">Inscription confirmée !</h1>
-      <p class="text-xl text-[#0f172a]/80">
+      <p id="success-description" class="text-xl text-[#0f172a]/80">
         Merci d'avoir confirmé votre inscription. Vous recevrez désormais nos emails.
       </p>
-      <p class="text-lg text-[#0f172a]/70">
-        Accédez maintenant aux 2 pratiques libératrices offertes :
-      </p>
+      <p id="success-subtext" class="text-lg text-[#0f172a]/70"></p>
       <div class="pt-4">
-        <a href="{{ '/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
-          <span>Accéder aux 2 pratiques offertes</span>
+        <a id="success-cta" href="{{ '/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
+          <span id="success-cta-text">Accéder aux 2 pratiques offertes</span>
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
           </svg>
@@ -62,11 +60,17 @@ eleventyExcludeFromCollections: true
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get('email');
     const token = urlParams.get('token');
+    const redirectParam = urlParams.get('redirect');
+    const sourceParam = urlParams.get('source');
 
     const loadingState = document.getElementById('loading-state');
     const successState = document.getElementById('success-state');
     const errorState = document.getElementById('error-state');
     const errorMessage = document.getElementById('error-message');
+    const successDescription = document.getElementById('success-description');
+    const successSubtext = document.getElementById('success-subtext');
+    const successCta = document.getElementById('success-cta');
+    const successCtaText = document.getElementById('success-cta-text');
 
     // Vérifier que les paramètres sont présents
     if (!email || !token) {
@@ -198,6 +202,29 @@ eleventyExcludeFromCollections: true
       if (result.data && result.data.success) {
         loadingState.classList.add('hidden');
         successState.classList.remove('hidden');
+
+        // Déterminer la destination en fonction de la source
+        const sourceOptin = sourceParam || result.data.sourceOptin || redirectParam || '2pratiques';
+        let target = '2pratiques';
+        if (sourceOptin && sourceOptin.includes('5joursofferts')) {
+          target = '5joursofferts';
+        } else if (redirectParam === 'achat21' || sourceOptin === 'achat21') {
+          target = 'achat21';
+        }
+
+        if (target === '5joursofferts') {
+          successSubtext.textContent = 'Accédez maintenant au jour 1 de vos 5 pratiques offertes :';
+          successCta.href = '/cours-en-ligne/5jours/j1/';
+          successCtaText.textContent = 'Accéder au jour 1 des 5 pratiques';
+        } else if (target === 'achat21') {
+          successSubtext.textContent = 'Accédez à votre confirmation d’achat pour 21 jours :';
+          successCta.href = '/confirmation/';
+          successCtaText.textContent = 'Accéder à ma confirmation d’achat';
+        } else {
+          successSubtext.textContent = 'Accédez maintenant aux 2 pratiques libératrices offertes :';
+          successCta.href = '/2-pratiques-offertes/';
+          successCtaText.textContent = 'Accéder aux 2 pratiques offertes';
+        }
       } else {
         throw new Error(result.data?.message || 'Erreur lors de la confirmation');
       }

@@ -839,6 +839,7 @@ exports.subscribeToNewsletter = onCall(
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           expiresAt: expirationDate,
           confirmed: false,
+          sourceOptin: '2pratiques',
         });
 
         // Ajouter le contact à MailJet
@@ -968,7 +969,7 @@ exports.subscribeToNewsletter = onCall(
 
         // Envoyer l'email de confirmation avec le template MailJet
         console.log('📧 Starting email confirmation process for:', contactData.Email);
-        const confirmationUrl = `https://fluance.io/confirm?email=${encodeURIComponent(contactData.Email)}&token=${confirmationToken}`;
+        const confirmationUrl = `https://fluance.io/confirm?email=${encodeURIComponent(contactData.Email)}&token=${confirmationToken}&redirect=2pratiques`;
 
         let emailSent = false;
         let emailError = null;
@@ -997,6 +998,7 @@ exports.subscribeToNewsletter = onCall(
                   token: confirmationToken,
                   email: contactData.Email,
                   firstname: name || '',
+                  redirect: '2pratiques',
                 },
               },
             ],
@@ -1248,6 +1250,7 @@ exports.confirmNewsletterOptIn = onCall(
           success: true,
           message: 'Email confirmed successfully',
           email: email,
+          sourceOptin: tokenData.sourceOptin || null,
         };
       } catch (error) {
         console.error('Error confirming newsletter opt-in:', error);
@@ -1448,7 +1451,7 @@ exports.subscribeTo5Days = onCall(
 
         // Envoyer l'email de confirmation avec le template MailJet
         console.log('📧 Starting email confirmation process for 5 jours:', contactData.Email);
-        const confirmationUrl = `https://fluance.io/confirm?email=${encodeURIComponent(contactData.Email)}&token=${confirmationToken}`;
+        const confirmationUrl = `https://fluance.io/confirm?email=${encodeURIComponent(contactData.Email)}&token=${confirmationToken}&redirect=5joursofferts`;
 
         let emailSent = false;
         let emailError = null;
@@ -1477,6 +1480,7 @@ exports.subscribeTo5Days = onCall(
                   token: confirmationToken,
                   email: contactData.Email,
                   firstname: name || '',
+                  redirect: '5joursofferts',
                 },
               },
             ],
