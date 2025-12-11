@@ -1696,12 +1696,12 @@ exports.subscribeTo5Days = onCall(
         // Ne définir serie_5jours_debut que si elle n'existe pas déjà (pour ne pas réinitialiser une série en cours)
         if (!currentProperties['serie_5jours_debut']) {
           properties['serie_5jours_debut'] = dateStr;
-          properties['serie_5jours_status'] = 'pending'; // Statut initial : en attente de confirmation
+          properties['serie_5jours_status'] = 'started'; // Statut initial : série démarrée (redirection immédiate vers jour 1)
         } else {
           // Si la série a déjà commencé, ne pas réinitialiser
           // Mais mettre à jour le statut si nécessaire
           if (!currentProperties['serie_5jours_status'] || currentProperties['serie_5jours_status'] === 'cancelled') {
-            properties['serie_5jours_status'] = 'pending';
+            properties['serie_5jours_status'] = 'started';
           }
         }
 
