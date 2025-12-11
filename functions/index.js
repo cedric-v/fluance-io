@@ -639,14 +639,27 @@ exports.subscribeToNewsletter = onCall(
       }
 
       try {
-        // Ajouter le contact à MailJet
-        // Note: Vous devrez peut-être créer une liste dans MailJet et utiliser son ID
-        // Pour l'instant, on ajoute juste le contact (il sera ajouté à la liste par défaut)
+        // Générer un token de confirmation unique pour le double opt-in
+        const confirmationToken = generateUniqueToken();
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 7); // Token valide 7 jours
+
+        // Stocker le token de confirmation dans Firestore
+        await db.collection('newsletterConfirmations').doc(confirmationToken).set({
+          email: email.toLowerCase().trim(),
+          name: name || '',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: expirationDate,
+          confirmed: false,
+        });
+
+        // Ajouter le contact à MailJet avec IsOptInPending: true pour le double opt-in
         const url = 'https://api.mailjet.com/v3/REST/contact';
 
         const contactData = {
           Email: email.toLowerCase().trim(),
           IsExcludedFromCampaigns: false,
+          IsOptInPending: true, // Activer le double opt-in
         };
 
         if (name) {
@@ -751,14 +764,196 @@ exports.subscribeToNewsletter = onCall(
           console.warn('MAILJET_LIST_ID not configured. Contact added to MailJet but not to a specific list.');
         }
 
+        // Envoyer l'email de confirmation avec le template MailJet
+        const confirmationUrl = `https://fluance.io/confirm?email=${encodeURIComponent(contactData.Email)}&token=${confirmationToken}`;
+        
+        try {
+          const emailResponse = await fetch('https://api.mailjet.com/v3.1/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify({
+              Messages: [
+                {
+                  From: {
+                    Email: 'support@actu.fluance.io',
+                    Name: 'Cédric de Fluance',
+                  },
+                  To: [
+                    {
+                      Email: contactData.Email,
+                      Name: name || contactData.Email,
+                    },
+                  ],
+                  TemplateID: 7571938,
+                  TemplateLanguage: true,
+                  Subject: 'Dernière étape indispensable [[data:firstname:""]]',
+                  Variables: {
+                    token: confirmationToken,
+                    email: contactData.Email,
+                    firstname: name || '',
+                  },
+                },
+              ],
+            }),
+          });
+
+          if (!emailResponse.ok) {
+            const errorText = await emailResponse.text();
+            console.error('Error sending confirmation email:', errorText);
+            // On continue quand même, le contact a été créé
+          } else {
+            console.log(`Confirmation email sent to ${contactData.Email}`);
+          }
+        } catch (emailError) {
+          console.error('Error sending confirmation email:', emailError);
+          // On continue quand même, le contact a été créé
+        }
+
         return {
           success: true,
-          message: 'Successfully subscribed to newsletter',
+          message: 'Confirmation email sent. Please check your inbox.',
           email: contactData.Email,
         };
       } catch (error) {
         console.error('Error subscribing to newsletter:', error);
         throw new HttpsError('internal', 'Error subscribing to newsletter: ' + error.message);
+      }
+    });
+
+/**
+ * Confirme l'opt-in newsletter (double opt-in)
+ * Cette fonction est publique (pas besoin d'authentification admin)
+ * Région : europe-west1 (Belgique)
+ * Utilise les secrets Firebase pour Mailjet
+ */
+exports.confirmNewsletterOptIn = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'MAILJET_LIST_ID'],
+      cors: true, // Autoriser CORS pour toutes les origines
+    },
+    async (request) => {
+      const {email, token} = request.data;
+
+      if (!email || !token) {
+        throw new HttpsError('invalid-argument', 'Email and token are required');
+      }
+
+      // Valider le format de l'email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new HttpsError('invalid-argument', 'Invalid email format');
+      }
+
+      try {
+        // Vérifier le token dans Firestore
+        const tokenDoc = await db.collection('newsletterConfirmations').doc(token).get();
+
+        if (!tokenDoc.exists) {
+          throw new HttpsError('not-found', 'Token invalide');
+        }
+
+        const tokenData = tokenDoc.data();
+
+        // Vérifier que l'email correspond
+        if (tokenData.email.toLowerCase().trim() !== email.toLowerCase().trim()) {
+          throw new HttpsError('permission-denied', 'Email does not match token');
+        }
+
+        // Vérifier si déjà confirmé
+        if (tokenData.confirmed) {
+          return {
+            success: true,
+            message: 'Email already confirmed',
+            email: email,
+            alreadyConfirmed: true,
+          };
+        }
+
+        // Vérifier si le token a expiré
+        const now = new Date();
+        const expiresAt = tokenData.expiresAt.toDate();
+        if (now > expiresAt) {
+          throw new HttpsError('deadline-exceeded', 'Ce lien de confirmation a expiré. Veuillez vous réinscrire.');
+        }
+
+        const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+
+        // Confirmer l'opt-in dans MailJet (mettre IsOptInPending à false)
+        const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(email.toLowerCase().trim())}`;
+        
+        const updateResponse = await fetch(contactUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${auth}`,
+          },
+          body: JSON.stringify({
+            IsOptInPending: false,
+          }),
+        });
+
+        if (!updateResponse.ok) {
+          const errorText = await updateResponse.text();
+          console.error('Error confirming opt-in in MailJet:', errorText);
+          throw new Error(`Mailjet API error: ${updateResponse.status} - ${errorText}`);
+        }
+
+        // Marquer le token comme confirmé dans Firestore
+        await db.collection('newsletterConfirmations').doc(token).update({
+          confirmed: true,
+          confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // Ajouter le contact à la liste spécifique si configurée
+        const listId = process.env.MAILJET_LIST_ID;
+        if (listId) {
+          const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
+
+          try {
+            const listResponse = await fetch(addToListUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${auth}`,
+              },
+              body: JSON.stringify({
+                IsUnsubscribed: false,
+                ContactAlt: email.toLowerCase().trim(),
+                ListID: parseInt(listId, 10),
+              }),
+            });
+
+            if (!listResponse.ok) {
+              const errorText = await listResponse.text();
+              // Si le contact est déjà dans la liste, ce n'est pas une erreur critique
+              if (listResponse.status === 400 && errorText.includes('already')) {
+                console.log(`Contact ${email} is already in list ${listId}`);
+              } else {
+                console.error('Error adding contact to MailJet list:', errorText);
+              }
+            } else {
+              console.log(`Contact ${email} successfully added to list ${listId}`);
+            }
+          } catch (listError) {
+            console.error('Error adding contact to MailJet list:', listError);
+          }
+        }
+
+        return {
+          success: true,
+          message: 'Email confirmed successfully',
+          email: email,
+        };
+      } catch (error) {
+        console.error('Error confirming newsletter opt-in:', error);
+        if (error instanceof HttpsError) {
+          throw error;
+        }
+        throw new HttpsError('internal', 'Error confirming newsletter opt-in: ' + error.message);
       }
     });
 

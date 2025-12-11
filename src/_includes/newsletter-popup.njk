@@ -311,11 +311,11 @@
           });
           
           if (result.data && result.data.success) {
-            showMessage('Merci ! Votre inscription s\'est bien passée. Pensez à vérifier vos spams / courriers indésirables au besoin.', 'success');
-            // Rediriger vers la page 2-pratiques-offertes après 1.5 secondes
+            showMessage('Merci ! Un email de confirmation vous a été envoyé. Veuillez cliquer sur le lien dans l\'email pour confirmer votre inscription. Pensez à vérifier vos spams / courriers indésirables.', 'success');
+            // Rediriger vers la page 2-pratiques-offertes après 3 secondes
             setTimeout(() => {
               window.location.href = '/2-pratiques-offertes/';
-            }, 1500);
+            }, 3000);
           } else {
             showMessage('Une erreur est survenue. Veuillez réessayer.', 'error');
           }
