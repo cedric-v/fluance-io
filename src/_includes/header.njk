@@ -116,6 +116,8 @@
             {% set targetUrl = '/en/member-login/' %}
           {% elif currentUrl == '/creer-compte/' %}
             {% set targetUrl = '/en/create-account/' %}
+          {% elif currentUrl == '/reinitialiser-mot-de-passe/' %}
+            {% set targetUrl = '/en/reset-password/' %}
           {% else %}
             {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
             {% if cleanUrl == '/' %}
@@ -133,6 +135,8 @@
             {% set targetUrl = '/connexion-membre/' %}
           {% elif currentUrl == '/en/create-account/' %}
             {% set targetUrl = '/creer-compte/' %}
+          {% elif currentUrl == '/en/reset-password/' %}
+            {% set targetUrl = '/reinitialiser-mot-de-passe/' %}
           {% else %}
             {% set targetUrl = currentUrl | replace('/en/', '/') %}
           {% endif %}
@@ -234,6 +238,8 @@
             {% set targetUrl = '/en/member-login/' %}
           {% elif currentUrl == '/creer-compte/' %}
             {% set targetUrl = '/en/create-account/' %}
+          {% elif currentUrl == '/reinitialiser-mot-de-passe/' %}
+            {% set targetUrl = '/en/reset-password/' %}
           {% else %}
             {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
             {% if cleanUrl == '/' %}
@@ -251,6 +257,8 @@
             {% set targetUrl = '/connexion-membre/' %}
           {% elif currentUrl == '/en/create-account/' %}
             {% set targetUrl = '/creer-compte/' %}
+          {% elif currentUrl == '/en/reset-password/' %}
+            {% set targetUrl = '/reinitialiser-mot-de-passe/' %}
           {% else %}
             {% set targetUrl = currentUrl | replace('/en/', '/') %}
           {% endif %}
