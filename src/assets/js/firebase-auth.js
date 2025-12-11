@@ -331,17 +331,54 @@ async function sendPasswordResetEmail(email) {
     console.log('[Firebase Auth]   Origin:', window.location.origin);
 
     console.log('[Firebase Auth] Appel de auth.sendPasswordResetEmail...');
-    await auth.sendPasswordResetEmail(email, actionCodeSettings);
     
-    console.log('[Firebase Auth] ✅ Email de réinitialisation envoyé avec succès');
-    console.log('[Firebase Auth] 💡 Note: L\'email est envoyé par Firebase Auth, pas par Mailjet');
-    console.log('[Firebase Auth] 💡 Vérifiez votre boîte de réception et le dossier spam');
-    console.log('[Firebase Auth] 💡 L\'expéditeur est généralement: noreply@[PROJECT_ID].firebaseapp.com');
-    
-    return { 
-      success: true,
-      message: 'Un email de réinitialisation a été envoyé. Vérifiez votre boîte de réception et le dossier spam.'
-    };
+    try {
+      await auth.sendPasswordResetEmail(email, actionCodeSettings);
+      
+      console.log('[Firebase Auth] ✅ Email de réinitialisation envoyé avec succès');
+      console.log('[Firebase Auth] 💡 Note: L\'email est envoyé par Firebase Auth, pas par Mailjet');
+      console.log('[Firebase Auth] 💡 Vérifiez votre boîte de réception et le dossier spam');
+      console.log('[Firebase Auth] 💡 L\'expéditeur est: support@actu.fluance.io (ou noreply@fluance-protected-content.firebaseapp.com si le domaine personnalisé n\'est pas encore vérifié)');
+      
+      return { 
+        success: true,
+        message: 'Un email de réinitialisation a été envoyé. Vérifiez votre boîte de réception et le dossier spam.'
+      };
+    } catch (firebaseError) {
+      // Si Firebase Auth échoue, essayer la fonction alternative via Mailjet
+      console.warn('[Firebase Auth] ⚠️ Firebase Auth a échoué, tentative avec la fonction alternative via Mailjet');
+      console.warn('[Firebase Auth] Erreur Firebase:', firebaseError.code, firebaseError.message);
+      
+      try {
+        // Appeler la fonction Firebase alternative
+        if (!firebase.functions) {
+          throw new Error('Firebase Functions n\'est pas disponible');
+        }
+        
+        // Initialiser Functions avec la région si nécessaire
+        const functions = firebase.functions();
+        // Spécifier la région si nécessaire (europe-west1)
+        const sendPasswordResetViaMailjet = functions.httpsCallable('sendPasswordResetEmailViaMailjet');
+        
+        console.log('[Firebase Auth] Appel de la fonction alternative sendPasswordResetEmailViaMailjet...');
+        const result = await sendPasswordResetViaMailjet({ email });
+        
+        if (result.data && result.data.success) {
+          console.log('[Firebase Auth] ✅ Email de réinitialisation envoyé via Mailjet (fonction alternative)');
+          return {
+            success: true,
+            message: 'Un email de réinitialisation a été envoyé via Mailjet. Vérifiez votre boîte de réception et le dossier spam.',
+            sentViaMailjet: true
+          };
+        } else {
+          throw new Error(result.data?.message || 'Erreur lors de l\'envoi via Mailjet');
+        }
+      } catch (mailjetError) {
+        console.error('[Firebase Auth] ❌ La fonction alternative a aussi échoué:', mailjetError);
+        // Relancer l'erreur Firebase originale
+        throw firebaseError;
+      }
+    }
   } catch (error) {
     console.error('[Firebase Auth] ❌ ERREUR lors de l\'envoi de l\'email de réinitialisation');
     console.error('[Firebase Auth] Erreur complète:', error);

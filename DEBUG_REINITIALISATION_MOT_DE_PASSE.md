@@ -11,6 +11,17 @@ L'email de réinitialisation de mot de passe n'arrive pas à l'utilisateur.
 - ✅ **Mailjet** : Utilisé uniquement pour les emails de **création de compte** (tokens d'inscription)
 - ✅ **Firebase Auth** : Utilisé pour les emails de **réinitialisation de mot de passe** et **connexion passwordless**
 
+## 📧 Domaine personnalisé pour les emails
+
+Un domaine personnalisé est configuré pour l'envoi des emails Firebase Auth (ex: `actu.votre-domaine.io`).
+
+**État actuel** : "Custom-domain verification in progress" (Vérification en cours)
+
+Une fois la vérification terminée :
+- Les emails seront envoyés depuis votre domaine personnalisé (ex: `support@votre-domaine.io`) au lieu de `noreply@[PROJECT_ID].firebaseapp.com`
+- Cela améliore la délivrabilité et la confiance des utilisateurs
+- **Aucune modification de code nécessaire** - Firebase gère cela automatiquement
+
 ## 🔧 Vérifications à faire
 
 ### 1. Vérifier que "Email/Password" est activé
@@ -65,14 +76,17 @@ L'email de réinitialisation de mot de passe n'arrive pas à l'utilisateur.
 Les emails Firebase peuvent être filtrés comme spam :
 - ✅ Vérifiez votre dossier **spam/courrier indésirable**
 - ✅ Vérifiez les filtres de votre boîte email
-- ✅ L'expéditeur est généralement : `noreply@fluance-protected-content.firebaseapp.com`
-- ✅ Ajoutez cet expéditeur à vos contacts pour éviter les filtres
-- ✅ Dans Gmail, recherchez : `from:noreply@fluance-protected-content.firebaseapp.com`
+- ✅ **Expéditeur actuel** (pendant la vérification) : `noreply@[PROJECT_ID].firebaseapp.com`
+- ✅ **Expéditeur après vérification** : `support@votre-domaine-personnalise.io` (une fois le domaine personnalisé vérifié)
+- ✅ Ajoutez ces expéditeurs à vos contacts pour éviter les filtres
+- ✅ Dans Gmail, recherchez : 
+  - `from:noreply@[PROJECT_ID].firebaseapp.com` (actuel)
+  - `from:support@votre-domaine-personnalise.io` (après vérification)
 
 ### 6. Vérifier que l'utilisateur existe
 
 1. Dans Firebase Console, allez dans **Authentication > Users**
-2. Recherchez l'email : `cedricjourney+testauth@gmail.com`
+2. Recherchez l'email de l'utilisateur concerné (ex: `user@example.com`)
 3. Vérifiez que l'utilisateur existe
 4. Si l'utilisateur n'existe pas :
    - L'email de réinitialisation ne peut pas être envoyé
@@ -126,12 +140,42 @@ Ouvrez la console du navigateur (F12) et vérifiez :
 - `{{LINK}}` (accolades)
 - Ou utilisez le bouton "Reset to default" puis personnalisez uniquement le texte, pas le lien
 
-### Solution 2 : Vérifier le domaine personnalisé
+### Solution 2 : Vérifier le domaine personnalisé pour les emails
 
-Si vous utilisez un domaine personnalisé (`fluance.io`), vérifiez :
+**Domaine personnalisé configuré** : Votre domaine personnalisé (ex: `actu.votre-domaine.io`)
+
+**État actuel** : "Custom-domain verification in progress"
+
+#### Étapes de vérification :
+
+1. **Dans Firebase Console** :
+   - Allez dans **Authentication > Settings > Email templates**
+   - Vérifiez l'état de la vérification de votre domaine personnalisé
+   - Si "Custom-domain verification in progress", attendez la propagation DNS (jusqu'à 24h)
+
+2. **Vérifier les enregistrements DNS** :
+   - Connectez-vous à votre fournisseur DNS (registraire de domaine)
+   - Vérifiez que les enregistrements TXT et CNAME fournis par Firebase sont bien configurés pour votre domaine personnalisé
+   - Les enregistrements doivent être ajoutés au niveau du sous-domaine configuré
+
+3. **Une fois la vérification terminée** :
+   - Firebase affichera "Verification complete" ou "Verified"
+   - Cliquez sur **"Apply custom domain"** pour activer le domaine
+   - Les emails seront automatiquement envoyés depuis votre domaine personnalisé (ex: `support@votre-domaine.io`)
+   - **Aucune modification de code nécessaire** - Firebase gère cela automatiquement
+
+4. **Vérifier le domaine dans les templates** :
+   - Dans **Authentication > Sign-in method > Email/Password > Email templates**
+   - Pour chaque template (Password reset, Email verification, etc.)
+   - Vérifiez que votre domaine personnalisé est sélectionné
+   - Si ce n'est pas le cas, sélectionnez-le dans le menu déroulant "Custom domain"
+
+#### Vérification du domaine pour les liens (Hosting) :
+
+Si vous utilisez un domaine personnalisé (`fluance.io`) pour les liens de réinitialisation, vérifiez :
 1. Que le domaine est bien configuré dans Firebase Hosting
 2. Que les DNS sont correctement configurés
-3. Que le domaine est dans la liste des domaines autorisés
+3. Que le domaine est dans la liste des domaines autorisés dans Authentication > Settings
 
 ### Solution 3 : Tester avec un autre email
 
@@ -152,23 +196,24 @@ Pour identifier si c'est un problème spécifique à votre fournisseur d'email.
 ## 📋 Checklist de vérification
 
 - [ ] "Email/Password" est activé dans Firebase Console
-- [ ] Le template "Password reset" est configuré et contient un lien
-- [ ] Le lien dans le template pointe vers `fluance.io/reinitialiser-mot-de-passe`
+- [ ] Le template "Password reset" est configuré et contient un lien avec `%LINK%`
 - [ ] Le domaine `fluance.io` est dans les domaines autorisés
+- [ ] **Domaine personnalisé** : Vérification DNS en cours ou terminée
 - [ ] Les quotas Firebase ne sont pas dépassés
 - [ ] Vérifié les spams dans Gmail
 - [ ] L'utilisateur existe dans Firebase Authentication
 - [ ] Testé avec un autre email
 - [ ] Vérifié la console du navigateur pour les erreurs
-- [ ] Recherché l'email dans Gmail avec `from:noreply@fluance-protected-content.firebaseapp.com`
+- [ ] Recherché l'email dans Gmail avec `from:support@votre-domaine-personnalise.io` (ou `from:noreply@[PROJECT_ID].firebaseapp.com` si pas encore vérifié)
 
 ## 💡 Prochaines étapes
 
-1. **Commencez par vérifier les domaines autorisés** (étape 3) - c'est souvent la cause
-2. **Vérifiez les spams** (étape 5) - les emails Firebase sont souvent filtrés
-3. **Vérifiez la console du navigateur** - les logs détaillés vous indiqueront le problème exact
-4. **Vérifiez les quotas** (étape 4) - si vous avez envoyé beaucoup d'emails récemment
-5. **Vérifiez le template d'email** (étape 2) - le lien doit pointer vers le bon domaine
+1. **Attendre la vérification du domaine personnalisé** - Si votre domaine personnalisé est en cours de vérification, attendez que la vérification DNS soit terminée (jusqu'à 24h)
+2. **Vérifier les domaines autorisés** (étape 3) - c'est souvent la cause
+3. **Vérifier les spams** (étape 5) - les emails Firebase sont souvent filtrés
+4. **Vérifier la console du navigateur** - les logs détaillés vous indiqueront le problème exact
+5. **Vérifier les quotas** (étape 4) - si vous avez envoyé beaucoup d'emails récemment
+6. **Vérifier le template d'email** (étape 2) - le lien doit utiliser `%LINK%` et non une URL hardcodée
 
 ## 🆘 Si rien ne fonctionne
 

@@ -1818,3 +1818,132 @@ exports.subscribeTo5Days = onCall(
       }
     });
 
+/**
+ * Fonction alternative pour envoyer un email de réinitialisation de mot de passe via Mailjet
+ * Cette fonction génère un lien de réinitialisation Firebase et l'envoie via Mailjet
+ * Utile si les emails Firebase Auth ne fonctionnent pas correctement
+ *
+ * Région : europe-west1
+ */
+exports.sendPasswordResetEmailViaMailjet = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      cors: true,
+    },
+    async (request) => {
+      const {email} = request.data;
+
+      if (!email) {
+        throw new HttpsError('invalid-argument', 'Email is required');
+      }
+
+      try {
+        // Vérifier que l'utilisateur existe
+        try {
+          // eslint-disable-next-line no-unused-vars
+          const userRecord = await auth.getUserByEmail(email.toLowerCase().trim());
+        } catch (error) {
+          if (error.code === 'auth/user-not-found') {
+            // Pour des raisons de sécurité, ne pas révéler si l'utilisateur existe ou non
+            // Retourner un succès même si l'utilisateur n'existe pas
+            console.log(`Password reset requested for non-existent user: ${email}`);
+            return {
+              success: true,
+              message: 'If an account exists with this email, a password reset link has been sent.',
+            };
+          }
+          throw error;
+        }
+
+        // Générer le lien de réinitialisation Firebase
+        const resetLink = await auth.generatePasswordResetLink(email.toLowerCase().trim(), {
+          url: 'https://fluance.io/reinitialiser-mot-de-passe',
+          handleCodeInApp: true,
+        });
+
+        console.log(`Password reset link generated for ${email}`);
+
+        // Envoyer l'email via Mailjet
+        const emailSubject = 'Réinitialisation de votre mot de passe Fluance';
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .button {
+                display: inline-block;
+                padding: 12px 24px;
+                background-color: #4CAF50;
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+                margin: 20px 0;
+              }
+              .button:hover { background-color: #45a049; }
+              .footer { margin-top: 30px; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h2>Réinitialisation de votre mot de passe</h2>
+              <p>Bonjour,</p>
+              <p>Vous avez demandé à réinitialiser votre mot de passe pour votre compte Fluance.</p>
+              <p>Cliquez sur le bouton ci-dessous pour réinitialiser votre mot de passe :</p>
+              <p style="text-align: center;">
+                <a href="${resetLink}" class="button">Réinitialiser mon mot de passe</a>
+              </p>
+              <p>Ou copiez-collez ce lien dans votre navigateur :</p>
+              <p style="word-break: break-all; color: #666; font-size: 12px;">${resetLink}</p>
+              <p><strong>Ce lien est valide pendant 1 heure.</strong></p>
+              <p>Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email en toute sécurité.</p>
+              <div class="footer">
+                <p>Cordialement,<br>L'équipe Fluance</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+
+        const emailText = `
+Réinitialisation de votre mot de passe Fluance
+
+Bonjour,
+
+Vous avez demandé à réinitialiser votre mot de passe pour votre compte Fluance.
+
+Cliquez sur ce lien pour réinitialiser votre mot de passe :
+${resetLink}
+
+Ce lien est valide pendant 1 heure.
+
+Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email en toute sécurité.
+
+Cordialement,
+L'équipe Fluance
+        `;
+
+        await sendMailjetEmail(
+            email.toLowerCase().trim(),
+            emailSubject,
+            emailHtml,
+            emailText,
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+
+        console.log(`Password reset email sent via Mailjet to ${email}`);
+
+        return {
+          success: true,
+          message: 'Password reset email sent successfully.',
+        };
+      } catch (error) {
+        console.error('Error sending password reset email via Mailjet:', error);
+        throw new HttpsError('internal', 'Error sending password reset email: ' + error.message);
+      }
+    });
+
