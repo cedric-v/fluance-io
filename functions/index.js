@@ -2962,7 +2962,7 @@ exports.sendNewContentEmails = onSchedule(
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
       region: 'europe-west1',
     },
-    async (event) => {
+    async (_event) => {
       console.log('📧 Starting scheduled email job for new content');
       const now = new Date();
       const mailjetApiKey = process.env.MAILJET_API_KEY;
@@ -3063,9 +3063,20 @@ exports.sendNewContentEmails = onSchedule(
                       <style>
                         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                        .header { background-color: #648ED8; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-                        .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }
-                        .button { display: inline-block; padding: 12px 24px; background-color: #ffce2d; color: #0f172a; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+                        .header {
+                          background-color: #648ED8; color: white; padding: 20px;
+                          text-align: center; border-radius: 5px 5px 0 0;
+                        }
+                        .content {
+                          background-color: #f9f9f9; padding: 20px;
+                          border-radius: 0 0 5px 5px;
+                        }
+                        .button {
+                          display: inline-block; padding: 12px 24px;
+                          background-color: #ffce2d; color: #0f172a;
+                          text-decoration: none; border-radius: 5px;
+                          font-weight: bold; margin: 20px 0;
+                        }
                         .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
                       </style>
                     </head>
@@ -3155,9 +3166,20 @@ exports.sendNewContentEmails = onSchedule(
                       <style>
                         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
                         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                        .header { background-color: #648ED8; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-                        .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }
-                        .button { display: inline-block; padding: 12px 24px; background-color: #ffce2d; color: #0f172a; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+                        .header {
+                          background-color: #648ED8; color: white; padding: 20px;
+                          text-align: center; border-radius: 5px 5px 0 0;
+                        }
+                        .content {
+                          background-color: #f9f9f9; padding: 20px;
+                          border-radius: 0 0 5px 5px;
+                        }
+                        .button {
+                          display: inline-block; padding: 12px 24px;
+                          background-color: #ffce2d; color: #0f172a;
+                          text-decoration: none; border-radius: 5px;
+                          font-weight: bold; margin: 20px 0;
+                        }
                         .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
                       </style>
                     </head>
@@ -3168,7 +3190,8 @@ exports.sendNewContentEmails = onSchedule(
                         </div>
                         <div class="content">
                           <p>Bonjour,</p>
-                          <p>Votre nouveau contenu pour la <strong>semaine ${currentWeek}</strong> est maintenant disponible !</p>
+                          <p>Votre nouveau contenu pour la
+                            <strong>semaine ${currentWeek}</strong> est maintenant disponible !</p>
                           <p><strong>${contentData.title || 'Nouveau contenu'}</strong></p>
                           <p style="text-align: center;">
                             <a href="https://fluance.io/membre/" class="button">Accéder à mon contenu</a>
