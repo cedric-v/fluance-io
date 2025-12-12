@@ -98,6 +98,34 @@ function makeRequest(options, data = null) {
   });
 }
 
+// Fonction pour mettre à jour le nom du contact (champ Name standard)
+async function updateContactName(email, name) {
+  if (!name) return;
+
+  const encodedEmail = encodeURIComponent(email.toLowerCase().trim());
+  const options = {
+    hostname: 'api.mailjet.com',
+    path: `/v3/REST/contact/${encodedEmail}`,
+    method: 'PUT',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/json',
+    },
+  };
+
+  const data = {
+    Email: email.toLowerCase().trim(),
+    Name: name,
+  };
+
+  try {
+    await makeRequest(options, data);
+  } catch (error) {
+    // Ne pas bloquer si la mise à jour du nom échoue
+    console.log(`   ⚠️  Impossible de mettre à jour le nom du contact: ${error.message}`);
+  }
+}
+
 // Fonction pour ajouter un contact à la liste Mailjet
 async function addContactToList(email, listId) {
   const options = {
@@ -209,6 +237,13 @@ async function addContacts() {
       await addContactToList(contact.email, LIST_ID);
       console.log(`   ✅ Contact ajouté à la liste`);
 
+      // Mettre à jour le nom du contact (champ Name standard)
+      if (contact.name) {
+        console.log(`   📋 Mise à jour du nom du contact...`);
+        await updateContactName(contact.email, contact.name);
+        console.log(`   ✅ Nom du contact mis à jour`);
+      }
+
       // Préparer les propriétés
       const properties = {
         statut: 'client',
@@ -218,9 +253,29 @@ async function addContacts() {
         valeur_client: contact.montant,
       };
 
+      // Ajouter le prénom si disponible
+      if (contact.name) {
+        properties.firstname = contact.name;
+      }
+
       if (contact.dateAchat) {
-        properties.date_premier_achat = contact.dateAchat;
-        properties.date_dernier_achat = contact.dateAchat;
+        // Convertir le format JJ/MM/AAAA en format ISO (YYYY-MM-DD)
+        const dateParts = contact.dateAchat.split('/');
+        if (dateParts.length === 3) {
+          const day = dateParts[0].padStart(2, '0');
+          const month = dateParts[1].padStart(2, '0');
+          const year = dateParts[2];
+          // Format ISO: YYYY-MM-DD
+          const isoDate = `${year}-${month}-${day}`;
+          // Mailjet attend le format ISO complet avec heure (ou juste la date)
+          // Utiliser toISOString() pour avoir le format complet
+          const dateObj = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+          const dateStr = dateObj.toISOString();
+          properties.date_premier_achat = dateStr;
+          properties.date_dernier_achat = dateStr;
+        } else {
+          console.error(`   ⚠️  Format de date invalide: ${contact.dateAchat} (attendu: JJ/MM/AAAA)`);
+        }
       }
 
       // Mettre à jour les propriétés
