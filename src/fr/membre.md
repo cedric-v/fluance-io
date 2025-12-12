@@ -599,11 +599,15 @@ document.addEventListener('DOMContentLoaded', function() {
               }
               
               // Scroller vers le contenu affiché après un court délai pour laisser le DOM se mettre à jour
+              // Prendre en compte la hauteur du header fixe (environ 112px = pt-28)
               setTimeout(() => {
-                contentSection.scrollIntoView({ 
-                  behavior: 'smooth', 
-                  block: 'start',
-                  inline: 'nearest'
+                const headerOffset = 120; // Hauteur approximative du header (pt-28 = 7rem = 112px + marge)
+                const elementPosition = contentSection.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                
+                window.scrollTo({
+                  top: offsetPosition,
+                  behavior: 'smooth'
                 });
               }, 100);
             }
