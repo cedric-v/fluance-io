@@ -33,3 +33,6 @@ Thumbs.db
 functions/node_modules/
 functions/.env
 functions/.env.local
+
+# Configuration avec données sensibles
+scripts/mailjet-contacts-config.json
