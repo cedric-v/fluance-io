@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
           id: 'complet',
           name: 'Approche Fluance Complète',
           url: '/cours-en-ligne/approche-fluance-complete/',
-          description: 'Accès à une nouvelle mini-série de pratiques chaque semaine. Pour garder l\'élan et continuer à prendre soin de votre corps et de ses ressentis.'
+          description: 'Accès à une <strong>nouvelle mini-série</strong> de pratiques <strong>chaque semaine.</strong><br><br>Pour <strong>garder l\'élan</strong> et <strong>continuer à prendre soin</strong> de votre <strong>corps</strong> et de <strong>vos ressentis</strong>.'
         }
       ];
       
