@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         {
           id: 'communaute',
-          name: 'Communauté',
+          name: '👥 Communauté',
           url: null, // Pas de page de vente
           description: null, // Pas de description pour l'onglet communauté
           isCommunity: true // Marqueur pour identifier l'onglet communauté
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p class="text-gray-700 mb-8">
                   Cliquez sur le bouton ci-dessous pour rejoindre le groupe WhatsApp de la communauté Fluance :
                 </p>
-                <a href="https://chat.whatsapp.com/LdJ0R68BN3ZK97C8V4iDpe" 
+                <a href="https://chat.whatsapp.com/GAGCKlYTDBGDVlMC0udkvu" 
                    target="_blank"
                    rel="noopener noreferrer"
                    class="inline-flex items-center gap-3 bg-[#25D366] text-white px-8 py-4 rounded-lg hover:bg-[#20BA5A] transition-colors font-semibold text-lg shadow-lg">
