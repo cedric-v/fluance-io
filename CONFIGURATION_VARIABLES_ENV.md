@@ -42,6 +42,11 @@ Ajoutez les variables suivantes une par une :
 - **Nom** : `PAYPAL_CLIENT_SECRET`  
   **Valeur** : Votre Client Secret PayPal
 
+#### Variables de notification (optionnelles)
+- **Nom** : `NOTIFICATION_EMAIL`  
+  **Valeur** : L'adresse email qui recevra les notifications pour les nouveaux commentaires sur le site  
+  **Note** : Si cette variable n'est pas configurée, les notifications de commentaires seront désactivées
+
 ### Étape 3 : Redéployer les fonctions
 
 Après avoir ajouté les variables, redéployez les fonctions :

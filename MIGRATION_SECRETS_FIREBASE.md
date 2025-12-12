@@ -28,6 +28,9 @@ echo -n "VOTRE_SECRET_API_MAILJET" | firebase functions:secrets:set MAILJET_API_
 # Créer les secrets PayPal (si vous les utilisez)
 # echo -n "VOTRE_CLIENT_ID" | firebase functions:secrets:set PAYPAL_CLIENT_ID
 # echo -n "VOTRE_CLIENT_SECRET" | firebase functions:secrets:set PAYPAL_CLIENT_SECRET
+
+# Créer le secret pour les notifications de commentaires (optionnel)
+# echo -n "votre-email@example.com" | firebase functions:secrets:set NOTIFICATION_EMAIL
 ```
 
 **Note** : Remplacez les valeurs par vos vraies clés API. Utilisez `echo -n` pour éviter d'ajouter un saut de ligne.
