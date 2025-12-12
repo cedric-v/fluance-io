@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p class="text-gray-700 mb-6">${prod.description}</p>
                 <a href="${prod.url}" 
                    class="inline-block bg-fluance text-white px-8 py-3 rounded-lg hover:bg-fluance/90 transition-colors font-semibold">
-                  ${prod.id === 'complet' ? 'Découvrir et acquérir l\'approche Fluance complète' : prod.id === '21jours' ? 'Découvrir et acquérir le défi 21 jours' : `Découvrir et acquérir ${prod.name}`}
+                  ${prod.id === 'complet' ? 'Découvrir et acquérir l\'approche Fluance complète' : prod.id === '21jours' ? 'Découvrir et acquérir le défi 21 jours pour remettre du mouvement' : `Découvrir et acquérir ${prod.name}`}
                 </a>
               </div>
             </div>
