@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-Une fonction Firebase Scheduled (`sendNewContentEmails`) s'exécute **quotidiennement à 9h (Europe/Paris)** pour envoyer automatiquement des emails aux clients lorsqu'un nouveau contenu devient disponible.
+Une fonction Firebase Scheduled (`sendNewContentEmails`) s'exécute **quotidiennement à 8h (Europe/Paris)** pour envoyer automatiquement des emails aux clients lorsqu'un nouveau contenu devient disponible.
 
 ## Fonctionnement
 
@@ -75,16 +75,16 @@ firebase deploy --only functions:sendNewContentEmails
 
 ### 2. Vérifier le schedule
 
-La fonction est configurée pour s'exécuter tous les jours à 9h (Europe/Paris).
+La fonction est configurée pour s'exécuter tous les jours à 8h (Europe/Paris).
 
 Pour modifier l'horaire, éditez le paramètre `schedule` dans `functions/index.js` :
 
 ```javascript
-schedule: '0 9 * * *', // Format cron : minute heure jour mois jour-semaine
+schedule: '0 8 * * *', // Format cron : minute heure jour mois jour-semaine
 ```
 
 **Exemples de schedules :**
-- `'0 9 * * *'` : Tous les jours à 9h
+- `'0 8 * * *'` : Tous les jours à 8h
 - `'0 10 * * 1'` : Tous les lundis à 10h
 - `'0 */6 * * *'` : Toutes les 6 heures
 
