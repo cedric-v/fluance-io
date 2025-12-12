@@ -68,9 +68,20 @@ async function addProductToUser(email, productName) {
 
     const userData = userDoc.data();
     console.log(`📄 Document Firestore trouvé`);
+    console.log(`   Produits actuels: ${JSON.stringify(userData.products || [])}`);
     
     // Récupérer ou initialiser le tableau products
+    // Si products n'existe pas mais product existe, migrer
     let products = userData.products || [];
+    if (products.length === 0 && userData.product) {
+      console.log(`   Migration depuis ancien format: product = "${userData.product}"`);
+      const existingStartDate = userData.registrationDate || userData.createdAt || admin.firestore.Timestamp.now();
+      products = [{
+        name: userData.product,
+        startDate: existingStartDate,
+        purchasedAt: userData.createdAt || existingStartDate,
+      }];
+    }
     
     // Vérifier si le produit existe déjà
     const productExists = products.some(p => p.name === productName);
@@ -81,7 +92,7 @@ async function addProductToUser(email, productName) {
       return;
     }
 
-    // Ajouter le nouveau produit
+    // Ajouter le nouveau produit au tableau existant
     const now = admin.firestore.Timestamp.now();
     products.push({
       name: productName,
@@ -89,10 +100,12 @@ async function addProductToUser(email, productName) {
       purchasedAt: now,
     });
 
+    console.log(`   Nouveaux produits: ${products.map(p => p.name).join(', ')}`);
+
     // Mettre à jour le document avec set() et merge pour éviter les problèmes avec FieldValue dans les tableaux
     await userDocRef.set({
       products: products,
-      product: productName, // Garder pour compatibilité rétroactive
+      product: productName, // Garder pour compatibilité rétroactive (dernier produit ajouté)
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
 
