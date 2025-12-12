@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
           id: 'complet',
           name: 'Approche Fluance Complète',
           url: '/cours-en-ligne/approche-fluance-complete/',
-          description: 'Accès complet à tous les cours et pratiques avec déblocage hebdomadaire.'
+          description: 'Accès à une nouvelle mini-série de pratiques chaque semaine. Pour garder l\'élan et continuer à prendre soin de votre corps et de ses ressentis.'
         }
       ];
       
