@@ -266,6 +266,14 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   if (passwordTab) passwordTab.addEventListener('click', () => switchTab('password'));
   if (passwordlessTab) passwordlessTab.addEventListener('click', () => switchTab('passwordless'));
+  
+  // Check if a specific tab is requested in the URL
+  const tabParam = urlParams.get('tab');
+  if (tabParam === 'passwordless') {
+    switchTab('passwordless');
+  } else if (tabParam === 'password') {
+    switchTab('password');
+  }
   // if (passkeyTab) passkeyTab.addEventListener('click', () => switchTab('passkey')); // Temporarily disabled
   
   // Check if a passwordless link is present in the URL

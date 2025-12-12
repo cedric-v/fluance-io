@@ -306,6 +306,14 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   if (passwordTab) passwordTab.addEventListener('click', () => switchTab('password'));
   if (passwordlessTab) passwordlessTab.addEventListener('click', () => switchTab('passwordless'));
+  
+  // Vérifier si un onglet spécifique est demandé dans l'URL
+  const tabParam = urlParams.get('tab');
+  if (tabParam === 'passwordless') {
+    switchTab('passwordless');
+  } else if (tabParam === 'password') {
+    switchTab('password');
+  }
   // if (passkeyTab) passkeyTab.addEventListener('click', () => switchTab('passkey')); // Temporairement désactivé
   
   // Vérifier si un lien passwordless est présent dans l'URL
