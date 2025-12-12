@@ -12,6 +12,7 @@
 
 const {onRequest, onCall} = require('firebase-functions/v2/https');
 const {onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {setGlobalOptions} = require('firebase-functions/v2');
 const {HttpsError} = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
@@ -2946,4 +2947,282 @@ function escapeHtml(text) {
       .replace(/'/g, '&#39;')
       .replace(/\n/g, '<br>');
 }
+
+/**
+ * Fonction scheduled pour envoyer des emails de nouveaux contenus
+ * S'exécute quotidiennement à 9h (Europe/Paris)
+ * Envoie des emails pour :
+ * - Produit "21jours" : un email par jour (jours 1-21)
+ * - Produit "complet" : un email par semaine (semaines 1-14)
+ */
+exports.sendNewContentEmails = onSchedule(
+    {
+      schedule: '0 9 * * *', // Tous les jours à 9h
+      timeZone: 'Europe/Paris',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      region: 'europe-west1',
+    },
+    async (event) => {
+      console.log('📧 Starting scheduled email job for new content');
+      const now = new Date();
+      const mailjetApiKey = process.env.MAILJET_API_KEY;
+      const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+
+      if (!mailjetApiKey || !mailjetApiSecret) {
+        console.error('❌ Mailjet credentials not configured');
+        return;
+      }
+
+      try {
+        // Récupérer tous les utilisateurs avec des produits actifs
+        const usersSnapshot = await db.collection('users').get();
+        console.log(`📊 Found ${usersSnapshot.size} users to check`);
+
+        let emailsSent = 0;
+        let emailsSkipped = 0;
+        let errors = 0;
+
+        for (const userDoc of usersSnapshot.docs) {
+          const userData = userDoc.data();
+          const email = userData.email;
+          const userId = userDoc.id;
+
+          if (!email) {
+            console.warn(`⚠️ User ${userId} has no email, skipping`);
+            continue;
+          }
+
+          const products = userData.products || [];
+
+          // Si products est vide mais product existe (ancien format), migrer
+          if (products.length === 0 && userData.product) {
+            console.log(`🔄 Migrating user ${userId} from old format`);
+            const startDate = userData.registrationDate ||
+                userData.createdAt?.toDate() ||
+                new Date();
+            products.push({
+              name: userData.product,
+              startDate: admin.firestore.Timestamp.fromDate(startDate),
+              purchasedAt: userData.createdAt ||
+                  admin.firestore.Timestamp.fromDate(new Date()),
+            });
+          }
+
+          // Traiter chaque produit de l'utilisateur
+          for (const product of products) {
+            if (!product.name || !product.startDate) {
+              console.warn(`⚠️ User ${userId} has invalid product data:`, product);
+              continue;
+            }
+
+            const productName = product.name;
+            const startDate = product.startDate.toDate();
+            const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+            const weeksSinceStart = Math.floor(daysSinceStart / 7);
+
+            try {
+              if (productName === '21jours') {
+                // Produit 21jours : email par jour (jours 1-21)
+                const currentDay = daysSinceStart + 1; // Jour 1 = premier jour après achat
+
+                if (currentDay >= 1 && currentDay <= 21) {
+                  // Vérifier si l'email a déjà été envoyé pour ce jour
+                  const emailSentDocId = `${userId}_21jours_day_${currentDay}`;
+                  const emailSentDoc = await db.collection('contentEmailsSent')
+                      .doc(emailSentDocId).get();
+
+                  if (emailSentDoc.exists) {
+                    console.log(`⏭️ Email already sent to ${email} for 21jours day ${currentDay}`);
+                    emailsSkipped++;
+                    continue;
+                  }
+
+                  // Vérifier si le contenu existe
+                  const contentDocId = `21jours-jour-${currentDay}`;
+                  const contentDoc = await db.collection('protectedContent')
+                      .doc(contentDocId).get();
+
+                  if (!contentDoc.exists) {
+                    console.warn(`⚠️ Content not found: ${contentDocId}`);
+                    continue;
+                  }
+
+                  const contentData = contentDoc.data();
+                  if (contentData.product !== '21jours') {
+                    console.warn(`⚠️ Content ${contentDocId} has wrong product`);
+                    continue;
+                  }
+
+                  // Envoyer l'email
+                  const emailSubject = `Jour ${currentDay} de votre défi 21 jours - ${contentData.title || 'Nouveau contenu disponible'}`;
+                  const emailHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="utf-8">
+                      <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header { background-color: #648ED8; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+                        .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }
+                        .button { display: inline-block; padding: 12px 24px; background-color: #ffce2d; color: #0f172a; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+                        .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="container">
+                        <div class="header">
+                          <h1>Jour ${currentDay} de votre défi 21 jours</h1>
+                        </div>
+                        <div class="content">
+                          <p>Bonjour,</p>
+                          <p>Votre nouveau contenu pour le <strong>jour ${currentDay}</strong> est maintenant disponible !</p>
+                          <p><strong>${contentData.title || 'Nouveau contenu'}</strong></p>
+                          <p style="text-align: center;">
+                            <a href="https://fluance.io/membre/" class="button">Accéder à mon contenu</a>
+                          </p>
+                          <p>Continuez votre parcours vers plus de mouvement et de bien-être !</p>
+                          <div class="footer">
+                            <p>Fluance - Le mouvement qui éveille et apaise</p>
+                            <p><a href="https://fluance.io">fluance.io</a></p>
+                          </div>
+                        </div>
+                      </div>
+                    </body>
+                    </html>
+                  `;
+
+                  await sendMailjetEmail(
+                      email,
+                      emailSubject,
+                      emailHtml,
+                      `Jour ${currentDay} de votre défi 21 jours - ${contentData.title || 'Nouveau contenu disponible'}\n\nAccédez à votre contenu : https://fluance.io/membre/`,
+                      mailjetApiKey,
+                      mailjetApiSecret,
+                  );
+
+                  // Marquer l'email comme envoyé
+                  await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                    userId: userId,
+                    email: email,
+                    product: '21jours',
+                    day: currentDay,
+                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                  });
+
+                  console.log(`✅ Email sent to ${email} for 21jours day ${currentDay}`);
+                  emailsSent++;
+                }
+              } else if (productName === 'complet') {
+                // Produit complet : email par semaine (semaines 1-14)
+                const currentWeek = weeksSinceStart + 1; // Semaine 1 = première semaine après achat
+
+                if (currentWeek >= 1 && currentWeek <= 14) {
+                  // Vérifier si l'email a déjà été envoyé pour cette semaine
+                  const emailSentDocId = `${userId}_complet_week_${currentWeek}`;
+                  const emailSentDoc = await db.collection('contentEmailsSent')
+                      .doc(emailSentDocId).get();
+
+                  if (emailSentDoc.exists) {
+                    console.log(`⏭️ Email already sent to ${email} for complet week ${currentWeek}`);
+                    emailsSkipped++;
+                    continue;
+                  }
+
+                  // Vérifier si le contenu existe
+                  const contentDocId = `complet-week-${currentWeek}`;
+                  const contentDoc = await db.collection('protectedContent')
+                      .doc(contentDocId).get();
+
+                  if (!contentDoc.exists) {
+                    console.warn(`⚠️ Content not found: ${contentDocId}`);
+                    continue;
+                  }
+
+                  const contentData = contentDoc.data();
+                  if (contentData.product !== 'complet') {
+                    console.warn(`⚠️ Content ${contentDocId} has wrong product`);
+                    continue;
+                  }
+
+                  // Envoyer l'email
+                  const emailSubject = `Semaine ${currentWeek} - Nouveau contenu disponible - ${contentData.title || 'Approche Fluance Complète'}`;
+                  const emailHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="utf-8">
+                      <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header { background-color: #648ED8; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+                        .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }
+                        .button { display: inline-block; padding: 12px 24px; background-color: #ffce2d; color: #0f172a; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+                        .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="container">
+                        <div class="header">
+                          <h1>Semaine ${currentWeek} - Nouveau contenu disponible</h1>
+                        </div>
+                        <div class="content">
+                          <p>Bonjour,</p>
+                          <p>Votre nouveau contenu pour la <strong>semaine ${currentWeek}</strong> est maintenant disponible !</p>
+                          <p><strong>${contentData.title || 'Nouveau contenu'}</strong></p>
+                          <p style="text-align: center;">
+                            <a href="https://fluance.io/membre/" class="button">Accéder à mon contenu</a>
+                          </p>
+                          <p>Continuez votre parcours vers plus de mouvement et de bien-être !</p>
+                          <div class="footer">
+                            <p>Fluance - Le mouvement qui éveille et apaise</p>
+                            <p><a href="https://fluance.io">fluance.io</a></p>
+                          </div>
+                        </div>
+                      </div>
+                    </body>
+                    </html>
+                  `;
+
+                  await sendMailjetEmail(
+                      email,
+                      emailSubject,
+                      emailHtml,
+                      `Semaine ${currentWeek} - Nouveau contenu disponible - ${contentData.title || 'Approche Fluance Complète'}\n\nAccédez à votre contenu : https://fluance.io/membre/`,
+                      mailjetApiKey,
+                      mailjetApiSecret,
+                  );
+
+                  // Marquer l'email comme envoyé
+                  await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                    userId: userId,
+                    email: email,
+                    product: 'complet',
+                    week: currentWeek,
+                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                  });
+
+                  console.log(`✅ Email sent to ${email} for complet week ${currentWeek}`);
+                  emailsSent++;
+                }
+              }
+            } catch (productError) {
+              console.error(`❌ Error processing product ${productName} for user ${userId}:`, productError);
+              errors++;
+            }
+          }
+        }
+
+        console.log(`📧 Email job completed: ${emailsSent} sent, ${emailsSkipped} skipped, ${errors} errors`);
+        return {
+          success: true,
+          emailsSent,
+          emailsSkipped,
+          errors,
+        };
+      } catch (error) {
+        console.error('❌ Error in sendNewContentEmails:', error);
+        throw error;
+      }
+    });
 
