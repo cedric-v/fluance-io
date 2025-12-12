@@ -2070,3 +2070,150 @@ L'équipe Fluance
       }
     });
 
+/**
+ * Fonction pour envoyer un lien de connexion passwordless via Mailjet
+ * Cette fonction génère un lien de connexion Firebase et l'envoie via Mailjet
+ *
+ * Région : europe-west1
+ */
+exports.sendSignInLinkViaMailjet = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      cors: true,
+    },
+    async (request) => {
+      const {email} = request.data;
+
+      if (!email) {
+        throw new HttpsError('invalid-argument', 'Email is required');
+      }
+
+      try {
+        // Utiliser admin.auth() directement pour éviter les problèmes d'initialisation
+        const adminAuth = admin.auth();
+
+        // Générer le lien de connexion passwordless Firebase
+        const signInLink = await adminAuth.generateSignInWithEmailLink(
+            email.toLowerCase().trim(),
+            {
+              url: 'https://fluance.io/connexion-membre',
+              handleCodeInApp: true,
+            },
+        );
+
+        console.log(`Sign-in link generated for ${email}`);
+
+        // Créer ou mettre à jour le contact dans MailJet pour qu'il apparaisse dans l'historique
+        const normalizedEmail = email.toLowerCase().trim();
+        const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+        const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
+
+        try {
+          // Vérifier si le contact existe
+          const checkResponse = await fetch(contactUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            },
+          });
+
+          if (!checkResponse.ok) {
+            // Créer le contact s'il n'existe pas
+            const createUrl = 'https://api.mailjet.com/v3/REST/contact';
+            const contactData = {
+              Email: normalizedEmail,
+              IsExcludedFromCampaigns: false,
+            };
+
+            const createResponse = await fetch(createUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${auth}`,
+              },
+              body: JSON.stringify(contactData),
+            });
+
+            if (createResponse.ok) {
+              console.log(`Contact created in MailJet: ${normalizedEmail}`);
+            } else {
+              const errorText = await createResponse.text();
+              console.warn(`Could not create contact in MailJet (may already exist): ${errorText}`);
+            }
+          } else {
+            console.log(`Contact already exists in MailJet: ${normalizedEmail}`);
+          }
+        } catch (contactError) {
+          console.warn(`Error managing contact in MailJet (continuing anyway):`, contactError);
+          // Continuer même si la création du contact échoue
+        }
+
+        // Envoyer l'email via Mailjet
+        const emailSubject = 'Connexion à votre compte Fluance';
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .button {
+                display: inline-block;
+                padding: 12px 24px;
+                background-color: #ffce2d;
+                color: #0f172a;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+                margin: 20px 0;
+              }
+              .footer { margin-top: 30px; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>Connexion à votre compte Fluance</h1>
+              <p>Bonjour,</p>
+              <p>Cliquez sur le lien ci-dessous pour vous connecter à votre compte Fluance :</p>
+              <p><a href="${signInLink}" class="button">Se connecter</a></p>
+              <p>Ou copiez ce lien dans votre navigateur :</p>
+              <p style="word-break: break-all; color: #666;">${signInLink}</p>
+              <p>Ce lien est valide pendant 1 heure et ne peut être utilisé qu'une seule fois.</p>
+              <p>Si vous n'avez pas demandé cette connexion, vous pouvez ignorer cet email.
+              </p>
+              <div class="footer">
+                <p>Cordialement,<br>L'équipe Fluance</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+
+        const emailText = `Connexion à votre compte Fluance\n\n` +
+            `Cliquez sur ce lien pour vous connecter : ${signInLink}\n\n` +
+            `Ce lien est valide pendant 1 heure et ne peut être utilisé qu'une seule fois.\n\n` +
+            `Si vous n'avez pas demandé cette connexion, vous pouvez ignorer cet email.`;
+
+        await sendMailjetEmail(
+            email.toLowerCase().trim(),
+            emailSubject,
+            emailHtml,
+            emailText,
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+
+        console.log(`Sign-in link email sent via Mailjet to ${email}`);
+
+        return {
+          success: true,
+          message: 'Sign-in link email sent successfully.',
+        };
+      } catch (error) {
+        console.error('Error sending sign-in link email via Mailjet:', error);
+        throw new HttpsError('internal', 'Error sending sign-in link email: ' + error.message);
+      }
+    });
+

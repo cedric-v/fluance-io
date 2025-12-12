@@ -254,7 +254,9 @@ async function sendSignInLink(email, actionCodeSettings = null) {
     
     // Configuration par défaut : lien valide pour cette page
     const defaultSettings = {
-      url: window.location.origin + '/connexion-membre',
+      url: window.location.hostname === 'fluance.io' 
+        ? 'https://fluance.io/connexion-membre' 
+        : window.location.origin + '/connexion-membre',
       handleCodeInApp: true
     };
     
@@ -265,17 +267,81 @@ async function sendSignInLink(email, actionCodeSettings = null) {
     console.log('[Firebase Auth] URL complète:', settings.url);
     console.log('[Firebase Auth] handleCodeInApp:', settings.handleCodeInApp);
     
-    console.log('[Firebase Auth] Appel de auth.sendSignInLinkToEmail...');
-    await auth.sendSignInLinkToEmail(email, settings);
+    // Essayer d'abord Mailjet (meilleure délivrabilité), puis Firebase Auth en fallback
+    console.log('[Firebase Auth] Tentative d\'envoi via Mailjet (méthode principale)...');
     
-    console.log('[Firebase Auth] ✅ Lien de connexion envoyé avec succès');
-    return { success: true };
+    try {
+      // Charger Firebase Functions si nécessaire
+      let app;
+      try {
+        app = firebase.app();
+      } catch (appError) {
+        throw new Error('Impossible d\'obtenir l\'app Firebase: ' + appError.message);
+      }
+      
+      // Vérifier si le script Functions est déjà chargé
+      let functionsScript = document.querySelector('script[src*="firebase-functions-compat"]');
+      
+      if (!functionsScript) {
+        // Charger le script Firebase Functions
+        functionsScript = document.createElement('script');
+        functionsScript.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+        document.head.appendChild(functionsScript);
+        
+        // Attendre que le script se charge
+        await new Promise((resolve, reject) => {
+          let timeoutId;
+          functionsScript.onload = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            resolve();
+          };
+          functionsScript.onerror = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            reject(new Error('Erreur lors du chargement de Firebase Functions'));
+          };
+          timeoutId = setTimeout(() => {
+            reject(new Error('Timeout lors du chargement de Firebase Functions'));
+          }, 10000);
+        });
+        
+        // Attendre un peu pour que Functions soit initialisé
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      // Vérifier que app.functions est disponible
+      if (typeof app.functions !== 'function') {
+        throw new Error('Firebase Functions n\'est pas disponible après chargement du script');
+      }
+      
+      // Appeler la fonction Firebase qui envoie via Mailjet
+      const functions = app.functions('europe-west1');
+      const sendSignInLinkViaMailjet = functions.httpsCallable('sendSignInLinkViaMailjet');
+      
+      console.log('[Firebase Auth] Appel de sendSignInLinkViaMailjet...');
+      const result = await sendSignInLinkViaMailjet({email: email.toLowerCase().trim()});
+      
+      if (result.data && result.data.success) {
+        console.log('[Firebase Auth] ✅ Lien de connexion envoyé via Mailjet');
+        return { success: true, message: 'Lien de connexion envoyé avec succès. Vérifiez votre boîte de réception.' };
+      } else {
+        throw new Error(result.data?.error || 'Erreur lors de l\'envoi via Mailjet');
+      }
+    } catch (mailjetError) {
+      console.warn('[Firebase Auth] ⚠️ Mailjet a échoué, tentative avec Firebase Auth (fallback)');
+      console.warn('[Firebase Auth] Erreur Mailjet:', mailjetError.message);
+      
+      // Fallback sur Firebase Auth
+      console.log('[Firebase Auth] Appel de auth.sendSignInLinkToEmail (fallback)...');
+      await auth.sendSignInLinkToEmail(email, settings);
+      
+      console.log('[Firebase Auth] ✅ Lien de connexion envoyé via Firebase Auth (fallback)');
+      return { success: true, message: 'Lien de connexion envoyé avec succès. Vérifiez votre boîte de réception.' };
+    }
   } catch (error) {
     console.error('[Firebase Auth] ❌ ERREUR lors de l\'envoi du lien');
     console.error('[Firebase Auth] Erreur complète:', error);
     console.error('[Firebase Auth] Code d\'erreur:', error.code);
     console.error('[Firebase Auth] Message d\'erreur:', error.message);
-    console.error('[Firebase Auth] Stack:', error.stack);
     
     // Messages d'erreur plus détaillés
     let errorMessage = getErrorMessage(error.code);
