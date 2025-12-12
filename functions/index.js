@@ -4,6 +4,7 @@
  * Fonctions :
  * - webhookStripe : Gère les webhooks Stripe pour générer les tokens
  * - webhookPayPal : Gère les webhooks PayPal pour générer les tokens
+ * - createStripeCheckoutSession : Crée une session Stripe Checkout
  * - createUserToken : Crée manuellement un token pour un utilisateur
  * - verifyToken : Vérifie un token et crée le compte Firebase Auth
  * - sendEmail : Envoie un email via Mailjet
@@ -471,41 +472,103 @@ async function createTokenAndSendEmail(
 }
 
 /**
- * Webhook Stripe - Gère les paiements réussis
+ * Retire un produit du tableau products d'un utilisateur dans Firestore
+ * @param {string} email - Email de l'utilisateur
+ * @param {string} productName - Nom du produit à retirer ('complet' ou '21jours')
+ */
+async function removeProductFromUser(email, productName) {
+  try {
+    const emailLower = email.toLowerCase().trim();
+    const userRef = db.collection('users').doc(emailLower);
+
+    // Récupérer le document utilisateur
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      console.log(`User document not found for ${emailLower}`);
+      return {success: false, message: 'User not found'};
+    }
+
+    const userData = userDoc.data();
+    let products = userData.products || [];
+
+    // Si products n'existe pas mais product existe (ancien format), migrer
+    if (products.length === 0 && userData.product) {
+      products = [{
+        name: userData.product,
+        startDate: userData.registrationDate || userData.createdAt,
+        purchasedAt: userData.createdAt,
+      }];
+    }
+
+    // Retirer le produit du tableau
+    const initialLength = products.length;
+    products = products.filter((p) => p.name !== productName);
+
+    if (products.length === initialLength) {
+      console.log(`Product ${productName} not found in user ${emailLower} products`);
+      return {success: false, message: 'Product not found in user products'};
+    }
+
+    // Mettre à jour le document utilisateur
+    await userRef.update({
+      products: products,
+    });
+
+    console.log(`Product ${productName} removed from user ${emailLower}`);
+    return {success: true, message: 'Product removed successfully'};
+  } catch (error) {
+    console.error(`Error removing product ${productName} from user ${email}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Webhook Stripe - Gère les paiements réussis, annulations et échecs
  * Région : europe-west1 (Belgique)
  * Utilise les secrets Firebase pour Mailjet
  */
 exports.webhookStripe = onRequest(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'STRIPE_WEBHOOK_SECRET'],
     },
     async (req, res) => {
-      // Vérifier la signature Stripe (sera utilisé avec le package Stripe)
-      // const sig = req.headers['stripe-signature'];
+      // Vérifier la signature Stripe
+      const sig = req.headers['stripe-signature'];
 
       // Note: Pour utiliser Stripe, installer le package: npm install stripe
-      // const stripe = require('stripe')(functions.config().stripe?.secret_key || process.env.STRIPE_SECRET_KEY);
+      // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
       let event;
 
       try {
-        // Pour Stripe, vous devez installer le package Stripe et utiliser constructEvent
-        // Pour l'instant, on accepte l'événement tel quel (à sécuriser en production)
-        event = req.body;
-
-        // Décommenter et utiliser ceci une fois Stripe installé :
-        // event = stripe.webhooks.constructEvent(
-        //   req.rawBody,
-        //   sig,
-        //   stripeConfig.webhook_secret
-        // );
+        // Si le package Stripe est installé et le secret configuré, vérifier la signature
+        if (process.env.STRIPE_WEBHOOK_SECRET && typeof require !== 'undefined') {
+          try {
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || '');
+            event = stripe.webhooks.constructEvent(
+                req.rawBody || JSON.stringify(req.body),
+                sig,
+                process.env.STRIPE_WEBHOOK_SECRET,
+            );
+          } catch {
+            // Si le package Stripe n'est pas installé, accepter l'événement tel quel (développement)
+            console.warn('Stripe package not installed or webhook secret not configured, ' +
+                'accepting event without verification');
+            event = req.body;
+          }
+        } else {
+          // Pour l'instant, on accepte l'événement tel quel (à sécuriser en production)
+          console.warn('STRIPE_WEBHOOK_SECRET not configured, accepting event without verification');
+          event = req.body;
+        }
       } catch (err) {
         console.error('Webhook signature verification failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
       }
 
-      // Gérer l'événement
+      // Gérer les événements de paiement réussi
       if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
         const session = event.data.object;
         const customerEmail = session.customer_details?.email || session.customer_email;
@@ -568,11 +631,64 @@ exports.webhookStripe = onRequest(
         }
       }
 
+      // Gérer les événements d'annulation d'abonnement
+      if (event.type === 'customer.subscription.deleted') {
+        const subscription = event.data.object;
+        const customerEmail = subscription.metadata?.email || subscription.customer_email;
+
+        if (!customerEmail) {
+          console.error('No email found in subscription cancellation event');
+          return res.status(400).send('No email found');
+        }
+
+        // Vérifier si c'est pour le système Firebase
+        const system = subscription.metadata?.system;
+        if (system !== 'firebase') {
+          console.log(`Subscription cancellation ignored - système: ${system || 'non défini'}`);
+          return res.status(200).json({received: true, ignored: true});
+        }
+
+        // Vérifier le produit
+        const product = subscription.metadata?.product;
+        if (product !== 'complet') {
+          console.log(`Subscription cancellation ignored - produit: ${product} (seul 'complet' peut être annulé)`);
+          return res.status(200).json({received: true, ignored: true});
+        }
+
+        try {
+          // Retirer le produit "complet" de l'utilisateur
+          await removeProductFromUser(customerEmail, 'complet');
+          console.log(`Subscription cancelled and product 'complet' removed for ${customerEmail}`);
+          return res.status(200).json({received: true});
+        } catch (error) {
+          console.error('Error removing product after subscription cancellation:', error);
+          return res.status(500).send('Error processing cancellation');
+        }
+      }
+
+      // Gérer les événements d'échec de paiement
+      if (event.type === 'invoice.payment_failed') {
+        const invoice = event.data.object;
+        const customerEmail = invoice.customer_email;
+
+        if (!customerEmail) {
+          console.error('No email found in payment failed event');
+          return res.status(400).send('No email found');
+        }
+
+        // Note: Pour invoice.payment_failed, on ne retire pas immédiatement l'accès
+        // On pourrait envoyer un email de notification au client
+        // L'accès sera retiré seulement si l'abonnement est finalement annulé
+        console.log(`Payment failed for ${customerEmail}, subscription: ${invoice.subscription}`);
+        // TODO: Envoyer un email de notification au client
+        return res.status(200).json({received: true});
+      }
+
       res.status(200).json({received: true});
     });
 
 /**
- * Webhook PayPal - Gère les paiements réussis
+ * Webhook PayPal - Gère les paiements réussis, annulations et échecs
  * Région : europe-west1 (Belgique)
  * Utilise les secrets Firebase pour Mailjet
  */
@@ -584,7 +700,7 @@ exports.webhookPayPal = onRequest(
     async (req, res) => {
       const event = req.body;
 
-      // Vérifier que c'est un événement de paiement réussi
+      // Gérer les événements de paiement réussi
       if (event.event_type === 'PAYMENT.CAPTURE.COMPLETED' ||
       event.event_type === 'CHECKOUT.ORDER.APPROVED') {
         const resource = event.resource;
@@ -653,7 +769,166 @@ exports.webhookPayPal = onRequest(
         }
       }
 
+      // Gérer les événements d'annulation d'abonnement PayPal
+      if (event.event_type === 'BILLING.SUBSCRIPTION.CANCELLED' ||
+          event.event_type === 'BILLING.SUBSCRIPTION.SUSPENDED') {
+        const resource = event.resource;
+        const customerEmail = resource.subscriber?.email_address ||
+            resource.payer?.email_address;
+
+        if (!customerEmail) {
+          console.error('No email found in PayPal subscription cancellation event');
+          return res.status(400).send('No email found');
+        }
+
+        // Vérifier si c'est pour le système Firebase via custom_id
+        const customId = resource.custom_id || '';
+        if (!customId.startsWith('firebase_')) {
+          console.log(`PayPal subscription cancellation ignored - custom_id: ${customId || 'non défini'}`);
+          return res.status(200).json({received: true, ignored: true});
+        }
+
+        // Vérifier le produit
+        const product = customId.replace('firebase_', '');
+        if (product !== 'complet') {
+          console.log(`PayPal subscription cancellation ignored - produit: ${product} ` +
+              `(seul 'complet' peut être annulé)`);
+          return res.status(200).json({received: true, ignored: true});
+        }
+
+        try {
+          // Retirer le produit "complet" de l'utilisateur
+          await removeProductFromUser(customerEmail, 'complet');
+          console.log(`PayPal subscription ${event.event_type} and product 'complet' removed for ${customerEmail}`);
+          return res.status(200).json({received: true});
+        } catch (error) {
+          console.error('Error removing product after PayPal subscription cancellation:', error);
+          return res.status(500).send('Error processing cancellation');
+        }
+      }
+
+      // Gérer les événements d'échec de paiement PayPal
+      if (event.event_type === 'BILLING.SUBSCRIPTION.PAYMENT.FAILED' ||
+          event.event_type === 'PAYMENT.SALE.DENIED') {
+        const resource = event.resource;
+        const customerEmail = resource.subscriber?.email_address ||
+            resource.payer?.email_address;
+
+        if (!customerEmail) {
+          console.error('No email found in PayPal payment failed event');
+          return res.status(400).send('No email found');
+        }
+
+        // Note: Pour les échecs de paiement, on ne retire pas immédiatement l'accès
+        // On pourrait envoyer un email de notification au client
+        // L'accès sera retiré seulement si l'abonnement est finalement annulé
+        console.log(`PayPal payment failed for ${customerEmail}, event: ${event.event_type}`);
+        // TODO: Envoyer un email de notification au client
+        return res.status(200).json({received: true});
+      }
+
       res.status(200).json({received: true});
+    });
+
+/**
+ * Crée une session Stripe Checkout
+ * Région : europe-west1 (Belgique)
+ * Utilise les secrets Firebase pour Stripe
+ */
+exports.createStripeCheckoutSession = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['STRIPE_SECRET_KEY'],
+    },
+    async (request) => {
+      const {product, variant, locale = 'fr'} = request.data;
+
+      // Valider les paramètres
+      if (!product || (product !== '21jours' && product !== 'complet')) {
+        throw new HttpsError('invalid-argument', 'Product must be "21jours" or "complet"');
+      }
+
+      if (product === 'complet' && !variant) {
+        throw new HttpsError('invalid-argument', 'Variant is required for "complet" product (must be "mensuel" or "trimestriel")');
+      }
+
+      if (product === 'complet' && variant !== 'mensuel' && variant !== 'trimestriel') {
+        throw new HttpsError('invalid-argument', 'Variant must be "mensuel" or "trimestriel"');
+      }
+
+      // Mapping des produits vers les Price IDs Stripe
+      const priceIds = {
+        '21jours': 'price_1SdZ2X2Esx6PN6y1wnkrLfSu',
+        'complet': {
+          'mensuel': 'price_1SdZ4p2Esx6PN6y1bzRGQSC5',
+          'trimestriel': 'price_1SdZ6E2Esx6PN6y11qme0Rde',
+        },
+      };
+
+      // Déterminer le Price ID
+      let priceId;
+      if (product === '21jours') {
+        priceId = priceIds['21jours'];
+      } else {
+        priceId = priceIds['complet'][variant];
+      }
+
+      // Déterminer le mode (payment pour one-time, subscription pour abonnements)
+      const mode = product === '21jours' ? 'payment' : 'subscription';
+
+      // URLs de redirection selon la locale
+      const baseUrl = 'https://fluance.io';
+      const successUrl = locale === 'en' ?
+        `${baseUrl}/en/success?session_id={CHECKOUT_SESSION_ID}` :
+        `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = locale === 'en' ?
+        `${baseUrl}/en/cancel` :
+        `${baseUrl}/cancel`;
+
+      try {
+        // Vérifier si le package Stripe est installé
+        let stripe;
+        try {
+          stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+        } catch {
+          throw new HttpsError('failed-precondition',
+              'Stripe package not installed. Run: npm install stripe in functions/ directory');
+        }
+
+        // Créer la session Checkout
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price: priceId,
+              quantity: 1,
+            },
+          ],
+          mode: mode,
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          metadata: {
+            system: 'firebase',
+            product: product,
+          },
+          // Pour les abonnements, passer les métadonnées aussi dans la subscription
+          subscription_data: mode === 'subscription' ? {
+            metadata: {
+              system: 'firebase',
+              product: product,
+            },
+          } : undefined,
+        });
+
+        return {
+          success: true,
+          sessionId: session.id,
+          url: session.url,
+        };
+      } catch (error) {
+        console.error('Error creating Stripe Checkout session:', error);
+        throw new HttpsError('internal', `Error creating checkout session: ${error.message}`);
+      }
     });
 
 /**

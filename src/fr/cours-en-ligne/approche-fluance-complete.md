@@ -80,10 +80,10 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#0f172a]/80 text-center mb-6">
             <strong class="text-fluance">Les 14 premiers jours sont offerts</strong>
           </p>
-          <a href="https://espace.fluance.io/par/abo/bdc/mens" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'fr')" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
             <span>S'abonner mensuellement</span>
             <span>→</span>
-          </a>
+          </button>
           <p class="text-sm text-[#0f172a]/70 text-center mt-2">
             Résiliable à tout moment avec un simple e-mail à <a href="#" id="cancel-email-link-1" class="text-fluance hover:underline"></a>
           </p>
@@ -107,10 +107,10 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#0f172a]/80 text-center mb-6">
             <strong class="text-fluance">Les 14 premiers jours sont offerts</strong>
           </p>
-          <a href="https://espace.fluance.io/par/abo/bdc/tri" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'trimestriel', 'fr')" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
             <span>S'abonner trimestriellement</span>
             <span>→</span>
-          </a>
+          </button>
           <p class="text-sm text-[#0f172a]/70 text-center mt-2">
             Résiliable à tout moment avec un simple e-mail à <a href="#" id="cancel-email-link-2" class="text-fluance hover:underline"></a>
           </p>

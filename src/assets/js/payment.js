@@ -1,109 +1,119 @@
 /**
- * Configuration et fonctions pour les paiements Stripe et PayPal
- * 
- * ⚠️ IMPORTANT : 
- * - Les Price IDs Stripe et Product IDs PayPal doivent être configurés dans products.json
- * - Les clés API Stripe/PayPal doivent être configurées côté serveur (Firebase Functions)
+ * Fonctions JavaScript pour gérer les paiements Stripe
+ * Utilise Firebase Functions pour créer les sessions Checkout
  */
 
-/**
- * Crée une session Stripe Checkout
- * @param {string} productId - ID du produit ("21jours" ou "complet")
- * @param {string} variant - Variante ("mensuel" ou "trimestriel" pour complet)
- * @param {string} locale - Langue ("fr" ou "en")
- * @returns {Promise<string>} URL de la session Stripe Checkout
- */
-async function createStripeCheckoutSession(productId, variant = null, locale = 'fr') {
-  try {
-    // Déterminer le produit complet
-    const productKey = variant ? `${productId}_${variant}` : productId;
-    
-    const response = await fetch('/api/create-stripe-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        productId: productId,
-        variant: variant,
-        locale: locale,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Erreur lors de la création de la session Stripe');
-    }
-
-    const data = await response.json();
-    return data.url;
-  } catch (error) {
-    console.error('Erreur Stripe:', error);
-    throw error;
-  }
-}
-
-/**
- * Crée une commande PayPal
- * @param {string} productId - ID du produit ("21jours" ou "complet")
- * @param {string} variant - Variante ("mensuel" ou "trimestriel" pour complet)
- * @param {string} locale - Langue ("fr" ou "en")
- * @returns {Promise<string>} URL d'approbation PayPal
- */
-async function createPayPalOrder(productId, variant = null, locale = 'fr') {
-  try {
-    const response = await fetch('/api/create-paypal-order', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        productId: productId,
-        variant: variant,
-        locale: locale,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Erreur lors de la création de la commande PayPal');
-    }
-
-    const data = await response.json();
-    return data.approvalUrl;
-  } catch (error) {
-    console.error('Erreur PayPal:', error);
-    throw error;
-  }
-}
-
-/**
- * Redirige vers Stripe Checkout
- */
-async function redirectToStripe(productId, variant = null, locale = 'fr') {
-  try {
-    const url = await createStripeCheckoutSession(productId, variant, locale);
-    window.location.href = url;
-  } catch (error) {
-    alert('Erreur lors de la redirection vers Stripe. Veuillez réessayer.');
-  }
-}
-
-/**
- * Redirige vers PayPal
- */
-async function redirectToPayPal(productId, variant = null, locale = 'fr') {
-  try {
-    const url = await createPayPalOrder(productId, variant, locale);
-    window.location.href = url;
-  } catch (error) {
-    alert('Erreur lors de la redirection vers PayPal. Veuillez réessayer.');
-  }
-}
-
-// Exporter les fonctions pour utilisation globale
-window.FluancePayment = {
-  createStripeCheckoutSession,
-  createPayPalOrder,
-  redirectToStripe,
-  redirectToPayPal,
+// Configuration Firebase (même que dans firebase-auth.js)
+const firebaseConfig = {
+  apiKey: 'AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM',
+  authDomain: 'fluance-protected-content.firebaseapp.com',
+  projectId: 'fluance-protected-content',
+  storageBucket: 'fluance-protected-content.firebasestorage.app',
+  messagingSenderId: '173938686776',
+  appId: '1:173938686776:web:891caf76098a42c3579fcd',
+  measurementId: 'G-CWPNXDQEYR',
 };
 
+/**
+ * Charge Firebase si pas déjà chargé
+ * @returns {Promise} Promise qui se résout quand Firebase est prêt
+ */
+function loadFirebase() {
+  return new Promise((resolve, reject) => {
+    // Si Firebase est déjà initialisé
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+      resolve();
+      return;
+    }
+
+    // Charger Firebase SDK
+    const script1 = document.createElement('script');
+    script1.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
+    document.head.appendChild(script1);
+
+    script1.onload = () => {
+      const script2 = document.createElement('script');
+      script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+      document.head.appendChild(script2);
+
+      script2.onload = () => {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+        resolve();
+      };
+
+      script2.onerror = () => {
+        reject(new Error('Erreur lors du chargement de Firebase Functions'));
+      };
+    };
+
+    script1.onerror = () => {
+      reject(new Error('Erreur lors du chargement de Firebase App'));
+    };
+  });
+}
+
+/**
+ * Crée une session Stripe Checkout et redirige l'utilisateur
+ * @param {string} product - '21jours' ou 'complet'
+ * @param {string|null} variant - 'mensuel' ou 'trimestriel' (requis pour 'complet', null pour '21jours')
+ * @param {string} locale - 'fr' ou 'en' (défaut: 'fr')
+ */
+async function redirectToStripeCheckout(product, variant = null, locale = 'fr') {
+  try {
+    // Charger Firebase si pas déjà chargé
+    await loadFirebase();
+
+    // Obtenir l'instance Firebase Functions
+    const app = firebase.app();
+    const functions = app.functions('europe-west1');
+    const createStripeCheckoutSession = functions.httpsCallable('createStripeCheckoutSession');
+
+    // Préparer les données
+    const data = {
+      product: product,
+      locale: locale,
+    };
+
+    // Ajouter variant si nécessaire (pour 'complet')
+    if (product === 'complet' && variant) {
+      data.variant = variant;
+    }
+
+    // Afficher un indicateur de chargement (optionnel)
+    const button = event?.target;
+    if (button) {
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Chargement...';
+    }
+
+    // Appeler la fonction Firebase
+    const result = await createStripeCheckoutSession(data);
+
+    if (result.data && result.data.success && result.data.url) {
+      // Rediriger vers Stripe Checkout
+      window.location.href = result.data.url;
+    } else {
+      throw new Error('Erreur lors de la création de la session de paiement');
+    }
+  } catch (error) {
+    console.error('Erreur lors de la création de la session Stripe:', error);
+    alert('Une erreur est survenue. Veuillez réessayer.');
+    
+    // Réactiver le bouton en cas d'erreur
+    const button = event?.target;
+    if (button) {
+      button.disabled = false;
+    }
+  }
+}
+
+// Exposer les fonctions globalement pour utilisation dans les pages
+window.FluancePayment = {
+  redirectToStripe: redirectToStripeCheckout,
+};
+
+// Fonctions de compatibilité (pour utilisation directe dans onclick)
+window.redirectToStripeCheckout = redirectToStripeCheckout;
