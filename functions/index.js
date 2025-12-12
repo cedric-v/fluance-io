@@ -769,19 +769,21 @@ exports.verifyToken = onCall(
 
         // Gérer le tableau de produits
         let products = existingUserData.products || [];
-        
+
         // Si products n'existe pas mais product existe (ancien format), migrer
         if (products.length === 0 && existingUserData.product) {
           products = [{
             name: existingUserData.product,
-            startDate: existingUserData.registrationDate || existingUserData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
-            purchasedAt: existingUserData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
+            startDate: existingUserData.registrationDate ||
+              existingUserData.createdAt ||
+              admin.firestore.FieldValue.serverTimestamp(),
+            purchasedAt: existingUserData.createdAt ||
+              admin.firestore.FieldValue.serverTimestamp(),
           }];
         }
 
         // Vérifier si le produit existe déjà dans le tableau
-        const productExists = products.some(p => p.name === tokenData.product);
-        
+        const productExists = products.some((p) => p.name === tokenData.product);
         if (!productExists) {
           // Ajouter le nouveau produit avec sa date de démarrage
           const now = admin.firestore.FieldValue.serverTimestamp();
