@@ -169,10 +169,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // Check if reset code is present in URL
   const urlParams = new URLSearchParams(window.location.search);
-  const actionCode = urlParams.get('oobCode');
+  const actionCode = urlParams.get('oobCode') || urlParams.get('token'); // Support custom token
   const mode = urlParams.get('mode');
 
-  if (actionCode && mode === 'resetPassword') {
+  // Show form if we have a code (Firebase) or token (custom)
+  if (actionCode && (mode === 'resetPassword' || urlParams.get('token'))) {
     // Show confirmation form
     requestForm.classList.add('hidden');
     confirmForm.classList.remove('hidden');

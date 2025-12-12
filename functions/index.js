@@ -1890,9 +1890,8 @@ exports.subscribeTo5Days = onCall(
     });
 
 /**
- * Fonction alternative pour envoyer un email de réinitialisation de mot de passe via Mailjet
- * Cette fonction génère un lien de réinitialisation Firebase et l'envoie via Mailjet
- * Utile si les emails Firebase Auth ne fonctionnent pas correctement
+ * Fonction pour envoyer un email de réinitialisation de mot de passe via Mailjet
+ * Utilise un système de tokens personnalisé hébergé sur fluance.io (pas de pages Firebase)
  *
  * Région : europe-west1
  */
@@ -1910,17 +1909,16 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
       }
 
       try {
-        // Utiliser admin.auth() directement pour éviter les problèmes d'initialisation
+        const normalizedEmail = email.toLowerCase().trim();
         const adminAuth = admin.auth();
 
         // Vérifier que l'utilisateur existe
         try {
           // eslint-disable-next-line no-unused-vars
-          const userRecord = await adminAuth.getUserByEmail(email.toLowerCase().trim());
+          const userRecord = await adminAuth.getUserByEmail(normalizedEmail);
         } catch (error) {
           if (error.code === 'auth/user-not-found') {
             // Pour des raisons de sécurité, ne pas révéler si l'utilisateur existe ou non
-            // Retourner un succès même si l'utilisateur n'existe pas
             console.log(`Password reset requested for non-existent user: ${email}`);
             return {
               success: true,
@@ -1930,21 +1928,25 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
           throw error;
         }
 
-        // Générer le lien de réinitialisation Firebase
-        // L'URL pointe vers la page de connexion, qui redirigera vers la page de réinitialisation
-        // si un code est présent. Après confirmation, l'utilisateur sera sur la page de connexion
-        const resetLink = await adminAuth.generatePasswordResetLink(
-            email.toLowerCase().trim(),
-            {
-              url: 'https://fluance.io/connexion-membre',
-              handleCodeInApp: true,
-            },
-        );
+        // Générer un token de réinitialisation personnalisé (hébergé sur fluance.io)
+        const token = generateUniqueToken();
+        const expirationDate = new Date();
+        expirationDate.setHours(expirationDate.getHours() + 1); // Valide pendant 1 heure
 
-        console.log(`Password reset link generated for ${email}`);
+        // Stocker le token dans Firestore
+        await db.collection('passwordResetTokens').doc(token).set({
+          email: normalizedEmail,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: expirationDate,
+          used: false,
+        });
+
+        // Générer le lien de réinitialisation (100% sur fluance.io)
+        const resetLink = `https://fluance.io/reinitialiser-mot-de-passe?token=${token}`;
+
+        console.log(`Password reset token generated for ${email}`);
 
         // Créer ou mettre à jour le contact dans MailJet pour qu'il apparaisse dans l'historique
-        const normalizedEmail = email.toLowerCase().trim();
         const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
         const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
 
@@ -2068,6 +2070,124 @@ L'équipe Fluance
       } catch (error) {
         console.error('Error sending password reset email via Mailjet:', error);
         throw new HttpsError('internal', 'Error sending password reset email: ' + error.message);
+      }
+    });
+
+/**
+ * Vérifie un token de réinitialisation de mot de passe et réinitialise le mot de passe
+ * Région : europe-west1
+ */
+exports.verifyPasswordResetToken = onCall(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (request) => {
+      const {token, newPassword} = request.data;
+
+      if (!token || !newPassword) {
+        throw new HttpsError('invalid-argument', 'Token and new password are required');
+      }
+
+      if (newPassword.length < 6) {
+        throw new HttpsError('invalid-argument', 'Password must be at least 6 characters long');
+      }
+
+      try {
+        // Vérifier le token dans Firestore
+        const tokenDoc = await db.collection('passwordResetTokens').doc(token).get();
+
+        if (!tokenDoc.exists) {
+          throw new HttpsError('not-found', 'Token invalide ou expiré');
+        }
+
+        const tokenData = tokenDoc.data();
+
+        // Vérifier si le token a déjà été utilisé
+        if (tokenData.used) {
+          throw new HttpsError('failed-precondition', 'Ce lien a déjà été utilisé');
+        }
+
+        // Vérifier si le token a expiré
+        const now = new Date();
+        const expiresAt = tokenData.expiresAt.toDate();
+        if (now > expiresAt) {
+          throw new HttpsError('deadline-exceeded', 'Ce lien a expiré. Veuillez demander un nouveau lien.');
+        }
+
+        const email = tokenData.email;
+
+        // Réinitialiser le mot de passe via Firebase Admin SDK
+        const adminAuth = admin.auth();
+        const userRecord = await adminAuth.getUserByEmail(email);
+        await adminAuth.updateUser(userRecord.uid, {password: newPassword});
+
+        // Marquer le token comme utilisé
+        await db.collection('passwordResetTokens').doc(token).update({
+          used: true,
+          usedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(`Password reset successful for ${email}`);
+
+        return {
+          success: true,
+          message: 'Password reset successfully.',
+        };
+      } catch (error) {
+        console.error('Error verifying password reset token:', error);
+        if (error instanceof HttpsError) {
+          throw error;
+        }
+        throw new HttpsError('internal', 'Error resetting password: ' + error.message);
+      }
+    });
+
+/**
+ * Vérifie si un token de réinitialisation est valide et retourne l'email associé
+ * Région : europe-west1
+ */
+exports.checkPasswordResetToken = onCall(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (request) => {
+      const {token} = request.data;
+
+      if (!token) {
+        throw new HttpsError('invalid-argument', 'Token is required');
+      }
+
+      try {
+        // Vérifier le token dans Firestore
+        const tokenDoc = await db.collection('passwordResetTokens').doc(token).get();
+
+        if (!tokenDoc.exists) {
+          return {success: false, error: 'Token invalide ou expiré'};
+        }
+
+        const tokenData = tokenDoc.data();
+
+        // Vérifier si le token a déjà été utilisé
+        if (tokenData.used) {
+          return {success: false, error: 'Ce lien a déjà été utilisé'};
+        }
+
+        // Vérifier si le token a expiré
+        const now = new Date();
+        const expiresAt = tokenData.expiresAt.toDate();
+        if (now > expiresAt) {
+          return {success: false, error: 'Ce lien a expiré. Veuillez demander un nouveau lien.'};
+        }
+
+        return {
+          success: true,
+          email: tokenData.email,
+        };
+      } catch (error) {
+        console.error('Error checking password reset token:', error);
+        return {success: false, error: 'Erreur lors de la vérification du token'};
       }
     });
 

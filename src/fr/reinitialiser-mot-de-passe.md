@@ -169,10 +169,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // Vérifier si un code de réinitialisation est présent dans l'URL
   const urlParams = new URLSearchParams(window.location.search);
-  const actionCode = urlParams.get('oobCode');
+  const actionCode = urlParams.get('oobCode') || urlParams.get('token'); // Support token personnalisé
   const mode = urlParams.get('mode');
 
-  if (actionCode && mode === 'resetPassword') {
+  // Afficher le formulaire si on a un code (Firebase) ou un token (personnalisé)
+  if (actionCode && (mode === 'resetPassword' || urlParams.get('token'))) {
     // Afficher le formulaire de confirmation
     requestForm.classList.add('hidden');
     confirmForm.classList.remove('hidden');

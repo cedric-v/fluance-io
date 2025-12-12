@@ -549,9 +549,28 @@ async function sendPasswordResetEmail(email) {
 
 /**
  * Confirme la réinitialisation de mot de passe avec le code d'action
+ * Supporte à la fois les codes Firebase (oobCode) et les tokens personnalisés
  */
 async function confirmPasswordReset(actionCode, newPassword) {
   try {
+    // Si c'est un token personnalisé (format hex de 64 caractères)
+    if (actionCode && actionCode.length === 64 && /^[a-f0-9]+$/i.test(actionCode)) {
+      // Utiliser le système de tokens personnalisés
+      await ensureFunctionsLoaded();
+      const app = firebase.app();
+      const functions = app.functions('europe-west1');
+      const verifyToken = functions.httpsCallable('verifyPasswordResetToken');
+      
+      const result = await verifyToken({token: actionCode, newPassword: newPassword});
+      
+      if (result.data && result.data.success) {
+        return { success: true };
+      } else {
+        return { success: false, error: result.data?.error || 'Erreur lors de la réinitialisation' };
+      }
+    }
+    
+    // Sinon, utiliser le système Firebase Auth (pour compatibilité)
     if (!auth) {
       auth = firebase.auth();
     }
@@ -566,9 +585,28 @@ async function confirmPasswordReset(actionCode, newPassword) {
 
 /**
  * Vérifie si un code de réinitialisation de mot de passe est valide
+ * Supporte à la fois les codes Firebase (oobCode) et les tokens personnalisés
  */
 async function verifyPasswordResetCode(actionCode) {
   try {
+    // Si c'est un token personnalisé (format hex de 64 caractères)
+    if (actionCode && actionCode.length === 64 && /^[a-f0-9]+$/i.test(actionCode)) {
+      // Utiliser le système de tokens personnalisés
+      await ensureFunctionsLoaded();
+      const app = firebase.app();
+      const functions = app.functions('europe-west1');
+      const checkToken = functions.httpsCallable('checkPasswordResetToken');
+      
+      const result = await checkToken({token: actionCode});
+      
+      if (result.data && result.data.success) {
+        return { success: true, email: result.data.email };
+      } else {
+        return { success: false, error: result.data?.error || 'Token invalide ou expiré' };
+      }
+    }
+    
+    // Sinon, utiliser le système Firebase Auth (pour compatibilité)
     if (!auth) {
       auth = firebase.auth();
     }

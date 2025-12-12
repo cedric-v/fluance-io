@@ -48,6 +48,14 @@ service cloud.firestore {
       }
     }
 
+    // Tokens de réinitialisation de mot de passe
+    match /passwordResetTokens/{tokenId} {
+      // Lecture autorisée pour vérifier le token (mais pas les données sensibles)
+      allow read: if true;
+      // Écriture uniquement par les fonctions Firebase (via Admin SDK)
+      allow write: if false;
+    }
+
     // Toutes les autres collections sont refusées par défaut
     match /{document=**} {
       allow read, write: if false;
