@@ -228,8 +228,9 @@ async function sendMailjetEmail(to, subject, htmlContent, textContent = null, ap
     ],
   };
 
-  console.log(`📧 Sending email via Mailjet to: ${to}`);
-  console.log(`📧 Subject: ${subject}`);
+  console.log(`[Mailjet] Sending email via Mailjet to: ${to}`);
+  console.log(`[Mailjet] Subject: ${subject}`);
+  console.log(`[Mailjet] From: support@actu.fluance.io`);
 
   // Vérifier que les credentials sont présents (sans les logger)
   if (!apiKey || !apiSecret) {
@@ -249,7 +250,8 @@ async function sendMailjetEmail(to, subject, htmlContent, textContent = null, ap
     });
 
     const responseText = await response.text();
-    console.log(`📧 Mailjet API response status: ${response.status}`);
+    console.log(`[Mailjet] API response status: ${response.status}`);
+    console.log(`[Mailjet] Response preview: ${responseText.substring(0, 300)}`);
 
     if (!response.ok) {
       // Logger seulement le statut et un résumé de l'erreur (pas les détails complets)
@@ -779,6 +781,89 @@ exports.verifyToken = onCall(
       } catch (error) {
         console.error('Error creating user:', error);
         throw new HttpsError('internal', 'Erreur lors de la création du compte');
+      }
+    });
+
+/**
+ * Crée ou répare le document Firestore pour un utilisateur existant dans Firebase Auth
+ * Utile si l'utilisateur existe dans Auth mais pas dans Firestore
+ * Région : europe-west1
+ */
+exports.repairUserDocument = onCall(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (request) => {
+      const {email, product = '21jours'} = request.data;
+
+      if (!email) {
+        throw new HttpsError('invalid-argument', 'Email is required');
+      }
+
+      try {
+        const normalizedEmail = email.toLowerCase().trim();
+        const adminAuth = admin.auth();
+
+        // Vérifier que l'utilisateur existe dans Firebase Auth
+        let userRecord;
+        try {
+          userRecord = await adminAuth.getUserByEmail(normalizedEmail);
+        } catch (error) {
+          if (error.code === 'auth/user-not-found') {
+            throw new HttpsError('not-found', 'Utilisateur non trouvé dans Firebase Authentication');
+          }
+          throw error;
+        }
+
+        const userId = userRecord.uid;
+
+        // Vérifier si le document existe déjà
+        const userDoc = await db.collection('users').doc(userId).get();
+
+        if (userDoc.exists) {
+          // Le document existe déjà, retourner les informations
+          const existingData = userDoc.data();
+          console.log(`Document Firestore existe déjà pour ${normalizedEmail}`);
+          return {
+            success: true,
+            message: 'Document Firestore existe déjà',
+            userId: userId,
+            email: normalizedEmail,
+            product: existingData.product,
+          };
+        }
+
+        // Créer le document Firestore
+        const userData = {
+          email: normalizedEmail,
+          product: product,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+
+        // Pour le produit "21jours", ajouter la date d'inscription
+        if (product === '21jours') {
+          userData.registrationDate = admin.firestore.FieldValue.serverTimestamp();
+        }
+
+        await db.collection('users').doc(userId).set(userData);
+
+        console.log(`Document Firestore créé pour ${normalizedEmail} (${userId})`);
+
+        return {
+          success: true,
+          message: 'Document Firestore créé avec succès',
+          userId: userId,
+          email: normalizedEmail,
+          product: product,
+        };
+      } catch (error) {
+        console.error('Error repairing user document:', error);
+        if (error instanceof HttpsError) {
+          throw error;
+        }
+        throw new HttpsError('internal', 'Erreur lors de la création du document: ' + error.message);
       }
     });
 
@@ -2106,9 +2191,10 @@ Cordialement,
 L'équipe Fluance
         `;
 
-        console.log(`📧 About to call sendMailjetEmail for ${normalizedEmail}`);
+        console.log(`[Password Reset] About to call sendMailjetEmail for ${normalizedEmail}`);
+        console.log(`[Password Reset] Email will be sent from: support@actu.fluance.io`);
         try {
-          await sendMailjetEmail(
+          const mailjetResult = await sendMailjetEmail(
               normalizedEmail,
               emailSubject,
               emailHtml,
@@ -2116,7 +2202,8 @@ L'équipe Fluance
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
           );
-          console.log(`✅ Password reset email sent via Mailjet to ${normalizedEmail}`);
+          console.log(`[Password Reset] Mailjet result:`, JSON.stringify(mailjetResult).substring(0, 200));
+          console.log(`[Password Reset] Password reset email sent via Mailjet to ${normalizedEmail}`);
         } catch (emailError) {
           // Logger seulement le message d'erreur, pas la stack trace complète
           console.error(`❌ Error calling sendMailjetEmail: ${emailError.message}`);

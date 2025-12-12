@@ -690,14 +690,47 @@ async function loadProtectedContent(contentId = null) {
     }
 
     // Récupérer les informations de l'utilisateur depuis Firestore
-    const userDoc = await db.collection('users').doc(user.uid).get();
+    let userDoc = await db.collection('users').doc(user.uid).get();
     if (!userDoc.exists) {
-      return { 
-        success: false, 
-        error: 'Votre compte n\'a pas été trouvé dans notre système. Cela peut arriver si le compte a été créé récemment. Veuillez contacter le support si le problème persiste.',
-        errorCode: 'USER_NOT_FOUND',
-        suggestion: 'Contactez le support avec votre email: ' + user.email
-      };
+      // Essayer de réparer automatiquement le document Firestore
+      console.log('[Protected Content] Document Firestore manquant, tentative de réparation...');
+      try {
+        await ensureFunctionsLoaded();
+        const app = firebase.app();
+        const functions = app.functions('europe-west1');
+        const repairUserDocument = functions.httpsCallable('repairUserDocument');
+        
+        const repairResult = await repairUserDocument({
+          email: user.email,
+          product: '21jours', // Par défaut, on assume 21jours
+        });
+        
+        if (repairResult.data && repairResult.data.success) {
+          console.log('[Protected Content] Document Firestore créé avec succès');
+          // Recharger le document
+          userDoc = await db.collection('users').doc(user.uid).get();
+        } else {
+          throw new Error('Réparation échouée');
+        }
+      } catch (repairError) {
+        console.error('[Protected Content] Erreur lors de la réparation:', repairError);
+        return { 
+          success: false, 
+          error: 'Votre compte n\'a pas été trouvé dans notre système. Cela peut arriver si le compte a été créé récemment. Veuillez contacter le support si le problème persiste.',
+          errorCode: 'USER_NOT_FOUND',
+          suggestion: 'Contactez le support avec votre email: ' + user.email
+        };
+      }
+      
+      // Vérifier à nouveau après la tentative de réparation
+      if (!userDoc.exists) {
+        return { 
+          success: false, 
+          error: 'Votre compte n\'a pas été trouvé dans notre système. Veuillez contacter le support.',
+          errorCode: 'USER_NOT_FOUND',
+          suggestion: 'Contactez le support avec votre email: ' + user.email
+        };
+      }
     }
 
     const userData = userDoc.data();
