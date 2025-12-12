@@ -203,7 +203,7 @@ async function ensureMailjetContactProperties(apiKey, apiSecret) {
   console.log('📋 Finished ensuring all MailJet contact properties exist');
 }
 
-async function sendMailjetEmail(to, subject, htmlContent, textContent = null, apiKey, apiSecret) {
+async function sendMailjetEmail(to, subject, htmlContent, textContent = null, apiKey, apiSecret, fromEmail = 'support@actu.fluance.io', fromName = 'Fluance') {
   // Vérifier que les credentials Mailjet sont configurés
   if (!apiKey || !apiSecret) {
     throw new Error('Mailjet credentials not configured. Please set MAILJET_API_KEY and MAILJET_API_SECRET secrets using: firebase functions:secrets:set');
@@ -215,8 +215,8 @@ async function sendMailjetEmail(to, subject, htmlContent, textContent = null, ap
     Messages: [
       {
         From: {
-          Email: 'support@actu.fluance.io',
-          Name: 'Fluance',
+          Email: fromEmail,
+          Name: fromName,
         },
         To: [
           {
@@ -232,7 +232,7 @@ async function sendMailjetEmail(to, subject, htmlContent, textContent = null, ap
 
   console.log(`[Mailjet] Sending email via Mailjet to: ${to}`);
   console.log(`[Mailjet] Subject: ${subject}`);
-  console.log(`[Mailjet] From: support@actu.fluance.io`);
+  console.log(`[Mailjet] From: ${fromEmail}`);
 
   // Vérifier que les credentials sont présents (sans les logger)
   if (!apiKey || !apiSecret) {
@@ -3037,7 +3037,7 @@ exports.sendNewContentEmails = onSchedule(
                     continue;
                   }
 
-                  // Vérifier si le contenu existe
+                  // Vérifier si le contenu existe et est accessible
                   const contentDocId = `21jours-jour-${currentDay}`;
                   const contentDoc = await db.collection('protectedContent')
                       .doc(contentDocId).get();
@@ -3050,6 +3050,12 @@ exports.sendNewContentEmails = onSchedule(
                   const contentData = contentDoc.data();
                   if (contentData.product !== '21jours') {
                     console.warn(`⚠️ Content ${contentDocId} has wrong product`);
+                    continue;
+                  }
+
+                  // Vérifier que le contenu est accessible (jour correspond)
+                  if (contentData.day !== undefined && contentData.day !== currentDay) {
+                    console.warn(`⚠️ Content ${contentDocId} day mismatch: expected ${currentDay}, got ${contentData.day}`);
                     continue;
                   }
 
@@ -3087,7 +3093,8 @@ exports.sendNewContentEmails = onSchedule(
                         </div>
                         <div class="content">
                           <p>Bonjour,</p>
-                          <p>Votre nouveau contenu pour le <strong>jour ${currentDay}</strong> est maintenant disponible !</p>
+                          <p>Votre nouveau contenu pour le
+                            <strong>jour ${currentDay}</strong> est maintenant disponible !</p>
                           <p><strong>${contentData.title || 'Nouveau contenu'}</strong></p>
                           <p style="text-align: center;">
                             <a href="https://fluance.io/membre/" class="button">Accéder à mon contenu</a>
@@ -3140,7 +3147,7 @@ exports.sendNewContentEmails = onSchedule(
                     continue;
                   }
 
-                  // Vérifier si le contenu existe
+                  // Vérifier si le contenu existe et est accessible
                   const contentDocId = `complet-week-${currentWeek}`;
                   const contentDoc = await db.collection('protectedContent')
                       .doc(contentDocId).get();
@@ -3153,6 +3160,12 @@ exports.sendNewContentEmails = onSchedule(
                   const contentData = contentDoc.data();
                   if (contentData.product !== 'complet') {
                     console.warn(`⚠️ Content ${contentDocId} has wrong product`);
+                    continue;
+                  }
+
+                  // Vérifier que le contenu est accessible (semaine correspond)
+                  if (contentData.week !== undefined && contentData.week !== currentWeek) {
+                    console.warn(`⚠️ Content ${contentDocId} week mismatch: expected ${currentWeek}, got ${contentData.week}`);
                     continue;
                   }
 
@@ -3236,11 +3249,211 @@ exports.sendNewContentEmails = onSchedule(
           }
         }
 
-        console.log(`📧 Email job completed: ${emailsSent} sent, ${emailsSkipped} skipped, ${errors} errors`);
+        // Traiter les contacts "5 jours offerts" pour emails marketing
+        console.log('📧 Starting marketing emails for 5 jours offerts prospects');
+        let marketingEmailsSent = 0;
+        let marketingEmailsSkipped = 0;
+
+        try {
+          // Récupérer les contacts Mailjet avec source_optin contenant "5joursofferts"
+          const auth = Buffer.from(`${mailjetApiKey}:${mailjetApiSecret}`).toString('base64');
+          const contactListUrl = 'https://api.mailjet.com/v3/REST/contact';
+          const listResponse = await fetch(contactListUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            },
+          });
+
+          if (listResponse.ok) {
+            const listData = await listResponse.json();
+            const contacts = listData.Data || [];
+
+            for (const contact of contacts) {
+              const email = contact.Email;
+              if (!email) continue;
+
+              try {
+                // Récupérer les propriétés du contact
+                const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
+                const contactDataResponse = await fetch(contactDataUrl, {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Basic ${auth}`,
+                  },
+                });
+
+                if (!contactDataResponse.ok) continue;
+
+                const contactDataResult = await contactDataResponse.json();
+                if (!contactDataResult.Data || contactDataResult.Data.length === 0) continue;
+
+                const contactData = contactDataResult.Data[0];
+                if (!contactData.Data) continue;
+
+                // Parser les propriétés
+                let properties = {};
+                if (Array.isArray(contactData.Data)) {
+                  contactData.Data.forEach((item) => {
+                    if (item.Name && item.Value !== undefined) {
+                      properties[item.Name] = item.Value;
+                    }
+                  });
+                } else if (typeof contactData.Data === 'object') {
+                  properties = contactData.Data;
+                }
+
+                // Vérifier que c'est un prospect "5 jours offerts" et pas un client
+                const sourceOptin = properties.source_optin || '';
+                const estClient = properties.est_client === 'True' || properties.est_client === true;
+                const produitsAchetes = properties.produits_achetes || '';
+
+                if (estClient || produitsAchetes.includes('21jours') || produitsAchetes.includes('complet')) {
+                  // C'est un client, on skip (déjà traité plus haut)
+                  continue;
+                }
+
+                if (!sourceOptin.includes('5joursofferts')) {
+                  continue;
+                }
+
+                // Calculer les jours depuis l'inscription
+                let startDate;
+                if (properties.serie_5jours_debut) {
+                  startDate = new Date(properties.serie_5jours_debut);
+                } else if (properties.date_optin) {
+                  // Format peut être JJ/MM/AAAA ou ISO
+                  const dateStr = properties.date_optin;
+                  if (dateStr.includes('/')) {
+                    const [day, month, year] = dateStr.split('/');
+                    startDate = new Date(year, month - 1, day);
+                  } else {
+                    startDate = new Date(dateStr);
+                  }
+                } else {
+                  // Pas de date, on skip
+                  continue;
+                }
+
+                const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+
+                // Envoyer des emails marketing pour promouvoir le programme 21 jours
+                // Jours 3, 7, 14, 21 après l'inscription
+                const marketingDays = [3, 7, 14, 21];
+                const currentDay = daysSinceStart + 1;
+
+                if (marketingDays.includes(currentDay)) {
+                  // Vérifier si l'email a déjà été envoyé
+                  const emailSentDocId = `marketing_5jours_${email.toLowerCase().trim()}_day_${currentDay}`;
+                  const emailSentDoc = await db.collection('contentEmailsSent')
+                      .doc(emailSentDocId).get();
+
+                  if (emailSentDoc.exists) {
+                    console.log(`⏭️ Marketing email already sent to ${email} for day ${currentDay}`);
+                    marketingEmailsSkipped++;
+                    continue;
+                  }
+
+                  // Envoyer l'email marketing
+                  const emailSubject = currentDay === 3 ? 'Continuez votre parcours avec le défi 21 jours' :
+                      currentDay === 7 ? 'Découvrez le programme complet de 21 jours' :
+                      currentDay === 14 ? 'Rejoignez le défi 21 jours pour aller plus loin' :
+                      'Le défi 21 jours : votre prochaine étape';
+
+                  const emailHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="utf-8">
+                      <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header {
+                          background-color: #648ED8; color: white; padding: 20px;
+                          text-align: center; border-radius: 5px 5px 0 0;
+                        }
+                        .content {
+                          background-color: #f9f9f9; padding: 20px;
+                          border-radius: 0 0 5px 5px;
+                        }
+                        .button {
+                          display: inline-block; padding: 12px 24px;
+                          background-color: #ffce2d; color: #0f172a;
+                          text-decoration: none; border-radius: 5px;
+                          font-weight: bold; margin: 20px 0;
+                        }
+                        .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="container">
+                        <div class="header">
+                          <h1>Le défi 21 jours vous attend</h1>
+                        </div>
+                        <div class="content">
+                          <p>Bonjour,</p>
+                          <p>Vous avez découvert les 5 jours offerts de Fluance. 
+                            Pourquoi ne pas continuer votre parcours avec le 
+                            <strong>défi complet de 21 jours</strong> ?</p>
+                          <p>Un programme structuré de 21 mini-séries de pratiques 
+                            pour intégrer durablement le mouvement dans votre quotidien.</p>
+                          <p style="text-align: center;">
+                            <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                               class="button">Découvrir le défi 21 jours</a>
+                          </p>
+                          <p>Au plaisir de vous accompagner dans votre parcours !</p>
+                          <div class="footer">
+                            <p>Fluance - Le mouvement qui éveille et apaise</p>
+                            <p><a href="https://fluance.io">fluance.io</a></p>
+                          </div>
+                        </div>
+                      </div>
+                    </body>
+                    </html>
+                  `;
+
+                  await sendMailjetEmail(
+                      email,
+                      emailSubject,
+                      emailHtml,
+                      `${emailSubject}\n\nDécouvrez le défi 21 jours : https://fluance.io/cours-en-ligne/21-jours-mouvement/`,
+                      mailjetApiKey,
+                      mailjetApiSecret,
+                      'fluance@actu.fluance.io',
+                      'Fluance',
+                  );
+
+                  // Marquer l'email comme envoyé
+                  await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                    email: email,
+                    type: 'marketing_5jours',
+                    day: currentDay,
+                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                  });
+
+                  console.log(`✅ Marketing email sent to ${email} for 5jours day ${currentDay}`);
+                  marketingEmailsSent++;
+                }
+              } catch (contactError) {
+                console.error(`❌ Error processing contact ${email}:`, contactError);
+                errors++;
+              }
+            }
+          } else {
+            console.warn('⚠️ Could not fetch Mailjet contacts for marketing emails');
+          }
+        } catch (marketingError) {
+          console.error('❌ Error in marketing emails section:', marketingError);
+          // Ne pas faire échouer toute la fonction si la partie marketing échoue
+        }
+
+        console.log(`📧 Email job completed: ${emailsSent} sent (clients), ${marketingEmailsSent} sent (marketing), ${emailsSkipped + marketingEmailsSkipped} skipped, ${errors} errors`);
         return {
           success: true,
           emailsSent,
+          marketingEmailsSent,
           emailsSkipped,
+          marketingEmailsSkipped,
           errors,
         };
       } catch (error) {
