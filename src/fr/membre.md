@@ -597,6 +597,15 @@ document.addEventListener('DOMContentLoaded', function() {
                   });
                 }
               }
+              
+              // Scroller vers le contenu affiché après un court délai pour laisser le DOM se mettre à jour
+              setTimeout(() => {
+                contentSection.scrollIntoView({ 
+                  behavior: 'smooth', 
+                  block: 'start',
+                  inline: 'nearest'
+                });
+              }, 100);
             }
 
             // Mettre à jour la navigation (désactiver tous, activer celui cliqué)
