@@ -33,10 +33,38 @@ ogImage: assets/img/cedric-bord-mer.jpg
   </div>
 </section>
 
+<section class="max-w-6xl mx-auto px-6 md:px-12 py-12">
+  <div class="bg-white rounded-lg p-8 shadow-lg">
+    <h2 class="text-2xl font-semibold text-fluance mb-6">What you receive when joining:</h2>
+    <ul class="space-y-4 text-lg text-[#0f172a]/90">
+      <li class="flex items-start gap-3">
+        <span class="text-fluance text-xl">✅</span>
+        <span><strong>every week</strong>, <strong>a new 2 to 5 minute mini-series</strong>, in video, to help you <strong>regain momentum</strong> and <strong>improve your relationship with your body and your feelings</strong></span>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="text-fluance text-xl">✅</span>
+        <span>the <strong>motivating community</strong> and <strong>support</strong></span>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="text-fluance text-xl">✅</span>
+        <span>Access to the <strong>library of past series</strong>, to <strong>practice differently, from home,</strong> whenever you want and give you <strong>inspiration</strong></span>
+      </li>
+      <li class="flex items-start gap-3 mt-6">
+        <span class="text-yellow-500 text-xl">⭐</span>
+        <span><strong>Bonus 1:</strong> <strong>discounts</strong> on in-person seminars and workshops</span>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="text-yellow-500 text-xl">⭐</span>
+        <span><strong>Bonus 2:</strong> exclusive guided practice to help you <strong>relax</strong>, <strong>ground</strong> yourself and <strong>regain more clarity in less than 5 minutes</strong>.</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
 <section id="choose-your-subscription" class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-8" style="scroll-margin-top: 100px;">
   <div class="text-center space-y-4 mb-12">
     <h2 class="text-3xl font-semibold text-fluance">Choose your subscription</h2>
-    <p class="text-lg text-[#0f172a]/80">Two flexible options to integrate Fluance into your daily life</p>
+    <p class="text-lg text-[#0f172a]/80">Two <strong>flexible</strong> options to <strong>integrate Fluance into your daily life</strong></p>
   </div>
 
   <div class="flex flex-col md:flex-row gap-8">

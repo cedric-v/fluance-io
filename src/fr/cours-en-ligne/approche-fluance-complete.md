@@ -33,10 +33,38 @@ ogImage: assets/img/cedric-bord-mer.jpg
   </div>
 </section>
 
+<section class="max-w-6xl mx-auto px-6 md:px-12 py-12">
+  <div class="bg-white rounded-lg p-8 shadow-lg">
+    <h2 class="text-2xl font-semibold text-fluance mb-6">Ce que vous recevez en rejoignant :</h2>
+    <ul class="space-y-4 text-lg text-[#0f172a]/90">
+      <li class="flex items-start gap-3">
+        <span class="text-fluance text-xl">✅</span>
+        <span><strong>chaque semaine</strong>, <strong>une nouvelle mini-série de 2 à 5 minutes</strong>, en vidéo, pour vous <strong>redonner l'élan</strong> et <strong>améliorer le rapport à votre corps et à vos ressentis</strong></span>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="text-fluance text-xl">✅</span>
+        <span>la <strong>communauté motivante</strong> et de <strong>soutien</strong></span>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="text-fluance text-xl">✅</span>
+        <span>Accès à la <strong>bibliothèque des séries passées</strong>, pour <strong>pratiquer différemment, depuis chez vous,</strong> quand vous le souhaitez et vous donner de l'<strong>inspiration</strong></span>
+      </li>
+      <li class="flex items-start gap-3 mt-6">
+        <span class="text-yellow-500 text-xl">⭐</span>
+        <span><strong>Bonus 1 :</strong> <strong>remises</strong> sur les séminaires et ateliers présentiels</span>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="text-yellow-500 text-xl">⭐</span>
+        <span><strong>Bonus 2 :</strong> pratique guidée exclusive pour vous <strong>détendre</strong>, vous <strong>ancrer</strong> et <strong>retrouver plus de clarté en moins de 5 minutes</strong>.</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
 <section id="choisissez-votre-abonnement" class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-8" style="scroll-margin-top: 100px;">
   <div class="text-center space-y-4 mb-12">
     <h2 class="text-3xl font-semibold text-fluance">Choisissez votre abonnement</h2>
-    <p class="text-lg text-[#0f172a]/80">Deux options flexibles pour intégrer Fluance dans votre quotidien</p>
+    <p class="text-lg text-[#0f172a]/80">Deux options <strong>flexibles</strong> pour <strong>intégrer Fluance dans votre quotidien</strong></p>
   </div>
 
   <div class="flex flex-col md:flex-row gap-8">
