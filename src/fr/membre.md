@@ -126,170 +126,294 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      const product = result.product;
-      const contents = result.contents || [];
-
-      if (contents.length === 0) {
-        contentContainer.innerHTML = `
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p class="text-blue-800">Aucun contenu disponible pour le moment.</p>
-          </div>
-        `;
-        contentContainer.classList.remove('hidden');
-        return;
-      }
-
-      // Afficher les contenus disponibles
-      let contentHTML = '<div class="space-y-6">';
+      // Nouveau format : result.products[] ou ancien format : result.product pour compatibilité
+      const products = result.products || [];
+      const product = result.product; // Pour compatibilité
       
-      if (product === '21jours') {
-        // Pour 21jours, afficher avec navigation par jour
-        const daysSinceRegistration = result.daysSinceRegistration || 0;
-        const currentDay = daysSinceRegistration + 1;
-        
-        // Calculer le nombre total de jours (incluant le bonus jour 22)
-        const maxDay = Math.max(...contents.map(c => c.day || 0), 21);
-        const totalDays = maxDay >= 22 ? 23 : 22; // 23 si bonus jour 22 existe, sinon 22
-        
-        contentHTML += `
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p class="text-blue-800 font-semibold">Vous êtes au jour ${currentDay} sur ${totalDays}</p>
-            <p class="text-blue-700 text-sm mt-1">Continuez votre parcours vers la détente et la mobilité.</p>
-          </div>
-        `;
-
-        // Trouver le contenu du jour actuel
-        let currentDayContent = null;
-        if (currentDay === 1) {
-          // Jour 1 = déroulé (jour 0)
-          currentDayContent = contents.find(c => c.day === 0);
-        } else if (currentDay <= 22) {
-          // Jours 2-22 = jours 1-21 du programme
-          currentDayContent = contents.find(c => c.day === currentDay - 1);
-        } else if (currentDay === 23) {
-          // Jour 23 = bonus (jour 22)
-          currentDayContent = contents.find(c => c.day === 22);
+      // Stocker les produits dans une variable accessible aux event listeners
+      window.currentUserProducts = products;
+      
+      // Définir les produits disponibles et leurs URLs de vente
+      const allProducts = [
+        {
+          id: '21jours',
+          name: 'Défi 21 jours',
+          url: '/cours-en-ligne/21jours/',
+          description: 'Retrouvez légèreté, mobilité et sérénité en seulement 2 à 5 minutes par jour, durant 21 jours.'
+        },
+        {
+          id: 'complet',
+          name: 'Approche Fluance Complète',
+          url: '/cours-en-ligne/approche-fluance-complete/',
+          description: 'Accès complet à tous les cours et pratiques avec déblocage hebdomadaire.'
         }
-
-        if (!currentDayContent) {
-          currentDayContent = contents
-            .filter(c => c.isAccessible)
-            .sort((a, b) => (b.day || 0) - (a.day || 0))[0];
-        }
-
-        if (currentDayContent) {
-          contentHTML += `
-            <div class="mb-6" id="current-day-content">
-              <h2 class="text-2xl font-semibold mb-4">${currentDayContent.title}</h2>
-              <div class="protected-content" data-content-id="${currentDayContent.id}">
-                <div class="bg-gray-100 rounded-lg p-8 text-center">
-                  <p class="text-gray-600 mb-4">Chargement du contenu...</p>
-                </div>
-              </div>
-            </div>
-          `;
-        }
-
-        // Navigation des jours
-        if (contents.length > 0) {
-          contentHTML += `
-            <div class="border-t pt-6 mt-6">
-              <h3 class="text-lg font-semibold mb-4">Navigation des jours</h3>
-              <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                ${contents.map(content => {
-                  const dayLabel = content.day === 0 ? 'Déroulé' : `Jour ${content.day}`;
-                  const isCurrent = content.id === currentDayContent?.id;
-                  const isLocked = !content.isAccessible;
-                  
-                  return `
-                    <a href="#" 
-                       data-content-id="${content.id}"
-                       class="block p-3 rounded-lg text-center text-sm transition-colors
-                              ${isCurrent ? 'bg-green-600 text-white font-semibold' : ''}
-                              ${isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
-                              ${!isLocked && !isCurrent ? 'hover:bg-gray-200' : ''}"
-                       ${isLocked ? 'onclick="return false;"' : ''}>
-                      <div class="font-semibold">${dayLabel}</div>
-                      <div class="text-xs mt-1">${content.title}</div>
-                      ${isLocked && content.daysRemaining !== null ? `<div class="text-xs mt-1">+${content.daysRemaining}j</div>` : ''}
-                    </a>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-          `;
-        }
-      } else {
-        // Pour les autres produits, afficher la liste des contenus
-        contentHTML += '<h2 class="text-2xl font-semibold mb-4">Vos contenus disponibles</h2>';
-        contentHTML += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
-        
-        contents.forEach(content => {
-          contentHTML += `
-            <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
-              <h3 class="font-semibold mb-2">${content.title}</h3>
-              <div class="protected-content" data-content-id="${content.id}">
-                <div class="bg-gray-100 rounded-lg p-4 text-center">
-                  <p class="text-gray-600 text-sm">Chargement...</p>
-                </div>
-              </div>
-            </div>
-          `;
+      ];
+      
+      // Déterminer le dernier produit démarré (date de démarrage la plus récente)
+      let lastStartedProduct = null;
+      if (products.length > 0) {
+        lastStartedProduct = products.reduce((latest, current) => {
+          const currentDate = current.startDate?.toDate ? current.startDate.toDate() : new Date(current.startDate);
+          const latestDate = latest.startDate?.toDate ? latest.startDate.toDate() : new Date(latest.startDate);
+          return currentDate > latestDate ? current : latest;
         });
-        
-        contentHTML += '</div>';
       }
+      
+      // Si aucun produit démarré, utiliser le premier produit acheté ou le premier disponible
+      const activeProductId = lastStartedProduct?.name || (products.length > 0 ? products[0].name : allProducts[0].id);
+      
+      // Créer les onglets
+      let tabsHTML = '<div class="border-b border-gray-200 mb-6">';
+      tabsHTML += '<nav class="flex space-x-4" role="tablist">';
+      
+      allProducts.forEach((prod, index) => {
+        const userProduct = products.find(p => p.name === prod.id);
+        const isActive = prod.id === activeProductId;
+        const isPurchased = !!userProduct;
+        
+        tabsHTML += `
+          <button 
+            role="tab"
+            data-product-id="${prod.id}"
+            class="px-4 py-2 font-medium text-sm border-b-2 transition-colors
+                   ${isActive ? 'border-fluance text-fluance' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                   ${isPurchased ? '' : 'opacity-60'}"
+            ${!isActive ? `onclick="switchProductTab('${prod.id}')"` : ''}>
+            ${prod.name}
+            ${isPurchased ? '<span class="ml-2 text-green-600">✓</span>' : ''}
+          </button>
+        `;
+      });
+      
+      tabsHTML += '</nav></div>';
+      
+      // Créer le contenu pour chaque produit
+      let contentHTML = tabsHTML + '<div class="space-y-6" id="product-content">';
+      
+      allProducts.forEach((prod) => {
+        const userProduct = products.find(p => p.name === prod.id);
+        const isActive = prod.id === activeProductId;
+        const isPurchased = !!userProduct;
+        
+        if (!isPurchased) {
+          // Produit non acheté : afficher un bouton d'achat
+          contentHTML += `
+            <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
+              <div class="bg-gradient-to-r from-fluance/10 to-fluance/5 rounded-lg p-8 text-center">
+                <h2 class="text-2xl font-semibold text-fluance mb-4">${prod.name}</h2>
+                <p class="text-gray-700 mb-6">${prod.description}</p>
+                <a href="${prod.url}" 
+                   class="inline-block bg-fluance text-white px-8 py-3 rounded-lg hover:bg-fluance/90 transition-colors font-semibold">
+                  Découvrir et acquérir ${prod.name}
+                </a>
+              </div>
+            </div>
+          `;
+        } else {
+          // Produit acheté : afficher le contenu
+          const contents = userProduct.contents || [];
+          
+          if (contents.length === 0) {
+            contentHTML += `
+              <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p class="text-blue-800">Aucun contenu disponible pour le moment.</p>
+                </div>
+              </div>
+            `;
+            // Pour 21jours, afficher avec navigation par jour
+            const daysSinceStart = userProduct.daysSinceStart || 0;
+            const currentDay = daysSinceStart + 1;
+            
+            // Calculer le nombre total de jours (incluant le bonus jour 22)
+            const maxDay = Math.max(...userProduct.contents.map(c => c.day || 0), 21);
+            const totalDays = maxDay >= 22 ? 23 : 22; // 23 si bonus jour 22 existe, sinon 22
+            
+            contentHTML += `
+              <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p class="text-blue-800 font-semibold">Vous êtes au jour ${currentDay} sur ${totalDays}</p>
+                  <p class="text-blue-700 text-sm mt-1">Continuez votre parcours vers la détente et la mobilité.</p>
+                </div>
+
+                ${(() => {
+                  // Trouver le contenu du jour actuel
+                  let currentDayContent = null;
+                  if (currentDay === 1) {
+                    currentDayContent = userProduct.contents.find(c => c.day === 0);
+                  } else if (currentDay <= 22) {
+                    currentDayContent = userProduct.contents.find(c => c.day === currentDay - 1);
+                  } else if (currentDay === 23) {
+                    currentDayContent = userProduct.contents.find(c => c.day === 22);
+                  }
+                  
+                  if (!currentDayContent) {
+                    currentDayContent = userProduct.contents
+                      .filter(c => c.isAccessible)
+                      .sort((a, b) => (b.day || 0) - (a.day || 0))[0];
+                  }
+                  
+                  return currentDayContent ? `
+                    <div class="mb-6" id="current-day-content-${prod.id}">
+                      <h2 class="text-2xl font-semibold mb-4">${currentDayContent.title}</h2>
+                      <div class="protected-content" data-content-id="${currentDayContent.id}">
+                        <div class="bg-gray-100 rounded-lg p-8 text-center">
+                          <p class="text-gray-600 mb-4">Chargement du contenu...</p>
+                        </div>
+                      </div>
+                    </div>
+                  ` : '';
+                })()}
+
+                <div class="border-t pt-6 mt-6">
+                  <h3 class="text-lg font-semibold mb-4">Navigation des jours</h3>
+                  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                    ${userProduct.contents.map(content => {
+                      const dayLabel = content.day === 0 ? 'Déroulé' : `Jour ${content.day}`;
+                      const isLocked = !content.isAccessible;
+                      
+                      return `
+                        <a href="#" 
+                           data-content-id="${content.id}"
+                           data-product="${prod.id}"
+                           class="block p-3 rounded-lg text-center text-sm transition-colors
+                                  ${isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+                           ${isLocked ? 'onclick="return false;"' : ''}>
+                          <div class="font-semibold">${dayLabel}</div>
+                          <div class="text-xs mt-1">${content.title}</div>
+                          ${isLocked && content.daysRemaining !== null ? `<div class="text-xs mt-1">+${content.daysRemaining}j</div>` : ''}
+                        </a>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              </div>
+            `;
+          } else if (prod.id === 'complet') {
+            // Pour complet, afficher avec navigation par semaine
+            const weeksSinceStart = userProduct.weeksSinceStart || 0;
+            const currentWeek = weeksSinceStart + 1;
+            
+            contentHTML += `
+              <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p class="text-blue-800 font-semibold">Vous êtes à la semaine ${currentWeek}</p>
+                  <p class="text-blue-700 text-sm mt-1">Un nouveau contenu se débloque chaque semaine.</p>
+                </div>
+
+                ${(() => {
+                  // Trouver le contenu de la semaine actuelle
+                  let currentWeekContent = null;
+                  if (currentWeek === 1) {
+                    currentWeekContent = userProduct.contents.find(c => c.week === 0); // Bonus
+                  } else if (currentWeek <= 15) {
+                    currentWeekContent = userProduct.contents.find(c => c.week === currentWeek - 1);
+                  }
+                  
+                  if (!currentWeekContent) {
+                    currentWeekContent = userProduct.contents
+                      .filter(c => c.isAccessible)
+                      .sort((a, b) => (b.week || 0) - (a.week || 0))[0];
+                  }
+                  
+                  return currentWeekContent ? `
+                    <div class="mb-6" id="current-week-content-${prod.id}">
+                      <h2 class="text-2xl font-semibold mb-4">${currentWeekContent.title}</h2>
+                      <div class="protected-content" data-content-id="${currentWeekContent.id}">
+                        <div class="bg-gray-100 rounded-lg p-8 text-center">
+                          <p class="text-gray-600 mb-4">Chargement du contenu...</p>
+                        </div>
+                      </div>
+                    </div>
+                  ` : '';
+                })()}
+
+                <div class="border-t pt-6 mt-6">
+                  <h3 class="text-lg font-semibold mb-4">Navigation des semaines</h3>
+                  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                    ${userProduct.contents.map(content => {
+                      const weekLabel = content.week === 0 ? 'Bonus' : `Semaine ${content.week}`;
+                      const isLocked = !content.isAccessible;
+                      
+                      return `
+                        <a href="#" 
+                           data-content-id="${content.id}"
+                           data-product="${prod.id}"
+                           class="block p-3 rounded-lg text-center text-sm transition-colors
+                                  ${isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+                           ${isLocked ? 'onclick="return false;"' : ''}>
+                          <div class="font-semibold">${weekLabel}</div>
+                          <div class="text-xs mt-1">${content.title}</div>
+                          ${isLocked && content.weeksRemaining !== null ? `<div class="text-xs mt-1">+${content.weeksRemaining}s</div>` : ''}
+                        </a>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        }
+      });
 
       contentHTML += '</div>';
       contentContainer.innerHTML = contentHTML;
       contentContainer.classList.remove('hidden');
 
-      // Charger les contenus protégés
-      const protectedElements = contentContainer.querySelectorAll('.protected-content[data-content-id]');
-      protectedElements.forEach(element => {
-        const contentId = element.getAttribute('data-content-id');
-        if (window.FluanceAuth && window.FluanceAuth.displayProtectedContent) {
-          window.FluanceAuth.displayProtectedContent(contentId, element).catch(err => {
-            console.error('Error loading content:', err);
-            element.innerHTML = `
-              <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p class="text-red-800 text-sm">Erreur lors du chargement</p>
-              </div>
-            `;
-          });
-        }
-      });
+      // Charger les contenus protégés de l'onglet actif uniquement
+      const activeTabContent = contentContainer.querySelector(`.product-tab-content[data-product="${activeProductId}"]:not(.hidden)`);
+      if (activeTabContent) {
+        const protectedElements = activeTabContent.querySelectorAll('.protected-content[data-content-id]');
+        protectedElements.forEach(element => {
+          const contentId = element.getAttribute('data-content-id');
+          if (contentId && window.FluanceAuth && window.FluanceAuth.displayProtectedContent) {
+            window.FluanceAuth.displayProtectedContent(contentId, element).catch(err => {
+              console.error('Error loading content:', err);
+              element.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p class="text-red-800 text-sm">Erreur lors du chargement</p>
+                </div>
+              `;
+            });
+          }
+        });
+      }
 
-      // Ajouter les listeners pour la navigation (21jours uniquement)
-      if (product === '21jours') {
-        // Attendre que le DOM soit mis à jour
-        setTimeout(() => {
-          const links = contentContainer.querySelectorAll('a[data-content-id]');
-          console.log('Found navigation links:', links.length);
-          
-          links.forEach(link => {
-            link.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const contentId = link.getAttribute('data-content-id');
-              console.log('Clicked on content:', contentId);
-              const content = contents.find(c => c.id === contentId);
-              
-              if (!content) {
-                console.warn('Content not found for ID:', contentId, 'Available contents:', contents.map(c => c.id));
-                return;
-              }
-              
-              console.log('Content found:', content.id, 'isAccessible:', content.isAccessible);
-              
-              if (!content.isAccessible) {
-                console.warn('Content not accessible:', contentId);
+      // Ajouter les listeners pour la navigation et le changement d'onglets
+      setTimeout(() => {
+        // Navigation par contenu (jours/semaines)
+        const links = contentContainer.querySelectorAll('a[data-content-id]');
+        links.forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const contentId = link.getAttribute('data-content-id');
+            const productId = link.getAttribute('data-product');
+            
+            // Trouver le produit et son contenu depuis les données chargées
+            const productData = window.currentUserProducts.find(p => p.name === productId);
+            if (!productData) return;
+            
+            const content = productData.contents.find(c => c.id === contentId);
+            if (!content) return;
+            
+            if (!content.isAccessible) {
+              if (content.daysRemaining !== null) {
                 alert(`Ce contenu sera disponible dans ${content.daysRemaining} jour${content.daysRemaining > 1 ? 's' : ''}.`);
-                return;
+              } else if (content.weeksRemaining !== null) {
+                alert(`Ce contenu sera disponible dans ${content.weeksRemaining} semaine${content.weeksRemaining > 1 ? 's' : ''}.`);
               }
+              return;
+            }
 
-            // Mettre à jour le contenu affiché
-            const contentSection = contentContainer.querySelector('#current-day-content');
+            // Mettre à jour le contenu affiché selon le produit
+            let contentSection;
+            if (productId === '21jours') {
+              contentSection = contentContainer.querySelector(`#current-day-content-${productId}`);
+            } else if (productId === 'complet') {
+              contentSection = contentContainer.querySelector(`#current-week-content-${productId}`);
+            }
+            
             if (contentSection) {
               const titleElement = contentSection.querySelector('h2');
               const protectedElement = contentSection.querySelector('.protected-content');
@@ -313,21 +437,20 @@ document.addEventListener('DOMContentLoaded', function() {
                   });
                 }
               }
-            } else {
-              console.error('Content section not found');
             }
 
-            // Mettre à jour la navigation
-            contentContainer.querySelectorAll('a[data-content-id]').forEach(l => {
+            // Mettre à jour la navigation (désactiver tous, activer celui cliqué)
+            contentContainer.querySelectorAll(`a[data-product="${productId}"]`).forEach(l => {
               l.classList.remove('bg-green-600', 'text-white', 'font-semibold');
-              l.classList.add('bg-gray-100', 'text-gray-700');
+              if (!l.classList.contains('bg-gray-200')) {
+                l.classList.add('bg-gray-100', 'text-gray-700');
+              }
             });
             link.classList.add('bg-green-600', 'text-white', 'font-semibold');
             link.classList.remove('bg-gray-100', 'text-gray-700');
-            });
           });
-        }, 100);
-      }
+        });
+      }, 100);
     } catch (error) {
       console.error('Error loading user content:', error);
       contentContainer.innerHTML = `
@@ -352,6 +475,52 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+// Fonction globale pour changer d'onglet produit
+function switchProductTab(productId) {
+  const contentContainer = document.getElementById('content-container');
+  if (!contentContainer) return;
+  
+  // Mettre à jour les onglets
+  contentContainer.querySelectorAll('button[data-product-id]').forEach(btn => {
+    const isActive = btn.getAttribute('data-product-id') === productId;
+    if (isActive) {
+      btn.classList.add('border-fluance', 'text-fluance');
+      btn.classList.remove('border-transparent', 'text-gray-500');
+    } else {
+      btn.classList.remove('border-fluance', 'text-fluance');
+      btn.classList.add('border-transparent', 'text-gray-500');
+    }
+  });
+  
+  // Afficher/masquer le contenu correspondant
+  contentContainer.querySelectorAll('.product-tab-content').forEach(content => {
+    if (content.getAttribute('data-product') === productId) {
+      content.classList.remove('hidden');
+      
+      // Charger les contenus protégés de l'onglet activé
+      const protectedElements = content.querySelectorAll('.protected-content[data-content-id]');
+      protectedElements.forEach(element => {
+        const contentId = element.getAttribute('data-content-id');
+        if (contentId && window.FluanceAuth && window.FluanceAuth.displayProtectedContent) {
+          // Vérifier si le contenu n'est pas déjà chargé
+          if (element.querySelector('.bg-gray-100')) {
+            window.FluanceAuth.displayProtectedContent(contentId, element).catch(err => {
+              console.error('Error loading content:', err);
+              element.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p class="text-red-800 text-sm">Erreur lors du chargement</p>
+                </div>
+              `;
+            });
+          }
+        }
+      });
+    } else {
+      content.classList.add('hidden');
+    }
+  });
+}
 
 // Fonction globale pour gérer la déconnexion
 async function handleLogout() {

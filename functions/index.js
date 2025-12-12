@@ -762,20 +762,51 @@ exports.verifyToken = onCall(
           userId: userRecord.uid,
         });
 
+        // Récupérer le document utilisateur existant pour gérer les produits multiples
+        const userDocRef = db.collection('users').doc(userRecord.uid);
+        const userDoc = await userDocRef.get();
+        const existingUserData = userDoc.exists ? userDoc.data() : {};
+
+        // Gérer le tableau de produits
+        let products = existingUserData.products || [];
+        
+        // Si products n'existe pas mais product existe (ancien format), migrer
+        if (products.length === 0 && existingUserData.product) {
+          products = [{
+            name: existingUserData.product,
+            startDate: existingUserData.registrationDate || existingUserData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
+            purchasedAt: existingUserData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
+          }];
+        }
+
+        // Vérifier si le produit existe déjà dans le tableau
+        const productExists = products.some(p => p.name === tokenData.product);
+        
+        if (!productExists) {
+          // Ajouter le nouveau produit avec sa date de démarrage
+          const now = admin.firestore.FieldValue.serverTimestamp();
+          products.push({
+            name: tokenData.product,
+            startDate: now, // Date de démarrage pour le drip
+            purchasedAt: now,
+          });
+        }
+
         // Créer ou mettre à jour le document utilisateur dans Firestore
         const userData = {
           email: email,
-          product: tokenData.product,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          products: products,
+          product: tokenData.product, // Garder pour compatibilité rétroactive
+          createdAt: existingUserData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
 
-        // Pour le produit "21jours", ajouter la date d'inscription pour l'accès progressif
-        if (tokenData.product === '21jours') {
+        // Pour le produit "21jours", ajouter aussi registrationDate pour compatibilité
+        if (tokenData.product === '21jours' && !existingUserData.registrationDate) {
           userData.registrationDate = admin.firestore.FieldValue.serverTimestamp();
         }
 
-        await db.collection('users').doc(userRecord.uid).set(userData, {merge: true});
+        await userDocRef.set(userData, {merge: true});
 
         return {success: true, userId: userRecord.uid, email: email};
       } catch (error) {
@@ -834,17 +865,23 @@ exports.repairUserDocument = onCall(
           };
         }
 
-        // Créer le document Firestore
+        // Créer le document Firestore avec products[]
+        const now = admin.firestore.FieldValue.serverTimestamp();
         const userData = {
           email: normalizedEmail,
-          product: product,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          products: [{
+            name: product,
+            startDate: now,
+            purchasedAt: now,
+          }],
+          product: product, // Garder pour compatibilité rétroactive
+          createdAt: now,
+          updatedAt: now,
         };
 
-        // Pour le produit "21jours", ajouter la date d'inscription
+        // Pour le produit "21jours", ajouter aussi registrationDate pour compatibilité
         if (product === '21jours') {
-          userData.registrationDate = admin.firestore.FieldValue.serverTimestamp();
+          userData.registrationDate = now;
         }
 
         await db.collection('users').doc(userId).set(userData);

@@ -734,10 +734,21 @@ async function loadProtectedContent(contentId = null) {
     }
 
     const userData = userDoc.data();
-    const userProduct = userData.product;
     
-    // Vérifier que le produit est défini
-    if (!userProduct) {
+    // Récupérer les produits : nouveau format (products[]) ou ancien format (product) pour compatibilité
+    let userProducts = userData.products || [];
+    
+    // Migration automatique : si products[] n'existe pas mais product existe
+    if (userProducts.length === 0 && userData.product) {
+      userProducts = [{
+        name: userData.product,
+        startDate: userData.registrationDate || userData.createdAt || {toDate: () => new Date()},
+        purchasedAt: userData.createdAt || {toDate: () => new Date()},
+      }];
+    }
+    
+    // Vérifier qu'au moins un produit est défini
+    if (userProducts.length === 0) {
       return { 
         success: false, 
         error: 'Votre compte n\'a pas de produit associé. Veuillez contacter le support pour résoudre ce problème.',
@@ -745,6 +756,9 @@ async function loadProtectedContent(contentId = null) {
         suggestion: 'Contactez le support avec votre email: ' + user.email
       };
     }
+    
+    // Pour compatibilité rétroactive, garder userProduct comme le premier produit
+    const userProduct = userProducts[0].name;
     
     // Si un contentId est spécifié, charger ce contenu spécifique
     if (contentId) {
@@ -760,55 +774,61 @@ async function loadProtectedContent(contentId = null) {
       }
 
       const contentData = contentDoc.data();
+      const contentProduct = contentData.product;
       
-      // Vérifier que l'utilisateur a accès à ce produit
-      if (contentData.product !== userProduct) {
+      // Trouver le produit correspondant dans les produits de l'utilisateur
+      const userProductData = userProducts.find(p => p.name === contentProduct);
+      
+      if (!userProductData) {
         return { 
           success: false, 
           error: `Vous n'avez pas accès à ce contenu. Ce contenu fait partie d'une autre formation que celle à laquelle vous êtes inscrit(e).`,
           errorCode: 'PRODUCT_MISMATCH',
-          suggestion: `Vous êtes inscrit(e) à la formation "${userProduct}". Accédez au contenu depuis votre espace membre.`
+          suggestion: `Accédez au contenu depuis votre espace membre.`
         };
       }
 
+      // Vérifier l'accès progressif selon le type de produit
+      const now = new Date();
+      const startDate = userProductData.startDate ? userProductData.startDate.toDate() : new Date();
+      
       // Pour le produit "21jours", vérifier l'accès progressif basé sur le jour
-      if (userProduct === '21jours' && contentData.day !== undefined) {
-        let registrationDate = userData.registrationDate;
-        
-        // Fallback : si registrationDate n'existe pas, utiliser createdAt ou date actuelle
-        if (!registrationDate) {
-          registrationDate = userData.createdAt;
-          // Si createdAt n'existe pas non plus, utiliser la date actuelle (accès immédiat)
-          if (!registrationDate) {
-            console.warn('registrationDate et createdAt manquants, utilisation de la date actuelle');
-            registrationDate = { toDate: () => new Date() };
-          } else {
-            // Mettre à jour le document utilisateur avec registrationDate pour les prochaines fois
-            console.warn('registrationDate manquant, utilisation de createdAt. Mise à jour du document utilisateur...');
-            db.collection('users').doc(user.uid).update({
-              registrationDate: userData.createdAt
-            }).catch(err => console.error('Erreur lors de la mise à jour de registrationDate:', err));
-          }
-        }
-
-        // Calculer le nombre de jours depuis l'inscription
-        const now = new Date();
-        const registration = registrationDate.toDate();
-        const daysSinceRegistration = Math.floor((now - registration) / (1000 * 60 * 60 * 24));
+      if (contentProduct === '21jours' && contentData.day !== undefined) {
+        const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
         const dayNumber = contentData.day;
 
         // Jour 0 (déroulé) accessible immédiatement
         // Jours 1-21 : accessibles à partir du jour correspondant
-        // Jour 22 (bonus) : accessible au jour 22 (daysSinceRegistration >= 21)
-        if (dayNumber > 0 && daysSinceRegistration < dayNumber - 1) {
-          const daysRemaining = dayNumber - daysSinceRegistration - 1;
+        // Jour 22 (bonus) : accessible au jour 22 (daysSinceStart >= 21)
+        if (dayNumber > 0 && daysSinceStart < dayNumber - 1) {
+          const daysRemaining = dayNumber - daysSinceStart - 1;
           return { 
             success: false, 
-            error: `Ce contenu sera disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}. Vous êtes actuellement au jour ${daysSinceRegistration + 1} du défi de 21 jours.`,
+            error: `Ce contenu sera disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}. Vous êtes actuellement au jour ${daysSinceStart + 1} du défi de 21 jours.`,
             errorCode: 'CONTENT_NOT_AVAILABLE_YET',
             suggestion: 'Continuez à suivre le programme jour par jour. Le contenu se débloque automatiquement chaque jour.',
             daysRemaining: daysRemaining,
-            currentDay: daysSinceRegistration + 1
+            currentDay: daysSinceStart + 1
+          };
+        }
+      }
+      
+      // Pour le produit "complet", vérifier l'accès progressif basé sur la semaine
+      if (contentProduct === 'complet' && contentData.week !== undefined) {
+        const weeksSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24 * 7));
+        const weekNumber = contentData.week;
+
+        // Semaine 0 (bonus) accessible immédiatement
+        // Semaines 1-14 : accessibles à partir de la semaine correspondante
+        if (weekNumber > 0 && weeksSinceStart < weekNumber) {
+          const weeksRemaining = weekNumber - weeksSinceStart;
+          return { 
+            success: false, 
+            error: `Ce contenu sera disponible dans ${weeksRemaining} semaine${weeksRemaining > 1 ? 's' : ''}. Vous êtes actuellement à la semaine ${weeksSinceStart + 1}.`,
+            errorCode: 'CONTENT_NOT_AVAILABLE_YET',
+            suggestion: 'Continuez à suivre le programme semaine par semaine. Le contenu se débloque automatiquement chaque semaine.',
+            weeksRemaining: weeksRemaining,
+            currentWeek: weeksSinceStart + 1
           };
         }
       }
@@ -833,140 +853,131 @@ async function loadProtectedContent(contentId = null) {
       return result;
     }
 
-    // Sinon, charger la liste des contenus disponibles pour ce produit
+    // Sinon, charger la liste des contenus disponibles pour tous les produits
     try {
-      let query = db.collection('protectedContent').where('product', '==', userProduct);
-      
-      // Pour "21jours", trier par jour (0-21) au lieu de createdAt
-      if (userProduct === '21jours') {
-        query = query.orderBy('day', 'asc');
-      } else {
-        query = query.orderBy('createdAt', 'desc');
-      }
-      
-      const contentsSnapshot = await query.get();
-      
-      const contents = [];
       const now = new Date();
-      let registrationDate = userData.registrationDate;
+      const productsData = [];
       
-      // Fallback : si registrationDate n'existe pas, utiliser createdAt ou date actuelle
-      if (!registrationDate) {
-        registrationDate = userData.createdAt;
-        if (!registrationDate) {
-          console.warn('registrationDate et createdAt manquants, utilisation de la date actuelle');
-          registrationDate = { toDate: () => new Date() };
+      // Pour chaque produit de l'utilisateur, charger ses contenus
+      for (const userProductData of userProducts) {
+        const productName = userProductData.name;
+        const startDate = userProductData.startDate ? userProductData.startDate.toDate() : new Date();
+        
+        let query = db.collection('protectedContent').where('product', '==', productName);
+        
+        // Pour "21jours", trier par jour (0-22) au lieu de createdAt
+        if (productName === '21jours') {
+          query = query.orderBy('day', 'asc');
+        } else if (productName === 'complet') {
+          // Pour "complet", trier par semaine (0-14)
+          query = query.orderBy('week', 'asc');
         } else {
-          // Mettre à jour le document utilisateur avec registrationDate pour les prochaines fois
-          console.warn('registrationDate manquant, utilisation de createdAt. Mise à jour du document utilisateur...');
-          db.collection('users').doc(user.uid).update({
-            registrationDate: userData.createdAt
-          }).catch(err => console.error('Erreur lors de la mise à jour de registrationDate:', err));
-        }
-      }
-      
-      const daysSinceRegistration = registrationDate 
-        ? Math.floor((now - registrationDate.toDate()) / (1000 * 60 * 60 * 24))
-        : 0;
-      
-      contentsSnapshot.forEach((doc) => {
-        const data = doc.data();
-        const dayNumber = data.day;
-        
-        // Pour "21jours", vérifier l'accès progressif
-        let isAccessible = true;
-        if (userProduct === '21jours' && dayNumber !== undefined) {
-          if (dayNumber === 0) {
-            // Jour 0 (déroulé) accessible immédiatement
-            isAccessible = true;
-          } else if (daysSinceRegistration !== null) {
-            // Jours 1-21 : accessibles à partir du jour correspondant
-            // Jour 22 (bonus) : accessible au jour 22 (daysSinceRegistration >= 21)
-            isAccessible = daysSinceRegistration >= dayNumber - 1;
-          } else {
-            isAccessible = false;
-          }
+          query = query.orderBy('createdAt', 'desc');
         }
         
-        const contentObj = {
-          id: doc.id,
-          title: data.title || doc.id,
-          content: data.content || '',
-          day: dayNumber,
-          isAccessible: isAccessible,
-          daysRemaining: (userProduct === '21jours' && dayNumber !== undefined && daysSinceRegistration !== null && dayNumber > 0)
-            ? Math.max(0, dayNumber - daysSinceRegistration - 1)
-            : null,
-        };
-        
-        // Pour les autres produits (pas 21jours), ajouter createdAt/updatedAt pour le tri
-        if (userProduct !== '21jours') {
-          contentObj.createdAt = data.createdAt;
-          contentObj.updatedAt = data.updatedAt;
-        }
-        
-        contents.push(contentObj);
-      });
-
-      return { success: true, contents, product: userProduct, daysSinceRegistration };
-    } catch (indexError) {
-      // Si l'index est en cours de construction, essayer sans orderBy
-      if (indexError.code === 'failed-precondition' && 
-          indexError.message && 
-          indexError.message.includes('index is currently building')) {
-        console.warn('Index en cours de construction, chargement sans tri...');
+        let contentsSnapshot;
         try {
-          const contentsSnapshot = await db.collection('protectedContent')
-            .where('product', '==', userProduct)
-            .get();
-          
-          const contents = [];
-          contentsSnapshot.forEach((doc) => {
-            const data = doc.data();
-            const contentObj = {
-              id: doc.id,
-              title: data.title || doc.id,
-              content: data.content || '',
-            };
-            
-            // Pour 21jours, trier par day
-            if (userProduct === '21jours' && data.day !== undefined) {
-              contentObj.day = data.day;
-            } else {
-              // Pour les autres produits, utiliser createdAt pour le tri
-              contentObj.createdAt = data.createdAt;
-              contentObj.updatedAt = data.updatedAt;
-            }
-            
-            contents.push(contentObj);
-          });
-          
-          // Trier manuellement côté client
-          if (userProduct === '21jours') {
-            // Trier par day pour 21jours
-            contents.sort((a, b) => (a.day || 0) - (b.day || 0));
+          contentsSnapshot = await query.get();
+        } catch (indexError) {
+          // Si l'index est en cours de construction, essayer sans orderBy
+          if (indexError.code === 'failed-precondition') {
+            contentsSnapshot = await db.collection('protectedContent')
+              .where('product', '==', productName)
+              .get();
           } else {
-            // Trier par createdAt pour les autres produits
-            contents.sort((a, b) => {
-              const aDate = a.createdAt?.toDate?.() || new Date(0);
-              const bDate = b.createdAt?.toDate?.() || new Date(0);
-              return bDate - aDate; // Descending
-            });
+            throw indexError;
           }
-
-          return { success: true, contents, product: userProduct };
-        } catch (fallbackError) {
-          console.error('Error loading protected content (fallback):', fallbackError);
-          return { 
-            success: false, 
-            error: 'Le système est en cours de mise à jour. Veuillez réessayer dans quelques minutes.',
-            errorCode: 'INDEX_BUILDING',
-            suggestion: 'Cette opération est temporaire. Attendez 2-3 minutes et rafraîchissez la page.'
-          };
         }
+        
+        const contents = [];
+        const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+        const weeksSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24 * 7));
+        
+        contentsSnapshot.forEach((doc) => {
+          const data = doc.data();
+          const dayNumber = data.day;
+          const weekNumber = data.week;
+          
+          // Vérifier l'accès progressif selon le type de produit
+          let isAccessible = true;
+          let daysRemaining = null;
+          let weeksRemaining = null;
+          
+          if (productName === '21jours' && dayNumber !== undefined) {
+            if (dayNumber === 0) {
+              // Jour 0 (déroulé) accessible immédiatement
+              isAccessible = true;
+            } else {
+              // Jours 1-21 : accessibles à partir du jour correspondant
+              // Jour 22 (bonus) : accessible au jour 22 (daysSinceStart >= 21)
+              isAccessible = daysSinceStart >= dayNumber - 1;
+              if (!isAccessible && dayNumber > 0) {
+                daysRemaining = Math.max(0, dayNumber - daysSinceStart - 1);
+              }
+            }
+          } else if (productName === 'complet' && weekNumber !== undefined) {
+            if (weekNumber === 0) {
+              // Semaine 0 (bonus) accessible immédiatement
+              isAccessible = true;
+            } else {
+              // Semaines 1-14 : accessibles à partir de la semaine correspondante
+              isAccessible = weeksSinceStart >= weekNumber;
+              if (!isAccessible && weekNumber > 0) {
+                weeksRemaining = Math.max(0, weekNumber - weeksSinceStart);
+              }
+            }
+          }
+          
+          const contentObj = {
+            id: doc.id,
+            title: data.title || doc.id,
+            content: data.content || '',
+            day: dayNumber,
+            week: weekNumber,
+            isAccessible: isAccessible,
+            daysRemaining: daysRemaining,
+            weeksRemaining: weeksRemaining,
+          };
+          
+          // Pour les autres produits, ajouter createdAt/updatedAt pour le tri
+          if (productName !== '21jours' && productName !== 'complet') {
+            contentObj.createdAt = data.createdAt;
+            contentObj.updatedAt = data.updatedAt;
+          }
+          
+          contents.push(contentObj);
+        });
+        
+        productsData.push({
+          name: productName,
+          startDate: startDate,
+          contents: contents,
+          daysSinceStart: productName === '21jours' ? daysSinceStart : null,
+          weeksSinceStart: productName === 'complet' ? weeksSinceStart : null,
+        });
       }
-      // Relancer l'erreur si ce n'est pas une erreur d'index en construction
-      throw indexError;
+
+      // Retourner tous les produits avec leurs contenus
+      // Garder aussi product et daysSinceRegistration pour compatibilité rétroactive
+      return { 
+        success: true, 
+        products: productsData, // Nouveau format : tableau de produits
+        product: userProduct, // Premier produit pour compatibilité
+        daysSinceRegistration: productsData.find(p => p.name === '21jours')?.daysSinceStart || null,
+      };
+    } catch (error) {
+      console.error('Error loading protected content:', error);
+      // Si l'index est en cours de construction, retourner une erreur explicite
+      if (error.code === 'failed-precondition') {
+        return { 
+          success: false, 
+          error: 'Le système est en cours de mise à jour. Veuillez réessayer dans quelques minutes.',
+          errorCode: 'INDEX_BUILDING',
+          suggestion: 'Cette opération est temporaire. Attendez 2-3 minutes et rafraîchissez la page.'
+        };
+      }
+      // Relancer l'erreur pour qu'elle soit gérée par le catch externe
+      throw error;
     }
   } catch (error) {
     console.error('Error loading protected content:', error);
