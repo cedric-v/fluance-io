@@ -916,13 +916,13 @@ async function loadProtectedContent(contentId = null) {
               }
             }
           } else if (productName === 'complet' && weekNumber !== undefined) {
-            if (weekNumber === 0) {
-              // Semaine 0 (bonus) accessible immédiatement
+            if (weekNumber === 0 || weekNumber === 1) {
+              // Semaine 0 (bonus) et semaine 1 accessibles immédiatement
               isAccessible = true;
             } else {
-              // Semaines 1-14 : accessibles à partir de la semaine correspondante
+              // Semaines 2-14 : accessibles à partir de la semaine correspondante
               isAccessible = weeksSinceStart >= weekNumber;
-              if (!isAccessible && weekNumber > 0) {
+              if (!isAccessible && weekNumber > 1) {
                 weeksRemaining = Math.max(0, weekNumber - weeksSinceStart);
               }
             }
