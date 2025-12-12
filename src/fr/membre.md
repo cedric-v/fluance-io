@@ -286,6 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
               </div>
             `;
+          } else if (prod.id === '21jours') {
             // Pour 21jours, afficher avec navigation par jour
             const daysSinceStart = userProduct.daysSinceStart || 0;
             const currentDay = daysSinceStart + 1;
@@ -422,27 +423,53 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
       contentHTML += '</div>';
+      console.log('[Espace Membre] HTML généré, longueur:', contentHTML.length);
+      console.log('[Espace Membre] Produit actif:', activeProductId);
       contentContainer.innerHTML = contentHTML;
       contentContainer.classList.remove('hidden');
+      
+      // Vérifier que le HTML a bien été inséré
+      const insertedTab = contentContainer.querySelector(`.product-tab-content[data-product="${activeProductId}"]`);
+      console.log('[Espace Membre] Onglet inséré trouvé:', insertedTab);
+      if (insertedTab) {
+        const insertedProtected = insertedTab.querySelectorAll('.protected-content[data-content-id]');
+        console.log('[Espace Membre] Éléments protégés dans le HTML inséré:', insertedProtected.length);
+      }
 
       // Charger les contenus protégés de l'onglet actif uniquement
-      const activeTabContent = contentContainer.querySelector(`.product-tab-content[data-product="${activeProductId}"]:not(.hidden)`);
-      if (activeTabContent) {
-        const protectedElements = activeTabContent.querySelectorAll('.protected-content[data-content-id]');
-        protectedElements.forEach(element => {
-          const contentId = element.getAttribute('data-content-id');
-          if (contentId && window.FluanceAuth && window.FluanceAuth.displayProtectedContent) {
-            window.FluanceAuth.displayProtectedContent(contentId, element).catch(err => {
-              console.error('Error loading content:', err);
-              element.innerHTML = `
-                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p class="text-red-800 text-sm">Erreur lors du chargement</p>
-                </div>
-              `;
-            });
-          }
-        });
-      }
+      setTimeout(() => {
+        const activeTabContent = contentContainer.querySelector(`.product-tab-content[data-product="${activeProductId}"]:not(.hidden)`);
+        console.log('[Espace Membre] Onglet actif trouvé:', activeTabContent, 'pour produit:', activeProductId);
+        
+        if (activeTabContent) {
+          const protectedElements = activeTabContent.querySelectorAll('.protected-content[data-content-id]');
+          console.log('[Espace Membre] Éléments protégés trouvés:', protectedElements.length);
+          
+          protectedElements.forEach((element, index) => {
+            const contentId = element.getAttribute('data-content-id');
+            console.log(`[Espace Membre] Chargement contenu ${index + 1}/${protectedElements.length}:`, contentId);
+            
+            if (contentId && window.FluanceAuth && window.FluanceAuth.displayProtectedContent) {
+              window.FluanceAuth.displayProtectedContent(contentId, element).catch(err => {
+                console.error('[Espace Membre] Erreur lors du chargement du contenu:', err);
+                element.innerHTML = `
+                  <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-800 text-sm">Erreur lors du chargement</p>
+                  </div>
+                `;
+              });
+            } else {
+              console.warn('[Espace Membre] Impossible de charger le contenu:', {
+                contentId,
+                hasFluanceAuth: !!window.FluanceAuth,
+                hasDisplayMethod: !!(window.FluanceAuth && window.FluanceAuth.displayProtectedContent)
+              });
+            }
+          });
+        } else {
+          console.warn('[Espace Membre] Onglet actif non trouvé pour produit:', activeProductId);
+        }
+      }, 100);
 
       // Ajouter les listeners pour la navigation et le changement d'onglets
       setTimeout(() => {
