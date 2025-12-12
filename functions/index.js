@@ -907,6 +907,10 @@ exports.createStripeCheckoutSession = onCall(
           mode: mode,
           success_url: successUrl,
           cancel_url: cancelUrl,
+          // Définir la langue de l'interface Stripe Checkout
+          // 'auto' détecte automatiquement la langue du navigateur
+          // 'fr' pour français, 'en' pour anglais
+          locale: locale === 'en' ? 'en' : 'fr',
           metadata: {
             system: 'firebase',
             product: product,
