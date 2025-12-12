@@ -818,9 +818,9 @@ async function loadProtectedContent(contentId = null) {
         const weeksSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24 * 7));
         const weekNumber = contentData.week;
 
-        // Semaine 0 (bonus) accessible immédiatement
-        // Semaines 1-14 : accessibles à partir de la semaine correspondante
-        if (weekNumber > 0 && weeksSinceStart < weekNumber) {
+        // Semaine 0 (bonus) et semaine 1 accessibles immédiatement
+        // Semaines 2-14 : accessibles à partir de la semaine correspondante
+        if (weekNumber > 1 && weeksSinceStart < weekNumber) {
           const weeksRemaining = weekNumber - weeksSinceStart;
           return { 
             success: false, 
