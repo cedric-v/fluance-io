@@ -10,6 +10,7 @@
  */
 
 const {onRequest, onCall} = require('firebase-functions/v2/https');
+const {onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {setGlobalOptions} = require('firebase-functions/v2');
 const {HttpsError} = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
@@ -2216,4 +2217,138 @@ exports.sendSignInLinkViaMailjet = onCall(
         throw new HttpsError('internal', 'Error sending sign-in link email: ' + error.message);
       }
     });
+
+/**
+ * Fonction qui envoie une notification par email lorsqu'un nouveau commentaire est ajouté
+ * Écoute les nouveaux documents dans comments/{pageId}/messages
+ */
+exports.notifyNewComment = onDocumentCreated(
+    {
+      document: 'comments/{pageId}/messages/{messageId}',
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'NOTIFICATION_EMAIL'],
+    },
+    async (event) => {
+      const commentData = event.data.data();
+      const pageId = event.params.pageId;
+      // eslint-disable-next-line no-unused-vars
+      const messageId = event.params.messageId;
+
+      if (!commentData) {
+        console.error('No data in comment document');
+        return;
+      }
+
+      const name = commentData.name || 'Anonyme';
+      const text = commentData.text || '';
+
+      // Décoder le pageId pour obtenir l'URL de la page
+      // Le pageId est encodé comme: origin + pathname (ou origin + pathname + '|' + contentId)
+      let pageUrl = decodeURIComponent(pageId);
+
+      // Si le pageId contient un pipe, c'est pour les commentaires de contenu protégé
+      // Format: origin + pathname + '|' + contentId
+      if (pageUrl.includes('|')) {
+        const parts = pageUrl.split('|');
+        pageUrl = parts[0]; // Prendre seulement l'URL de la page
+      }
+
+      // Construire l'URL complète
+      let fullUrl = pageUrl;
+      if (!pageUrl.startsWith('http')) {
+        // Si c'est juste un chemin, ajouter le domaine
+        fullUrl = `https://fluance.io${pageUrl.startsWith('/') ? '' : '/'}${pageUrl}`;
+      }
+
+      try {
+        // Email de notification (configuré via Firebase Secrets: NOTIFICATION_EMAIL)
+        const notificationEmail = process.env.NOTIFICATION_EMAIL;
+
+        if (!notificationEmail) {
+          console.error('NOTIFICATION_EMAIL secret not configured. Skipping notification.');
+          return;
+        }
+
+        const emailSubject = `Nouveau commentaire de ${name}`;
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .comment-box {
+                background-color: #f5f5f5;
+                border-left: 4px solid #ffce2d;
+                padding: 15px;
+                margin: 20px 0;
+              }
+              .button {
+                display: inline-block;
+                padding: 12px 24px;
+                background-color: #ffce2d;
+                color: #0f172a;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+                margin: 20px 0;
+              }
+              .footer { margin-top: 30px; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>Nouveau commentaire</h1>
+              <p><strong>Prénom :</strong> ${escapeHtml(name)}</p>
+              <div class="comment-box">
+                <p><strong>Commentaire :</strong></p>
+                <p>${escapeHtml(text)}</p>
+              </div>
+              <p><strong>Page :</strong> ${escapeHtml(fullUrl)}</p>
+              <p><a href="${fullUrl}" class="button">Voir la page</a></p>
+              <div class="footer">
+                <p>Ceci est une notification automatique pour les nouveaux commentaires.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+
+        const emailText = `Nouveau commentaire\n\n` +
+            `Prénom: ${name}\n\n` +
+            `Commentaire:\n${text}\n\n` +
+            `Page: ${fullUrl}\n\n` +
+            `Voir la page: ${fullUrl}`;
+
+        await sendMailjetEmail(
+            notificationEmail,
+            emailSubject,
+            emailHtml,
+            emailText,
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+
+        console.log(`Notification email sent for new comment from ${name} on ${fullUrl}`);
+      } catch (error) {
+        console.error('Error sending notification email for new comment:', error);
+        // Ne pas faire échouer la fonction si l'email échoue
+        // Le commentaire a déjà été créé
+      }
+    });
+
+/**
+ * Fonction utilitaire pour échapper le HTML dans les emails
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/\n/g, '<br>');
+}
 
