@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
           id: '21jours',
           name: 'Défi 21 jours',
           url: '/cours-en-ligne/21jours/',
-          description: 'Retrouvez légèreté, mobilité et sérénité en seulement 2 à 5 minutes par jour, durant 21 jours.'
+          description: 'Retrouvez <strong>légèreté</strong>, <strong>mobilité</strong> et <strong>sérénité</strong> en seulement <strong>2 à 5 minutes par jour</strong>.<br><br>Prêt pour ces <strong>21 jours</strong> avec vous-même ?'
         },
         {
           id: 'complet',
