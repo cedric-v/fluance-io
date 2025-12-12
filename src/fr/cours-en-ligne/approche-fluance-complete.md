@@ -80,7 +80,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#0f172a]/80 text-center mb-6">
             <strong class="text-fluance">Les 14 premiers jours sont offerts</strong>
           </p>
-          <button onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'fr')" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'fr', event)" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
             <span>S'abonner mensuellement</span>
             <span>→</span>
           </button>
@@ -107,7 +107,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#0f172a]/80 text-center mb-6">
             <strong class="text-fluance">Les 14 premiers jours sont offerts</strong>
           </p>
-          <button onclick="window.FluancePayment.redirectToStripe('complet', 'trimestriel', 'fr')" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'trimestriel', 'fr', event)" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
             <span>S'abonner trimestriellement</span>
             <span>→</span>
           </button>

@@ -23,7 +23,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
       </p>
     </div>
     <div class="flex flex-col gap-4">
-      <button onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr')" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center w-full">
+      <button onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr', event)" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center w-full">
         Démarrer le challenge de 21 jours pour 19 CHF / équivalent €
       </button>
       <a href="#en-savoir-plus" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center">
@@ -259,7 +259,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="pt-4 flex justify-center">
-        <button onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr')" class="btn-primary inline-flex flex-col items-center text-center">
+        <button onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr', event)" class="btn-primary inline-flex flex-col items-center text-center">
           <span>Je rejoins ce challenge vers un chemin vers un corps libre de tensions</span>
           <span class="text-sm font-normal opacity-90">19 CHF / équivalent €</span>
         </button>
@@ -314,7 +314,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
         Une <strong>manière simple, douce et vivante de retrouver fluidité et apaisement</strong>, sans chercher à rentrer dans un cadre.
       </p>
       <div class="pt-4 flex justify-center">
-        <button onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr')" class="btn-primary inline-flex flex-col items-center text-center">
+        <button onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr', event)" class="btn-primary inline-flex flex-col items-center text-center">
           <span>Je rejoins ce challenge vers un chemin vers un corps libre de tensions</span>
           <span class="text-sm font-normal opacity-90">19 CHF / équivalent €</span>
         </button>

@@ -59,9 +59,20 @@ function loadFirebase() {
  * @param {string} product - '21jours' ou 'complet'
  * @param {string|null} variant - 'mensuel' ou 'trimestriel' (requis pour 'complet', null pour '21jours')
  * @param {string} locale - 'fr' ou 'en' (défaut: 'fr')
+ * @param {Event} event - Événement de clic (optionnel, pour désactiver le bouton)
  */
-async function redirectToStripeCheckout(product, variant = null, locale = 'fr') {
+async function redirectToStripeCheckout(product, variant = null, locale = 'fr', event = null) {
+  // Récupérer le bouton depuis l'événement ou depuis window.event (fallback)
+  const button = event?.target || window.event?.target || null;
+  const originalText = button ? button.textContent : null;
+
   try {
+    // Désactiver le bouton et afficher un indicateur de chargement
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Chargement...';
+    }
+
     // Charger Firebase si pas déjà chargé
     await loadFirebase();
 
@@ -81,14 +92,6 @@ async function redirectToStripeCheckout(product, variant = null, locale = 'fr') 
       data.variant = variant;
     }
 
-    // Afficher un indicateur de chargement (optionnel)
-    const button = event?.target;
-    if (button) {
-      const originalText = button.textContent;
-      button.disabled = true;
-      button.textContent = 'Chargement...';
-    }
-
     // Appeler la fonction Firebase
     const result = await createStripeCheckoutSession(data);
 
@@ -103,9 +106,9 @@ async function redirectToStripeCheckout(product, variant = null, locale = 'fr') 
     alert('Une erreur est survenue. Veuillez réessayer.');
     
     // Réactiver le bouton en cas d'erreur
-    const button = event?.target;
-    if (button) {
+    if (button && originalText) {
       button.disabled = false;
+      button.textContent = originalText;
     }
   }
 }
@@ -117,3 +120,6 @@ window.FluancePayment = {
 
 // Fonctions de compatibilité (pour utilisation directe dans onclick)
 window.redirectToStripeCheckout = redirectToStripeCheckout;
+
+// Log pour vérifier que le script est chargé
+console.log('[Payment] Script payment.js chargé, FluancePayment disponible');
