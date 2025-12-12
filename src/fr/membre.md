@@ -187,18 +187,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       ];
       
-      // Déterminer le dernier produit démarré (date de démarrage la plus récente)
-      let lastStartedProduct = null;
-      if (products.length > 0) {
-        lastStartedProduct = products.reduce((latest, current) => {
-          const currentDate = current.startDate?.toDate ? current.startDate.toDate() : new Date(current.startDate);
-          const latestDate = latest.startDate?.toDate ? latest.startDate.toDate() : new Date(latest.startDate);
-          return currentDate > latestDate ? current : latest;
-        });
+      // Vérifier si un onglet est sauvegardé dans localStorage
+      const savedTab = localStorage.getItem('fluance-active-product-tab');
+      let activeProductId;
+      
+      if (savedTab && allProducts.some(p => p.id === savedTab)) {
+        // Vérifier que l'utilisateur a accès à ce produit
+        const hasAccess = products.some(p => p.name === savedTab);
+        if (hasAccess) {
+          activeProductId = savedTab;
+        }
       }
       
-      // Si aucun produit démarré, utiliser le premier produit acheté ou le premier disponible
-      const activeProductId = lastStartedProduct?.name || (products.length > 0 ? products[0].name : allProducts[0].id);
+      // Si pas d'onglet sauvegardé ou pas d'accès, utiliser le dernier produit démarré
+      if (!activeProductId) {
+        let lastStartedProduct = null;
+        if (products.length > 0) {
+          lastStartedProduct = products.reduce((latest, current) => {
+            const currentDate = current.startDate?.toDate ? current.startDate.toDate() : new Date(current.startDate);
+            const latestDate = latest.startDate?.toDate ? latest.startDate.toDate() : new Date(latest.startDate);
+            return currentDate > latestDate ? current : latest;
+          });
+        }
+        
+        // Si aucun produit démarré, utiliser le premier produit acheté ou le premier disponible
+        activeProductId = lastStartedProduct?.name || (products.length > 0 ? products[0].name : allProducts[0].id);
+      }
+      
+      // Sauvegarder l'onglet actif
+      localStorage.setItem('fluance-active-product-tab', activeProductId);
       
       // Créer les onglets
       let tabsHTML = '<div class="border-b border-gray-200 mb-6">';
@@ -572,6 +589,9 @@ document.addEventListener('DOMContentLoaded', function() {
 function switchProductTab(productId) {
   const contentContainer = document.getElementById('content-container');
   if (!contentContainer) return;
+  
+  // Sauvegarder l'onglet actif dans localStorage
+  localStorage.setItem('fluance-active-product-tab', productId);
   
   // Mettre à jour les onglets
   contentContainer.querySelectorAll('button[data-product-id]').forEach(btn => {
