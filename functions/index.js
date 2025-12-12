@@ -228,23 +228,66 @@ async function sendMailjetEmail(to, subject, htmlContent, textContent = null, ap
     ],
   };
 
-  const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
+  console.log(`📧 Sending email via Mailjet to: ${to}`);
+  console.log(`📧 Subject: ${subject}`);
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Basic ${auth}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Mailjet API error: ${response.status} - ${errorText}`);
+  // Vérifier que les credentials sont présents (sans les logger)
+  if (!apiKey || !apiSecret) {
+    throw new Error('Mailjet credentials not configured');
   }
 
-  return await response.json();
+  const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${auth}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const responseText = await response.text();
+    console.log(`📧 Mailjet API response status: ${response.status}`);
+
+    if (!response.ok) {
+      // Logger seulement le statut et un résumé de l'erreur (pas les détails complets)
+      try {
+        const errorData = JSON.parse(responseText);
+        const errorMessage = errorData.ErrorMessage || errorData.ErrorInfo || 'Unknown error';
+        console.error(`❌ Mailjet API error: ${response.status} - ${errorMessage}`);
+        throw new Error(`Mailjet API error: ${response.status} - ${errorMessage}`);
+      } catch {
+        // Si la réponse n'est pas du JSON, logger seulement le statut
+        console.error(`❌ Mailjet API error: ${response.status}`);
+        throw new Error(`Mailjet API error: ${response.status}`);
+      }
+    }
+
+    // Parser la réponse seulement si elle est OK
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+      // Logger seulement les informations non sensibles
+      if (responseData.Messages && responseData.Messages.length > 0) {
+        const messageStatus = responseData.Messages[0].Status || 'unknown';
+        console.log(`✅ Email sent successfully via Mailjet to ${to} (Status: ${messageStatus})`);
+      } else {
+        console.log(`✅ Email sent successfully via Mailjet to ${to}`);
+      }
+    } catch {
+      // Si la réponse n'est pas du JSON valide, retourner quand même un objet
+      console.log(`✅ Email sent successfully via Mailjet to ${to}`);
+      responseData = {success: true};
+    }
+
+    return responseData;
+  } catch (error) {
+    // Logger seulement le message d'erreur, pas la stack trace complète qui pourrait contenir des infos sensibles
+    console.error(`❌ Error in sendMailjetEmail: ${error.message}`);
+    throw error;
+  }
 }
 
 /**
@@ -1913,19 +1956,30 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
         const adminAuth = admin.auth();
 
         // Vérifier que l'utilisateur existe
+        let userExists = false;
         try {
           // eslint-disable-next-line no-unused-vars
           const userRecord = await adminAuth.getUserByEmail(normalizedEmail);
+          userExists = true;
+          console.log(`✅ User found: ${normalizedEmail}`);
         } catch (error) {
           if (error.code === 'auth/user-not-found') {
             // Pour des raisons de sécurité, ne pas révéler si l'utilisateur existe ou non
-            console.log(`Password reset requested for non-existent user: ${email}`);
+            console.log(`⚠️ Password reset requested for non-existent user: ${email}`);
             return {
               success: true,
               message: 'If an account exists with this email, a password reset link has been sent.',
             };
           }
           throw error;
+        }
+
+        if (!userExists) {
+          console.log(`⚠️ User does not exist, returning early`);
+          return {
+            success: true,
+            message: 'If an account exists with this email, a password reset link has been sent.',
+          };
         }
 
         // Générer un token de réinitialisation personnalisé (hébergé sur fluance.io)
@@ -2052,16 +2106,22 @@ Cordialement,
 L'équipe Fluance
         `;
 
-        await sendMailjetEmail(
-            email.toLowerCase().trim(),
-            emailSubject,
-            emailHtml,
-            emailText,
-            process.env.MAILJET_API_KEY,
-            process.env.MAILJET_API_SECRET,
-        );
-
-        console.log(`Password reset email sent via Mailjet to ${email}`);
+        console.log(`📧 About to call sendMailjetEmail for ${normalizedEmail}`);
+        try {
+          await sendMailjetEmail(
+              normalizedEmail,
+              emailSubject,
+              emailHtml,
+              emailText,
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+          );
+          console.log(`✅ Password reset email sent via Mailjet to ${normalizedEmail}`);
+        } catch (emailError) {
+          // Logger seulement le message d'erreur, pas la stack trace complète
+          console.error(`❌ Error calling sendMailjetEmail: ${emailError.message}`);
+          throw emailError;
+        }
 
         return {
           success: true,
