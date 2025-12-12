@@ -2,7 +2,9 @@
 
 ## Vue d'ensemble
 
-Une fonction Firebase Scheduled (`sendNewContentEmails`) s'exécute **quotidiennement à 8h (Europe/Paris)** pour envoyer automatiquement des emails aux clients lorsqu'un nouveau contenu devient disponible.
+Une fonction Firebase Scheduled (`sendNewContentEmails`) s'exécute **quotidiennement à 8h (Europe/Paris)** pour envoyer automatiquement des emails :
+- **Aux clients** : lorsqu'un nouveau contenu devient disponible dans leur espace membre
+- **Aux prospects "5 jours offerts"** : emails marketing pour promouvoir le programme 21 jours
 
 ## Fonctionnement
 
@@ -17,6 +19,13 @@ Une fonction Firebase Scheduled (`sendNewContentEmails`) s'exécute **quotidienn
 - **Calcul** : Basé sur le nombre de semaines depuis `startDate` dans le produit de l'utilisateur
 - **Semaine 1** : Première semaine après l'achat
 - **Semaine 14** : 14ème semaine après l'achat
+
+### Prospects "5 jours offerts" (Emails marketing)
+- **Fréquence** : Emails aux jours 3, 7, 14, 21 après l'inscription
+- **Calcul** : Basé sur `serie_5jours_debut` ou `date_optin` dans Mailjet
+- **Objectif** : Promouvoir le programme "21 jours"
+- **Email d'envoi** : `fluance@actu.fluance.io` (marketing, au lieu de `support@actu.fluance.io` pour transactionnel)
+- **Condition** : Seulement pour les prospects (pas les clients qui ont déjà acheté)
 
 ## Structure Firestore
 
@@ -33,13 +42,27 @@ contentEmailsSent/
   │   ├── day: number (1-21)
   │   └── sentAt: Timestamp
   │
-  └── {userId}_complet_week_{week}
-      ├── userId: string
+  ├── {userId}_complet_week_{week}
+  │   ├── userId: string
+  │   ├── email: string
+  │   ├── product: "complet"
+  │   ├── week: number (1-14)
+  │   └── sentAt: Timestamp
+  │
+  └── marketing_5jours_{email}_day_{day}
       ├── email: string
-      ├── product: "complet"
-      ├── week: number (1-14)
+      ├── type: "marketing_5jours"
+      ├── day: number (3, 7, 14, 21)
       └── sentAt: Timestamp
 ```
+
+## Vérification d'accessibilité du contenu
+
+La fonction vérifie que le contenu est **accessible** avant d'envoyer l'email :
+- Pour "21jours" : vérifie que `contentData.day === currentDay`
+- Pour "complet" : vérifie que `contentData.week === currentWeek`
+
+Cela garantit que l'email n'est envoyé que si le contenu est réellement disponible dans l'espace membre.
 
 ## Prérequis
 
