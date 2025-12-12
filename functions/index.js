@@ -2957,7 +2957,7 @@ function escapeHtml(text) {
  */
 exports.sendNewContentEmails = onSchedule(
     {
-      schedule: '0 9 * * *', // Tous les jours à 9h
+      schedule: '0 8 * * *', // Tous les jours à 8h
       timeZone: 'Europe/Paris',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
       region: 'europe-west1',
