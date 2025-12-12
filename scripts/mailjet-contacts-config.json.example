@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Sandrine",
+    "email": "sandrine.emery@cea.fr",
+    "product": "complet",
+    "dateAchat": "02/10/2025",
+    "montant": "75.00"
+  },
+  {
+    "name": "Fabienne",
+    "email": "fabienne.poscia@gmail.com",
+    "product": "complet",
+    "dateAchat": "03/10/2025",
+    "montant": "30.00"
+  },
+  {
+    "name": "Nicole",
+    "email": "nicolevonlanthen@hotmail.com",
+    "product": "21jours",
+    "dateAchat": "05/11/2025",
+    "montant": "19.00"
+  },
+  {
+    "name": "Sylvie",
+    "email": "sylvie707@cgocable.ca",
+    "product": "21jours",
+    "dateAchat": "05/11/2025",
+    "montant": "19.00"
+  }
+]
