@@ -1234,6 +1234,11 @@ exports.subscribeToNewsletter = onCall(
           est_client: 'False',
         };
 
+        // Ajouter le prénom aux propriétés si disponible
+        if (name) {
+          properties.firstname = name;
+        }
+
         console.log('📋 Starting MailJet contact properties update for 2 pratiques:', contactData.Email);
         console.log('📋 Properties to set:', JSON.stringify(properties));
         await updateMailjetContactProperties(
@@ -1841,6 +1846,11 @@ exports.subscribeTo5Days = onCall(
           date_optin: dateStr,
           est_client: 'False',
         };
+
+        // Ajouter le prénom aux propriétés si disponible
+        if (name) {
+          properties.firstname = name;
+        }
 
         // Si date_optin existe déjà et est plus ancienne, la conserver
         // Comparer les dates au format ISO (YYYY-MM-DD) ou ancien format (JJ/MM/AAAA)
