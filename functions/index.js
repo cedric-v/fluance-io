@@ -3165,7 +3165,8 @@ exports.sendNewContentEmails = onSchedule(
 
                   // Vérifier que le contenu est accessible (semaine correspond)
                   if (contentData.week !== undefined && contentData.week !== currentWeek) {
-                    console.warn(`⚠️ Content ${contentDocId} week mismatch: expected ${currentWeek}, got ${contentData.week}`);
+                    console.warn(`⚠️ Content ${contentDocId} week mismatch: ` +
+                        `expected ${currentWeek}, got ${contentData.week}`);
                     continue;
                   }
 
@@ -3447,7 +3448,9 @@ exports.sendNewContentEmails = onSchedule(
           // Ne pas faire échouer toute la fonction si la partie marketing échoue
         }
 
-        console.log(`📧 Email job completed: ${emailsSent} sent (clients), ${marketingEmailsSent} sent (marketing), ${emailsSkipped + marketingEmailsSkipped} skipped, ${errors} errors`);
+        console.log(`📧 Email job completed: ${emailsSent} sent (clients), ` +
+            `${marketingEmailsSent} sent (marketing), ` +
+            `${emailsSkipped + marketingEmailsSkipped} skipped, ${errors} errors`);
         return {
           success: true,
           emailsSent,
