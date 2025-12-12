@@ -426,7 +426,11 @@ document.addEventListener('DOMContentLoaded', function() {
           } else if (prod.id === 'complet') {
             // Pour complet, afficher avec navigation par semaine
             const weeksSinceStart = userProduct.weeksSinceStart || 0;
-            const currentWeek = weeksSinceStart + 1;
+            const calculatedWeek = weeksSinceStart + 1;
+            
+            // Limiter la semaine affichée au nombre de contenus disponibles
+            const maxWeek = Math.max(...userProduct.contents.map(c => c.week || 0), 0);
+            const currentWeek = Math.min(calculatedWeek, maxWeek + 1); // +1 car on compte aussi le bonus (week 0)
             
             contentHTML += `
               <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
