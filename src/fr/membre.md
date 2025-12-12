@@ -176,13 +176,13 @@ document.addEventListener('DOMContentLoaded', function() {
         {
           id: '21jours',
           name: 'Défi 21 jours',
-          url: '/cours-en-ligne/21jours/',
+          url: 'https://fluance.io/cours-en-ligne/21-jours-mouvement/',
           description: 'Retrouvez <strong>légèreté</strong>, <strong>mobilité</strong> et <strong>sérénité</strong> en seulement <strong>2 à 5 minutes par jour</strong>.<br><br>Prêt pour ces <strong>21 jours</strong> avec vous-même ?'
         },
         {
           id: 'complet',
           name: 'Approche Fluance Complète',
-          url: '/cours-en-ligne/approche-fluance-complete/',
+          url: 'https://fluance.io/cours-en-ligne/approche-fluance-complete/',
           description: 'Accès à une <strong>nouvelle mini-série</strong> de pratiques <strong>chaque semaine.</strong><br><br>Pour <strong>garder l\'élan</strong> et <strong>continuer à prendre soin</strong> de votre <strong>corps</strong> et de <strong>vos ressentis</strong>.'
         },
         {
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p class="text-gray-700 mb-6">${prod.description}</p>
                 <a href="${prod.url}" 
                    class="inline-block bg-fluance text-white px-8 py-3 rounded-lg hover:bg-fluance/90 transition-colors font-semibold">
-                  ${prod.id === 'complet' ? 'Découvrir et acquérir l\'approche Fluance complète' : `Découvrir et acquérir ${prod.name}`}
+                  ${prod.id === 'complet' ? 'Découvrir et acquérir l\'approche Fluance complète' : prod.id === '21jours' ? 'Découvrir et acquérir le défi 21 jours' : `Découvrir et acquérir ${prod.name}`}
                 </a>
               </div>
             </div>
