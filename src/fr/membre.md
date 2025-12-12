@@ -429,8 +429,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const calculatedWeek = weeksSinceStart + 1;
             
             // Limiter la semaine affichée au nombre de contenus disponibles
+            // maxWeek = la semaine la plus élevée dans les contenus (ex: 6 si on a week 0-6)
             const maxWeek = Math.max(...userProduct.contents.map(c => c.week || 0), 0);
-            const currentWeek = Math.min(calculatedWeek, maxWeek + 1); // +1 car on compte aussi le bonus (week 0)
+            // Si maxWeek = 6, on a les semaines 0-6, donc on affiche au maximum "semaine 6"
+            // Mais si calculatedWeek dépasse maxWeek, on limite à maxWeek
+            const currentWeek = Math.min(calculatedWeek, maxWeek > 0 ? maxWeek : 1);
             
             contentHTML += `
               <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
