@@ -127,8 +127,46 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       // Nouveau format : result.products[] ou ancien format : result.product pour compatibilité
-      const products = result.products || [];
+      let products = result.products || [];
       const product = result.product; // Pour compatibilité
+      
+      // Migration automatique si products est vide mais product existe
+      // Cela peut arriver si loadProtectedContent retourne l'ancien format
+      if (products.length === 0 && product) {
+        console.log('[Espace Membre] Migration automatique depuis product:', product);
+        console.log('[Espace Membre] Résultat avant migration:', result);
+        
+        // Si result.contents existe, c'est l'ancien format
+        if (result.contents && Array.isArray(result.contents)) {
+          products = [{
+            name: product,
+            startDate: result.daysSinceRegistration !== null ? 
+              new Date(Date.now() - (result.daysSinceRegistration * 24 * 60 * 60 * 1000)) : 
+              new Date(),
+            contents: result.contents,
+            daysSinceStart: result.daysSinceRegistration || 0,
+            weeksSinceStart: null,
+          }];
+          console.log('[Espace Membre] Produits après migration:', products);
+        } else {
+          // Si pas de contents, créer un produit vide (les contenus seront chargés plus tard)
+          // ou recharger depuis loadProtectedContent
+          console.warn('[Espace Membre] Pas de contents dans result, rechargement nécessaire');
+          // Recharger avec loadProtectedContent pour obtenir les contenus
+          try {
+            const reloadResult = await window.FluanceAuth.loadProtectedContent();
+            if (reloadResult.success && reloadResult.products) {
+              products = reloadResult.products;
+              console.log('[Espace Membre] Produits rechargés:', products);
+            }
+          } catch (reloadError) {
+            console.error('[Espace Membre] Erreur lors du rechargement:', reloadError);
+          }
+        }
+      }
+      
+      console.log('[Espace Membre] Produits chargés:', products);
+      console.log('[Espace Membre] Résultat complet:', result);
       
       // Stocker les produits dans une variable accessible aux event listeners
       window.currentUserProducts = products;
@@ -167,9 +205,22 @@ document.addEventListener('DOMContentLoaded', function() {
       tabsHTML += '<nav class="flex space-x-4" role="tablist">';
       
       allProducts.forEach((prod, index) => {
-        const userProduct = products.find(p => p.name === prod.id);
+        // Chercher le produit dans la liste des produits de l'utilisateur
+        const userProduct = products.find(p => {
+          const productName = typeof p === 'string' ? p : p.name;
+          return productName === prod.id;
+        });
         const isActive = prod.id === activeProductId;
-        const isPurchased = !!userProduct;
+        // Un produit est acheté si on le trouve dans la liste OU si c'est le product retourné
+        const isPurchased = !!userProduct || (product && product === prod.id);
+        
+        console.log(`[Espace Membre] Produit ${prod.id}:`, {
+          userProduct,
+          isActive,
+          isPurchased,
+          productFromResult: product,
+          productsList: products.map(p => typeof p === 'string' ? p : p.name)
+        });
         
         tabsHTML += `
           <button 
@@ -178,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             class="px-4 py-2 font-medium text-sm border-b-2 transition-colors
                    ${isActive ? 'border-fluance text-fluance' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
                    ${isPurchased ? '' : 'opacity-60'}"
-            ${!isActive ? `onclick="switchProductTab('${prod.id}')"` : ''}>
+            onclick="switchProductTab('${prod.id}')">
             ${prod.name}
             ${isPurchased ? '<span class="ml-2 text-green-600">✓</span>' : ''}
           </button>
@@ -191,9 +242,23 @@ document.addEventListener('DOMContentLoaded', function() {
       let contentHTML = tabsHTML + '<div class="space-y-6" id="product-content">';
       
       allProducts.forEach((prod) => {
-        const userProduct = products.find(p => p.name === prod.id);
+        // Chercher le produit dans la liste des produits de l'utilisateur
+        const userProduct = products.find(p => {
+          const productName = typeof p === 'string' ? p : p.name;
+          return productName === prod.id;
+        });
         const isActive = prod.id === activeProductId;
-        const isPurchased = !!userProduct;
+        // Un produit est acheté si on le trouve dans la liste OU si c'est le product retourné
+        const isPurchased = !!userProduct || (product && product === prod.id);
+        
+        console.log(`[Espace Membre] Affichage contenu ${prod.id}:`, {
+          userProduct,
+          isActive,
+          isPurchased,
+          productFromResult: product,
+          hasContents: userProduct?.contents?.length > 0,
+          userProductType: typeof userProduct
+        });
         
         if (!isPurchased) {
           // Produit non acheté : afficher un bouton d'achat
