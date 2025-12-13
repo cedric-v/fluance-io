@@ -1,0 +1,65 @@
+---
+layout: false
+permalink: /emails/promotion-21jours-relance.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+      <mj-button background-color="#ffce2d" color="#0f172a" font-weight="bold" border-radius="5px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold" padding="10px">
+          Fluance : sortir des tensions physiques et du trop-plein
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour{{firstName}},
+        </mj-text>
+        <mj-text>
+          Vous avez déjà goûté à ce que quelques minutes de Fluance peuvent changer dans votre quotidien.
+        </mj-text>
+        <mj-text>
+          Mais peut-être sentez-vous encore…
+        </mj-text>
+        <mj-text>
+          • ce <strong>trop-plein émotionnel et mental</strong> qui revient dès que la journée s'emballe,<br>
+          • ces <strong>tensions corporelles</strong> qui s'installent sans prévenir,<br>
+          • cette <strong>fatigue de "porter trop"</strong>, encore et encore.
+        </mj-text>
+        <mj-text>
+          Avec le parcours Fluance, vous pouvez aller plus loin sans alourdir votre emploi du temps :
+        </mj-text>
+        <mj-text>
+          • les pratiques ne prennent que quelques minutes,<br>
+          • le tout à votre rythme, depuis chez vous.
+        </mj-text>
+        <mj-button href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" align="center" padding="20px">
+          Sortir du trop-plein et des tensions corporelles
+        </mj-button>
+        <mj-text>
+          À tout bientôt,
+        </mj-text>
+        <mj-text>
+          Cédric
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666" padding="0">
+          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+

@@ -1,0 +1,77 @@
+---
+layout: false
+permalink: /emails/promotion-21jours-final.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+      <mj-button background-color="#ffce2d" color="#0f172a" font-weight="bold" border-radius="5px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold" padding="10px">
+          21 jours de Fluance : c'est le moment
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour{{firstName}},
+        </mj-text>
+        <mj-text>
+          <strong>Pourquoi rejoindre Fluance maintenant ?</strong>
+        </mj-text>
+        <mj-text>
+          Parce que vous méritez de ne plus rester prisonnier(ère) de :
+        </mj-text>
+        <mj-text>
+          • ces <strong>tensions corporelles</strong> qui alourdissent vos journées.<br>
+          • ce <strong>trop-plein émotionnel et mental</strong> qui vous épuise peut-être,
+        </mj-text>
+        <mj-text>
+          Et tout cela en seulement quelques minutes par jour.
+        </mj-text>
+        <mj-button href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" align="center" padding="20px">
+          Je continue dès maintenant
+        </mj-button>
+        <mj-text>
+          Imaginez commencer votre journée en vous sentant plus centrée, plus apaisée.
+        </mj-text>
+        <mj-text>
+          Mais Fluance, c'est aussi bien plus qu'un simple parcours :
+        </mj-text>
+        <mj-text>
+          • C'est <strong>soutenir la reprise en main de notre santé</strong> grâce à la conscience et au mouvement régulier,<br>
+          • C'est <strong>apprendre à s'écouter</strong> pour s'ouvrir à ses perceptions et à son plein potentiel,<br>
+          • C'est une <strong>approche d'éveil à soi différente</strong>, qui relie le corps, le cœur et l'esprit.
+        </mj-text>
+        <mj-text>
+          <strong>Et si c'était le moment pour dire oui à vous-même ?</strong>
+        </mj-text>
+        <mj-button href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" align="center" padding="20px">
+          Oui, je continue et réserve ma place dès maintenant
+        </mj-button>
+        <mj-text>
+          Avec joie de vous retrouver dans cet élan,
+        </mj-text>
+        <mj-text>
+          Cédric
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666" padding="0">
+          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+

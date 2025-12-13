@@ -1,0 +1,68 @@
+---
+layout: false
+permalink: /emails/promotion-21jours-jour6.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+      <mj-button background-color="#ffce2d" color="#0f172a" font-weight="bold" border-radius="5px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold" padding="10px">
+          Jour 6 : on continue ensemble ?
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour{{firstName}},
+        </mj-text>
+        <mj-text>
+          J'espère que cette première semaine de pratiques vous a été bénéfique.
+        </mj-text>
+        <mj-text>
+          <strong>Avez-vous envie qu'on continue ensemble ?</strong>
+        </mj-text>
+        <mj-text>
+          Si oui, alors la vidéo que je vous ai préparée devrait vous plaire :
+        </mj-text>
+        <mj-button href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" align="center" padding="20px">
+          Découvrir comment continuer ensemble
+        </mj-button>
+        <mj-text>
+          Je vous propose de garder ce "momentum" en allant bien plus loin ensemble grâce au parcours <strong>"21 jours pour remettre du mouvement"</strong>.
+        </mj-text>
+        <mj-text>
+          Pour continuer à sortir des tensions corporelles et de la surcharge.
+        </mj-text>
+        <mj-text>
+          Et aussi pour cheminer plus profondément vers la détente et le calme intérieur, à l'aide de temps pour vous guidés, en avançant à votre rythme, depuis chez vous.
+        </mj-text>
+        <mj-button href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" align="center" padding="20px">
+          C'est par ici
+        </mj-button>
+        <mj-text>
+          A tout bientôt,
+        </mj-text>
+        <mj-text>
+          Cédric
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666" padding="0">
+          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+

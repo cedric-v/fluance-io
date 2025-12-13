@@ -1,0 +1,50 @@
+---
+layout: false
+permalink: /emails/nouveau-contenu-complet.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+      <mj-button background-color="#ffce2d" color="#0f172a" font-weight="bold" border-radius="5px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold" padding="10px">
+          Semaine {{week}} - Nouveau contenu disponible
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour,
+        </mj-text>
+        <mj-text>
+          Votre nouveau contenu pour la <strong>semaine {{week}}</strong> est maintenant disponible !
+        </mj-text>
+        <mj-text>
+          <strong>{{title}}</strong>
+        </mj-text>
+        <mj-button href="https://fluance.io/membre/" align="center" padding="20px">
+          Accéder à mon contenu
+        </mj-button>
+        <mj-text>
+          Continuez votre parcours vers plus de mouvement et de bien-être !
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666" padding="0">
+          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+

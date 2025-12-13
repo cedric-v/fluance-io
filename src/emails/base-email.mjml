@@ -1,0 +1,35 @@
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+      <mj-button background-color="#ffce2d" color="#0f172a" font-weight="bold" border-radius="5px" />
+    </mj-attributes>
+    <mj-style>
+      .checklist-item { margin: 10px 0; }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold" padding="10px">
+          {{ title }}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        {{ content }}
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666" padding="0">
+          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+

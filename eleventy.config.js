@@ -3,6 +3,7 @@ const i18n = require("eleventy-plugin-i18n");
 const htmlmin = require("html-minifier-next"); // Le paquet sécurisé
 const fs = require("fs");
 const path = require("path");
+const mjml = require("mjml");
 
 // PathPrefix conditionnel : vide en dev, /fluance-io en prod (GitHub Pages), vide en prod (fluance.io)
 const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "" : "";
@@ -346,6 +347,55 @@ module.exports = function(eleventyConfig) {
   // Shortcode pour préserver le code JavaScript sans interprétation des entités HTML
   eleventyConfig.addPairedShortcode("rawjs", function(content) {
     return content;
+  });
+
+  // 5. Support MJML pour les templates d'emails
+  // Compiler les fichiers .mjml en HTML avec des placeholders Nunjucks
+  eleventyConfig.addTemplateFormats("mjml");
+  eleventyConfig.addExtension("mjml", {
+    outputFileExtension: "html",
+    compile: async (inputContent, inputPath) => {
+      // Compiler MJML en HTML
+      const mjmlResult = mjml(inputContent, {
+        minify: false, // Garder le HTML lisible pour le remplacement de variables
+        validationLevel: 'soft', // Permettre quelques warnings
+      });
+
+      if (mjmlResult.errors && mjmlResult.errors.length > 0) {
+        console.warn('MJML warnings for', inputPath, mjmlResult.errors);
+      }
+
+      // Retourner la fonction de compilation qui sera appelée avec les données
+      return async (data) => {
+        // Le HTML compilé contient déjà les placeholders Nunjucks
+        // Eleventy les remplacera automatiquement
+        return mjmlResult.html;
+      };
+    },
+  });
+
+  // Copier les templates d'emails compilés vers functions/emails pour utilisation par Cloud Functions
+  eleventyConfig.on('eleventy.after', async () => {
+    const emailTemplatesDir = path.join(__dirname, '_site', 'emails');
+    const functionsEmailsDir = path.join(__dirname, 'functions', 'emails');
+    
+    if (fs.existsSync(emailTemplatesDir)) {
+      // Créer le dossier functions/emails s'il n'existe pas
+      if (!fs.existsSync(functionsEmailsDir)) {
+        fs.mkdirSync(functionsEmailsDir, { recursive: true });
+      }
+      
+      // Copier tous les fichiers HTML d'emails
+      const files = fs.readdirSync(emailTemplatesDir);
+      files.forEach((file) => {
+        if (file.endsWith('.html')) {
+          const srcPath = path.join(emailTemplatesDir, file);
+          const destPath = path.join(functionsEmailsDir, file);
+          fs.copyFileSync(srcPath, destPath);
+          console.log(`📧 Copied email template: ${file}`);
+        }
+      });
+    }
   });
   
   return {
