@@ -21,7 +21,7 @@ permalink: /emails/promotion-21jours-relance.html
     <mj-section background-color="#ffffff" padding="20px">
       <mj-column>
         <mj-text>
-          Bonjour{{firstName}},
+          Bonjour {{firstName}},
         </mj-text>
         <mj-text>
           Vous avez déjà goûté à ce que quelques minutes de Fluance peuvent changer dans votre quotidien.

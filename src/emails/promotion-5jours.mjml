@@ -21,7 +21,7 @@ permalink: /emails/promotion-5jours.html
     <mj-section background-color="#ffffff" padding="20px">
       <mj-column>
         <mj-text>
-          Bonjour{{firstName}},
+          Bonjour {{firstName}},
         </mj-text>
         <mj-text>
           J'ai rencontré de nombreuses personnes ces derniers temps me faisant part de tensions physiques et émotionnelles, de manque d'énergie ou de surcharge mentale.

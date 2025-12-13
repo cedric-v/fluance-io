@@ -221,13 +221,13 @@ function loadEmailTemplate(templateName, variables = {}) {
   let html = fs.readFileSync(templatePath, 'utf8');
 
   // Remplacer les variables au format {{variable}}
-  // Gérer aussi les cas où la variable peut être vide (ajouter un espace si nécessaire)
+  // Gérer aussi les cas où la variable peut être vide (supprimer l'espace avant si vide)
   Object.keys(variables).forEach((key) => {
     const value = variables[key] || '';
     // Remplacer {{key}} avec gestion des espaces
-    // Si la valeur est vide, on peut vouloir supprimer l'espace avant aussi
-    const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-    html = html.replace(regex, value);
+    // Si la valeur est vide, supprimer aussi l'espace avant (ex: "Bonjour {{firstName}}," -> "Bonjour,")
+    const regex = new RegExp(`\\s+\\{\\{${key}\\}\\}`, 'g');
+    html = html.replace(regex, value ? ` ${value}` : '');
   });
 
   // Nettoyer les placeholders non remplacés (optionnel, pour debug)

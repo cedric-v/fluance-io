@@ -21,7 +21,7 @@ permalink: /emails/promotion-21jours-final.html
     <mj-section background-color="#ffffff" padding="20px">
       <mj-column>
         <mj-text>
-          Bonjour{{firstName}},
+          Bonjour {{firstName}},
         </mj-text>
         <mj-text>
           <strong>Pourquoi rejoindre Fluance maintenant ?</strong>

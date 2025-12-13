@@ -21,7 +21,7 @@ permalink: /emails/promotion-21jours-jour6.html
     <mj-section background-color="#ffffff" padding="20px">
       <mj-column>
         <mj-text>
-          Bonjour{{firstName}},
+          Bonjour {{firstName}},
         </mj-text>
         <mj-text>
           J'espère que cette première semaine de pratiques vous a été bénéfique.

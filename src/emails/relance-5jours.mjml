@@ -21,7 +21,7 @@ permalink: /emails/relance-5jours.html
     <mj-section background-color="#ffffff" padding="20px">
       <mj-column>
         <mj-text>
-          Bonjour{{firstName}},
+          Bonjour {{firstName}},
         </mj-text>
         <mj-text>
           Vous avez découvert les 2 pratiques offertes. Découvrez maintenant <strong>5 jours de pratiques offertes</strong> !
