@@ -3522,7 +3522,7 @@ exports.sendNewContentEmails = onSchedule(
                         .doc(emailSentDocId).get();
 
                     if (!emailSentDoc.exists) {
-                      const emailSubject = 'Découvrez nos 5 jours de pratiques offertes';
+                      const emailSubject = 'Découvrez les 5 jours de pratiques offertes';
                       const emailHtml = `
                         <!DOCTYPE html>
                         <html>
