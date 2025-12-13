@@ -3254,7 +3254,7 @@ exports.sendNewContentEmails = onSchedule(
         // Traiter les emails marketing pour les prospects
         console.log('📧 Starting marketing emails for prospects');
         let marketingEmailsSent = 0;
-        let marketingEmailsSkipped = 0;
+        const marketingEmailsSkipped = 0;
 
         try {
           // Récupérer tous les contacts Mailjet
@@ -3427,7 +3427,8 @@ exports.sendNewContentEmails = onSchedule(
                   // Emails aux jours 6, 10, 17 après le début des 5 jours
                   const joursPromo21jours = [6, 10, 17];
                   if (joursPromo21jours.includes(joursApres5jours)) {
-                    const emailSentDocId = `marketing_5jours_to_21jours_${email.toLowerCase().trim()}_day_${joursApres5jours}`;
+                    const emailSentDocId = `marketing_5jours_to_21jours_` +
+                        `${email.toLowerCase().trim()}_day_${joursApres5jours}`;
                     const emailSentDoc = await db.collection('contentEmailsSent')
                         .doc(emailSentDocId).get();
 
@@ -3599,7 +3600,8 @@ exports.sendNewContentEmails = onSchedule(
                   // Jours 8, 15, 22 après l'opt-in initial (après la relance J+3)
                   const joursPromo21joursSans5jours = [8, 15, 22];
                   if (joursPromo21joursSans5jours.includes(currentDay)) {
-                    const emailSentDocId = `marketing_2pratiques_to_21jours_${email.toLowerCase().trim()}_day_${currentDay}`;
+                    const emailSentDocId = `marketing_2pratiques_to_21jours_` +
+                        `${email.toLowerCase().trim()}_day_${currentDay}`;
                     const emailSentDoc = await db.collection('contentEmailsSent')
                         .doc(emailSentDocId).get();
 
