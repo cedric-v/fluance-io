@@ -17,6 +17,18 @@ Tous les emails sont maintenant gérés via **MJML**, un framework qui génère 
 
 ## Templates disponibles
 
+### Emails transactionnels
+
+| Template | Usage | Variables |
+|----------|-------|-----------|
+| `confirmation-optin.mjml` | Confirmation double opt-in (2 pratiques, 5 jours) | `firstName`, `confirmationUrl` |
+| `creation-compte.mjml` | Création compte après achat | `product`, `registrationUrl`, `expirationDays` |
+| `reinitialisation-mot-de-passe.mjml` | Réinitialisation mot de passe | `resetLink` |
+| `connexion.mjml` | Lien de connexion passwordless | `signInLink` |
+| `notification-commentaire.mjml` | Notification nouveau commentaire | `name`, `comment`, `pageUrl`, `fullUrl` |
+
+### Emails marketing
+
 | Template | Usage | Variables |
 |----------|-------|-----------|
 | `promotion-5jours.mjml` | Promotion 5 jours (J+1) | `firstName` |
@@ -24,6 +36,11 @@ Tous les emails sont maintenant gérés via **MJML**, un framework qui génère 
 | `promotion-21jours-jour6.mjml` | Jour 6 après 5 jours | `firstName` |
 | `promotion-21jours-relance.mjml` | Relance clôture (J+10, J+8) | `firstName` |
 | `promotion-21jours-final.mjml` | Message final (J+17, J+15, J+22) | `firstName` |
+
+### Emails de contenu
+
+| Template | Usage | Variables |
+|----------|-------|-----------|
 | `nouveau-contenu-21jours.mjml` | Nouveau contenu 21jours | `day`, `title` |
 | `nouveau-contenu-complet.mjml` | Nouveau contenu complet | `week`, `title` |
 
@@ -75,15 +92,18 @@ const emailHtml = loadEmailTemplate('mon-template', {
 - Placeholder : `{{variable}}`
 - Espace avant : `Bonjour {{firstName}},` → `Bonjour Cédric,` ou `Bonjour,` (si vide)
 
-### Gestion des espaces
+### Gestion des espaces et attributs HTML
 La fonction `loadEmailTemplate` gère automatiquement :
-- Si variable vide : supprime l'espace avant `{{variable}}`
-- Si variable remplie : conserve l'espace
+- **Placeholders avec espace avant** : Si variable vide, supprime l'espace avant `{{variable}}`
+- **Placeholders sans espace** : Remplace directement (pour les attributs HTML comme `href`)
 
-Exemple :
+Exemples :
 ```mjml
-Bonjour {{firstName}},  →  "Bonjour Cédric," ou "Bonjour,"
+Bonjour {{firstName}},  →  "Bonjour Cédric," ou "Bonjour," (si vide)
+href="{{confirmationUrl}}"  →  href="https://fluance.io/confirm?..." (toujours remplacé)
 ```
+
+**Important** : Les placeholders dans les attributs HTML (`href`, `src`, etc.) sont automatiquement remplacés, même sans espace avant.
 
 ## Exemple complet
 
@@ -124,6 +144,7 @@ permalink: /emails/exemple.html
 const emailHtml = loadEmailTemplate('exemple', {
   firstName: 'Cédric',
   title: 'Nouveau contenu',
+  registrationUrl: 'https://fluance.io/register?token=...',
 });
 ```
 
@@ -159,3 +180,9 @@ ls functions/emails/
 - ⚠️ **Les templates doivent être commités** : `src/emails/*.mjml`
 - ✅ **Les templates compilés sont dans `.gitignore`** : `functions/emails/*.html` (générés automatiquement)
 - ✅ **Variables vides** : L'espace avant `{{variable}}` est automatiquement supprimé
+- ✅ **Liens dynamiques** : Les placeholders dans `href="{{url}}"` sont automatiquement remplacés
+- ✅ **Migration complète** : Tous les emails utilisent maintenant MJML (100% migration)
+
+## Migration depuis les templates MailJet
+
+**Note** : Les anciens templates MailJet (comme le template ID 7571938) ont été remplacés par des templates MJML. Voir `MODIFIER_EMAIL_CONFIRMATION_DOUBLE_OPT_IN.md` pour l'historique, mais **tous les emails utilisent maintenant MJML**.
