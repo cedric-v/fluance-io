@@ -23,7 +23,7 @@ permalink: /emails/confirmation-optin.html
           Bonjour {{firstName}},
         </mj-text>
         <mj-text>
-          Merci pour votre inscription ! Pour recevoir vos 2 pratiques Fluance offertes, 
+          Merci pour votre inscription ! Pour recevoir vos contenus Fluance offerts, 
           il vous suffit de confirmer votre adresse email en cliquant sur le bouton ci-dessous.
         </mj-text>
         <mj-text>
