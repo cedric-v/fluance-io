@@ -3118,6 +3118,8 @@ exports.sendNewContentEmails = onSchedule(
                       `Jour ${currentDay} de votre défi 21 jours - ${contentData.title || 'Nouveau contenu disponible'}\n\nAccédez à votre contenu : https://fluance.io/membre/`,
                       mailjetApiKey,
                       mailjetApiSecret,
+                      'support@actu.fluance.io',
+                      'Cédric de Fluance',
                   );
 
                   // Marquer l'email comme envoyé
@@ -3403,7 +3405,7 @@ exports.sendNewContentEmails = onSchedule(
                         mailjetApiKey,
                         mailjetApiSecret,
                         'fluance@actu.fluance.io',
-                        'Fluance',
+                        'Cédric de Fluance',
                     );
 
                     await db.collection('contentEmailsSent').doc(emailSentDocId).set({
