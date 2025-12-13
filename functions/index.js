@@ -3102,7 +3102,7 @@ exports.sendNewContentEmails = onSchedule(
                           </p>
                           <p>Continuez votre parcours vers plus de mouvement et de bien-être !</p>
                           <div class="footer">
-                            <p>Fluance - Le mouvement qui éveille et apaise</p>
+                            <p>Cédric<br>Fluance - Le mouvement qui éveille et apaise</p>
                             <p><a href="https://fluance.io">fluance.io</a></p>
                           </div>
                         </div>
@@ -3213,7 +3213,7 @@ exports.sendNewContentEmails = onSchedule(
                           </p>
                           <p>Continuez votre parcours vers plus de mouvement et de bien-être !</p>
                           <div class="footer">
-                            <p>Fluance - Le mouvement qui éveille et apaise</p>
+                            <p>Cédric<br>Fluance - Le mouvement qui éveille et apaise</p>
                             <p><a href="https://fluance.io">fluance.io</a></p>
                           </div>
                         </div>
