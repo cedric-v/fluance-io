@@ -3055,7 +3055,8 @@ exports.sendNewContentEmails = onSchedule(
 
                   // Vérifier que le contenu est accessible (jour correspond)
                   if (contentData.day !== undefined && contentData.day !== currentDay) {
-                    console.warn(`⚠️ Content ${contentDocId} day mismatch: expected ${currentDay}, got ${contentData.day}`);
+                    console.warn(`⚠️ Content ${contentDocId} day mismatch: ` +
+                        `expected ${currentDay}, got ${contentData.day}`);
                     continue;
                   }
 
@@ -3250,13 +3251,13 @@ exports.sendNewContentEmails = onSchedule(
           }
         }
 
-        // Traiter les contacts "5 jours offerts" pour emails marketing
-        console.log('📧 Starting marketing emails for 5 jours offerts prospects');
+        // Traiter les emails marketing pour les prospects
+        console.log('📧 Starting marketing emails for prospects');
         let marketingEmailsSent = 0;
         let marketingEmailsSkipped = 0;
 
         try {
-          // Récupérer les contacts Mailjet avec source_optin contenant "5joursofferts"
+          // Récupérer tous les contacts Mailjet
           const auth = Buffer.from(`${mailjetApiKey}:${mailjetApiSecret}`).toString('base64');
           const contactListUrl = 'https://api.mailjet.com/v3/REST/contact';
           const listResponse = await fetch(contactListUrl, {
@@ -3304,7 +3305,7 @@ exports.sendNewContentEmails = onSchedule(
                   properties = contactData.Data;
                 }
 
-                // Vérifier que c'est un prospect "5 jours offerts" et pas un client
+                // Vérifier que c'est un prospect (pas un client)
                 const sourceOptin = properties.source_optin || '';
                 const estClient = properties.est_client === 'True' || properties.est_client === true;
                 const produitsAchetes = properties.produits_achetes || '';
@@ -3314,126 +3315,373 @@ exports.sendNewContentEmails = onSchedule(
                   continue;
                 }
 
-                if (!sourceOptin.includes('5joursofferts')) {
-                  continue;
-                }
-
-                // Calculer les jours depuis l'inscription
-                let startDate;
-                if (properties.serie_5jours_debut) {
-                  startDate = new Date(properties.serie_5jours_debut);
-                } else if (properties.date_optin) {
-                  // Format peut être JJ/MM/AAAA ou ISO
+                // Calculer les jours depuis l'inscription initiale (date_optin)
+                let optinDate;
+                if (properties.date_optin) {
                   const dateStr = properties.date_optin;
                   if (dateStr.includes('/')) {
                     const [day, month, year] = dateStr.split('/');
-                    startDate = new Date(year, month - 1, day);
+                    optinDate = new Date(year, month - 1, day);
                   } else {
-                    startDate = new Date(dateStr);
+                    optinDate = new Date(dateStr);
                   }
                 } else {
-                  // Pas de date, on skip
+                  // Pas de date d'opt-in, on skip
                   continue;
                 }
 
-                const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+                const daysSinceOptin = Math.floor((now - optinDate) / (1000 * 60 * 60 * 24));
+                const currentDay = daysSinceOptin + 1;
 
-                // Envoyer des emails marketing pour promouvoir le programme 21 jours
-                // Jours 3, 7, 14, 21 après l'inscription
-                const marketingDays = [3, 7, 14, 21];
-                const currentDay = daysSinceStart + 1;
+                // Vérifier si inscrit aux 5 jours
+                const has5jours = sourceOptin.includes('5joursofferts');
+                const serie5joursDebut = properties.serie_5jours_debut;
 
-                if (marketingDays.includes(currentDay)) {
-                  // Vérifier si l'email a déjà été envoyé
-                  const emailSentDocId = `marketing_5jours_${email.toLowerCase().trim()}_day_${currentDay}`;
+                // SCÉNARIO 1 : Opt-in "2 pratiques" → J+1 : Proposer "5 jours offerts"
+                if (sourceOptin.includes('2pratiques') && !has5jours && currentDay === 2) {
+                  const emailSentDocId = `marketing_2pratiques_to_5jours_${email.toLowerCase().trim()}`;
                   const emailSentDoc = await db.collection('contentEmailsSent')
                       .doc(emailSentDocId).get();
 
-                  if (emailSentDoc.exists) {
-                    console.log(`⏭️ Marketing email already sent to ${email} for day ${currentDay}`);
-                    marketingEmailsSkipped++;
-                    continue;
-                  }
-
-                  // Envoyer l'email marketing
-                  const emailSubject = currentDay === 3 ? 'Continuez votre parcours avec le défi 21 jours' :
-                      currentDay === 7 ? 'Découvrez le programme complet de 21 jours' :
-                      currentDay === 14 ? 'Rejoignez le défi 21 jours pour aller plus loin' :
-                      'Le défi 21 jours : votre prochaine étape';
-
-                  const emailHtml = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                      <meta charset="utf-8">
-                      <style>
-                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                        .header {
-                          background-color: #648ED8; color: white; padding: 20px;
-                          text-align: center; border-radius: 5px 5px 0 0;
-                        }
-                        .content {
-                          background-color: #f9f9f9; padding: 20px;
-                          border-radius: 0 0 5px 5px;
-                        }
-                        .button {
-                          display: inline-block; padding: 12px 24px;
-                          background-color: #ffce2d; color: #0f172a;
-                          text-decoration: none; border-radius: 5px;
-                          font-weight: bold; margin: 20px 0;
-                        }
-                        .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
-                      </style>
-                    </head>
-                    <body>
-                      <div class="container">
-                        <div class="header">
-                          <h1>Le défi 21 jours vous attend</h1>
-                        </div>
-                        <div class="content">
-                          <p>Bonjour,</p>
-                          <p>Vous avez découvert les 5 jours offerts de Fluance. 
-                            Pourquoi ne pas continuer votre parcours avec le 
-                            <strong>défi complet de 21 jours</strong> ?</p>
-                          <p>Un programme structuré de 21 mini-séries de pratiques 
-                            pour intégrer durablement le mouvement dans votre quotidien.</p>
-                          <p style="text-align: center;">
-                            <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
-                               class="button">Découvrir le défi 21 jours</a>
-                          </p>
-                          <p>Au plaisir de vous accompagner dans votre parcours !</p>
-                          <div class="footer">
-                            <p>Fluance - Le mouvement qui éveille et apaise</p>
-                            <p><a href="https://fluance.io">fluance.io</a></p>
+                  if (!emailSentDoc.exists) {
+                    const emailSubject = 'Découvrez nos 5 jours de pratiques offertes';
+                    const emailHtml = `
+                      <!DOCTYPE html>
+                      <html>
+                      <head>
+                        <meta charset="utf-8">
+                        <style>
+                          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                          .header {
+                            background-color: #648ED8; color: white; padding: 20px;
+                            text-align: center; border-radius: 5px 5px 0 0;
+                          }
+                          .content {
+                            background-color: #f9f9f9; padding: 20px;
+                            border-radius: 0 0 5px 5px;
+                          }
+                          .button {
+                            display: inline-block; padding: 12px 24px;
+                            background-color: #ffce2d; color: #0f172a;
+                            text-decoration: none; border-radius: 5px;
+                            font-weight: bold; margin: 20px 0;
+                          }
+                          .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                        </style>
+                      </head>
+                      <body>
+                        <div class="container">
+                          <div class="header">
+                            <h1>5 jours de pratiques offertes</h1>
+                          </div>
+                          <div class="content">
+                            <p>Bonjour,</p>
+                            <p>Vous avez découvert les 2 pratiques offertes de Fluance. 
+                              Pourquoi ne pas continuer avec <strong>5 jours de pratiques offertes</strong> ?</p>
+                            <p>Un programme court pour intégrer le mouvement dans votre quotidien.</p>
+                            <p style="text-align: center;">
+                              <a href="https://fluance.io/#5jours" 
+                                 class="button">Découvrir les 5 jours offerts</a>
+                            </p>
+                            <p>Au plaisir de vous accompagner !</p>
+                            <div class="footer">
+                              <p>Fluance - Le mouvement qui éveille et apaise</p>
+                              <p><a href="https://fluance.io">fluance.io</a></p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </body>
-                    </html>
-                  `;
+                      </body>
+                      </html>
+                    `;
 
-                  await sendMailjetEmail(
-                      email,
-                      emailSubject,
-                      emailHtml,
-                      `${emailSubject}\n\nDécouvrez le défi 21 jours : https://fluance.io/cours-en-ligne/21-jours-mouvement/`,
-                      mailjetApiKey,
-                      mailjetApiSecret,
-                      'fluance@actu.fluance.io',
-                      'Fluance',
-                  );
+                    await sendMailjetEmail(
+                        email,
+                        emailSubject,
+                        emailHtml,
+                        `${emailSubject}\n\nDécouvrez les 5 jours offerts : https://fluance.io/#5jours`,
+                        mailjetApiKey,
+                        mailjetApiSecret,
+                        'fluance@actu.fluance.io',
+                        'Fluance',
+                    );
 
-                  // Marquer l'email comme envoyé
-                  await db.collection('contentEmailsSent').doc(emailSentDocId).set({
-                    email: email,
-                    type: 'marketing_5jours',
-                    day: currentDay,
-                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
-                  });
+                    await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                      email: email,
+                      type: 'marketing_2pratiques_to_5jours',
+                      day: currentDay,
+                      sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                    });
 
-                  console.log(`✅ Marketing email sent to ${email} for 5jours day ${currentDay}`);
-                  marketingEmailsSent++;
+                    console.log(`✅ Marketing email sent to ${email} for 2pratiques→5jours`);
+                    marketingEmailsSent++;
+                  }
+                }
+
+                // SCÉNARIO 2 : Inscrit aux "5 jours" → Après les 5 jours : 2-3 emails pour 21 jours
+                if (has5jours && serie5joursDebut) {
+                  const cinqJoursStart = new Date(serie5joursDebut);
+                  const daysSince5jours = Math.floor((now - cinqJoursStart) / (1000 * 60 * 60 * 24));
+                  const joursApres5jours = daysSince5jours + 1;
+
+                  // Emails aux jours 6, 10, 17 après le début des 5 jours
+                  const joursPromo21jours = [6, 10, 17];
+                  if (joursPromo21jours.includes(joursApres5jours)) {
+                    const emailSentDocId = `marketing_5jours_to_21jours_${email.toLowerCase().trim()}_day_${joursApres5jours}`;
+                    const emailSentDoc = await db.collection('contentEmailsSent')
+                        .doc(emailSentDocId).get();
+
+                    if (!emailSentDoc.exists) {
+                      const emailSubject = joursApres5jours === 6 ? 'Continuez avec le défi 21 jours' :
+                          joursApres5jours === 10 ? 'Le défi 21 jours vous attend' :
+                          'Rejoignez le défi complet de 21 jours';
+
+                      const emailHtml = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                          <meta charset="utf-8">
+                          <style>
+                            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                            .header {
+                              background-color: #648ED8; color: white; padding: 20px;
+                              text-align: center; border-radius: 5px 5px 0 0;
+                            }
+                            .content {
+                              background-color: #f9f9f9; padding: 20px;
+                              border-radius: 0 0 5px 5px;
+                            }
+                            .button {
+                              display: inline-block; padding: 12px 24px;
+                              background-color: #ffce2d; color: #0f172a;
+                              text-decoration: none; border-radius: 5px;
+                              font-weight: bold; margin: 20px 0;
+                            }
+                            .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                          </style>
+                        </head>
+                        <body>
+                          <div class="container">
+                            <div class="header">
+                              <h1>Le défi 21 jours vous attend</h1>
+                            </div>
+                            <div class="content">
+                              <p>Bonjour,</p>
+                              <p>Vous avez découvert les 5 jours offerts de Fluance. 
+                                Pourquoi ne pas continuer votre parcours avec le 
+                                <strong>défi complet de 21 jours</strong> ?</p>
+                              <p>Un programme structuré de 21 mini-séries de pratiques 
+                                pour intégrer durablement le mouvement dans votre quotidien.</p>
+                              <p style="text-align: center;">
+                                <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                                   class="button">Découvrir le défi 21 jours</a>
+                              </p>
+                              <p>Au plaisir de vous accompagner dans votre parcours !</p>
+                              <div class="footer">
+                                <p>Fluance - Le mouvement qui éveille et apaise</p>
+                                <p><a href="https://fluance.io">fluance.io</a></p>
+                              </div>
+                            </div>
+                          </div>
+                        </body>
+                        </html>
+                      `;
+
+                      await sendMailjetEmail(
+                          email,
+                          emailSubject,
+                          emailHtml,
+                          `${emailSubject}\n\nDécouvrez le défi 21 jours : https://fluance.io/cours-en-ligne/21-jours-mouvement/`,
+                          mailjetApiKey,
+                          mailjetApiSecret,
+                          'fluance@actu.fluance.io',
+                          'Fluance',
+                      );
+
+                      await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                        email: email,
+                        type: 'marketing_5jours_to_21jours',
+                        day: joursApres5jours,
+                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                      });
+
+                      console.log(`✅ Marketing email sent to ${email} for 5jours→21jours day ${joursApres5jours}`);
+                      marketingEmailsSent++;
+                    }
+                  }
+                }
+
+                // SCÉNARIO 3 : PAS inscrit aux "5 jours" → Relance + série promotion 21 jours
+                if (sourceOptin.includes('2pratiques') && !has5jours) {
+                  // J+3 : 1 relance pour les 5 jours
+                  if (currentDay === 4) {
+                    const emailSentDocId = `marketing_relance_5jours_${email.toLowerCase().trim()}`;
+                    const emailSentDoc = await db.collection('contentEmailsSent')
+                        .doc(emailSentDocId).get();
+
+                    if (!emailSentDoc.exists) {
+                      const emailSubject = 'Ne manquez pas nos 5 jours de pratiques offertes';
+                      const emailHtml = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                          <meta charset="utf-8">
+                          <style>
+                            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                            .header {
+                              background-color: #648ED8; color: white; padding: 20px;
+                              text-align: center; border-radius: 5px 5px 0 0;
+                            }
+                            .content {
+                              background-color: #f9f9f9; padding: 20px;
+                              border-radius: 0 0 5px 5px;
+                            }
+                            .button {
+                              display: inline-block; padding: 12px 24px;
+                              background-color: #ffce2d; color: #0f172a;
+                              text-decoration: none; border-radius: 5px;
+                              font-weight: bold; margin: 20px 0;
+                            }
+                            .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                          </style>
+                        </head>
+                        <body>
+                          <div class="container">
+                            <div class="header">
+                              <h1>5 jours de pratiques offertes</h1>
+                            </div>
+                            <div class="content">
+                              <p>Bonjour,</p>
+                              <p>Vous avez découvert les 2 pratiques offertes. 
+                                Ne manquez pas l'opportunité de découvrir <strong>5 jours de pratiques offertes</strong> !</p>
+                              <p>Un programme court pour intégrer le mouvement dans votre quotidien.</p>
+                              <p style="text-align: center;">
+                                <a href="https://fluance.io/#5jours" 
+                                   class="button">Découvrir les 5 jours offerts</a>
+                              </p>
+                              <p>Au plaisir de vous accompagner !</p>
+                              <div class="footer">
+                                <p>Fluance - Le mouvement qui éveille et apaise</p>
+                                <p><a href="https://fluance.io">fluance.io</a></p>
+                              </div>
+                            </div>
+                          </div>
+                        </body>
+                        </html>
+                      `;
+
+                      await sendMailjetEmail(
+                          email,
+                          emailSubject,
+                          emailHtml,
+                          `${emailSubject}\n\nDécouvrez les 5 jours offerts : https://fluance.io/#5jours`,
+                          mailjetApiKey,
+                          mailjetApiSecret,
+                          'fluance@actu.fluance.io',
+                          'Fluance',
+                      );
+
+                      await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                        email: email,
+                        type: 'marketing_relance_5jours',
+                        day: currentDay,
+                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                      });
+
+                      console.log(`✅ Relance email sent to ${email} for 5jours`);
+                      marketingEmailsSent++;
+                    }
+                  }
+
+                  // Après la relance, si toujours pas inscrit aux 5 jours : série promotion 21 jours
+                  // Jours 8, 15, 22 après l'opt-in initial (après la relance J+3)
+                  const joursPromo21joursSans5jours = [8, 15, 22];
+                  if (joursPromo21joursSans5jours.includes(currentDay)) {
+                    const emailSentDocId = `marketing_2pratiques_to_21jours_${email.toLowerCase().trim()}_day_${currentDay}`;
+                    const emailSentDoc = await db.collection('contentEmailsSent')
+                        .doc(emailSentDocId).get();
+
+                    if (!emailSentDoc.exists) {
+                      const emailSubject = currentDay === 8 ? 'Découvrez le défi 21 jours' :
+                          currentDay === 15 ? 'Le défi 21 jours : votre prochaine étape' :
+                          'Rejoignez le défi complet de 21 jours';
+
+                      const emailHtml = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                          <meta charset="utf-8">
+                          <style>
+                            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                            .header {
+                              background-color: #648ED8; color: white; padding: 20px;
+                              text-align: center; border-radius: 5px 5px 0 0;
+                            }
+                            .content {
+                              background-color: #f9f9f9; padding: 20px;
+                              border-radius: 0 0 5px 5px;
+                            }
+                            .button {
+                              display: inline-block; padding: 12px 24px;
+                              background-color: #ffce2d; color: #0f172a;
+                              text-decoration: none; border-radius: 5px;
+                              font-weight: bold; margin: 20px 0;
+                            }
+                            .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                          </style>
+                        </head>
+                        <body>
+                          <div class="container">
+                            <div class="header">
+                              <h1>Le défi 21 jours vous attend</h1>
+                            </div>
+                            <div class="content">
+                              <p>Bonjour,</p>
+                              <p>Vous avez découvert les pratiques Fluance. 
+                                Pourquoi ne pas aller plus loin avec le 
+                                <strong>défi complet de 21 jours</strong> ?</p>
+                              <p>Un programme structuré de 21 mini-séries de pratiques 
+                                pour intégrer durablement le mouvement dans votre quotidien.</p>
+                              <p style="text-align: center;">
+                                <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                                   class="button">Découvrir le défi 21 jours</a>
+                              </p>
+                              <p>Au plaisir de vous accompagner dans votre parcours !</p>
+                              <div class="footer">
+                                <p>Fluance - Le mouvement qui éveille et apaise</p>
+                                <p><a href="https://fluance.io">fluance.io</a></p>
+                              </div>
+                            </div>
+                          </div>
+                        </body>
+                        </html>
+                      `;
+
+                      await sendMailjetEmail(
+                          email,
+                          emailSubject,
+                          emailHtml,
+                          `${emailSubject}\n\nDécouvrez le défi 21 jours : https://fluance.io/cours-en-ligne/21-jours-mouvement/`,
+                          mailjetApiKey,
+                          mailjetApiSecret,
+                          'fluance@actu.fluance.io',
+                          'Fluance',
+                      );
+
+                      await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                        email: email,
+                        type: 'marketing_2pratiques_to_21jours',
+                        day: currentDay,
+                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                      });
+
+                      console.log(`✅ Marketing email sent to ${email} for 2pratiques→21jours day ${currentDay}`);
+                      marketingEmailsSent++;
+                    }
+                  }
                 }
               } catch (contactError) {
                 console.error(`❌ Error processing contact ${email}:`, contactError);
