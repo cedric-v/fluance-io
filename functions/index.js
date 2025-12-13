@@ -364,42 +364,11 @@ async function createTokenAndSendEmail(
 
   // Contenu de l'email
   const emailSubject = 'Créez votre compte Fluance';
-  const emailHtml = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .button {
-          display: inline-block;
-          padding: 12px 24px;
-          background-color: #8bc34a;
-          color: #fff;
-          text-decoration: none;
-          border-radius: 4px;
-          margin: 20px 0;
-        }
-        .footer { margin-top: 40px; font-size: 12px; color: #666; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>Bienvenue chez Fluance !</h1>
-        <p>Merci pour votre achat de <strong>${product}</strong>.</p>
-        <p>Pour accéder à votre contenu protégé, veuillez créer votre compte en cliquant sur le bouton ci-dessous :</p>
-        <a href="${registrationUrl}" class="button">Créer mon compte</a>
-        <p><small>Ce lien est valable pendant ${expirationDays} jours
-          et ne peut être utilisé qu'une seule fois.</small></p>
-        <div class="footer">
-          <p>Si vous n'avez pas effectué cet achat, veuillez ignorer cet email.</p>
-          <p>Fluance - support@fluance.io</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+  const emailHtml = loadEmailTemplate('creation-compte', {
+    product: product,
+    registrationUrl: registrationUrl,
+    expirationDays: expirationDays.toString(),
+  });
 
   // Envoyer l'email
   await sendMailjetEmail(email, emailSubject, emailHtml, null, mailjetApiKey, mailjetApiSecret);
@@ -2254,65 +2223,16 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
 
         // Envoyer l'email via Mailjet
         const emailSubject = 'Réinitialisation de votre mot de passe Fluance';
-        const emailHtml = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .button {
-                display: inline-block;
-                padding: 12px 24px;
-                background-color: #4CAF50;
-                color: white;
-                text-decoration: none;
-                border-radius: 5px;
-                margin: 20px 0;
-              }
-              .button:hover { background-color: #45a049; }
-              .footer { margin-top: 30px; font-size: 12px; color: #666; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h2>Réinitialisation de votre mot de passe</h2>
-              <p>Bonjour,</p>
-              <p>Vous avez demandé à réinitialiser votre mot de passe pour votre compte Fluance.</p>
-              <p>Cliquez sur le bouton ci-dessous pour réinitialiser votre mot de passe :</p>
-              <p style="text-align: center;">
-                <a href="${resetLink}" class="button">Réinitialiser mon mot de passe</a>
-              </p>
-              <p>Ou copiez-collez ce lien dans votre navigateur :</p>
-              <p style="word-break: break-all; color: #666; font-size: 12px;">${resetLink}</p>
-              <p><strong>Ce lien est valide pendant 1 heure.</strong></p>
-              <p>Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email en toute sécurité.</p>
-              <div class="footer">
-                <p>Cordialement,<br>L'équipe Fluance</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `;
-
-        const emailText = `
-Réinitialisation de votre mot de passe Fluance
-
-Bonjour,
-
-Vous avez demandé à réinitialiser votre mot de passe pour votre compte Fluance.
-
-Cliquez sur ce lien pour réinitialiser votre mot de passe :
-${resetLink}
-
-Ce lien est valide pendant 1 heure.
-
-Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email en toute sécurité.
-
-Cordialement,
-L'équipe Fluance
-        `;
+        const emailHtml = loadEmailTemplate('reinitialisation-mot-de-passe', {
+          resetLink: resetLink,
+        });
+        const emailText = `Réinitialisation de votre mot de passe Fluance\n\n` +
+            `Bonjour,\n\n` +
+            `Vous avez demandé à réinitialiser votre mot de passe pour votre compte Fluance.\n\n` +
+            `Cliquez sur ce lien pour réinitialiser votre mot de passe :\n${resetLink}\n\n` +
+            `Ce lien est valide pendant 1 heure.\n\n` +
+            `Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email en toute sécurité.\n\n` +
+            `Cordialement,\nL'équipe Fluance`;
 
         console.log(`[Password Reset] About to call sendMailjetEmail for ${normalizedEmail}`);
         console.log(`[Password Reset] Email will be sent from: support@actu.fluance.io`);
@@ -2542,50 +2462,15 @@ exports.sendSignInLinkViaMailjet = onCall(
 
         // Envoyer l'email via Mailjet
         const emailSubject = 'Connexion à votre compte Fluance';
-        const emailHtml = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .button {
-                display: inline-block;
-                padding: 12px 24px;
-                background-color: #ffce2d;
-                color: #0f172a;
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold;
-                margin: 20px 0;
-              }
-              .footer { margin-top: 30px; font-size: 12px; color: #666; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>Connexion à votre compte Fluance</h1>
-              <p>Bonjour,</p>
-              <p>Cliquez sur le lien ci-dessous pour vous connecter à votre compte Fluance :</p>
-              <p><a href="${signInLink}" class="button">Se connecter</a></p>
-              <p>Ou copiez ce lien dans votre navigateur :</p>
-              <p style="word-break: break-all; color: #666;">${signInLink}</p>
-              <p>Ce lien est valide pendant 1 heure et ne peut être utilisé qu'une seule fois.</p>
-              <p>Si vous n'avez pas demandé cette connexion, vous pouvez ignorer cet email.
-              </p>
-              <div class="footer">
-                <p>Cordialement,<br>L'équipe Fluance</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `;
-
+        const emailHtml = loadEmailTemplate('connexion', {
+          signInLink: signInLink,
+        });
         const emailText = `Connexion à votre compte Fluance\n\n` +
-            `Cliquez sur ce lien pour vous connecter : ${signInLink}\n\n` +
+            `Bonjour,\n\n` +
+            `Cliquez sur ce lien pour vous connecter à votre compte Fluance :\n${signInLink}\n\n` +
             `Ce lien est valide pendant 1 heure et ne peut être utilisé qu'une seule fois.\n\n` +
-            `Si vous n'avez pas demandé cette connexion, vous pouvez ignorer cet email.`;
+            `Si vous n'avez pas demandé cette connexion, vous pouvez ignorer cet email.\n\n` +
+            `Cordialement,\nL'équipe Fluance`;
 
         await sendMailjetEmail(
             email.toLowerCase().trim(),
