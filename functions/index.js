@@ -597,9 +597,20 @@ exports.webhookStripe = onRequest(
 
         // Déterminer le produit depuis les métadonnées uniquement (pas de fallback)
         const product = session.metadata?.product;
-        if (!product || (product !== '21jours' && product !== 'complet')) {
+        if (!product || (product !== '21jours' && product !== 'complet' && product !== 'rdv-clarte')) {
           console.error(`Paiement Stripe ignoré - produit invalide: ${product}`);
           return res.status(200).json({received: true, ignored: true});
+        }
+
+        // Pour le RDV Clarté (cedricv.com), pas besoin de créer un token ni d'envoyer d'email
+        // Le paiement est juste loggé et la redirection se fait via success_url
+        if (product === 'rdv-clarte') {
+          console.log(`Paiement RDV Clarté réussi - Email: ${customerEmail}, Session: ${session.id}`);
+          return res.status(200).json({
+            received: true,
+            product: 'rdv-clarte',
+            message: 'Payment successful, redirecting to confirmation page',
+          });
         }
 
         try {
@@ -656,16 +667,30 @@ exports.webhookStripe = onRequest(
 
         // Vérifier le produit
         const product = subscription.metadata?.product;
-        if (product !== 'complet') {
-          console.log(`Subscription cancellation ignored - produit: ${product} (seul 'complet' peut être annulé)`);
+        if (product !== 'complet' && product !== 'rdv-clarte') {
+          console.log(
+              `Subscription cancellation ignored - produit: ${product} ` +
+              `(seul 'complet' ou 'rdv-clarte' peuvent être annulés)`,
+          );
           return res.status(200).json({received: true, ignored: true});
         }
 
         try {
-          // Retirer le produit "complet" de l'utilisateur
-          await removeProductFromUser(customerEmail, 'complet');
-          console.log(`Subscription cancelled and product 'complet' removed for ${customerEmail}`);
-          return res.status(200).json({received: true});
+          if (product === 'rdv-clarte') {
+            // Pour le RDV Clarté, pas d'espace membre, juste logger l'annulation
+            console.log(`Abonnement RDV Clarté annulé - Email: ${customerEmail}, Subscription: ${subscription.id}`);
+            // TODO: Si vous avez besoin de notifier le client ou de faire d'autres actions, ajoutez-les ici
+            return res.status(200).json({
+              received: true,
+              product: 'rdv-clarte',
+              message: 'Subscription cancelled successfully',
+            });
+          } else {
+            // Pour 'complet', retirer le produit de l'utilisateur
+            await removeProductFromUser(customerEmail, 'complet');
+            console.log(`Subscription cancelled and product 'complet' removed for ${customerEmail}`);
+            return res.status(200).json({received: true});
+          }
         } catch (error) {
           console.error('Error removing product after subscription cancellation:', error);
           return res.status(500).send('Error processing cancellation');
@@ -682,10 +707,24 @@ exports.webhookStripe = onRequest(
           return res.status(400).send('No email found');
         }
 
-        // Note: Pour invoice.payment_failed, on ne retire pas immédiatement l'accès
-        // On pourrait envoyer un email de notification au client
-        // L'accès sera retiré seulement si l'abonnement est finalement annulé
-        console.log(`Payment failed for ${customerEmail}, subscription: ${invoice.subscription}`);
+        // Récupérer les métadonnées de la subscription si disponible
+        const subscriptionId = invoice.subscription;
+        if (subscriptionId) {
+          try {
+            // Note: Pour invoice.payment_failed, on ne retire pas immédiatement l'accès
+            // On pourrait envoyer un email de notification au client
+            // L'accès sera retiré seulement si l'abonnement est finalement annulé
+            console.log(`Payment failed for ${customerEmail}, subscription: ${subscriptionId}`);
+            // TODO: Envoyer un email de notification au client
+            // Pour le RDV Clarté, pas d'action supplémentaire nécessaire
+            return res.status(200).json({received: true});
+          } catch (error) {
+            console.error('Error processing payment failed event:', error);
+            return res.status(200).json({received: true});
+          }
+        }
+
+        console.log(`Payment failed for ${customerEmail}, subscription: ${subscriptionId}`);
         // TODO: Envoyer un email de notification au client
         return res.status(200).json({received: true});
       }
@@ -844,14 +883,14 @@ exports.webhookPayPal = onRequest(
 exports.createStripeCheckoutSession = onCall(
     {
       region: 'europe-west1',
-      secrets: ['STRIPE_SECRET_KEY'],
+      secrets: ['STRIPE_SECRET_KEY', 'STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE', 'STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT'],
     },
     async (request) => {
       const {product, variant, locale = 'fr'} = request.data;
 
       // Valider les paramètres
-      if (!product || (product !== '21jours' && product !== 'complet')) {
-        throw new HttpsError('invalid-argument', 'Product must be "21jours" or "complet"');
+      if (!product || (product !== '21jours' && product !== 'complet' && product !== 'rdv-clarte')) {
+        throw new HttpsError('invalid-argument', 'Product must be "21jours", "complet", or "rdv-clarte"');
       }
 
       if (product === 'complet' && !variant) {
@@ -862,6 +901,11 @@ exports.createStripeCheckoutSession = onCall(
         throw new HttpsError('invalid-argument', 'Variant must be "mensuel" or "trimestriel"');
       }
 
+      // Pour rdv-clarte, variant est optionnel : 'unique' (paiement unique) ou 'abonnement' (abonnement mensuel)
+      if (product === 'rdv-clarte' && variant && variant !== 'unique' && variant !== 'abonnement') {
+        throw new HttpsError('invalid-argument', 'Variant for "rdv-clarte" must be "unique" or "abonnement"');
+      }
+
       // Mapping des produits vers les Price IDs Stripe
       const priceIds = {
         '21jours': 'price_1SdZ2X2Esx6PN6y1wnkrLfSu',
@@ -869,27 +913,59 @@ exports.createStripeCheckoutSession = onCall(
           'mensuel': 'price_1SdZ4p2Esx6PN6y1bzRGQSC5',
           'trimestriel': 'price_1SdZ6E2Esx6PN6y11qme0Rde',
         },
+        'rdv-clarte': {
+          // ⚠️ IMPORTANT : Remplacez 'price_XXXXX' par les vrais Price IDs Stripe
+          'unique': process.env.STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE || 'price_XXXXX', // 100 CHF, paiement unique
+          'abonnement': process.env.STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT || 'price_YYYYY', // 69 CHF/mois, abonnement
+        },
       };
 
       // Déterminer le Price ID
       let priceId;
       if (product === '21jours') {
         priceId = priceIds['21jours'];
+      } else if (product === 'rdv-clarte') {
+        const rdvVariant = variant || 'unique'; // Par défaut, paiement unique
+        priceId = priceIds['rdv-clarte'][rdvVariant];
+        if (priceId === 'price_XXXXX' || priceId === 'price_YYYYY') {
+          const secretName =
+              `STRIPE_PRICE_ID_RDV_CLARTE_${rdvVariant.toUpperCase()}`;
+          throw new HttpsError(
+              'failed-precondition',
+              `Stripe Price ID for RDV Clarté (${rdvVariant}) not configured. ` +
+              `Set ${secretName} secret.`,
+          );
+        }
       } else {
         priceId = priceIds['complet'][variant];
       }
 
       // Déterminer le mode (payment pour one-time, subscription pour abonnements)
-      const mode = product === '21jours' ? 'payment' : 'subscription';
+      const mode = (product === '21jours' || (product === 'rdv-clarte' && (!variant || variant === 'unique'))) ?
+        'payment' :
+        'subscription';
 
-      // URLs de redirection selon la locale
-      const baseUrl = 'https://fluance.io';
-      const successUrl = locale === 'en' ?
-        `${baseUrl}/en/success?session_id={CHECKOUT_SESSION_ID}` :
-        `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = locale === 'en' ?
-        `${baseUrl}/en/cancel` :
-        `${baseUrl}/cancel`;
+      // URLs de redirection selon le produit et la locale
+      let baseUrl; let successUrl; let cancelUrl;
+      if (product === 'rdv-clarte') {
+        // Pour le RDV Clarté, rediriger vers cedricv.com
+        baseUrl = 'https://cedricv.com';
+        successUrl = locale === 'en' ?
+          `${baseUrl}/en/confirmation?session_id={CHECKOUT_SESSION_ID}` :
+          `${baseUrl}/confirmation?session_id={CHECKOUT_SESSION_ID}`;
+        cancelUrl = locale === 'en' ?
+          `${baseUrl}/en/rdv/clarte` :
+          `${baseUrl}/rdv/clarte`;
+      } else {
+        // Pour les autres produits, rediriger vers fluance.io
+        baseUrl = 'https://fluance.io';
+        successUrl = locale === 'en' ?
+          `${baseUrl}/en/success?session_id={CHECKOUT_SESSION_ID}` :
+          `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
+        cancelUrl = locale === 'en' ?
+          `${baseUrl}/en/cancel` :
+          `${baseUrl}/cancel`;
+      }
 
       try {
         // Vérifier si le package Stripe est installé
@@ -920,12 +996,16 @@ exports.createStripeCheckoutSession = onCall(
           metadata: {
             system: 'firebase',
             product: product,
+            // Ajouter le variant pour rdv-clarte si présent
+            ...(product === 'rdv-clarte' && variant ? {variant: variant} : {}),
           },
           // Pour les abonnements, passer les métadonnées aussi dans la subscription
           subscription_data: mode === 'subscription' ? {
             metadata: {
               system: 'firebase',
               product: product,
+              // Ajouter le variant pour rdv-clarte si présent
+              ...(product === 'rdv-clarte' && variant ? {variant: variant} : {}),
             },
           } : undefined,
         });
