@@ -3307,6 +3307,9 @@ exports.sendNewContentEmails = onSchedule(
                   properties = contactData.Data;
                 }
 
+                // Récupérer le prénom si disponible
+                const firstName = properties.firstname || contact.Name || '';
+
                 // Vérifier que c'est un prospect (pas un client)
                 const sourceOptin = properties.source_optin || '';
                 const estClient = properties.est_client === 'True' || properties.est_client === true;
@@ -3346,7 +3349,7 @@ exports.sendNewContentEmails = onSchedule(
                       .doc(emailSentDocId).get();
 
                   if (!emailSentDoc.exists) {
-                    const emailSubject = 'Découvrez nos 5 jours de pratiques offertes';
+                    const emailSubject = '5 pratiques offertes pour libérer les tensions';
                     const emailHtml = `
                       <!DOCTYPE html>
                       <html>
@@ -3369,26 +3372,43 @@ exports.sendNewContentEmails = onSchedule(
                             text-decoration: none; border-radius: 5px;
                             font-weight: bold; margin: 20px 0;
                           }
+                          .checklist { margin: 20px 0; }
+                          .checklist-item { margin: 10px 0; }
                           .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
                         </style>
                       </head>
                       <body>
                         <div class="container">
                           <div class="header">
-                            <h1>5 jours de pratiques offertes</h1>
+                            <h1>5 pratiques offertes pour libérer les tensions</h1>
                           </div>
                           <div class="content">
-                            <p>Bonjour,</p>
-                            <p>Vous avez découvert les 2 pratiques offertes de Fluance. 
-                              Pourquoi ne pas continuer avec <strong>5 jours de pratiques offertes</strong> ?</p>
-                            <p>Un programme court pour intégrer le mouvement dans votre quotidien.</p>
+                            <p>Bonjour${firstName ? ' ' + firstName : ''},</p>
+                            <p>J'ai rencontré de nombreuses personnes ces derniers temps 
+                              me faisant part de tensions physiques et émotionnelles, 
+                              de manque d'énergie ou de surcharge mentale.</p>
+                            <p>C'est pourquoi j'ai le grand plaisir de vous partager 
+                              pour la première fois une approche intuitive libératrice 
+                              que j'expérimente depuis longtemps et qui m'aide 
+                              beaucoup.</p>
+                            <p>Comme je souhaite désormais la diffuser, je vous offre 
+                              un parcours de 5 minutes par jour durant 5 jours 
+                              pour :</p>
+                            <div class="checklist">
+                              <div class="checklist-item">✅ Relâcher la pression quotidienne</div>
+                              <div class="checklist-item">✅ Libérer les tensions physiques et émotionnelles</div>
+                              <div class="checklist-item">✅ Développer une présence calme et confiante.</div>
+                            </div>
+                            <p>Il vous suffit de vous inscrire via la page suivante 
+                              pour en bénéficier immédiatement :</p>
                             <p style="text-align: center;">
                               <a href="https://fluance.io/#5jours" 
-                                 class="button">Découvrir les 5 jours offerts</a>
+                                 class="button">S'inscrire aux 5 jours offerts</a>
                             </p>
-                            <p>Au plaisir de vous accompagner !</p>
+                            <p>Avec joie de vous retrouver dans cet élan,</p>
+                            <p>Cédric</p>
                             <div class="footer">
-                              <p>Fluance : le mouvement qui éveille et apaise</p>
+                              <p>Cédric<br>Fluance : le mouvement qui éveille et apaise</p>
                               <p><a href="https://fluance.io">fluance.io</a></p>
                             </div>
                           </div>
@@ -3435,62 +3455,213 @@ exports.sendNewContentEmails = onSchedule(
                         .doc(emailSentDocId).get();
 
                     if (!emailSentDoc.exists) {
-                      const emailSubject = joursApres5jours === 6 ? 'Continuez avec le défi 21 jours' :
-                          joursApres5jours === 10 ? 'Le défi 21 jours vous attend' :
-                          'Rejoignez le défi complet de 21 jours';
+                      let emailSubject;
+                      let emailHtml;
 
-                      const emailHtml = `
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                          <meta charset="utf-8">
-                          <style>
-                            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                            .header {
-                              background-color: #648ED8; color: white; padding: 20px;
-                              text-align: center; border-radius: 5px 5px 0 0;
-                            }
-                            .content {
-                              background-color: #f9f9f9; padding: 20px;
-                              border-radius: 0 0 5px 5px;
-                            }
-                            .button {
-                              display: inline-block; padding: 12px 24px;
-                              background-color: #ffce2d; color: #0f172a;
-                              text-decoration: none; border-radius: 5px;
-                              font-weight: bold; margin: 20px 0;
-                            }
-                            .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
-                          </style>
-                        </head>
-                        <body>
-                          <div class="container">
-                            <div class="header">
-                              <h1>Le défi 21 jours vous attend</h1>
-                            </div>
-                            <div class="content">
-                              <p>Bonjour,</p>
-                              <p>Vous avez découvert les 5 jours offerts de Fluance. 
-                                Pourquoi ne pas continuer votre parcours avec le 
-                                <strong>défi complet de 21 jours</strong> ?</p>
-                              <p>Un programme structuré de 21 mini-séries de pratiques 
-                                pour intégrer durablement le mouvement dans votre quotidien.</p>
-                              <p style="text-align: center;">
-                                <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
-                                   class="button">Découvrir le défi 21 jours</a>
-                              </p>
-                              <p>Au plaisir de vous accompagner dans votre parcours !</p>
-                              <div class="footer">
-                                <p>Fluance : le mouvement qui éveille et apaise</p>
-                                <p><a href="https://fluance.io">fluance.io</a></p>
+                      if (joursApres5jours === 6) {
+                        // Jour 6 : on continue ensemble ?
+                        emailSubject = 'Jour 6 : on continue ensemble ?';
+                        emailHtml = `
+                          <!DOCTYPE html>
+                          <html>
+                          <head>
+                            <meta charset="utf-8">
+                            <style>
+                              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                              .header {
+                                background-color: #648ED8; color: white; padding: 20px;
+                                text-align: center; border-radius: 5px 5px 0 0;
+                              }
+                              .content {
+                                background-color: #f9f9f9; padding: 20px;
+                                border-radius: 0 0 5px 5px;
+                              }
+                              .button {
+                                display: inline-block; padding: 12px 24px;
+                                background-color: #ffce2d; color: #0f172a;
+                                text-decoration: none; border-radius: 5px;
+                                font-weight: bold; margin: 20px 0;
+                              }
+                              .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="container">
+                              <div class="header">
+                                <h1>Jour 6 : on continue ensemble ?</h1>
+                              </div>
+                              <div class="content">
+                                <p>Bonjour${firstName ? ' ' + firstName : ''},</p>
+                                <p>J'espère que cette première semaine de pratiques vous a été bénéfique.</p>
+                                <p><strong>Avez-vous envie qu'on continue ensemble ?</strong></p>
+                                <p>Si oui, alors la vidéo que je vous ai préparée devrait vous plaire :</p>
+                                <p style="text-align: center;">
+                                  <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                                     class="button">Découvrir comment continuer ensemble</a>
+                                </p>
+                                <p>Je vous propose de garder ce "momentum" en allant 
+                                  bien plus loin ensemble grâce au parcours 
+                                  <strong>"21 jours pour remettre du mouvement"</strong>.</p>
+                                <p>Pour continuer à sortir des tensions corporelles 
+                                  et de la surcharge.</p>
+                                <p>Et aussi pour cheminer plus profondément vers la détente 
+                                  et le calme intérieur, à l'aide de temps pour vous guidés, 
+                                  en avançant à votre rythme, depuis chez vous.</p>
+                                <p style="text-align: center;">
+                                  <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                                     class="button">C'est par ici</a>
+                                </p>
+                                <p>A tout bientôt,</p>
+                                <p>Cédric</p>
+                                <div class="footer">
+                                  <p>Cédric<br>Fluance : le mouvement qui éveille et apaise</p>
+                                  <p><a href="https://fluance.io">fluance.io</a></p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </body>
-                        </html>
-                      `;
-
+                          </body>
+                          </html>
+                        `;
+                      } else if (joursApres5jours === 10) {
+                        // Relance de clôture 1
+                        emailSubject = 'Fluance : sortir des tensions physiques et du trop-plein';
+                        emailHtml = `
+                          <!DOCTYPE html>
+                          <html>
+                          <head>
+                            <meta charset="utf-8">
+                            <style>
+                              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                              .header {
+                                background-color: #648ED8; color: white; padding: 20px;
+                                text-align: center; border-radius: 5px 5px 0 0;
+                              }
+                              .content {
+                                background-color: #f9f9f9; padding: 20px;
+                                border-radius: 0 0 5px 5px;
+                              }
+                              .button {
+                                display: inline-block; padding: 12px 24px;
+                                background-color: #ffce2d; color: #0f172a;
+                                text-decoration: none; border-radius: 5px;
+                                font-weight: bold; margin: 20px 0;
+                              }
+                              .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="container">
+                              <div class="header">
+                                <h1>Sortir des tensions physiques et du trop-plein</h1>
+                              </div>
+                              <div class="content">
+                                <p>Bonjour${firstName ? ' ' + firstName : ''},</p>
+                                <p>Vous avez déjà goûté à ce que quelques minutes de Fluance 
+                                  peuvent changer dans votre quotidien.</p>
+                                <p>Mais peut-être sentez-vous encore…</p>
+                                <ul>
+                                  <li>ce <strong>trop-plein émotionnel et mental</strong> 
+                                    qui revient dès que la journée s'emballe,</li>
+                                  <li>ces <strong>tensions corporelles</strong> qui s'installent sans prévenir,</li>
+                                  <li>cette <strong>fatigue de "porter trop"</strong>, encore et encore.</li>
+                                </ul>
+                                <p>Avec le parcours Fluance, vous pouvez aller plus loin 
+                                  sans alourdir votre emploi du temps :</p>
+                                <ul>
+                                  <li>les pratiques ne prennent que quelques minutes,</li>
+                                  <li>le tout à votre rythme, depuis chez vous.</li>
+                                </ul>
+                                <p style="text-align: center;">
+                                  <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                                     class="button">Sortir du trop-plein et des tensions corporelles</a>
+                                </p>
+                                <p>À tout bientôt,</p>
+                                <p>Cédric</p>
+                                <div class="footer">
+                                  <p>Cédric<br>Fluance : le mouvement qui éveille et apaise</p>
+                                  <p><a href="https://fluance.io">fluance.io</a></p>
+                                </div>
+                              </div>
+                            </div>
+                          </body>
+                          </html>
+                        `;
+                      } else {
+                        // Jour 17 : Clôture, message final
+                        emailSubject = '21 jours de Fluance : c\'est le moment';
+                        emailHtml = `
+                          <!DOCTYPE html>
+                          <html>
+                          <head>
+                            <meta charset="utf-8">
+                            <style>
+                              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                              .header {
+                                background-color: #648ED8; color: white; padding: 20px;
+                                text-align: center; border-radius: 5px 5px 0 0;
+                              }
+                              .content {
+                                background-color: #f9f9f9; padding: 20px;
+                                border-radius: 0 0 5px 5px;
+                              }
+                              .button {
+                                display: inline-block; padding: 12px 24px;
+                                background-color: #ffce2d; color: #0f172a;
+                                text-decoration: none; border-radius: 5px;
+                                font-weight: bold; margin: 20px 0;
+                              }
+                              .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="container">
+                              <div class="header">
+                                <h1>21 jours de Fluance : c'est le moment</h1>
+                              </div>
+                              <div class="content">
+                                <p>Bonjour${firstName ? ' ' + firstName : ''},</p>
+                                <p><strong>Pourquoi rejoindre Fluance maintenant ?</strong></p>
+                                <p>Parce que vous méritez de ne plus rester prisonnier(ère) de :</p>
+                                <ul>
+                                  <li>ces <strong>tensions corporelles</strong> qui alourdissent vos journées.</li>
+                                  <li>ce <strong>trop-plein émotionnel et mental</strong> 
+                                    qui vous épuise peut-être,</li>
+                                </ul>
+                                <p>Et tout cela en seulement quelques minutes par jour.</p>
+                                <p style="text-align: center;">
+                                  <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                                     class="button">Je continue dès maintenant</a>
+                                </p>
+                                <p>Imaginez commencer votre journée en vous sentant plus centrée, plus apaisée.</p>
+                                <p>Mais Fluance, c'est aussi bien plus qu'un simple parcours :</p>
+                                <ul>
+                                  <li>C'est <strong>soutenir la reprise en main de notre santé</strong> 
+                                    grâce à la conscience et au mouvement régulier,</li>
+                                  <li>C'est <strong>apprendre à s'écouter</strong> 
+                                    pour s'ouvrir à ses perceptions et à son plein potentiel,</li>
+                                  <li>C'est une <strong>approche d'éveil à soi différente</strong>, 
+                                    qui relie le corps, le cœur et l'esprit.</li>
+                                </ul>
+                                <p><strong>Et si c'était le moment pour dire oui à vous-même ?</strong></p>
+                                <p style="text-align: center;">
+                                  <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                                     class="button">Oui, je continue et réserve ma place dès maintenant</a>
+                                </p>
+                                <p>Avec joie de vous retrouver dans cet élan,</p>
+                                <p>Cédric</p>
+                                <div class="footer">
+                                  <p>Cédric<br>Fluance : le mouvement qui éveille et apaise</p>
+                                  <p><a href="https://fluance.io">fluance.io</a></p>
+                                </div>
+                              </div>
+                            </div>
+                          </body>
+                          </html>
+                        `;
+                      }
                       await sendMailjetEmail(
                           email,
                           emailSubject,
@@ -3609,61 +3780,148 @@ exports.sendNewContentEmails = onSchedule(
                         .doc(emailSentDocId).get();
 
                     if (!emailSentDoc.exists) {
-                      const emailSubject = currentDay === 8 ? 'Découvrez le défi 21 jours' :
-                          currentDay === 15 ? 'Le défi 21 jours : votre prochaine étape' :
-                          'Rejoignez le défi complet de 21 jours';
-
-                      const emailHtml = `
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                          <meta charset="utf-8">
-                          <style>
-                            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                            .header {
-                              background-color: #648ED8; color: white; padding: 20px;
-                              text-align: center; border-radius: 5px 5px 0 0;
-                            }
-                            .content {
-                              background-color: #f9f9f9; padding: 20px;
-                              border-radius: 0 0 5px 5px;
-                            }
-                            .button {
-                              display: inline-block; padding: 12px 24px;
-                              background-color: #ffce2d; color: #0f172a;
-                              text-decoration: none; border-radius: 5px;
-                              font-weight: bold; margin: 20px 0;
-                            }
-                            .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
-                          </style>
-                        </head>
-                        <body>
-                          <div class="container">
-                            <div class="header">
-                              <h1>Le défi 21 jours vous attend</h1>
-                            </div>
-                            <div class="content">
-                              <p>Bonjour,</p>
-                              <p>Vous avez découvert les pratiques Fluance. 
-                                Pourquoi ne pas aller plus loin avec le 
-                                <strong>défi complet de 21 jours</strong> ?</p>
-                              <p>Un programme structuré de 21 mini-séries de pratiques 
-                                pour intégrer durablement le mouvement dans votre quotidien.</p>
-                              <p style="text-align: center;">
-                                <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
-                                   class="button">Découvrir le défi 21 jours</a>
-                              </p>
-                              <p>Au plaisir de vous accompagner dans votre parcours !</p>
-                              <div class="footer">
-                                <p>Fluance : le mouvement qui éveille et apaise</p>
-                                <p><a href="https://fluance.io">fluance.io</a></p>
+                      let emailSubject;
+                      let emailHtml;
+                      
+                      if (currentDay === 8) {
+                        // Premier email : Relance de clôture 1
+                        emailSubject = 'Fluance : sortir des tensions physiques et du trop-plein';
+                        emailHtml = `
+                          <!DOCTYPE html>
+                          <html>
+                          <head>
+                            <meta charset="utf-8">
+                            <style>
+                              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                              .header {
+                                background-color: #648ED8; color: white; padding: 20px;
+                                text-align: center; border-radius: 5px 5px 0 0;
+                              }
+                              .content {
+                                background-color: #f9f9f9; padding: 20px;
+                                border-radius: 0 0 5px 5px;
+                              }
+                              .button {
+                                display: inline-block; padding: 12px 24px;
+                                background-color: #ffce2d; color: #0f172a;
+                                text-decoration: none; border-radius: 5px;
+                                font-weight: bold; margin: 20px 0;
+                              }
+                              .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="container">
+                              <div class="header">
+                                <h1>Sortir des tensions physiques et du trop-plein</h1>
+                              </div>
+                              <div class="content">
+                                <p>Bonjour${firstName ? ' ' + firstName : ''},</p>
+                                <p>Vous avez déjà goûté à ce que quelques minutes de Fluance 
+                                  peuvent changer dans votre quotidien.</p>
+                                <p>Mais peut-être sentez-vous encore…</p>
+                                <ul>
+                                  <li>ce <strong>trop-plein émotionnel et mental</strong> 
+                                    qui revient dès que la journée s'emballe,</li>
+                                  <li>ces <strong>tensions corporelles</strong> qui s'installent sans prévenir,</li>
+                                  <li>cette <strong>fatigue de "porter trop"</strong>, encore et encore.</li>
+                                </ul>
+                                <p>Avec le parcours Fluance, vous pouvez aller plus loin 
+                                  sans alourdir votre emploi du temps :</p>
+                                <ul>
+                                  <li>les pratiques ne prennent que quelques minutes,</li>
+                                  <li>le tout à votre rythme, depuis chez vous.</li>
+                                </ul>
+                                <p style="text-align: center;">
+                                  <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                                     class="button">Sortir du trop-plein et des tensions corporelles</a>
+                                </p>
+                                <p>À tout bientôt,</p>
+                                <p>Cédric</p>
+                                <div class="footer">
+                                  <p>Cédric<br>Fluance : le mouvement qui éveille et apaise</p>
+                                  <p><a href="https://fluance.io">fluance.io</a></p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </body>
-                        </html>
-                      `;
+                          </body>
+                          </html>
+                        `;
+                      } else {
+                        // Jours 15 et 22 : Clôture, message final
+                        emailSubject = '21 jours de Fluance : c\'est le moment';
+                        emailHtml = `
+                          <!DOCTYPE html>
+                          <html>
+                          <head>
+                            <meta charset="utf-8">
+                            <style>
+                              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                              .header {
+                                background-color: #648ED8; color: white; padding: 20px;
+                                text-align: center; border-radius: 5px 5px 0 0;
+                              }
+                              .content {
+                                background-color: #f9f9f9; padding: 20px;
+                                border-radius: 0 0 5px 5px;
+                              }
+                              .button {
+                                display: inline-block; padding: 12px 24px;
+                                background-color: #ffce2d; color: #0f172a;
+                                text-decoration: none; border-radius: 5px;
+                                font-weight: bold; margin: 20px 0;
+                              }
+                              .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="container">
+                              <div class="header">
+                                <h1>21 jours de Fluance : c'est le moment</h1>
+                              </div>
+                              <div class="content">
+                                <p>Bonjour${firstName ? ' ' + firstName : ''},</p>
+                                <p><strong>Pourquoi rejoindre Fluance maintenant ?</strong></p>
+                                <p>Parce que vous méritez de ne plus rester prisonnier(ère) de :</p>
+                                <ul>
+                                  <li>ces <strong>tensions corporelles</strong> qui alourdissent vos journées.</li>
+                                  <li>ce <strong>trop-plein émotionnel et mental</strong> 
+                                    qui vous épuise peut-être,</li>
+                                </ul>
+                                <p>Et tout cela en seulement quelques minutes par jour.</p>
+                                <p style="text-align: center;">
+                                  <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                                     class="button">Je continue dès maintenant</a>
+                                </p>
+                                <p>Imaginez commencer votre journée en vous sentant plus centrée, plus apaisée.</p>
+                                <p>Mais Fluance, c'est aussi bien plus qu'un simple parcours :</p>
+                                <ul>
+                                  <li>C'est <strong>soutenir la reprise en main de notre santé</strong> 
+                                    grâce à la conscience et au mouvement régulier,</li>
+                                  <li>C'est <strong>apprendre à s'écouter</strong> 
+                                    pour s'ouvrir à ses perceptions et à son plein potentiel,</li>
+                                  <li>C'est une <strong>approche d'éveil à soi différente</strong>, 
+                                    qui relie le corps, le cœur et l'esprit.</li>
+                                </ul>
+                                <p><strong>Et si c'était le moment pour dire oui à vous-même ?</strong></p>
+                                <p style="text-align: center;">
+                                  <a href="https://fluance.io/cours-en-ligne/21-jours-mouvement/" 
+                                     class="button">Oui, je continue et réserve ma place dès maintenant</a>
+                                </p>
+                                <p>Avec joie de vous retrouver dans cet élan,</p>
+                                <p>Cédric</p>
+                                <div class="footer">
+                                  <p>Cédric<br>Fluance : le mouvement qui éveille et apaise</p>
+                                  <p><a href="https://fluance.io">fluance.io</a></p>
+                                </div>
+                              </div>
+                            </div>
+                          </body>
+                          </html>
+                        `;
+                      }
 
                       await sendMailjetEmail(
                           email,
