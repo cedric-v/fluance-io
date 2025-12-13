@@ -3499,7 +3499,7 @@ exports.sendNewContentEmails = onSchedule(
                           mailjetApiKey,
                           mailjetApiSecret,
                           'fluance@actu.fluance.io',
-                          'Fluance',
+                          'Cédric de Fluance',
                       );
 
                       await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -3584,7 +3584,7 @@ exports.sendNewContentEmails = onSchedule(
                           mailjetApiKey,
                           mailjetApiSecret,
                           'fluance@actu.fluance.io',
-                          'Fluance',
+                          'Cédric de Fluance',
                       );
 
                       await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -3673,7 +3673,7 @@ exports.sendNewContentEmails = onSchedule(
                           mailjetApiKey,
                           mailjetApiSecret,
                           'fluance@actu.fluance.io',
-                          'Fluance',
+                          'Cédric de Fluance',
                       );
 
                       await db.collection('contentEmailsSent').doc(emailSentDocId).set({
