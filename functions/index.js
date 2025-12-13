@@ -3782,7 +3782,7 @@ exports.sendNewContentEmails = onSchedule(
                     if (!emailSentDoc.exists) {
                       let emailSubject;
                       let emailHtml;
-                      
+
                       if (currentDay === 8) {
                         // Premier email : Relance de clôture 1
                         emailSubject = 'Fluance : sortir des tensions physiques et du trop-plein';
