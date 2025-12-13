@@ -213,7 +213,7 @@ async function ensureMailjetContactProperties(apiKey, apiSecret) {
  */
 function loadEmailTemplate(templateName, variables = {}) {
   const templatePath = path.join(__dirname, 'emails', `${templateName}.html`);
-  
+
   if (!fs.existsSync(templatePath)) {
     throw new Error(`Email template not found: ${templateName}.html`);
   }
