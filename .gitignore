@@ -36,3 +36,4 @@ functions/.env.local
 
 # Configuration avec données sensibles
 scripts/mailjet-contacts-config.json
+functions/emails/*.html
