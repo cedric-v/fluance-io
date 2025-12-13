@@ -3556,7 +3556,8 @@ exports.sendNewContentEmails = onSchedule(
                             <div class="content">
                               <p>Bonjour,</p>
                               <p>Vous avez découvert les 2 pratiques offertes. 
-                                Ne manquez pas l'opportunité de découvrir <strong>5 jours de pratiques offertes</strong> !</p>
+                                Ne manquez pas l'opportunité de découvrir 
+                                <strong>5 jours de pratiques offertes</strong>!</p>
                               <p>Un programme court pour intégrer le mouvement dans votre quotidien.</p>
                               <p style="text-align: center;">
                                 <a href="https://fluance.io/#5jours" 
