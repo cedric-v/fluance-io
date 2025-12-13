@@ -3102,7 +3102,7 @@ exports.sendNewContentEmails = onSchedule(
                           </p>
                           <p>Continuez votre parcours vers plus de mouvement et de bien-être !</p>
                           <div class="footer">
-                            <p>Cédric<br>Fluance - Le mouvement qui éveille et apaise</p>
+                            <p>Cédric<br>Fluance : le mouvement qui éveille et apaise</p>
                             <p><a href="https://fluance.io">fluance.io</a></p>
                           </div>
                         </div>
@@ -3213,7 +3213,7 @@ exports.sendNewContentEmails = onSchedule(
                           </p>
                           <p>Continuez votre parcours vers plus de mouvement et de bien-être !</p>
                           <div class="footer">
-                            <p>Cédric<br>Fluance - Le mouvement qui éveille et apaise</p>
+                            <p>Cédric<br>Fluance : le mouvement qui éveille et apaise</p>
                             <p><a href="https://fluance.io">fluance.io</a></p>
                           </div>
                         </div>
@@ -3386,7 +3386,7 @@ exports.sendNewContentEmails = onSchedule(
                             </p>
                             <p>Au plaisir de vous accompagner !</p>
                             <div class="footer">
-                              <p>Fluance - Le mouvement qui éveille et apaise</p>
+                              <p>Fluance : le mouvement qui éveille et apaise</p>
                               <p><a href="https://fluance.io">fluance.io</a></p>
                             </div>
                           </div>
@@ -3480,7 +3480,7 @@ exports.sendNewContentEmails = onSchedule(
                               </p>
                               <p>Au plaisir de vous accompagner dans votre parcours !</p>
                               <div class="footer">
-                                <p>Fluance - Le mouvement qui éveille et apaise</p>
+                                <p>Fluance : le mouvement qui éveille et apaise</p>
                                 <p><a href="https://fluance.io">fluance.io</a></p>
                               </div>
                             </div>
@@ -3522,7 +3522,7 @@ exports.sendNewContentEmails = onSchedule(
                         .doc(emailSentDocId).get();
 
                     if (!emailSentDoc.exists) {
-                      const emailSubject = 'Ne manquez pas nos 5 jours de pratiques offertes';
+                      const emailSubject = 'Découvrez nos 5 jours de pratiques offertes';
                       const emailHtml = `
                         <!DOCTYPE html>
                         <html>
@@ -3556,8 +3556,8 @@ exports.sendNewContentEmails = onSchedule(
                             <div class="content">
                               <p>Bonjour,</p>
                               <p>Vous avez découvert les 2 pratiques offertes. 
-                                Ne manquez pas l'opportunité de découvrir 
-                                <strong>5 jours de pratiques offertes</strong>!</p>
+                                Découvrez maintenant 
+                                <strong>5 jours de pratiques offertes</strong> !</p>
                               <p>Un programme court pour intégrer le mouvement dans votre quotidien.</p>
                               <p style="text-align: center;">
                                 <a href="https://fluance.io/#5jours" 
@@ -3565,7 +3565,7 @@ exports.sendNewContentEmails = onSchedule(
                               </p>
                               <p>Au plaisir de vous accompagner !</p>
                               <div class="footer">
-                                <p>Fluance - Le mouvement qui éveille et apaise</p>
+                                <p>Fluance : le mouvement qui éveille et apaise</p>
                                 <p><a href="https://fluance.io">fluance.io</a></p>
                               </div>
                             </div>
@@ -3654,7 +3654,7 @@ exports.sendNewContentEmails = onSchedule(
                               </p>
                               <p>Au plaisir de vous accompagner dans votre parcours !</p>
                               <div class="footer">
-                                <p>Fluance - Le mouvement qui éveille et apaise</p>
+                                <p>Fluance : le mouvement qui éveille et apaise</p>
                                 <p><a href="https://fluance.io">fluance.io</a></p>
                               </div>
                             </div>
