@@ -1,0 +1,53 @@
+---
+layout: false
+permalink: /emails/notification-commentaire.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold">
+          Nouveau commentaire
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          <strong>Prénom :</strong> {{name}}
+        </mj-text>
+        <mj-divider border-color="#ffce2d" border-width="4px" padding="15px 0" />
+        <mj-text background-color="#f5f5f5" padding="15px">
+          <strong>Commentaire :</strong><br>
+          {{comment}}
+        </mj-text>
+        <mj-text>
+          <strong>Page :</strong> {{pageUrl}}
+        </mj-text>
+        <mj-button
+          href="{{fullUrl}}"
+          background-color="#ffce2d"
+          color="#0f172a"
+          font-weight="bold"
+          padding="15px 30px"
+          border-radius="5px"
+        >
+          Voir la page
+        </mj-button>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" color="#666666">
+          Ceci est une notification automatique pour les nouveaux commentaires.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

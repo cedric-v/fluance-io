@@ -2545,51 +2545,12 @@ exports.notifyNewComment = onDocumentCreated(
         }
 
         const emailSubject = `Nouveau commentaire de ${name}`;
-        const emailHtml = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .comment-box {
-                background-color: #f5f5f5;
-                border-left: 4px solid #ffce2d;
-                padding: 15px;
-                margin: 20px 0;
-              }
-              .button {
-                display: inline-block;
-                padding: 12px 24px;
-                background-color: #ffce2d;
-                color: #0f172a;
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold;
-                margin: 20px 0;
-              }
-              .footer { margin-top: 30px; font-size: 12px; color: #666; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>Nouveau commentaire</h1>
-              <p><strong>Prénom :</strong> ${escapeHtml(name)}</p>
-              <div class="comment-box">
-                <p><strong>Commentaire :</strong></p>
-                <p>${escapeHtml(text)}</p>
-              </div>
-              <p><strong>Page :</strong> ${escapeHtml(fullUrl)}</p>
-              <p><a href="${fullUrl}" class="button">Voir la page</a></p>
-              <div class="footer">
-                <p>Ceci est une notification automatique pour les nouveaux commentaires.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `;
-
+        const emailHtml = loadEmailTemplate('notification-commentaire', {
+          name: escapeHtml(name),
+          comment: escapeHtml(text),
+          pageUrl: escapeHtml(fullUrl),
+          fullUrl: fullUrl, // URL non échappée pour le lien
+        });
         const emailText = `Nouveau commentaire\n\n` +
             `Prénom: ${name}\n\n` +
             `Commentaire:\n${text}\n\n` +
