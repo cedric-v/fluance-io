@@ -1356,7 +1356,7 @@ exports.sendNewsletter = onCall(
           const body = {
             Messages: batch.map((email) => ({
               From: {
-                Email: 'support@fluance.io',
+                Email: 'support@actu.fluance.io',
                 Name: 'Fluance',
               },
               To: [{Email: email}],
