@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
                       : prod.id === '21jours'
                         ? 'Découvrir et acquérir le défi 21 jours pour remettre du mouvement'
                         : prod.id === 'sos-dos-cervicales'
-                          ? 'Obtenir l'accès à SOS dos & cervicales'
+                          ? "Obtenir l'accès à SOS dos & cervicales"
                           : `Découvrir et acquérir ${prod.name}`
                   }
                 </a>
