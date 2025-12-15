@@ -79,6 +79,18 @@ permalink: /connexion-membre/
         />
       </div>
 
+      <div class="flex items-center justify-between mt-4 mb-2">
+        <label class="flex items-center text-sm text-[#0f172a]">
+          <input
+            type="checkbox"
+            id="remember-me"
+            name="remember"
+            class="h-4 w-4 text-fluance border-fluance/40 rounded focus:ring-fluance"
+          />
+          <span class="ml-2 select-none">Rester connecté</span>
+        </label>
+      </div>
+
       <div id="success-message" class="hidden bg-[#ffce2d]/10 border border-[#ffce2d]/30 rounded-lg p-4">
         <p class="text-[#0f172a] text-sm"></p>
       </div>
@@ -348,12 +360,18 @@ document.addEventListener('DOMContentLoaded', async function() {
   const submitButton = document.getElementById('submit-button');
   const buttonText = document.getElementById('button-text');
   const buttonSpinner = document.getElementById('button-spinner');
+  const rememberCheckbox = document.getElementById('remember-me');
+
+  if (rememberCheckbox && typeof getRememberChoice === 'function') {
+    rememberCheckbox.checked = getRememberChoice(false);
+  }
 
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
+    const remember = rememberCheckbox ? rememberCheckbox.checked : false;
 
     if (!email) {
       showError('Veuillez entrer votre email.');
@@ -389,7 +407,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       if (currentTab === 'password') {
         // Connexion avec mot de passe
-        const result = await window.FluanceAuth.signIn(email, password);
+        const result = await window.FluanceAuth.signIn(email, password, remember);
 
         if (result.success) {
           // Rediriger vers la page d'origine ou l'espace membre

@@ -76,6 +76,38 @@ if (typeof firebase === 'undefined') {
 }
 
 let auth, db;
+const REMEMBER_STORAGE_KEY = 'fluance_remember_me';
+
+function getRememberChoice(defaultValue = false) {
+  try {
+    const stored = window.localStorage.getItem(REMEMBER_STORAGE_KEY);
+    if (stored === 'local') return true;
+    if (stored === 'session') return false;
+  } catch (_e) {
+    // Ignore storage errors and fall back to default
+  }
+  return defaultValue;
+}
+
+function saveRememberChoice(remember) {
+  try {
+    window.localStorage.setItem(REMEMBER_STORAGE_KEY, remember ? 'local' : 'session');
+  } catch (_e) {
+    // Ignore storage errors (private browsing, etc.)
+  }
+}
+
+async function applyAuthPersistence(remember) {
+  if (!auth || !auth.setPersistence || !firebase?.auth?.Auth?.Persistence) return;
+  const target = remember
+    ? firebase.auth.Auth.Persistence.LOCAL
+    : firebase.auth.Auth.Persistence.SESSION;
+  try {
+    await auth.setPersistence(target);
+  } catch (err) {
+    console.warn('Error setting auth persistence:', err);
+  }
+}
 
 function initAuth() {
   // Vérifier que firebase.auth est disponible
@@ -93,10 +125,13 @@ function initAuth() {
   auth = firebase.auth();
   db = firebase.firestore();
   
-  // Configurer la persistance de session (LOCAL par défaut, mais on s'assure qu'elle est active)
-  // La persistance LOCAL permet de garder la session même après fermeture du navigateur
-  if (auth.setPersistence) {
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => {
+  // Configurer la persistance selon le choix utilisateur (par défaut: rester connecté)
+  if (auth.setPersistence && firebase?.auth?.Auth?.Persistence) {
+    const remember = getRememberChoice(false);
+    const target = remember
+      ? firebase.auth.Auth.Persistence.LOCAL
+      : firebase.auth.Auth.Persistence.SESSION;
+    auth.setPersistence(target).catch(err => {
       console.warn('Error setting auth persistence:', err);
     });
   }
@@ -168,6 +203,10 @@ async function verifyTokenAndCreateAccount(token, password, email = null) {
 
       console.log('Signing in with email:', userEmail);
       
+      const remember = getRememberChoice(false);
+      await applyAuthPersistence(remember);
+      saveRememberChoice(remember);
+      
       // Connecter l'utilisateur automatiquement
       const userCredential = await auth.signInWithEmailAndPassword(userEmail, password);
       
@@ -212,8 +251,10 @@ async function verifyTokenAndCreateAccount(token, password, email = null) {
 /**
  * Connexion avec email et mot de passe
  */
-async function signIn(email, password) {
+async function signIn(email, password, remember = true) {
   try {
+    await applyAuthPersistence(remember);
+    saveRememberChoice(remember);
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     return { success: true, user: userCredential.user };
   } catch (error) {
@@ -641,6 +682,10 @@ async function handleSignInLink() {
       if (!email) {
         return { success: false, error: 'Email requis pour la connexion' };
       }
+      
+      const remember = getRememberChoice(false);
+      await applyAuthPersistence(remember);
+      saveRememberChoice(remember);
       
       // Connecter l'utilisateur avec le lien
       const result = await auth.signInWithEmailLink(email, window.location.href);
