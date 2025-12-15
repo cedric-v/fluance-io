@@ -2673,7 +2673,7 @@ function escapeHtml(text) {
 
 /**
  * Fonction scheduled pour envoyer des emails de nouveaux contenus
- * S'exécute quotidiennement à 9h (Europe/Paris)
+ * S'exécute quotidiennement à 8h (Europe/Paris)
  * Envoie des emails pour :
  * - Produit "21jours" : un email par jour (jours 1-21)
  * - Produit "complet" : un email par semaine (semaines 1-14)
