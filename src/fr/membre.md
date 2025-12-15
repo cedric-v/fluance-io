@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
           id: 'sos-dos-cervicales',
           name: 'SOS dos & cervicales',
           url: 'https://buy.stripe.com/aFadR2bSl7ePaeA8PK8k80p',
-          description: 'OFFRE SPÉCIALE : effacez les tensions de la posture "Ordinateur" 💻. Ajoutez la pratique SOS dos & cervicales (15 min) pour dérouler votre colonne et soulager la nuque après une journée assise. +17 CHF.'
+          description: 'Effacez les tensions de la posture "Ordinateur". Ajoutez la pratique SOS dos & cervicales (15 min) pour dérouler votre colonne et soulager la nuque après une journée assise.'
         }
       ];
       

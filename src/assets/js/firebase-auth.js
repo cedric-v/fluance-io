@@ -8,7 +8,8 @@
 // Voir OBTENIR_CONFIGURATION_FIREBASE.md pour obtenir les vraies clés
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
+// Utiliser var et réutiliser si déjà présent pour éviter les doublons si le script est injecté deux fois
+var firebaseConfig = window.firebaseConfig || {
   apiKey: "AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM",
   authDomain: "fluance-protected-content.firebaseapp.com",
   projectId: "fluance-protected-content",
@@ -17,6 +18,8 @@ const firebaseConfig = {
   appId: "1:173938686776:web:891caf76098a42c3579fcd",
   measurementId: "G-CWPNXDQEYR"
 };
+// Stocker globalement pour les prochains chargements éventuels
+window.firebaseConfig = firebaseConfig;
 
 // Initialiser Firebase (compat mode pour compatibilité avec l'existant)
 if (typeof firebase === 'undefined') {
