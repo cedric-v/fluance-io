@@ -2846,32 +2846,52 @@ exports.sendNewContentEmails = onSchedule(
                   let emailHtml;
                   const isBonusDay = currentDay === 22;
 
+                  let textIntro;
+
                   if (!isBonusDay) {
-                    emailSubject = `Jour ${currentDay} de votre défi 21 jours - ${contentData.title || 'Nouveau contenu disponible'}`;
+                    emailSubject = `Jour ${currentDay} de votre defi 21 jours - ` +
+                      `${contentData.title || 'Nouveau contenu disponible'}`;
+
                     emailHtml = loadEmailTemplate('nouveau-contenu-21jours', {
                       day: currentDay,
                       title: contentData.title || 'Nouveau contenu',
                     });
+
+                    textIntro =
+                      `Jour ${currentDay} de votre defi 21 jours - ` +
+                      `${contentData.title || 'Nouveau contenu disponible'}`;
                   } else {
                     // Jour 22 : bonus final + teasing pour l'approche complète
-                    emailSubject = `Bonus de votre défi 21 jours - ${contentData.title || '3 minutes pour soulager votre dos'}`;
-                    emailHtml = `
-                      <p>Bonjour${firstName ? ' ' + firstName : ''},</p>
-                      <p>Voici le <strong>bonus</strong> de votre défi <strong>21 jours pour remettre du mouvement</strong>.</p>
-                      <p>Offrez-vous encore quelques minutes aujourd'hui pour intégrer ce que vous avez exploré ces dernières semaines.</p>
-                      <p>Demain, je vous enverrai un email pour vous montrer comment <strong>continuer sur votre lancée</strong> avec l'<strong>approche Fluance complète</strong>, qui vous propose une nouvelle mini-série de pratiques chaque semaine.</p>
-                      <p>Pour l'instant, profitez pleinement de ce bonus&nbsp;:</p>
-                      <p><a href="https://fluance.io/membre/">Accéder à votre bonus dans votre espace membre</a></p>
-                    `;
+                    const bonusTitle =
+                      contentData.title || '3 minutes pour soulager votre dos';
+
+                    emailSubject =
+                      `Bonus de votre defi 21 jours - ${bonusTitle}`;
+
+                    const bonusNamePart = firstName ? ` ${firstName}` : '';
+                    emailHtml =
+                      '<p>Bonjour' + bonusNamePart + ',</p>' +
+                      '<p>Voici le <strong>bonus</strong> de votre defi ' +
+                      '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                      '<p>Offrez-vous encore quelques minutes aujourd\'hui pour ' +
+                      'integrer ce que vous avez explore ces dernieres semaines.</p>' +
+                      '<p>Demain, je vous enverrai un email pour vous montrer ' +
+                      'comment <strong>continuer sur votre lancee</strong> avec ' +
+                      'l\'<strong>approche Fluance complete</strong>, qui vous ' +
+                      'propose une nouvelle mini-serie de pratiques chaque semaine.</p>' +
+                      '<p>Pour l\'instant, profitez pleinement de ce bonus :</p>' +
+                      '<p><a href="https://fluance.io/membre/">' +
+                      'Acceder a votre bonus dans votre espace membre</a></p>';
+
+                    textIntro =
+                      `Bonus de votre defi 21 jours - ${bonusTitle}`;
                   }
 
                   await sendMailjetEmail(
                       email,
                       emailSubject,
                       emailHtml,
-                      `${!isBonusDay
-                        ? `Jour ${currentDay} de votre défi 21 jours - ${contentData.title || 'Nouveau contenu disponible'}`
-                        : `Bonus de votre défi 21 jours - ${contentData.title || '3 minutes pour soulager votre dos'}`}\n\nAccédez à votre contenu : https://fluance.io/membre/`,
+                      `${textIntro}\n\nAccedez a votre contenu : https://fluance.io/membre/`,
                       mailjetApiKey,
                       mailjetApiSecret,
                       'support@actu.fluance.io',
@@ -2911,77 +2931,138 @@ exports.sendNewContentEmails = onSchedule(
                       let emailText;
 
                       if (daysAfterEnd === 1) {
-                        emailSubject = 'Et maintenant, comment continuer sur votre lancée ?';
-                        emailHtml = `
-                          <p>Bonjour${namePart},</p>
-                          <p>Félicitations pour avoir terminé le défi <strong>21 jours pour remettre du mouvement</strong> !</p>
-                          <p>Vous avez déjà posé des bases importantes pour votre corps : plus de mobilité, plus de conscience, plus de respiration.</p>
-                          <p>La question maintenant : <strong>comment garder cet élan</strong> dans la durée ?</p>
-                          <p>L'<strong>approche Fluance complète</strong> vous propose une nouvelle mini-série de pratiques chaque semaine, toujours courtes, pour continuer à entretenir votre dos, vos épaules et votre énergie.</p>
-                          <p>Découvrez la suite naturelle de votre parcours :</p>
-                          <p><a href="${completUrl}">Découvrir l'approche Fluance complète</a></p>
-                        `;
-                        emailText =
-`Bonjour${namePart},
+                        emailSubject =
+                          'Et maintenant, comment continuer sur votre lancee ?';
 
-Félicitations pour avoir terminé le défi "21 jours pour remettre du mouvement" !
+                        emailHtml =
+                          '<p>Bonjour' + namePart + ',</p>' +
+                          '<p>Felicitations pour avoir termine le defi ' +
+                          '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                          '<p>Vous avez deja pose des bases importantes pour ' +
+                          'votre corps : plus de mobilite, plus de conscience, ' +
+                          'plus de respiration.</p>' +
+                          '<p>La question maintenant : <strong>comment garder ' +
+                          'cet elan</strong> dans la duree ?</p>' +
+                          '<p>L\'<strong>approche Fluance complete</strong> ' +
+                          'vous propose une nouvelle mini-serie de pratiques ' +
+                          'chaque semaine, toujours courtes, pour continuer a ' +
+                          'entretenir votre dos, vos epaules et votre energie.</p>' +
+                          '<p>Decouvrez la suite naturelle de votre parcours :</p>' +
+                          '<p><a href="' + completUrl + '">' +
+                          'Decouvrir l\'approche Fluance complete</a></p>';
 
-Vous avez posé des bases importantes pour votre corps : plus de mobilité, plus de conscience, plus de respiration.
-
-La question maintenant : comment garder cet élan dans la durée ?
-
-L'approche Fluance complète vous propose une nouvelle mini-série de pratiques chaque semaine, toujours courtes, pour continuer à entretenir votre dos, vos épaules et votre énergie.
-
-Découvrez la suite naturelle de votre parcours :
-${completUrl}
-`;
+                        emailText = [
+                          `Bonjour${namePart},`,
+                          '',
+                          'Felicitations pour avoir termine le defi ' +
+                            '"21 jours pour remettre du mouvement".',
+                          '',
+                          'Vous avez pose des bases importantes pour votre ' +
+                            'corps : plus de mobilite, plus de conscience, ' +
+                            'plus de respiration.',
+                          '',
+                          'La question maintenant : comment garder cet elan ' +
+                            'dans la duree ?',
+                          '',
+                          'L\'approche Fluance complete vous propose une ' +
+                            'nouvelle mini-serie de pratiques chaque semaine, ' +
+                            'toujours courtes, pour continuer a entretenir ' +
+                            'votre dos, vos epaules et votre energie.',
+                          '',
+                          'Decouvrez la suite naturelle de votre parcours :',
+                          completUrl,
+                        ].join('\n');
                       } else if (daysAfterEnd === 4) {
-                        emailSubject = 'Vous aimeriez continuer… mais vous hésitez ?';
-                        emailHtml = `
-                          <p>Bonjour${namePart},</p>
-                          <p>Vous avez déjà montré que vous pouviez vous offrir quelques minutes par jour pour votre corps.</p>
-                          <p>Peut-être que vous hésitez à continuer : manque de temps, peur de ne pas “tenir”, doute sur l'utilité sur le long terme…</p>
-                          <p>Avec l'<strong>approche Fluance complète</strong>, vous recevez chaque semaine une nouvelle mini-série. Les séances restent simples, courtes, et pensées pour s'intégrer à un quotidien chargé.</p>
-                          <p>Vous n'avez pas besoin d'être plus discipliné(e) : vous avez déjà commencé. Il s'agit juste de continuer à petits pas.</p>
-                          <p>Pour voir comment cela peut soutenir votre corps dans les prochaines semaines :</p>
-                          <p><a href="${completUrl}">Voir l'approche Fluance complète</a></p>
-                        `;
-                        emailText =
-`Bonjour${namePart},
+                        emailSubject =
+                          'Vous aimeriez continuer... mais vous hesitez ?';
 
-Vous avez déjà montré que vous pouviez vous offrir quelques minutes par jour pour votre corps.
+                        emailHtml =
+                          '<p>Bonjour' + namePart + ',</p>' +
+                          '<p>Vous avez deja montre que vous pouviez vous ' +
+                          'offrir quelques minutes par jour pour votre corps.</p>' +
+                          '<p>Peut-etre que vous hesitez a continuer : manque ' +
+                          'de temps, peur de ne pas tenir, doute sur ' +
+                          'l\'utilite sur le long terme...</p>' +
+                          '<p>Avec l\'<strong>approche Fluance complete</strong>, ' +
+                          'vous recevez chaque semaine une nouvelle mini-serie. ' +
+                          'Les seances restent simples, courtes, et pensees ' +
+                          'pour s\'integrer a un quotidien charge.</p>' +
+                          '<p>Vous n\'avez pas besoin d\'etre plus ' +
+                          'discipline(e) : vous avez deja commence. Il s\'agit ' +
+                          'juste de continuer a petits pas.</p>' +
+                          '<p>Pour voir comment cela peut soutenir votre corps ' +
+                          'dans les prochaines semaines :</p>' +
+                          '<p><a href="' + completUrl + '">' +
+                          'Voir l\'approche Fluance complete</a></p>';
 
-Vous hésitez peut-être à continuer : manque de temps, peur de ne pas tenir, doute sur l'utilité sur le long terme.
-
-Avec l'approche Fluance complète, vous recevez chaque semaine une nouvelle mini-série. Les séances restent simples, courtes, et pensées pour s'intégrer à un quotidien chargé.
-
-Vous n'avez pas besoin d'être plus discipliné(e) : vous avez déjà commencé. Il s'agit juste de continuer à petits pas.
-
-Pour voir comment cela peut soutenir votre corps dans les prochaines semaines :
-${completUrl}
-`;
+                        emailText = [
+                          `Bonjour${namePart},`,
+                          '',
+                          'Vous avez deja montre que vous pouviez vous offrir ' +
+                            'quelques minutes par jour pour votre corps.',
+                          '',
+                          'Vous hesitez peut-etre a continuer : manque de ' +
+                            'temps, peur de ne pas tenir, doute sur ' +
+                            'l\'utilite sur le long terme.',
+                          '',
+                          'Avec l\'approche Fluance complete, vous recevez ' +
+                            'chaque semaine une nouvelle mini-serie. Les ' +
+                            'seances restent simples, courtes, et pensees ' +
+                            'pour s\'integrer a un quotidien charge.',
+                          '',
+                          'Vous n\'avez pas besoin d\'etre plus discipline(e) : ' +
+                            'vous avez deja commence. Il s\'agit juste de ' +
+                            'continuer a petits pas.',
+                          '',
+                          'Pour voir comment cela peut soutenir votre corps ' +
+                            'dans les prochaines semaines :',
+                          completUrl,
+                        ].join('\n');
                       } else {
-                        emailSubject = 'Dernier rappel pour continuer avec l’approche Fluance complète';
-                        emailHtml = `
-                          <p>Bonjour${namePart},</p>
-                          <p>Il y a quelques jours, vous avez terminé le défi <strong>21 jours pour remettre du mouvement</strong>.</p>
-                          <p>Comment se sent votre corps aujourd'hui ? Et comment aimeriez-vous qu'il se sente dans 3 ou 6 mois ?</p>
-                          <p>Si vous souhaitez garder cet élan, l'<strong>approche Fluance complète</strong> peut devenir votre rituel hebdomadaire : une nouvelle mini-série de pratiques chaque semaine, pour continuer à délier, renforcer et apaiser.</p>
-                          <p>Ceci est un dernier rappel doux : si c’est le bon moment pour vous, vous pouvez rejoindre l’approche complète ici :</p>
-                          <p><a href="${completUrl}">Rejoindre l'approche Fluance complète</a></p>
-                        `;
-                        emailText =
-`Bonjour${namePart},
+                        emailSubject =
+                          'Dernier rappel pour continuer avec ' +
+                          'l\'approche Fluance complete';
 
-Il y a quelques jours, vous avez terminé le défi "21 jours pour remettre du mouvement".
+                        emailHtml =
+                          '<p>Bonjour' + namePart + ',</p>' +
+                          '<p>Il y a quelques jours, vous avez termine le ' +
+                          'defi <strong>21 jours pour remettre du mouvement' +
+                          '</strong>.</p>' +
+                          '<p>Comment se sent votre corps aujourd\'hui ? Et ' +
+                          'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
+                          '6 mois ?</p>' +
+                          '<p>Si vous souhaitez garder cet elan, ' +
+                          'l\'<strong>approche Fluance complete</strong> peut ' +
+                          'devenir votre rituel hebdomadaire : une nouvelle ' +
+                          'mini-serie de pratiques chaque semaine, pour ' +
+                          'continuer a delier, renforcer et apaiser.</p>' +
+                          '<p>Ceci est un dernier rappel doux : si c\'est le ' +
+                          'bon moment pour vous, vous pouvez rejoindre ' +
+                          'l\'approche complete ici :</p>' +
+                          '<p><a href="' + completUrl + '">' +
+                          'Rejoindre l\'approche Fluance complete</a></p>';
 
-Comment se sent votre corps aujourd'hui ? Et comment aimeriez-vous qu'il se sente dans 3 ou 6 mois ?
-
-Si vous souhaitez garder cet élan, l'approche Fluance complète peut devenir votre rituel hebdomadaire : une nouvelle mini-série de pratiques chaque semaine, pour continuer à délier, renforcer et apaiser.
-
-Ceci est un dernier rappel doux : si c’est le bon moment pour vous, vous pouvez rejoindre l’approche complète ici :
-${completUrl}
-`;
+                        emailText = [
+                          `Bonjour${namePart},`,
+                          '',
+                          'Il y a quelques jours, vous avez termine le defi ' +
+                            '"21 jours pour remettre du mouvement".',
+                          '',
+                          'Comment se sent votre corps aujourd\'hui ? Et ' +
+                            'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
+                            '6 mois ?',
+                          '',
+                          'Si vous souhaitez garder cet elan, l\'approche ' +
+                            'Fluance complete peut devenir votre rituel ' +
+                            'hebdomadaire : une nouvelle mini-serie de ' +
+                            'pratiques chaque semaine, pour continuer a ' +
+                            'delier, renforcer et apaiser.',
+                          '',
+                          'Ceci est un dernier rappel doux : si c\'est le ' +
+                            'bon moment pour vous, vous pouvez rejoindre ' +
+                            'l\'approche complete ici :',
+                          completUrl,
+                        ].join('\n');
                       }
 
                       await sendMailjetEmail(
