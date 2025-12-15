@@ -449,21 +449,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Mais si calculatedWeek dépasse maxWeek, on limite à maxWeek
             const currentWeek = Math.min(calculatedWeek, maxWeek > 0 ? maxWeek : 1);
             
-            // Contenu de bienvenue (si défini) : toujours accessible et affiché en premier
+            // Contenu de bienvenue (si défini)
             const welcomeContent = userProduct.contents.find(c => c.type === 'welcome' || c.id === 'complet-bienvenue');
 
             contentHTML += `
               <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
-                ${welcomeContent ? `
-                <div class="mb-8" id="welcome-content-${prod.id}">
-                  <h2 class="text-2xl font-semibold mb-4">${welcomeContent.title}</h2>
-                  <div class="protected-content" data-content-id="${welcomeContent.id}">
-                    <div class="bg-gray-100 rounded-lg p-8 text-center">
-                      <p class="text-gray-600 mb-4">Chargement du contenu...</p>
-                    </div>
-                  </div>
-                </div>
-                ` : ''}
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                   <p class="text-blue-800 font-semibold">Vous êtes à la semaine ${currentWeek}</p>
                   <p class="text-blue-700 text-sm mt-1">Un nouveau contenu se débloque chaque semaine.</p>
@@ -473,18 +463,24 @@ document.addEventListener('DOMContentLoaded', function() {
                   // Filtrer les contenus de type \"semaine\" (exclure le contenu de bienvenue)
                   const weeklyContents = userProduct.contents.filter(c => c.type !== 'welcome');
 
-                  // Trouver le contenu de la semaine actuelle
+                  // Trouver le contenu affiché dans la zone principale
                   let currentWeekContent = null;
-                  if (currentWeek === 1) {
-                    currentWeekContent = weeklyContents.find(c => c.week === 0); // Bonus
-                  } else if (currentWeek <= 15) {
-                    currentWeekContent = weeklyContents.find(c => c.week === currentWeek - 1);
-                  }
-                  
-                  if (!currentWeekContent) {
-                    currentWeekContent = weeklyContents
-                      .filter(c => c.isAccessible)
-                      .sort((a, b) => (b.week || 0) - (a.week || 0))[0];
+
+                  // Lors de la première semaine, afficher d'abord le contenu de bienvenue s'il existe
+                  if (welcomeContent && weeksSinceStart === 0) {
+                    currentWeekContent = welcomeContent;
+                  } else {
+                    if (currentWeek === 1) {
+                      currentWeekContent = weeklyContents.find(c => c.week === 0); // Bonus
+                    } else if (currentWeek <= 15) {
+                      currentWeekContent = weeklyContents.find(c => c.week === currentWeek - 1);
+                    }
+                    
+                    if (!currentWeekContent) {
+                      currentWeekContent = weeklyContents
+                        .filter(c => c.isAccessible)
+                        .sort((a, b) => (b.week || 0) - (a.week || 0))[0];
+                    }
                   }
                   
                   return currentWeekContent ? `
@@ -502,10 +498,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="border-t pt-6 mt-6">
                   <h3 class="text-lg font-semibold mb-4">Navigation des semaines</h3>
                   <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                    ${userProduct.contents
-                      .filter(content => content.type !== 'welcome')
+                    ${[welcomeContent, ...userProduct.contents.filter(content => content.type !== 'welcome')]
+                      .filter(Boolean)
                       .map(content => {
-                      const weekLabel = content.week === 0 ? 'Bonus' : `Semaine ${content.week}`;
+                      const weekLabel = content.type === 'welcome'
+                        ? 'Bienvenue'
+                        : content.week === 0
+                          ? 'Bonus'
+                          : `Semaine ${content.week}`;
                       const isLocked = !content.isAccessible;
                       
                       return `
