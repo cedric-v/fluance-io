@@ -2767,6 +2767,13 @@ exports.sendNewContentEmails = onSchedule(
           }
 
           const products = userData.products || [];
+          const hasComplet = products.some((p) => p && p.name === 'complet');
+          const firstName =
+            userData.firstName ||
+            userData.firstname ||
+            userData.prenom ||
+            (typeof userData.name === 'string' ? userData.name.split(' ')[0] : '') ||
+            '';
 
           // Si products est vide mais product existe (ancien format), migrer
           if (products.length === 0 && userData.product) {
@@ -2796,10 +2803,10 @@ exports.sendNewContentEmails = onSchedule(
 
             try {
               if (productName === '21jours') {
-                // Produit 21jours : email par jour (jours 1-21)
+                // Produit 21jours : email par jour (jours 1-21) + bonus jour 22
                 const currentDay = daysSinceStart + 1; // Jour 1 = premier jour après achat
 
-                if (currentDay >= 1 && currentDay <= 21) {
+                if (currentDay >= 1 && currentDay <= 22) {
                   // Vérifier si l'email a déjà été envoyé pour ce jour
                   const emailSentDocId = `${userId}_21jours_day_${currentDay}`;
                   const emailSentDoc = await db.collection('contentEmailsSent')
@@ -2835,17 +2842,36 @@ exports.sendNewContentEmails = onSchedule(
                   }
 
                   // Envoyer l'email
-                  const emailSubject = `Jour ${currentDay} de votre défi 21 jours - ${contentData.title || 'Nouveau contenu disponible'}`;
-                  const emailHtml = loadEmailTemplate('nouveau-contenu-21jours', {
-                    day: currentDay,
-                    title: contentData.title || 'Nouveau contenu',
-                  });
+                  let emailSubject;
+                  let emailHtml;
+                  const isBonusDay = currentDay === 22;
+
+                  if (!isBonusDay) {
+                    emailSubject = `Jour ${currentDay} de votre défi 21 jours - ${contentData.title || 'Nouveau contenu disponible'}`;
+                    emailHtml = loadEmailTemplate('nouveau-contenu-21jours', {
+                      day: currentDay,
+                      title: contentData.title || 'Nouveau contenu',
+                    });
+                  } else {
+                    // Jour 22 : bonus final + teasing pour l'approche complète
+                    emailSubject = `Bonus de votre défi 21 jours - ${contentData.title || '3 minutes pour soulager votre dos'}`;
+                    emailHtml = `
+                      <p>Bonjour${firstName ? ' ' + firstName : ''},</p>
+                      <p>Voici le <strong>bonus</strong> de votre défi <strong>21 jours pour remettre du mouvement</strong>.</p>
+                      <p>Offrez-vous encore quelques minutes aujourd'hui pour intégrer ce que vous avez exploré ces dernières semaines.</p>
+                      <p>Demain, je vous enverrai un email pour vous montrer comment <strong>continuer sur votre lancée</strong> avec l'<strong>approche Fluance complète</strong>, qui vous propose une nouvelle mini-série de pratiques chaque semaine.</p>
+                      <p>Pour l'instant, profitez pleinement de ce bonus&nbsp;:</p>
+                      <p><a href="https://fluance.io/membre/">Accéder à votre bonus dans votre espace membre</a></p>
+                    `;
+                  }
 
                   await sendMailjetEmail(
                       email,
                       emailSubject,
                       emailHtml,
-                      `Jour ${currentDay} de votre défi 21 jours - ${contentData.title || 'Nouveau contenu disponible'}\n\nAccédez à votre contenu : https://fluance.io/membre/`,
+                      `${!isBonusDay
+                        ? `Jour ${currentDay} de votre défi 21 jours - ${contentData.title || 'Nouveau contenu disponible'}`
+                        : `Bonus de votre défi 21 jours - ${contentData.title || '3 minutes pour soulager votre dos'}`}\n\nAccédez à votre contenu : https://fluance.io/membre/`,
                       mailjetApiKey,
                       mailjetApiSecret,
                       'support@actu.fluance.io',
@@ -2863,6 +2889,124 @@ exports.sendNewContentEmails = onSchedule(
 
                   console.log(`✅ Email sent to ${email} for 21jours day ${currentDay}`);
                   emailsSent++;
+                }
+
+                // Après le bonus (jour 22) : séquence d'emails pour inviter à l'approche complète
+                if (!hasComplet && currentDay > 22) {
+                  const daysAfterEnd = currentDay - 22; // J+1 = 1, J+4 = 4, J+8 = 8
+                  const sequenceDays = [1, 4, 8];
+
+                  if (sequenceDays.includes(daysAfterEnd)) {
+                    const emailSentDocId = `${userId}_21jours_to_complet_day_${daysAfterEnd}`;
+                    const emailSentDoc = await db.collection('contentEmailsSent')
+                        .doc(emailSentDocId).get();
+
+                    if (!emailSentDoc.exists) {
+                      const baseUrl = 'https://fluance.io';
+                      const completUrl = `${baseUrl}/cours-en-ligne/approche-fluance-complete/`;
+                      const namePart = firstName ? ` ${firstName}` : '';
+
+                      let emailSubject;
+                      let emailHtml;
+                      let emailText;
+
+                      if (daysAfterEnd === 1) {
+                        emailSubject = 'Et maintenant, comment continuer sur votre lancée ?';
+                        emailHtml = `
+                          <p>Bonjour${namePart},</p>
+                          <p>Félicitations pour avoir terminé le défi <strong>21 jours pour remettre du mouvement</strong> !</p>
+                          <p>Vous avez déjà posé des bases importantes pour votre corps : plus de mobilité, plus de conscience, plus de respiration.</p>
+                          <p>La question maintenant : <strong>comment garder cet élan</strong> dans la durée ?</p>
+                          <p>L'<strong>approche Fluance complète</strong> vous propose une nouvelle mini-série de pratiques chaque semaine, toujours courtes, pour continuer à entretenir votre dos, vos épaules et votre énergie.</p>
+                          <p>Découvrez la suite naturelle de votre parcours :</p>
+                          <p><a href="${completUrl}">Découvrir l'approche Fluance complète</a></p>
+                        `;
+                        emailText =
+`Bonjour${namePart},
+
+Félicitations pour avoir terminé le défi "21 jours pour remettre du mouvement" !
+
+Vous avez posé des bases importantes pour votre corps : plus de mobilité, plus de conscience, plus de respiration.
+
+La question maintenant : comment garder cet élan dans la durée ?
+
+L'approche Fluance complète vous propose une nouvelle mini-série de pratiques chaque semaine, toujours courtes, pour continuer à entretenir votre dos, vos épaules et votre énergie.
+
+Découvrez la suite naturelle de votre parcours :
+${completUrl}
+`;
+                      } else if (daysAfterEnd === 4) {
+                        emailSubject = 'Vous aimeriez continuer… mais vous hésitez ?';
+                        emailHtml = `
+                          <p>Bonjour${namePart},</p>
+                          <p>Vous avez déjà montré que vous pouviez vous offrir quelques minutes par jour pour votre corps.</p>
+                          <p>Peut-être que vous hésitez à continuer : manque de temps, peur de ne pas “tenir”, doute sur l'utilité sur le long terme…</p>
+                          <p>Avec l'<strong>approche Fluance complète</strong>, vous recevez chaque semaine une nouvelle mini-série. Les séances restent simples, courtes, et pensées pour s'intégrer à un quotidien chargé.</p>
+                          <p>Vous n'avez pas besoin d'être plus discipliné(e) : vous avez déjà commencé. Il s'agit juste de continuer à petits pas.</p>
+                          <p>Pour voir comment cela peut soutenir votre corps dans les prochaines semaines :</p>
+                          <p><a href="${completUrl}">Voir l'approche Fluance complète</a></p>
+                        `;
+                        emailText =
+`Bonjour${namePart},
+
+Vous avez déjà montré que vous pouviez vous offrir quelques minutes par jour pour votre corps.
+
+Vous hésitez peut-être à continuer : manque de temps, peur de ne pas tenir, doute sur l'utilité sur le long terme.
+
+Avec l'approche Fluance complète, vous recevez chaque semaine une nouvelle mini-série. Les séances restent simples, courtes, et pensées pour s'intégrer à un quotidien chargé.
+
+Vous n'avez pas besoin d'être plus discipliné(e) : vous avez déjà commencé. Il s'agit juste de continuer à petits pas.
+
+Pour voir comment cela peut soutenir votre corps dans les prochaines semaines :
+${completUrl}
+`;
+                      } else {
+                        emailSubject = 'Dernier rappel pour continuer avec l’approche Fluance complète';
+                        emailHtml = `
+                          <p>Bonjour${namePart},</p>
+                          <p>Il y a quelques jours, vous avez terminé le défi <strong>21 jours pour remettre du mouvement</strong>.</p>
+                          <p>Comment se sent votre corps aujourd'hui ? Et comment aimeriez-vous qu'il se sente dans 3 ou 6 mois ?</p>
+                          <p>Si vous souhaitez garder cet élan, l'<strong>approche Fluance complète</strong> peut devenir votre rituel hebdomadaire : une nouvelle mini-série de pratiques chaque semaine, pour continuer à délier, renforcer et apaiser.</p>
+                          <p>Ceci est un dernier rappel doux : si c’est le bon moment pour vous, vous pouvez rejoindre l’approche complète ici :</p>
+                          <p><a href="${completUrl}">Rejoindre l'approche Fluance complète</a></p>
+                        `;
+                        emailText =
+`Bonjour${namePart},
+
+Il y a quelques jours, vous avez terminé le défi "21 jours pour remettre du mouvement".
+
+Comment se sent votre corps aujourd'hui ? Et comment aimeriez-vous qu'il se sente dans 3 ou 6 mois ?
+
+Si vous souhaitez garder cet élan, l'approche Fluance complète peut devenir votre rituel hebdomadaire : une nouvelle mini-série de pratiques chaque semaine, pour continuer à délier, renforcer et apaiser.
+
+Ceci est un dernier rappel doux : si c’est le bon moment pour vous, vous pouvez rejoindre l’approche complète ici :
+${completUrl}
+`;
+                      }
+
+                      await sendMailjetEmail(
+                          email,
+                          emailSubject,
+                          emailHtml,
+                          emailText,
+                          mailjetApiKey,
+                          mailjetApiSecret,
+                          'fluance@actu.fluance.io',
+                          'Cédric de Fluance',
+                      );
+
+                      await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                        userId: userId,
+                        email: email,
+                        type: 'marketing_21jours_to_complet',
+                        day: daysAfterEnd,
+                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                      });
+
+                      console.log(`✅ Post-21jours email (J+${daysAfterEnd}) sent to ${email} for approche complète`);
+                      emailsSent++;
+                    }
+                  }
                 }
               } else if (productName === 'complet') {
                 // Produit complet : email par semaine (semaines 1-14)
