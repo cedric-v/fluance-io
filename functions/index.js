@@ -31,6 +31,9 @@ admin.initializeApp();
 const db = admin.firestore();
 const auth = admin.auth();
 
+// Price ID du produit cross-sell "SOS dos & cervicales"
+const STRIPE_PRICE_ID_SOS_DOS_CERVICALES = 'price_1SeWdF2Esx6PN6y1XlbpIObG';
+
 // Configuration Mailjet (via secrets Firebase - méthode moderne)
 // ⚠️ IMPORTANT : Les secrets sont configurés via Firebase CLI :
 // echo -n "votre_cle" | firebase functions:secrets:set MAILJET_API_KEY
@@ -641,6 +644,54 @@ exports.webhookStripe = onRequest(
           console.log(
               `Token created and email sent to ${customerEmail} for product ${product}, amount: ${amountCHF} CHF`,
           );
+
+          // Vérifier si le produit cross-sell "SOS dos & cervicales" a été acheté
+          try {
+            // Récupérer les line_items de la session Stripe pour détecter les cross-sells
+            let hasCrossSell = false;
+            if (process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
+              try {
+                const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+                // Récupérer la session complète avec line_items
+                const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+                  expand: ['line_items'],
+                });
+
+                // Vérifier si le price_id du cross-sell est présent dans les line_items
+                if (fullSession.line_items && fullSession.line_items.data) {
+                  for (const lineItem of fullSession.line_items.data) {
+                    if (lineItem.price && lineItem.price.id === STRIPE_PRICE_ID_SOS_DOS_CERVICALES) {
+                      hasCrossSell = true;
+                      console.log(`Cross-sell "SOS dos & cervicales" détecté pour ${customerEmail}`);
+                      break;
+                    }
+                  }
+                }
+              } catch (stripeError) {
+                console.warn('Error retrieving Stripe session line_items:', stripeError.message);
+                // Si on ne peut pas récupérer les line_items, on continue sans le cross-sell
+              }
+            }
+
+            // Si le cross-sell a été détecté, créer un token pour ce produit
+            if (hasCrossSell) {
+              await createTokenAndSendEmail(
+                  customerEmail,
+                  'sos-dos-cervicales',
+                  30,
+                  process.env.MAILJET_API_KEY,
+                  process.env.MAILJET_API_SECRET,
+                  17, // Montant du cross-sell en CHF
+              );
+              console.log(
+                  `Token created and email sent to ${customerEmail} for cross-sell product sos-dos-cervicales`,
+              );
+            }
+          } catch (crossSellError) {
+            // Ne pas faire échouer le webhook si le traitement du cross-sell échoue
+            console.error('Error processing cross-sell:', crossSellError);
+          }
+
           return res.status(200).json({received: true});
         } catch (error) {
           console.error('Error creating token:', error);
