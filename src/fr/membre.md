@@ -502,7 +502,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="border-t pt-6 mt-6">
                   <h3 class="text-lg font-semibold mb-4">Navigation des semaines</h3>
                   <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                    ${weeklyContents.map(content => {
+                    ${userProduct.contents
+                      .filter(content => content.type !== 'welcome')
+                      .map(content => {
                       const weekLabel = content.week === 0 ? 'Bonus' : `Semaine ${content.week}`;
                       const isLocked = !content.isAccessible;
                       
