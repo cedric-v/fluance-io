@@ -580,22 +580,25 @@ exports.webhookStripe = onRequest(
       // Gérer les événements de paiement réussi
       if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
         const session = event.data.object;
-        const customerEmail = session.customer_details?.email || session.customer_email;
         // amount et currency ne sont plus utilisés car on utilise uniquement les métadonnées
         // const amount = session.amount_total || session.amount;
         // const currency = session.currency || 'chf';
 
-        if (!customerEmail) {
-          console.error('No email found in Stripe event');
-          return res.status(400).send('No email found');
-        }
-
-        // Vérifier si ce paiement est destiné au nouveau système (Firebase)
-        // ⚠️ IMPORTANT : Pas de fallback - seuls les paiements avec metadata.system = 'firebase' sont traités
+        // Vérifier d'abord si ce paiement est destiné au système Firebase.
+        // ⚠️ IMPORTANT : Pas de fallback - seuls les paiements avec metadata.system = 'firebase' sont traités.
         const system = session.metadata?.system;
         if (system !== 'firebase') {
-          console.log(`Paiement Stripe ignoré - système: ${system || 'non défini'} (pas pour Firebase)`);
+          console.log(
+              `Paiement Stripe ignoré - système: ${system || 'non défini'} (pas pour Firebase)`,
+          );
           return res.status(200).json({received: true, ignored: true});
+        }
+
+        // Ensuite seulement, exiger la présence de l'email (spécifique aux paiements Fluance).
+        const customerEmail = session.customer_details?.email || session.customer_email;
+        if (!customerEmail) {
+          console.error('No email found in Stripe event (Firebase system)');
+          return res.status(400).send('No email found');
         }
 
         // Déterminer le produit depuis les métadonnées uniquement (pas de fallback)
