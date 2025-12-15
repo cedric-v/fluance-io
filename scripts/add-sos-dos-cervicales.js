@@ -23,6 +23,7 @@ async function main() {
     product: 'sos-dos-cervicales',
     title: 'SOS dos & cervicales',
     content: contentHtml,
+    commentText: 'Comment se passe cette pratique pour vous ? Bienfait, questions ?',
     createdAt: now,
     updatedAt: now,
   });

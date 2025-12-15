@@ -980,6 +980,7 @@ async function loadProtectedContent(contentId = null) {
             id: doc.id,
             title: data.title || doc.id,
             content: data.content || '',
+            type: data.type || null,
             day: dayNumber,
             week: weekNumber,
             isAccessible: isAccessible,
@@ -1137,8 +1138,13 @@ async function displayProtectedContent(contentId, containerElement) {
     // Afficher le contenu HTML
     containerElement.innerHTML = result.content;
     
-    // Pour le produit "21jours", ajouter automatiquement la question et la section de commentaires
-    if (result.product === '21jours' && result.day !== undefined) {
+    // Ajouter automatiquement une section de commentaires
+    // - pour chaque jour du défi "21jours" (jour défini)
+    // - pour chaque contenu de l'approche "complet"
+    // - pour le contenu SOS dos & cervicales
+    if ((result.product === '21jours' && result.day !== undefined) ||
+        result.product === 'complet' ||
+        result.product === 'sos-dos-cervicales') {
       // Créer un conteneur pour la section de commentaires
       const commentSection = document.createElement('div');
       commentSection.className = 'mt-8 pt-8 border-t border-gray-200';
