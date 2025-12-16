@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h2 class="text-2xl font-semibold text-fluance mb-4">${prod.name}</h2>
                 <p class="text-gray-700 mb-6">${prod.description}</p>
                 <a href="${prod.url}" 
-                   class="inline-block bg-fluance text-white px-8 py-3 rounded-lg hover:bg-fluance/90 transition-colors font-semibold">
+                   class="inline-block bg-fluance text-[#F5F7F6] px-8 py-3 rounded-lg hover:bg-fluance/90 transition-colors font-semibold">
                   ${
                     prod.id === 'complet'
                       ? 'Découvrir et acquérir l\'approche Fluance complète'

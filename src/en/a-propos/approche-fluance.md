@@ -11,10 +11,10 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
   <header class="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] -mt-28 mb-8 overflow-hidden" style="height: 300px;">
     <div class="absolute inset-0 z-0">
       <img src="{{ '/assets/img/cedric-dehors-fluance-reduit.jpeg' | url }}" alt="Cédric in the mountains" class="w-full h-full object-cover object-position-mobile" loading="lazy">
-      <div class="absolute inset-0 bg-linear-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
+      <div class="absolute inset-0" style="background: linear-gradient(to right, transparent, rgba(100, 142, 216, 0.7), rgba(100, 142, 216, 0.9));"></div>
     </div>
     <div class="relative z-10 h-full flex flex-col items-center justify-center px-6 md:px-12 text-center">
-      <h1 class="text-4xl font-semibold text-white drop-shadow-lg">The Fluance Approach</h1>
+      <h1 class="text-4xl font-semibold text-[#F5F7F6] drop-shadow-lg">The Fluance Approach</h1>
     </div>
   </header>
 
@@ -82,13 +82,13 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
 
   <div class="pt-8 mt-8 border-t border-fluance/20">
     <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-      <a href="{{ '/en/a-propos/philosophie/' | relativeUrl }}" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
+      <a href="{{ '/en/a-propos/philosophie/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
         Philosophy
       </a>
-      <a href="{{ '/en/a-propos/histoire-cedric/' | relativeUrl }}" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
+      <a href="{{ '/en/a-propos/histoire-cedric/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
         Cédric's story
       </a>
-      <a href="javascript://" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] text-center" data-w-token="9241cb136525ee5e376e">
+      <a href="javascript://" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center" data-w-token="9241cb136525ee5e376e">
         Receive a practice
       </a>
     </div>

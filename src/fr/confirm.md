@@ -28,7 +28,7 @@ eleventyExcludeFromCollections: true
       </p>
       <p id="success-subtext" class="text-lg text-[#3E3A35]/70"></p>
       <div class="pt-4">
-        <a id="success-cta" href="{{ '/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
+        <a id="success-cta" href="{{ '/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
           <span id="success-cta-text">Accéder aux 2 pratiques offertes</span>
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>

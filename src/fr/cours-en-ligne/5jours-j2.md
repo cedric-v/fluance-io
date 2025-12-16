@@ -42,7 +42,7 @@ permalink: /cours-en-ligne/5jours/j2/
       <form id="comment-form">
         <input type="text" id="name" placeholder="Votre prénom" required="" class="w-full p-3 mb-3 border-2 border-fluance/20 rounded-lg focus:border-fluance focus:outline-hidden text-[#3E3A35]">
         <textarea id="text" placeholder="Votre commentaire" required="" rows="4" class="w-full p-3 mb-3 border-2 border-fluance/20 rounded-lg focus:border-fluance focus:outline-hidden text-[#3E3A35]"></textarea>
-        <button type="submit" class="btn-primary w-full text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A]">Envoyer</button>
+        <button type="submit" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]">Envoyer</button>
       </form>
       <div id="comments-container"></div>
       <div id="pagination-controls" style="margin-top:10px;"></div>

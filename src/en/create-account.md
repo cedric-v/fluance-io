@@ -95,7 +95,7 @@ permalink: /en/create-account/
           <button
             type="button"
             id="create-passkey-btn"
-            class="flex-1 bg-fluance text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-fluance/90 transition-colors"
+            class="flex-1 bg-fluance text-[#F5F7F6] py-2 px-4 rounded-lg text-sm font-semibold hover:bg-fluance/90 transition-colors"
           >
             Create passkey
           </button>
@@ -113,7 +113,7 @@ permalink: /en/create-account/
       <button
         type="submit"
         id="submit-button"
-        class="w-full bg-fluance text-white py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
+        class="w-full bg-fluance text-[#F5F7F6] py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
       >
         <span id="button-text">Create my account</span>
         <span id="button-spinner" class="hidden ml-2">

@@ -91,13 +91,13 @@ permalink: /a-propos/histoire-cedric/
 
   <div class="pt-8 mt-8 border-t border-fluance/20">
     <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-      <a href="{{ '/a-propos/philosophie/' | relativeUrl }}" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
+      <a href="{{ '/a-propos/philosophie/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
         Philosophie
       </a>
-      <a href="{{ '/a-propos/approche-fluance/' | relativeUrl }}" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
+      <a href="{{ '/a-propos/approche-fluance/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
         Approche Fluance
       </a>
-      <a href="javascript://" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] text-center" data-w-token="9241cb136525ee5e376e">
+      <a href="javascript://" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center" data-w-token="9241cb136525ee5e376e">
         Recevoir une pratique
       </a>
     </div>

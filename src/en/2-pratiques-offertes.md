@@ -40,7 +40,7 @@ eleventyExcludeFromCollections: true
         To go much further, discover the next step 👇
       </p>
       <div>
-        <a href="{{ '/en/cours-en-ligne/21-jours-mouvement/' | relativeUrl }}" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center text-center">
+        <a href="{{ '/en/cours-en-ligne/21-jours-mouvement/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center text-center">
           Click here to continue for 21 days
         </a>
       </div>

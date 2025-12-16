@@ -11,7 +11,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
   <div class="absolute inset-0 z-0">
     {% image "assets/img/bienvenue-21-jour-bandeau.jpg", "Welcome to the 21-day journey", "w-full h-full object-cover" %}
     <div class="absolute inset-0 md:hidden" style="background-color: rgba(100, 142, 216, 0.8);"></div>
-    <div class="hidden md:block absolute inset-0 bg-linear-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
+    <div class="hidden md:block absolute inset-0" style="background: linear-gradient(to right, transparent, rgba(100, 142, 216, 0.7), rgba(100, 142, 216, 0.9));"></div>
   </div>
   <div class="relative z-10 max-w-2xl text-[#F5F7F6] space-y-8">
     <div class="space-y-4">
@@ -23,7 +23,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
       </p>
     </div>
     <div class="flex flex-col gap-4">
-      <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
+      <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
         Start the 21-day challenge for 19 CHF / equivalent €
       </a>
       <a href="#learn-more" class="btn-secondary border-[#F5F7F6]/80 text-[#F5F7F6] hover:bg-[#F5F7F6]/10 text-center">
@@ -259,7 +259,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
     </div>
 
     <div class="pt-4 flex justify-center">
-        <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary inline-flex flex-col items-center text-center">
+        <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex flex-col items-center text-center">
           <span>I join this challenge towards a path to a body free of tension</span>
           <span class="text-sm font-normal opacity-90">19 CHF / equivalent €</span>
         </a>
@@ -299,8 +299,8 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
       </div>
     </div>
 
-    <div class="p-8 bg-fluance text-white space-y-4 rounded-2xl border border-fluance/20 shadow-lg">
-      <h2 class="text-2xl font-semibold text-white">TOTAL satisfaction guarantee for 14 days.</h2>
+    <div class="p-8 bg-fluance text-[#F5F7F6] space-y-4 rounded-2xl border border-fluance/20 shadow-lg">
+      <h2 class="text-2xl font-semibold text-[#F5F7F6]">TOTAL satisfaction guarantee for 14 days.</h2>
       <p class="text-lg text-[#3E3A35]">
         A simple email to customer support (support@fluance.io), without justification, is enough to get a refund.
       </p>
@@ -314,7 +314,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
         A <strong>simple, gentle and lively way to regain fluidity and calm</strong>, without trying to fit into a framework.
       </p>
       <div class="pt-4 flex justify-center">
-        <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary inline-flex flex-col items-center text-center">
+        <a href="https://espace.fluance.io/par/21jours/bdc" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex flex-col items-center text-center">
           <span>I join this challenge towards a path to a body free of tension</span>
           <span class="text-sm font-normal opacity-90">19 CHF / equivalent €</span>
         </a>

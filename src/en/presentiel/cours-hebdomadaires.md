@@ -52,7 +52,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-3">Mandatory registration</h3>
-        <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex">
+        <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex">
           View the schedule of upcoming classes and register →
         </a>
       </div>
@@ -100,7 +100,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
     </div>
 
     <div class="text-center pt-6">
-      <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex">View the schedule and register for a session →</a>
+      <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex">View the schedule and register for a session →</a>
     </div>
   </article>
 </section>

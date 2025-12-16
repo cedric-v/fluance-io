@@ -30,7 +30,7 @@ permalink: /accompagnements-individuels/entrepreneurs-independants/
     </p>
 
     <div class="text-center pt-6">
-      <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="btn-primary inline-flex items-center gap-2">En savoir plus <span>→</span></a>
+      <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2">En savoir plus <span>→</span></a>
     </div>
   </article>
 </section>

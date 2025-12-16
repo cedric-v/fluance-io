@@ -40,7 +40,7 @@ permalink: /reinitialiser-mot-de-passe/
       <button
         type="submit"
         id="submit-button"
-        class="w-full bg-fluance text-white py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
+        class="w-full bg-fluance text-[#F5F7F6] py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
       >
         <span id="button-text">Envoyer le lien de réinitialisation</span>
         <span id="button-spinner" class="hidden ml-2">
@@ -96,7 +96,7 @@ permalink: /reinitialiser-mot-de-passe/
       <button
         type="submit"
         id="confirm-submit-button"
-        class="w-full bg-fluance text-white py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
+        class="w-full bg-fluance text-[#F5F7F6] py-3 px-4 rounded-lg font-semibold hover:bg-fluance/90 transition-colors duration-200 flex items-center justify-center"
       >
         <span id="confirm-button-text">Réinitialiser le mot de passe</span>
         <span id="confirm-button-spinner" class="hidden ml-2">

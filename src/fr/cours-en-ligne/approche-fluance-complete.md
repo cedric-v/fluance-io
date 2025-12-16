@@ -10,7 +10,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
 <section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">
   <div class="absolute inset-0 z-0">
     {% image "assets/img/cedric-bord-mer.jpg", "Cédric au bord de la mer", "w-full h-full object-cover" %}
-    <div class="absolute inset-0 bg-linear-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90 md:via-[#648ED8]/70 md:to-[#648ED8]/90"></div>
+    <div class="absolute inset-0" style="background: linear-gradient(to right, transparent, rgba(100, 142, 216, 0.7), rgba(100, 142, 216, 0.9));"></div>
     <div class="absolute inset-0 bg-black/30 md:bg-transparent"></div>
   </div>
   <div class="relative z-10 max-w-2xl text-[#F5F7F6] space-y-8">
@@ -25,7 +25,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="#choisissez-votre-abonnement" class="btn-primary inline-flex items-center gap-2 text-center text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A]">
+      <a href="#choisissez-votre-abonnement" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]">
         <span>Découvrir les 2 formules</span>
         <span>→</span>
       </a>
@@ -80,7 +80,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#3E3A35] text-center mb-6">
             <strong class="text-fluance">Les 14 premiers jours sont offerts</strong>
           </p>
-          <button onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'fr', event)" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6">
             <span>S'abonner mensuellement</span>
             <span>→</span>
           </button>
@@ -94,7 +94,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
     <!-- Option 2: Trimestriel -->
     <div class="section-card p-8 bg-white border-2 border-fluance hover:border-fluance/80 transition-all flex-1 relative">
       <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
-        <span class="bg-fluance text-white px-4 py-1 rounded-full text-sm font-semibold whitespace-nowrap">La plus populaire</span>
+        <span class="bg-fluance text-[#F5F7F6] px-4 py-1 rounded-full text-sm font-semibold whitespace-nowrap">La plus populaire</span>
       </div>
       <div class="space-y-4 pt-6">
         <div class="text-center">
@@ -107,7 +107,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#3E3A35] text-center mb-6">
             <strong class="text-fluance">Les 14 premiers jours sont offerts</strong>
           </p>
-          <button onclick="window.FluancePayment.redirectToStripe('complet', 'trimestriel', 'fr', event)" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'trimestriel', 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6">
             <span>S'abonner trimestriellement</span>
             <span>→</span>
           </button>

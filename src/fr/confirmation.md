@@ -41,7 +41,7 @@ eleventyExcludeFromCollections: true
           Pour l'obtenir, il vous suffit de cliquer sur le lien ci-dessous :
         </p>
         <div class="pt-4">
-          <a href="{{ '/cadeau/' | relativeUrl }}" class="btn-primary inline-flex items-center gap-2 text-center">
+          <a href="{{ '/cadeau/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2 text-center">
             Accéder à mon cadeau de bienvenue : quelques moments ressourçant en nature
             <span>→</span>
           </a>

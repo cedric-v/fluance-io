@@ -43,7 +43,7 @@ permalink: /cours-en-ligne/5jours/inscription/
     </p>
     
     <div class="text-center">
-      <a href="javascript://" data-open-popup-5jours class="btn-primary inline-flex items-center gap-2 text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A]">
+      <a href="javascript://" data-open-popup-5jours class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]">
         <span>Participer et vivre votre première pratique tout de suite</span>
         <span>→</span>
       </a>
@@ -78,7 +78,7 @@ permalink: /cours-en-ligne/5jours/inscription/
     </p>
     
     <div class="text-center pt-4">
-      <a href="javascript://" data-open-popup-5jours class="btn-primary flex flex-col items-center gap-1 text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A]">
+      <a href="javascript://" data-open-popup-5jours class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]">
         <span class="inline-flex items-center gap-2">Je participe maintenant <span>→</span></span>
         <span class="text-sm font-normal opacity-90">Accès immédiat et gratuit</span>
       </a>
@@ -119,7 +119,7 @@ permalink: /cours-en-ligne/5jours/inscription/
     <p class="text-lg text-[#3E3A35]">
       <strong>Cliquez ici pour recevoir la première pratique.</strong>
     </p>
-    <a href="javascript://" data-open-popup-5jours class="btn-primary inline-flex items-center gap-2 text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A]">
+    <a href="javascript://" data-open-popup-5jours class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]">
       <span>Je participe maintenant</span>
       <span>→</span>
     </a>

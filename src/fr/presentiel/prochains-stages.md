@@ -34,7 +34,7 @@ permalink: /presentiel/prochains-stages/
     </div>
 
     <div class="text-center pt-6">
-      <a href="{{ '/contact/' | relativeUrl }}" class="btn-primary inline-flex items-center gap-2">Ecrire pour être mis sur la liste d'attente <span>→</span></a>
+      <a href="{{ '/contact/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2">Ecrire pour être mis sur la liste d'attente <span>→</span></a>
     </div>
   </article>
 </section>

@@ -20,7 +20,7 @@ permalink: /connexion/
           Accédez à votre espace de formation en ligne pour suivre vos cours et pratiques.
         </p>
         <div class="text-center">
-          <a href="/connexion-membre/" class="btn-primary inline-flex items-center gap-2">Se connecter <span>→</span></a>
+          <a href="/connexion-membre/" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2">Se connecter <span>→</span></a>
         </div>
       </div>
 
@@ -31,7 +31,7 @@ permalink: /connexion/
           Regardez le planning des prochains cours et inscrivez-vous à une séance.
         </p>
         <div class="text-center">
-          <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary inline-flex items-center gap-2">Regarder le planning et s'inscrire à une séance <span>→</span></a>
+          <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2">Regarder le planning et s'inscrire à une séance <span>→</span></a>
         </div>
       </div>
     </div>
