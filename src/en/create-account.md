@@ -9,13 +9,13 @@ permalink: /en/create-account/
 <div class="min-h-screen bg-[#fdfaf6] py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 section-card">
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-[#0f172a] mb-2">Create my account</h1>
+      <h1 class="text-3xl font-bold text-[#3E3A35] mb-2">Create my account</h1>
       <p class="text-[#1f1f1f]/80">Access your protected Fluance content</p>
     </div>
 
     <form id="token-form" class="space-y-6">
       <div>
-        <label for="token" class="block text-sm font-medium text-[#0f172a] mb-2">
+        <label for="token" class="block text-sm font-medium text-[#3E3A35] mb-2">
           Activation code
         </label>
         <input
@@ -23,7 +23,7 @@ permalink: /en/create-account/
           id="token"
           name="token"
           required
-          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
           placeholder="Your activation code"
         />
         <p class="mt-1 text-sm text-[#1f1f1f]/60">
@@ -32,7 +32,7 @@ permalink: /en/create-account/
       </div>
 
       <div>
-        <label for="email" class="block text-sm font-medium text-[#0f172a] mb-2">
+        <label for="email" class="block text-sm font-medium text-[#3E3A35] mb-2">
           Email
         </label>
         <input
@@ -40,13 +40,13 @@ permalink: /en/create-account/
           id="email"
           name="email"
           required
-          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
           placeholder="your@email.com"
         />
       </div>
 
       <div>
-        <label for="password" class="block text-sm font-medium text-[#0f172a] mb-2">
+        <label for="password" class="block text-sm font-medium text-[#3E3A35] mb-2">
           Password
         </label>
         <input
@@ -55,13 +55,13 @@ permalink: /en/create-account/
           name="password"
           required
           minlength="6"
-          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
           placeholder="Minimum 6 characters"
         />
       </div>
 
       <div>
-        <label for="confirm-password" class="block text-sm font-medium text-[#0f172a] mb-2">
+        <label for="confirm-password" class="block text-sm font-medium text-[#3E3A35] mb-2">
           Confirm password
         </label>
         <input
@@ -70,7 +70,7 @@ permalink: /en/create-account/
           name="confirm-password"
           required
           minlength="6"
-          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
           placeholder="Repeat your password"
         />
       </div>
@@ -79,13 +79,13 @@ permalink: /en/create-account/
         <p class="text-red-800 text-sm"></p>
       </div>
 
-      <div id="success-message" class="hidden bg-[#ffce2d]/10 border border-[#ffce2d]/30 rounded-lg p-4">
-        <p class="text-[#0f172a] text-sm"></p>
+      <div id="success-message" class="hidden bg-[#E6B84A]/10 border border-[#E6B84A]/30 rounded-lg p-4">
+        <p class="text-[#3E3A35] text-sm"></p>
       </div>
 
       <!-- Offer to add a passkey -->
       <div id="passkey-offer" class="hidden mt-4 bg-fluance/5 border border-fluance/20 rounded-lg p-4">
-        <p class="text-sm text-[#0f172a] mb-2 font-medium">
+        <p class="text-sm text-[#3E3A35] mb-2 font-medium">
           ✨ Your account has been created! Would you like to also create a passkey for faster and more secure login?
         </p>
         <p class="text-xs text-[#1f1f1f]/60 mb-3">
@@ -146,19 +146,19 @@ permalink: /en/create-account/
       </button>
       <div id="help-content" class="hidden mt-4 space-y-4 text-sm text-[#1f1f1f]/80">
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">I can't find my email/code</p>
+          <p class="font-semibold text-[#3E3A35] mb-1">I can't find my email/code</p>
           <p>→ Check your spam folder.</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">The code doesn't work</p>
+          <p class="font-semibold text-[#3E3A35] mb-1">The code doesn't work</p>
           <p>→ Make sure to copy-paste the complete code, without spaces</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">What is "Email login"?</p>
+          <p class="font-semibold text-[#3E3A35] mb-1">What is "Email login"?</p>
           <p>It's a passwordless login method. We send you an email containing a unique, one-time-use link to identify yourself. It's simple and very secure.</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Still need help?</p>
+          <p class="font-semibold text-[#3E3A35] mb-1">Still need help?</p>
           <p><a href="/en/contact" class="text-fluance hover:underline">Contact us.</a></p>
         </div>
       </div>
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 createPasskeyBtn.textContent = 'Creating...';
                 passkeyStatus.classList.remove('hidden');
                 passkeyStatus.textContent = 'Creating passkey...';
-                passkeyStatus.className = 'mt-2 text-sm text-[#0f172a]';
+                passkeyStatus.className = 'mt-2 text-sm text-[#3E3A35]';
                 
                 const linkResult = await window.FluanceAuth.linkPasskeyToAccount();
                 

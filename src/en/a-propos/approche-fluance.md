@@ -21,7 +21,7 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
     <div class="space-y-6">
       <h2 class="text-2xl font-semibold text-fluance text-center">The tripod of vitality:</h2>
-      <p class="text-xl text-[#0f172a]/80 font-medium text-center">
+      <p class="text-xl text-[#3E3A35] font-medium text-center">
         Movement, Breath, Play
       </p>
       
@@ -31,7 +31,7 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
         </div>
       </div>
       
-      <p class="text-lg text-[#0f172a]/75 leading-relaxed">
+      <p class="text-lg text-[#3E3A35] leading-relaxed">
         The Fluance approach is based on a unique synergy designed to free the body and mind. It doesn't seek performance, but fluidity.
       </p>
     </div>
@@ -39,21 +39,21 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
     <div class="space-y-6 pt-6 border-t border-fluance/10">
       <div class="space-y-3">
         <h3 class="text-xl font-semibold text-fluance">Movement:</h3>
-        <p class="text-lg text-[#0f172a]/75 leading-relaxed">
+        <p class="text-lg text-[#3E3A35] leading-relaxed">
           to release tensions and restore energy circulation.
         </p>
       </div>
 
       <div class="space-y-3">
         <h3 class="text-xl font-semibold text-fluance">Breath:</h3>
-        <p class="text-lg text-[#0f172a]/75 leading-relaxed">
+        <p class="text-lg text-[#3E3A35] leading-relaxed">
           to anchor presence and calm the nervous system.
         </p>
       </div>
 
       <div class="space-y-3">
         <h3 class="text-xl font-semibold text-fluance">Play:</h3>
-        <p class="text-lg text-[#0f172a]/75 leading-relaxed">
+        <p class="text-lg text-[#3E3A35] leading-relaxed">
           to rediscover spontaneity and the simple joy of being alive.
         </p>
       </div>
@@ -61,19 +61,19 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
 
     <div class="space-y-4 pt-6 border-t border-fluance/10">
       <h2 class="text-2xl font-semibold text-fluance">Simple, powerful and liberating practices</h2>
-      <p class="text-lg text-[#0f172a]/75 leading-relaxed">
+      <p class="text-lg text-[#3E3A35] leading-relaxed">
         No need for complex postures or athletic prerequisites. The practices offered are accessible to everyone and designed to provide immediate relief and a sense of inner freedom. It's an invitation to let go of the mind to return to the body's intelligence.
       </p>
     </div>
 
     <div class="space-y-4 pt-6 border-t border-fluance/10">
       <h2 class="text-2xl font-semibold text-fluance">The magic of regularity</h2>
-      <p class="text-lg text-[#0f172a]/75 leading-relaxed">
+      <p class="text-lg text-[#3E3A35] leading-relaxed">
         Like a drop of water that eventually sculpts the stone, it's repetition that creates deep transformation.
       </p>
       
       <div class="bg-fluance/5 border-l-4 border-fluance p-6 rounded-r-lg mt-6">
-        <p class="text-lg text-[#0f172a]/80 italic leading-relaxed">
+        <p class="text-lg text-[#3E3A35] italic leading-relaxed">
           Cédric's advice: "To benefit from cumulative benefits, the essential is not intensity, but consistency. Practice a few movements every day, even if it's only for a few minutes. It's in these small moments that great change is created."
         </p>
       </div>
@@ -82,13 +82,13 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
 
   <div class="pt-8 mt-8 border-t border-fluance/20">
     <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-      <a href="{{ '/en/a-propos/philosophie/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      <a href="{{ '/en/a-propos/philosophie/' | relativeUrl }}" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
         Philosophy
       </a>
-      <a href="{{ '/en/a-propos/histoire-cedric/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center">
+      <a href="{{ '/en/a-propos/histoire-cedric/' | relativeUrl }}" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
         Cédric's story
       </a>
-      <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center" data-w-token="9241cb136525ee5e376e">
+      <a href="javascript://" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] text-center" data-w-token="9241cb136525ee5e376e">
         Receive a practice
       </a>
     </div>

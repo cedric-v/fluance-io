@@ -12,7 +12,7 @@ eleventyExcludeFromCollections: true
     <!-- Loading state -->
     <div id="loading-state" class="text-center space-y-4">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-fluance"></div>
-      <p class="text-lg text-[#0f172a]/80">Verifying...</p>
+      <p class="text-lg text-[#3E3A35]">Verifying...</p>
     </div>
 
     <!-- Success state -->
@@ -22,15 +22,15 @@ eleventyExcludeFromCollections: true
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
       </div>
-      <h1 class="text-4xl font-semibold text-[#0f172a]">Subscription confirmed!</h1>
-      <p class="text-xl text-[#0f172a]/80">
+      <h1 class="text-4xl font-semibold text-[#3E3A35]">Subscription confirmed!</h1>
+      <p class="text-xl text-[#3E3A35]">
         Thank you for confirming your subscription. You will now receive our emails.
       </p>
-      <p class="text-lg text-[#0f172a]/70">
+      <p class="text-lg text-[#3E3A35]/70">
         Access the 2 free liberating practices now:
       </p>
       <div class="pt-4">
-        <a href="{{ '/en/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
+        <a href="{{ '/en/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
           <span>Access the 2 free practices</span>
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
@@ -46,10 +46,10 @@ eleventyExcludeFromCollections: true
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </div>
-      <h1 class="text-4xl font-semibold text-[#0f172a]">Confirmation error</h1>
-      <p id="error-message" class="text-xl text-[#0f172a]/80"></p>
+      <h1 class="text-4xl font-semibold text-[#3E3A35]">Confirmation error</h1>
+      <p id="error-message" class="text-xl text-[#3E3A35]"></p>
       <div class="pt-6">
-        <a href="{{ '/en/' | relativeUrl }}" class="btn-secondary border-fluance text-fluance hover:bg-fluance hover:text-white inline-block">
+        <a href="{{ '/en/' | relativeUrl }}" class="btn-secondary border-fluance text-fluance hover:bg-fluance hover:text-[#F5F7F6] inline-block">
           Back to home
         </a>
       </div>

@@ -13,19 +13,19 @@ ogImage: assets/img/cedric-bord-mer.jpg
     <div class="absolute inset-0 bg-linear-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90 md:via-[#648ED8]/70 md:to-[#648ED8]/90"></div>
     <div class="absolute inset-0 bg-black/30 md:bg-transparent"></div>
   </div>
-  <div class="relative z-10 max-w-2xl text-white space-y-8">
+  <div class="relative z-10 max-w-2xl text-[#F5F7F6] space-y-8">
     <div class="space-y-4">
-      <h1 class="text-3xl md:text-5xl font-semibold leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] md:drop-shadow-none">
+      <h1 class="text-3xl md:text-5xl font-semibold leading-relaxed text-[#F5F7F6] drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] md:drop-shadow-none">
         Increase your energy<br />
         Reduce tension<br />
         Stay joyful and in great shape<br />
       </h1>
-      <p class="text-lg md:text-xl text-white/90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)] md:drop-shadow-none">
+      <p class="text-lg md:text-xl text-[#F5F7F6] drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)] md:drop-shadow-none">
         in just 2 to 5 minutes a day, thanks to a continuous and fluid momentum towards yourself.
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="#choose-your-subscription" class="btn-primary inline-flex items-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]">
+      <a href="#choose-your-subscription" class="btn-primary inline-flex items-center gap-2 text-center text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A]">
         <span>Discover the 2 options</span>
         <span>→</span>
       </a>
@@ -36,7 +36,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-12">
   <div class="bg-white rounded-lg p-8 shadow-lg">
     <h2 class="text-2xl font-semibold text-fluance mb-6">What you receive when joining:</h2>
-    <ul class="space-y-4 text-lg text-[#0f172a]/90">
+    <ul class="space-y-4 text-lg text-[#3E3A35]/90">
       <li class="flex items-start gap-3">
         <span class="text-fluance text-xl">✅</span>
         <span><strong>every week</strong>, <strong>a new 2 to 5 minute mini-series</strong>, in video, to help you <strong>regain momentum</strong> and <strong>improve your relationship with your body and your feelings</strong></span>
@@ -64,7 +64,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
 <section id="choose-your-subscription" class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-8" style="scroll-margin-top: 100px;">
   <div class="text-center space-y-4 mb-12">
     <h2 class="text-3xl font-semibold text-fluance">Choose your subscription</h2>
-    <p class="text-lg text-[#0f172a]/80">Two <strong>flexible</strong> options to <strong>integrate Fluance into your daily life</strong></p>
+    <p class="text-lg text-[#3E3A35]">Two <strong>flexible</strong> options to <strong>integrate Fluance into your daily life</strong></p>
   </div>
 
   <div class="flex flex-col md:flex-row gap-8">
@@ -74,17 +74,17 @@ ogImage: assets/img/cedric-bord-mer.jpg
         <div class="text-center">
           <h3 class="text-2xl font-semibold text-fluance mb-2">Monthly plan</h3>
           <p class="text-3xl font-bold text-fluance">30 CHF</p>
-          <p class="text-lg text-[#0f172a]/80">/ equivalent € per month</p>
+          <p class="text-lg text-[#3E3A35]">/ equivalent € per month</p>
         </div>
         <div class="pt-4 border-t border-fluance/20">
-          <p class="text-lg text-[#0f172a]/80 text-center mb-6">
+          <p class="text-lg text-[#3E3A35] text-center mb-6">
             <strong class="text-fluance">The first 14 days are free</strong>
           </p>
-          <a href="https://espace.fluance.io/par/abo/bdc/mens" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
+          <a href="https://espace.fluance.io/par/abo/bdc/mens" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6">
             <span>Subscribe monthly</span>
             <span>→</span>
           </a>
-          <p class="text-sm text-[#0f172a]/70 text-center mt-2">
+          <p class="text-sm text-[#3E3A35]/70 text-center mt-2">
             Cancelable at any time with a simple email to <a href="#" id="cancel-email-link-en-1" class="text-fluance hover:underline"></a>
           </p>
         </div>
@@ -100,18 +100,18 @@ ogImage: assets/img/cedric-bord-mer.jpg
         <div class="text-center">
           <h3 class="text-2xl font-semibold text-fluance mb-2">Quarterly plan</h3>
           <p class="text-3xl font-bold text-fluance">25 CHF</p>
-          <p class="text-lg text-[#0f172a]/80">/ equivalent € per month</p>
-          <p class="text-sm text-[#0f172a]/60 mt-2">Paid quarterly (75 CHF / quarter)</p>
+          <p class="text-lg text-[#3E3A35]">/ equivalent € per month</p>
+          <p class="text-sm text-[#3E3A35]/60 mt-2">Paid quarterly (75 CHF / quarter)</p>
         </div>
         <div class="pt-4 border-t border-fluance/20">
-          <p class="text-lg text-[#0f172a]/80 text-center mb-6">
+          <p class="text-lg text-[#3E3A35] text-center mb-6">
             <strong class="text-fluance">The first 14 days are free</strong>
           </p>
-          <a href="https://espace.fluance.io/par/abo/bdc/tri" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] mb-6">
+          <a href="https://espace.fluance.io/par/abo/bdc/tri" class="btn-primary w-full inline-flex items-center justify-center gap-2 text-center text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6">
             <span>Subscribe quarterly</span>
             <span>→</span>
           </a>
-          <p class="text-sm text-[#0f172a]/70 text-center mt-2">
+          <p class="text-sm text-[#3E3A35]/70 text-center mt-2">
             Cancelable at any time with a simple email to <a href="#" id="cancel-email-link-en-2" class="text-fluance hover:underline"></a>
           </p>
         </div>

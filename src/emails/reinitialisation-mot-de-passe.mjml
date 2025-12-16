@@ -27,7 +27,7 @@ permalink: /emails/reinitialisation-mot-de-passe.html
         </mj-text>
         <mj-button
           href="{{resetLink}}"
-          background-color="#ffce2d"
+          background-color="#E6B84A"
           color="#0f172a"
           font-weight="bold"
           padding="15px 30px"

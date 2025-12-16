@@ -11,25 +11,25 @@ locale: fr
     <div class="absolute inset-0 md:hidden" style="background-color: rgba(100, 142, 216, 0.8);"></div>
     <div class="hidden md:block absolute inset-0 bg-linear-to-r from-transparent via-[#648ED8]/70 to-[#648ED8]/90"></div>
   </div>
-  <div class="relative z-10 max-w-2xl text-white space-y-8">
+  <div class="relative z-10 max-w-2xl text-[#F5F7F6] space-y-8">
     <div class="space-y-4">
-      <h1 class="text-4xl md:text-6xl font-semibold leading-tight">
+      <h1 class="text-4xl md:text-6xl font-semibold leading-tight text-[#F5F7F6]">
         Relâcher les tensions.<br>
         Libérer le trop-plein émotionnel.<br>
         Détendre et fortifier votre corps.
       </h1>
-      <p class="text-lg md:text-xl text-white/90">
+      <p class="text-lg md:text-xl text-[#F5F7F6]">
         Rejoignez un mouvement transformateur basé sur une approche simple, ludique, naturelle et libératrice.<br><br>
         Aucun équipement nécessaire.<br>
         Aucun prérequis.
       </p>
     </div>
     <div class="flex flex-col sm:flex-row gap-4">
-      <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col" data-w-token="9241cb136525ee5e376e">
+      <a href="javascript://" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center flex flex-col" data-w-token="9241cb136525ee5e376e">
         <span>Essayer 2 pratiques libératrices</span>
         <span class="text-sm font-normal opacity-90">en ligne</span>
       </a>
-      <a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-secondary border-white/80 text-white hover:bg-white/10 text-center flex flex-col">
+      <a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-secondary border-[3px] border-[#F5F7F6] bg-[#7A1F3D]/80 text-[#F5F7F6] hover:bg-[#7A1F3D]/90 text-center flex flex-col">
         <span>Cours à Fribourg (Suisse)</span>
         <span class="text-sm font-normal opacity-90">présentiel</span>
       </a>
@@ -39,8 +39,8 @@ locale: fr
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16 grid md:grid-cols-[2fr_1fr] gap-8 items-center">
   <div class="text-left space-y-4">
-    <h2 class="text-3xl md:text-4xl font-semibold text-[#0f172a]">Qu'est-ce que Fluance ?</h2>
-    <p class="text-lg md:text-xl text-[#0f172a]/75">
+    <h2 class="text-3xl md:text-4xl font-semibold text-[#3E3A35]">Qu'est-ce que Fluance ?</h2>
+    <p class="text-lg md:text-xl text-[#3E3A35]">
       Fluance est une approche nouvelle du lien au corps et ses tensions.<br><br>
       Grâce à des mouvements en conscience et son aspect ludique, elle rééquilibre progressivement votre système nerveux, amène de la clarté mentale et procure de la vitalité.
     </p>
@@ -52,8 +52,8 @@ locale: fr
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-12">
   <div class="text-left space-y-4">
-    <h3 class="text-2xl md:text-3xl font-semibold text-[#0f172a]">Une synthèse fluide des sagesses ancestrales</h3>
-    <p class="text-lg text-[#0f172a]/75">
+    <h3 class="text-2xl md:text-3xl font-semibold text-[#3E3A35]">Une synthèse fluide des sagesses ancestrales</h3>
+    <p class="text-lg text-[#3E3A35]">
        Fluance puise son inspiration aux racines des arts martiaux, du Chi Gong, du Tai-Chi et du Yoga, mais s'affranchit des formes rigides et des chorégraphies imposées.<br /><br />
        Ici, la discipline s'efface au profit de l'écoute : le mouvement devient organique, intuitif et entièrement personnalisé. Il ne s'agit pas de contraindre votre corps dans une posture, mais de laisser le mouvement s'adapter à votre anatomie et à vos ressentis de l'instant.
     </p>
@@ -63,8 +63,8 @@ locale: fr
       {% image "assets/img/parcours-fluance.jpg", "Parcours Fluance", "w-full h-full object-cover", "lazy", "", "500", "276" %}
     </div>
     <div class="text-left space-y-4">
-      <h3 class="text-2xl md:text-3xl font-semibold text-[#0f172a]">L'accès direct au calme pour les esprits agités</h3>
-      <p class="text-lg text-[#0f172a]/75">
+      <h3 class="text-2xl md:text-3xl font-semibold text-[#3E3A35]">L'accès direct au calme pour les esprits agités</h3>
+      <p class="text-lg text-[#3E3A35]">
         C'est souvent la "porte dérobée" idéale pour ceux qui trouvent la méditation assise difficile ou frustrante.<br /><br />
         En passant par le corps plutôt que par le mental, Fluance court-circuite l'agitation intérieure. Après seulement quelques pratiques, on constate des résultats surprenants : même sans expérience préalable, il devient possible de goûter à un état d'ancrage profond, de présence absolue et de calme, là où l'immobilité seule avait échoué.
       </p>
@@ -78,20 +78,20 @@ locale: fr
   </div>
   <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">« Cela me fait <strong>un bien fou</strong> ! »</p>
-      <p class="text-sm text-[#0f172a]/60 mt-2">— Sylvie Danielle</p>
+      <p class="italic text-[#3E3A35]">« Cela me fait <strong>un bien fou</strong> ! »</p>
+      <p class="text-sm text-[#3E3A35]/60 mt-2">— Sylvie Danielle</p>
     </div>
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">« Cette semaine les <strong>douleurs ont vraiment diminué</strong>. »</p>
-      <p class="text-sm text-[#0f172a]/60 mt-2">— Monique</p>
+      <p class="italic text-[#3E3A35]">« Cette semaine les <strong>douleurs ont vraiment diminué</strong>. »</p>
+      <p class="text-sm text-[#3E3A35]/60 mt-2">— Monique</p>
     </div>
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">"Ta méthode est tellement simple et fluide. C'est <strong>agréable</strong> et on n'a <strong>pas le sentiment d'avoir un effort à faire</strong>."</p>
-      <p class="text-sm text-[#0f172a]/60 mt-2">— Isabelle</p>
+      <p class="italic text-[#3E3A35]">"Ta méthode est tellement simple et fluide. C'est <strong>agréable</strong> et on n'a <strong>pas le sentiment d'avoir un effort à faire</strong>."</p>
+      <p class="text-sm text-[#3E3A35]/60 mt-2">— Isabelle</p>
     </div>
     <div class="quote-card">
-      <p class="italic text-[#0f172a]/80">"J'ai du <strong>plaisir</strong> à <strong>recontacter mon corps</strong>."</p>
-      <p class="text-sm text-[#0f172a]/60 mt-2">— Claire</p>
+      <p class="italic text-[#3E3A35]">"J'ai du <strong>plaisir</strong> à <strong>recontacter mon corps</strong>."</p>
+      <p class="text-sm text-[#3E3A35]/60 mt-2">— Claire</p>
     </div>
   </div>
 </section>
@@ -101,11 +101,11 @@ locale: fr
     <h2 class="text-3xl font-semibold text-fluance">Rejoignez le mouvement</h2>
   </div>
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="javascript://" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] text-center flex flex-col" data-w-token="9241cb136525ee5e376e">
+    <a href="javascript://" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center flex flex-col" data-w-token="9241cb136525ee5e376e">
       <span>Essayer 2 pratiques libératrices</span>
       <span class="text-sm font-normal opacity-90">en ligne</span>
     </a>
-    <a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="inline-flex flex-col items-center justify-center rounded-full border-[3px] border-fluance text-fluance bg-white hover:bg-fluance hover:text-white px-6 py-3 font-bold shadow-lg transition-all duration-200">
+    <a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="inline-flex flex-col items-center justify-center rounded-full border-[3px] border-fluance text-fluance bg-[#F5F7F6]/30 hover:bg-fluance hover:text-[#F5F7F6] px-6 py-3 font-bold shadow-lg transition-all duration-200">
       <span>Cours à Fribourg (Suisse)</span>
       <span class="text-sm font-normal opacity-90">présentiel</span>
     </a>

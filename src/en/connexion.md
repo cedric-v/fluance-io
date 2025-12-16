@@ -8,7 +8,7 @@ permalink: /en/connexion/
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="space-y-4 text-center">
-    <h1 class="text-4xl font-semibold text-[#0f172a]">Login</h1>
+    <h1 class="text-4xl font-semibold text-[#3E3A35]">Login</h1>
   </header>
 
   <article class="text-[#1f1f1f]">
@@ -16,7 +16,7 @@ permalink: /en/connexion/
       <!-- Online Training -->
       <div class="section-card p-8 bg-white flex-1">
         <h2 class="text-2xl font-semibold text-fluance mb-4">Online Training</h2>
-        <p class="text-lg text-[#0f172a]/80 mb-6">
+        <p class="text-lg text-[#3E3A35] mb-6">
           Access your online training space to follow your courses and practices.
         </p>
         <div class="text-center">
@@ -27,7 +27,7 @@ permalink: /en/connexion/
       <!-- In-person -->
       <div class="section-card p-8 bg-white flex-1">
         <h2 class="text-2xl font-semibold text-fluance mb-4">In-person</h2>
-        <p class="text-lg text-[#0f172a]/80 mb-6">
+        <p class="text-lg text-[#3E3A35] mb-6">
           View the schedule of upcoming classes and register for a session.
         </p>
         <div class="text-center">

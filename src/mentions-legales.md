@@ -9,7 +9,7 @@ permalink: /mentions-legales/
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-12 space-y-8">
   <header class="space-y-2 text-center">
     <p class="cta-pill bg-fluance/10 text-fluance inline-flex">Information légale</p>
-    <h1 class="text-3xl font-semibold text-[#0f172a]">Politique de confidentialité</h1>
+    <h1 class="text-3xl font-semibold text-[#3E3A35]">Politique de confidentialité</h1>
   </header>
 
   <article class="legal-text space-y-4 text-[#1f1f1f]">

@@ -8,7 +8,7 @@ permalink: /cours-en-ligne/5jours/j2/
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="text-center space-y-6">
-    <h1 class="text-4xl md:text-5xl font-semibold text-[#0f172a] leading-tight">
+    <h1 class="text-4xl md:text-5xl font-semibold text-[#3E3A35] leading-tight">
       Libérez les tensions<br>
       et retrouvez votre calme intérieur
     </h1>
@@ -32,17 +32,17 @@ permalink: /cours-en-ligne/5jours/j2/
 
   <div class="section-card p-8 bg-white space-y-6">
     <div class="max-w-md mx-auto space-y-4">
-      <p class="text-lg text-[#0f172a]/80 text-center">
+      <p class="text-lg text-[#3E3A35] text-center">
         <strong>Notez de 1 à 10 votre état de détente de votre haut du corps avant et après :</strong>
       </p>
-      <p class="text-sm text-[#0f172a]/60 text-center italic">
+      <p class="text-sm text-[#3E3A35]/60 text-center italic">
         (1 = catastrophique, 10 = tout est fluide)
       </p>
-      <h3 class="text-xl font-semibold text-[#0f172a]">Ajouter un commentaire</h3>
+      <h3 class="text-xl font-semibold text-[#3E3A35]">Ajouter un commentaire</h3>
       <form id="comment-form">
-        <input type="text" id="name" placeholder="Votre prénom" required="" class="w-full p-3 mb-3 border-2 border-fluance/20 rounded-lg focus:border-fluance focus:outline-hidden text-[#0f172a]">
-        <textarea id="text" placeholder="Votre commentaire" required="" rows="4" class="w-full p-3 mb-3 border-2 border-fluance/20 rounded-lg focus:border-fluance focus:outline-hidden text-[#0f172a]"></textarea>
-        <button type="submit" class="btn-primary w-full text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d]">Envoyer</button>
+        <input type="text" id="name" placeholder="Votre prénom" required="" class="w-full p-3 mb-3 border-2 border-fluance/20 rounded-lg focus:border-fluance focus:outline-hidden text-[#3E3A35]">
+        <textarea id="text" placeholder="Votre commentaire" required="" rows="4" class="w-full p-3 mb-3 border-2 border-fluance/20 rounded-lg focus:border-fluance focus:outline-hidden text-[#3E3A35]"></textarea>
+        <button type="submit" class="btn-primary w-full text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A]">Envoyer</button>
       </form>
       <div id="comments-container"></div>
       <div id="pagination-controls" style="margin-top:10px;"></div>
@@ -211,7 +211,7 @@ permalink: /cours-en-ligne/5jours/j2/
           prevBtn.style.borderRadius = '0.5rem';
           prevBtn.style.border = '1px solid rgba(130, 21, 62, 0.2)';
           prevBtn.style.backgroundColor = 'transparent';
-          prevBtn.style.color = '#82153e';
+          prevBtn.style.color = '#7A1F3D';
           prevBtn.style.fontWeight = '500';
           prevBtn.style.transition = 'all 0.2s ease';
           prevBtn.onmouseenter = function() {
@@ -244,7 +244,7 @@ permalink: /cours-en-ligne/5jours/j2/
           nextBtn.style.borderRadius = '0.5rem';
           nextBtn.style.border = '1px solid rgba(130, 21, 62, 0.2)';
           nextBtn.style.backgroundColor = 'transparent';
-          nextBtn.style.color = '#82153e';
+          nextBtn.style.color = '#7A1F3D';
           nextBtn.style.fontWeight = '500';
           nextBtn.style.transition = 'all 0.2s ease';
           nextBtn.onmouseenter = function() {
@@ -309,32 +309,32 @@ permalink: /cours-en-ligne/5jours/j2/
 
   <div class="section-card p-8 bg-white space-y-6">
     <div class="space-y-4">
-      <p class="text-xl text-[#0f172a]/80 text-center">
+      <p class="text-xl text-[#3E3A35] text-center">
         5 minutes par jour durant 5 jours <strong>d'expériences intuitives et puissantes pour :</strong>
       </p>
 
       <div class="flex flex-col gap-3 text-left max-w-2xl mx-auto">
         <div class="flex items-start gap-3">
           <span class="text-[#8bc34a] text-xl font-bold mt-1">☑️</span>
-          <p class="text-lg text-[#0f172a]/80"><strong>Relâcher</strong> la pression quotidienne</p>
+          <p class="text-lg text-[#3E3A35]"><strong>Relâcher</strong> la pression quotidienne</p>
         </div>
         <div class="flex items-start gap-3">
           <span class="text-[#8bc34a] text-xl font-bold mt-1">☑️</span>
-          <p class="text-lg text-[#0f172a]/80"><strong>Libérer</strong> les tensions physiques et émotionnelles</p>
+          <p class="text-lg text-[#3E3A35]"><strong>Libérer</strong> les tensions physiques et émotionnelles</p>
         </div>
         <div class="flex items-start gap-3">
           <span class="text-[#8bc34a] text-xl font-bold mt-1">☑️</span>
-          <p class="text-lg text-[#0f172a]/80">Développer une <strong>présence calme et confiante</strong></p>
+          <p class="text-lg text-[#3E3A35]">Développer une <strong>présence calme et confiante</strong></p>
         </div>
       </div>
     </div>
     
-    <p class="text-lg text-[#0f172a]/80 text-center">
+    <p class="text-lg text-[#3E3A35] text-center">
       Vous êtes guidé par <strong>Cédric Vonlanthen</strong>, enseignant de méditation depuis plus de 13 ans et fondateur de Fluance.
     </p>
     
     <div class="pt-4 border-t border-fluance/20">
-      <p class="text-lg text-[#0f172a]/80 text-center">
+      <p class="text-lg text-[#3E3A35] text-center">
         Pour inviter votre entourage à ces 5 jours vers la détente, transmettez-leur l'adresse fluance.io
       </p>
     </div>

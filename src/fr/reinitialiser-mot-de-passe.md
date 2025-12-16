@@ -9,14 +9,14 @@ permalink: /reinitialiser-mot-de-passe/
 <div class="min-h-screen bg-[#fdfaf6] py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 section-card">
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-[#0f172a] mb-2">Réinitialiser le mot de passe</h1>
+      <h1 class="text-3xl font-bold text-[#3E3A35] mb-2">Réinitialiser le mot de passe</h1>
       <p class="text-[#1f1f1f]/80">Entrez votre email pour recevoir un lien de réinitialisation</p>
     </div>
 
     <!-- Formulaire de demande de réinitialisation -->
     <form id="reset-request-form" class="space-y-6">
       <div>
-        <label for="email" class="block text-sm font-medium text-[#0f172a] mb-2">
+        <label for="email" class="block text-sm font-medium text-[#3E3A35] mb-2">
           Email
         </label>
         <input
@@ -24,13 +24,13 @@ permalink: /reinitialiser-mot-de-passe/
           id="email"
           name="email"
           required
-          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
           placeholder="votre@email.com"
         />
       </div>
 
-      <div id="success-message" class="hidden bg-[#ffce2d]/10 border border-[#ffce2d]/30 rounded-lg p-4">
-        <p class="text-[#0f172a] text-sm"></p>
+      <div id="success-message" class="hidden bg-[#E6B84A]/10 border border-[#E6B84A]/30 rounded-lg p-4">
+        <p class="text-[#3E3A35] text-sm"></p>
       </div>
 
       <div id="error-message" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">
@@ -55,7 +55,7 @@ permalink: /reinitialiser-mot-de-passe/
     <!-- Formulaire de confirmation de réinitialisation (affiché si code présent dans l'URL) -->
     <form id="reset-confirm-form" class="space-y-6 hidden">
       <div>
-        <label for="new-password" class="block text-sm font-medium text-[#0f172a] mb-2">
+        <label for="new-password" class="block text-sm font-medium text-[#3E3A35] mb-2">
           Nouveau mot de passe
         </label>
         <input
@@ -64,14 +64,14 @@ permalink: /reinitialiser-mot-de-passe/
           name="new-password"
           required
           minlength="6"
-          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
           placeholder="Au moins 6 caractères"
         />
         <p class="mt-1 text-xs text-[#1f1f1f]/60">Le mot de passe doit contenir au moins 6 caractères</p>
       </div>
 
       <div>
-        <label for="confirm-password" class="block text-sm font-medium text-[#0f172a] mb-2">
+        <label for="confirm-password" class="block text-sm font-medium text-[#3E3A35] mb-2">
           Confirmer le mot de passe
         </label>
         <input
@@ -80,13 +80,13 @@ permalink: /reinitialiser-mot-de-passe/
           name="confirm-password"
           required
           minlength="6"
-          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
           placeholder="Répétez le mot de passe"
         />
       </div>
 
-      <div id="confirm-success-message" class="hidden bg-[#ffce2d]/10 border border-[#ffce2d]/30 rounded-lg p-4">
-        <p class="text-[#0f172a] text-sm"></p>
+      <div id="confirm-success-message" class="hidden bg-[#E6B84A]/10 border border-[#E6B84A]/30 rounded-lg p-4">
+        <p class="text-[#3E3A35] text-sm"></p>
       </div>
 
       <div id="confirm-error-message" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">

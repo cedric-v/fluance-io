@@ -12,7 +12,7 @@ eleventyExcludeFromCollections: true
     <!-- État de chargement -->
     <div id="loading-state" class="text-center space-y-4">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-fluance"></div>
-      <p class="text-lg text-[#0f172a]/80">Vérification en cours...</p>
+      <p class="text-lg text-[#3E3A35]">Vérification en cours...</p>
     </div>
 
     <!-- État de succès -->
@@ -22,13 +22,13 @@ eleventyExcludeFromCollections: true
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
       </div>
-      <h1 class="text-4xl font-semibold text-[#0f172a]">Inscription confirmée !</h1>
-      <p id="success-description" class="text-xl text-[#0f172a]/80">
+      <h1 class="text-4xl font-semibold text-[#3E3A35]">Inscription confirmée !</h1>
+      <p id="success-description" class="text-xl text-[#3E3A35]">
         Merci d'avoir confirmé votre inscription. Vous recevrez désormais nos emails.
       </p>
-      <p id="success-subtext" class="text-lg text-[#0f172a]/70"></p>
+      <p id="success-subtext" class="text-lg text-[#3E3A35]/70"></p>
       <div class="pt-4">
-        <a id="success-cta" href="{{ '/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary text-[#0f172a] bg-[#ffce2d] hover:bg-[#ffd84d] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
+        <a id="success-cta" href="{{ '/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary text-[#3E3A35] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
           <span id="success-cta-text">Accéder aux 2 pratiques offertes</span>
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
@@ -44,10 +44,10 @@ eleventyExcludeFromCollections: true
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </div>
-      <h1 class="text-4xl font-semibold text-[#0f172a]">Erreur de confirmation</h1>
-      <p id="error-message" class="text-xl text-[#0f172a]/80"></p>
+      <h1 class="text-4xl font-semibold text-[#3E3A35]">Erreur de confirmation</h1>
+      <p id="error-message" class="text-xl text-[#3E3A35]"></p>
       <div class="pt-6">
-        <a href="{{ '/' | relativeUrl }}" class="btn-secondary border-fluance text-fluance hover:bg-fluance hover:text-white inline-block">
+        <a href="{{ '/' | relativeUrl }}" class="btn-secondary border-fluance text-fluance hover:bg-fluance hover:text-[#F5F7F6] inline-block">
           Retour à l'accueil
         </a>
       </div>

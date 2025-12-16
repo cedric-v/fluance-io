@@ -8,7 +8,7 @@ permalink: /connexion/
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="space-y-4 text-center">
-    <h1 class="text-4xl font-semibold text-[#0f172a]">Connexion</h1>
+    <h1 class="text-4xl font-semibold text-[#3E3A35]">Connexion</h1>
   </header>
 
   <article class="text-[#1f1f1f]">
@@ -16,7 +16,7 @@ permalink: /connexion/
       <!-- Formation en ligne -->
       <div class="section-card p-8 bg-white flex-1">
         <h2 class="text-2xl font-semibold text-fluance mb-4">Formation en ligne</h2>
-        <p class="text-lg text-[#0f172a]/80 mb-6">
+        <p class="text-lg text-[#3E3A35] mb-6">
           Accédez à votre espace de formation en ligne pour suivre vos cours et pratiques.
         </p>
         <div class="text-center">
@@ -27,7 +27,7 @@ permalink: /connexion/
       <!-- Présentiel -->
       <div class="section-card p-8 bg-white flex-1">
         <h2 class="text-2xl font-semibold text-fluance mb-4">Présentiel</h2>
-        <p class="text-lg text-[#0f172a]/80 mb-6">
+        <p class="text-lg text-[#3E3A35] mb-6">
           Regardez le planning des prochains cours et inscrivez-vous à une séance.
         </p>
         <div class="text-center">

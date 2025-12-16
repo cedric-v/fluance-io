@@ -3,7 +3,7 @@
   Usage: {% commentSection %}
 #}
 <div class="mt-8 pt-8 border-t border-gray-200">
-  <h3 class="text-xl font-semibold text-[#0f172a] mb-4">
+  <h3 class="text-xl font-semibold text-[#3E3A35] mb-4">
     Quelles améliorations avez-vous ressenties suite à la pratique du jour ?
   </h3>
   
@@ -14,14 +14,14 @@
       id="name" 
       placeholder="Votre prénom" 
       required 
-      class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+      class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
     />
     <textarea 
       id="text" 
       placeholder="Votre commentaire" 
       required
       rows="4"
-      class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+      class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
     ></textarea>
     <button 
       type="submit"
@@ -112,7 +112,7 @@ function escapeHTML(str) {
     var container = document.getElementById("comments-container");
     if (!container) return;
     
-    container.innerHTML = "<h4 class='text-lg font-semibold text-[#0f172a] mb-4'>Commentaires</h4>";
+    container.innerHTML = "<h4 class='text-lg font-semibold text-[#3E3A35] mb-4'>Commentaires</h4>";
     
     if (allComments.length === 0) {
       container.innerHTML += "<p class='text-[#1f1f1f]/60 text-sm'>Aucun commentaire pour le moment. Soyez le premier à partager votre expérience !</p>";
@@ -132,7 +132,7 @@ function escapeHTML(str) {
       var text = escapeHTML(decodedText);
       var name = escapeHTML(decodedName);
       
-      container.innerHTML += '<div class="border-b border-gray-200 mb-4 pb-4"><div class="mb-2"><strong class="text-[#0f172a]">' + name + '</strong></div><p class="text-[#1f1f1f]/80">' + text + '</p></div>';
+      container.innerHTML += '<div class="border-b border-gray-200 mb-4 pb-4"><div class="mb-2"><strong class="text-[#3E3A35]">' + name + '</strong></div><p class="text-[#1f1f1f]/80">' + text + '</p></div>';
     }
     
     renderPaginationControls(page);
@@ -162,7 +162,7 @@ function escapeHTML(str) {
       prevBtn.style.borderRadius = '0.5rem';
       prevBtn.style.border = '1px solid rgba(130, 21, 62, 0.2)';
       prevBtn.style.backgroundColor = 'transparent';
-      prevBtn.style.color = '#82153e';
+      prevBtn.style.color = '#7A1F3D';
       prevBtn.style.fontWeight = '500';
       prevBtn.style.transition = 'all 0.2s ease';
       prevBtn.style.marginRight = '0.5rem';
@@ -202,7 +202,7 @@ function escapeHTML(str) {
       nextBtn.style.borderRadius = '0.5rem';
       nextBtn.style.border = '1px solid rgba(130, 21, 62, 0.2)';
       nextBtn.style.backgroundColor = 'transparent';
-      nextBtn.style.color = '#82153e';
+      nextBtn.style.color = '#7A1F3D';
       nextBtn.style.fontWeight = '500';
       nextBtn.style.transition = 'all 0.2s ease';
       nextBtn.style.marginLeft = '0.5rem';

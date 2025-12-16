@@ -9,7 +9,7 @@ permalink: /connexion-membre/
 <div class="min-h-screen bg-[#fdfaf6] py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 section-card">
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-[#0f172a] mb-2">Connexion</h1>
+      <h1 class="text-3xl font-bold text-[#3E3A35] mb-2">Connexion</h1>
       <p class="text-[#1f1f1f]/80">Accédez à votre contenu protégé Fluance</p>
     </div>
 
@@ -45,7 +45,7 @@ permalink: /connexion-membre/
     <!-- Formulaire avec mot de passe -->
     <form id="login-form" class="space-y-6">
       <div>
-        <label for="email" class="block text-sm font-medium text-[#0f172a] mb-2">
+        <label for="email" class="block text-sm font-medium text-[#3E3A35] mb-2">
           Email
         </label>
         <input
@@ -53,7 +53,7 @@ permalink: /connexion-membre/
           id="email"
           name="email"
           required
-          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
           placeholder="votre@email.com"
         />
         <p id="passkey-info" class="hidden mt-2 text-sm text-[#1f1f1f]/60 italic">
@@ -63,7 +63,7 @@ permalink: /connexion-membre/
 
       <div id="password-field">
         <div class="flex items-center justify-between mb-2">
-          <label for="password" class="block text-sm font-medium text-[#0f172a]">
+          <label for="password" class="block text-sm font-medium text-[#3E3A35]">
             Mot de passe
           </label>
           <a href="/reinitialiser-mot-de-passe" class="text-sm text-fluance hover:text-fluance/80">
@@ -74,13 +74,13 @@ permalink: /connexion-membre/
           type="password"
           id="password"
           name="password"
-          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#0f172a]"
+          class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
           placeholder="Votre mot de passe"
         />
       </div>
 
       <div class="flex items-center justify-between mt-4 mb-2">
-        <label class="flex items-center text-sm text-[#0f172a]">
+        <label class="flex items-center text-sm text-[#3E3A35]">
           <input
             type="checkbox"
             id="remember-me"
@@ -91,8 +91,8 @@ permalink: /connexion-membre/
         </label>
       </div>
 
-      <div id="success-message" class="hidden bg-[#ffce2d]/10 border border-[#ffce2d]/30 rounded-lg p-4">
-        <p class="text-[#0f172a] text-sm"></p>
+      <div id="success-message" class="hidden bg-[#E6B84A]/10 border border-[#E6B84A]/30 rounded-lg p-4">
+        <p class="text-[#3E3A35] text-sm"></p>
       </div>
 
       <div id="error-message" class="hidden bg-red-50 border border-red-200 rounded-lg p-6">
@@ -150,23 +150,23 @@ permalink: /connexion-membre/
       </button>
       <div id="help-content" class="hidden mt-4 space-y-4 text-sm text-[#1f1f1f]/80">
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Je ne trouve pas mon email/code</p>
+          <p class="font-semibold text-[#3E3A35] mb-1">Je ne trouve pas mon email/code</p>
           <p>→ Vérifiez vos courriers indésirables (spams).</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Le code ne fonctionne pas</p>
+          <p class="font-semibold text-[#3E3A35] mb-1">Le code ne fonctionne pas</p>
           <p>→ Assurez-vous de copier-coller le code complet, sans espace</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Qu'est-ce que la « Connexion par e-mail » ?</p>
+          <p class="font-semibold text-[#3E3A35] mb-1">Qu'est-ce que la « Connexion par e-mail » ?</p>
           <p>C'est la méthode de connexion sans mot de passe. Nous vous envoyons un e-mail contenant un lien unique, utilisable une seule fois, pour vous identifier. C'est simple et très sécurisé.</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Qu'est-ce qu'une « Clé d'accès » ?</p>
+          <p class="font-semibold text-[#3E3A35] mb-1">Qu'est-ce qu'une « Clé d'accès » ?</p>
           <p>Une clé d'accès vous permet de vous connecter instantanément et en toute sécurité en utilisant votre empreinte digitale, votre visage ou le code de votre appareil. C'est la méthode la plus simple et la plus sécurisée.</p>
         </div>
         <div>
-          <p class="font-semibold text-[#0f172a] mb-1">Encore besoin d'aide ?</p>
+          <p class="font-semibold text-[#3E3A35] mb-1">Encore besoin d'aide ?</p>
           <p><a href="/contact" class="text-fluance hover:underline">Contactez-nous.</a></p>
         </div>
       </div>

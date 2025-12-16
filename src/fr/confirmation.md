@@ -9,8 +9,8 @@ eleventyExcludeFromCollections: true
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="space-y-4 text-center">
-    <h1 class="text-4xl font-semibold text-[#0f172a]">Félicitations et merci de votre confiance</h1>
-    <p class="text-xl text-[#0f172a]/80 font-medium">Je vous souhaite un agréable parcours et me réjouis de vous retrouver prochainement.</p>
+    <h1 class="text-4xl font-semibold text-[#3E3A35]">Félicitations et merci de votre confiance</h1>
+    <p class="text-xl text-[#3E3A35] font-medium">Je vous souhaite un agréable parcours et me réjouis de vous retrouver prochainement.</p>
   </header>
 
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
@@ -21,10 +21,10 @@ eleventyExcludeFromCollections: true
         </svg>
         <div class="flex-1">
           <h2 class="text-xl font-semibold text-fluance mb-2">Vos informations de connexion</h2>
-          <p class="text-lg text-[#0f172a]/80">
+          <p class="text-lg text-[#3E3A35]">
             Vos <strong>informations de connexion viennent de vous être envoyées par e-mail</strong>. Dans le cas d'un paiement par PayPal elles sont envoyées à l'adresse e-mail enregistrée sur votre compte PayPal.
           </p>
-          <p class="text-lg text-[#0f172a]/80 mt-4">
+          <p class="text-lg text-[#3E3A35] mt-4">
             Si ce n'est pas le cas, veuillez vérifier dans vos courriers indésirables (spams) et nous écrire s'ils n'ont pas été reçus dans les 2 heures à venir.
           </p>
         </div>
@@ -34,7 +34,7 @@ eleventyExcludeFromCollections: true
     <div class="section-card p-8 bg-white space-y-6">
       <div class="text-center space-y-4">
         <h2 class="text-2xl font-semibold text-fluance">En guise de cadeau de bienvenue</h2>
-        <p class="text-lg text-[#0f172a]/80">
+        <p class="text-lg text-[#3E3A35]">
           Je vous invite à venir virtuellement en balade avec moi, en vous partageant quelques moments ressourçant en nature.
         </p>
         <p class="text-lg font-semibold text-fluance">
@@ -56,16 +56,16 @@ eleventyExcludeFromCollections: true
         </svg>
         <div class="flex-1">
           <h2 class="text-xl font-semibold text-fluance mb-4">Envie de partager cette aventure avec un proche que cela pourrait inspirer, aider ou soutenir ?</h2>
-          <p class="text-lg text-[#0f172a]/80">
+          <p class="text-lg text-[#3E3A35]">
             Savez-vous que <em>les personnes qui suivent une formation avec une connaissance</em> ont tendance à mieux mettre en pratique les partages proposés et ainsi obtenir de <em>meilleurs résultats</em> ?
           </p>
-          <p class="text-lg text-[#0f172a]/80 mt-4">
+          <p class="text-lg text-[#3E3A35] mt-4">
             Il vous suffit simplement de lui parler de votre choix de réaliser cette formation et/ou de lui transmettre la page ou le message qui vous a permis d'arriver ici.
           </p>
-          <p class="text-lg text-[#0f172a]/80 mt-4">
+          <p class="text-lg text-[#3E3A35] mt-4">
             Ou encore de lui dire de nous écrire ou de nous appeler aux coordonnées ci-dessous (section "Besoin d'aide ?").
           </p>
-          <p class="text-lg text-[#0f172a]/80 mt-4">
+          <p class="text-lg text-[#3E3A35] mt-4">
             Nous lui répondrons avec joie.
           </p>
         </div>
@@ -73,14 +73,14 @@ eleventyExcludeFromCollections: true
     </div>
 
     <div class="text-center space-y-4 pt-8">
-      <p class="text-xl text-[#0f172a]/80 font-medium">A bientôt,</p>
+      <p class="text-xl text-[#3E3A35] font-medium">A bientôt,</p>
       <p class="text-xl font-semibold text-fluance">Cédric Vonlanthen</p>
-      <p class="text-lg text-[#0f172a]/75 italic">Heureux fondateur de Fluance.</p>
+      <p class="text-lg text-[#3E3A35] italic">Heureux fondateur de Fluance.</p>
     </div>
 
     <div class="section-card p-8 bg-fluance/5 border-l-4 border-fluance rounded-r-lg space-y-4">
       <h2 class="text-xl font-semibold text-fluance">Besoin d'aide ?</h2>
-      <p class="text-[#0f172a]/80">
+      <p class="text-[#3E3A35]">
         Contactez-moi via <a href="#" id="confirmation-email-link" class="text-fluance font-semibold hover:underline"></a> ou <a href="{{ '/contact/' | relativeUrl }}" class="text-fluance font-semibold hover:underline">cette page</a>.
       </p>
     </div>

@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-fluance: #82153e;
+  --color-fluance: #7A1F3D;
 }
 
 /*
@@ -23,10 +23,10 @@
 }
 
 :root {
-  --fluance-bordeaux: #82153e;
-  --fluance-gold: #ffce2d;
+  --fluance-bordeaux: #7A1F3D;
+  --fluance-gold: #E6B84A;
   --fluance-leaf: #8bc34a;
-  --fluance-ink: #0f172a;
+  --fluance-ink: #3E3A35;
   --fluance-cream: #fdfaf6;
 }
 
@@ -46,13 +46,13 @@ body.page-transitioning {
 }
 
 .hero-gradient {
-  background: radial-gradient(circle at top, rgba(255, 206, 45, 0.25), transparent),
-    linear-gradient(135deg, rgba(130, 21, 62, 0.85), rgba(15, 23, 42, 0.9));
+  background: radial-gradient(circle at top, rgba(230, 184, 74, 0.25), transparent),
+    linear-gradient(135deg, rgba(122, 31, 61, 0.85), rgba(15, 23, 42, 0.9));
 }
 
 .section-card {
   border-radius: 1.5rem;
-  border: 1px solid rgba(130, 21, 62, 0.15);
+  border: 1px solid rgba(122, 31, 61, 0.15);
   background: white;
   box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
 }
@@ -74,20 +74,20 @@ body.page-transitioning {
   padding: 0.85rem 1.75rem;
   font-weight: 600;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 15px 30px rgba(255, 206, 45, 0.35);
+  box-shadow: 0 15px 30px rgba(230, 184, 74, 0.35);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 25px 40px rgba(255, 206, 45, 0.45);
+  box-shadow: 0 25px 40px rgba(230, 184, 74, 0.45);
 }
 
 .btn-secondary {
   border-radius: 9999px;
   padding: 0.85rem 1.5rem;
   font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  color: white;
+  border: 1px solid rgba(245, 247, 246, 0.4);
+  color: #F5F7F6;
 }
 
 .quote-card {
@@ -98,7 +98,7 @@ body.page-transitioning {
 .nav-blur {
   backdrop-filter: blur(14px);
   background: rgba(253, 250, 246, 0.8);
-  border-bottom: 1px solid rgba(130, 21, 62, 0.1);
+  border-bottom: 1px solid rgba(122, 31, 61, 0.1);
 }
 
 /* Legal pages typography */
@@ -106,7 +106,7 @@ body.page-transitioning {
 .legal-text h3,
 .legal-text h4 {
   font-weight: 600;
-  color: #0f172a;
+  color: #3E3A35;
   margin-top: 1.75rem;
   margin-bottom: 0.75rem;
 }
@@ -150,24 +150,24 @@ header .group:hover .absolute {
 
 /* Effet menu iOS au scroll (desktop uniquement) */
 #main-header.header-scrolled {
-  background: rgba(130, 21, 62, 0.75);
+  background: rgba(122, 31, 61, 0.85);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 206, 45, 0.1);
+  border-bottom: 1px solid rgba(230, 184, 74, 0.1);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
 /* Assurer la compatibilité avec les navigateurs */
 @supports (backdrop-filter: blur(20px)) {
   #main-header.header-scrolled {
-    background: rgba(130, 21, 62, 0.7);
+    background: rgba(122, 31, 61, 0.8);
   }
 }
 
 /* Fallback pour les navigateurs qui ne supportent pas backdrop-filter */
 @supports not (backdrop-filter: blur(20px)) {
   #main-header.header-scrolled {
-    background: rgba(130, 21, 62, 0.95);
+    background: rgba(122, 31, 61, 0.95);
   }
 }
 
