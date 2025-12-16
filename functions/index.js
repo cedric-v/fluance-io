@@ -3475,13 +3475,293 @@ exports.sendNewContentEmails = onSchedule(
           // Ne pas faire échouer toute la fonction si la partie marketing échoue
         }
 
+        // Email "réseaux sociaux" : 10 jours après le dernier email programmé
+        console.log('📧 Starting social networks email (10 days after last scheduled email)');
+        let socialEmailsSent = 0;
+
+        try {
+          // Traiter les clients (Firestore users)
+          for (const userId of userIds) {
+            try {
+              const userDoc = await db.collection('users').doc(userId).get();
+              if (!userDoc.exists) continue;
+
+              const userData = userDoc.data();
+              const email = userData.email;
+              if (!email) continue;
+
+              const firstName = userData.firstName || userData.firstname || '';
+
+              // Trouver le dernier email envoyé pour ce client
+              // Note: On récupère tous les emails et on trie en mémoire pour éviter l'index composite
+              const allEmailsQuery = await db.collection('contentEmailsSent')
+                  .where('email', '==', email)
+                  .get();
+
+              if (allEmailsQuery.empty) continue;
+
+              // Trouver le dernier email (avec sentAt le plus récent)
+              let lastEmailSentAt = null;
+              for (const doc of allEmailsQuery.docs) {
+                const data = doc.data();
+                if (data.sentAt) {
+                  const sentAtDate = data.sentAt.toDate ? data.sentAt.toDate() : new Date(data.sentAt);
+                  if (!lastEmailSentAt || sentAtDate > lastEmailSentAt) {
+                    lastEmailSentAt = sentAtDate;
+                  }
+                }
+              }
+
+              if (!lastEmailSentAt) continue;
+
+              // Calculer les jours depuis le dernier email
+              const lastEmailDate = lastEmailSentAt;
+              const daysSinceLastEmail = Math.floor((now - lastEmailDate) / (1000 * 60 * 60 * 24));
+
+              // Envoyer si 10 jours se sont écoulés
+              if (daysSinceLastEmail >= 10) {
+                const emailSentDocId = `social_networks_${email.toLowerCase().trim()}`;
+                const emailSentDoc = await db.collection('contentEmailsSent')
+                    .doc(emailSentDocId).get();
+
+                if (!emailSentDoc.exists) {
+                  const namePart = firstName ? ` ${firstName}` : '';
+                  const emailSubject = 'Fluance : on se retrouve sur les reseaux sociaux ?';
+                  const emailHtml =
+                      '<p>Bonjour' + namePart + ',</p>' +
+                      '<p>En complement des e-mails de Fluance, je vous invite aussi a ' +
+                      'rejoindre le <a href="https://t.me/+TsD5YCuHvLB7Bdft">groupe Telegram</a> ' +
+                      'ou le <a href="https://www.facebook.com/groups/fluanceio/">groupe Facebook</a> ' +
+                      'pour vous aider a prendre le reflexe de bouger en conscience ' +
+                      'regulierement et vous donner de l\'inspiration.</p>' +
+                      '<p>Fluance est aussi <a href="https://www.youtube.com/@fluanceio">YouTube</a> ' +
+                      'et <a href="https://www.instagram.com/fluanceio/">Instagram</a>.</p>' +
+                      '<p>Les liens des autres reseaux sont au pied de ' +
+                      '<a href="https://fluance.io/">cette page</a>.</p>' +
+                      '<p>Une bonne pratique et a bientot,<br>Cedric</p>';
+
+                  const emailText = [
+                    `Bonjour${namePart},`,
+                    '',
+                    'En complement des e-mails de Fluance, je vous invite aussi a ' +
+                      'rejoindre le groupe Telegram ou le groupe Facebook pour vous aider ' +
+                      'a prendre le reflexe de bouger en conscience regulierement et vous ' +
+                      'donner de l\'inspiration.',
+                    '',
+                    'Fluance est aussi YouTube et Instagram.',
+                    'Les liens des autres reseaux sont au pied de cette page.',
+                    '',
+                    'Une bonne pratique et a bientot,',
+                    'Cedric',
+                    '',
+                    'Liens:',
+                    'Groupe Telegram: https://t.me/+TsD5YCuHvLB7Bdft',
+                    'Groupe Facebook: https://www.facebook.com/groups/fluanceio/',
+                    'YouTube: https://www.youtube.com/@fluanceio',
+                    'Instagram: https://www.instagram.com/fluanceio/',
+                    'Site web: https://fluance.io/',
+                  ].join('\n');
+
+                  await sendMailjetEmail(
+                      email,
+                      emailSubject,
+                      emailHtml,
+                      emailText,
+                      mailjetApiKey,
+                      mailjetApiSecret,
+                      'fluance@actu.fluance.io',
+                      'Cédric de Fluance',
+                  );
+
+                  await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                    email: email,
+                    type: 'social_networks',
+                    daysSinceLastEmail: daysSinceLastEmail,
+                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                  });
+
+                  console.log(`✅ Social networks email sent to ${email} (${daysSinceLastEmail} days after last email)`);
+                  socialEmailsSent++;
+                }
+              }
+            } catch (userError) {
+              console.error(`❌ Error processing user ${userId} for social networks email:`, userError);
+            }
+          }
+
+          // Traiter les prospects (Mailjet contacts)
+          try {
+            const auth = Buffer.from(`${mailjetApiKey}:${mailjetApiSecret}`).toString('base64');
+            const contactListUrl = 'https://api.mailjet.com/v3/REST/contact';
+            const listResponse = await fetch(contactListUrl, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${auth}`,
+              },
+            });
+
+            if (listResponse.ok) {
+              const listData = await listResponse.json();
+              const contacts = listData.Data || [];
+
+              for (const contact of contacts) {
+                const email = contact.Email;
+                if (!email) continue;
+
+                try {
+                  // Récupérer les propriétés du contact
+                  const contactDataUrl =
+                    `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
+                  const contactDataResponse = await fetch(contactDataUrl, {
+                    method: 'GET',
+                    headers: {
+                      'Authorization': `Basic ${auth}`,
+                    },
+                  });
+
+                  if (!contactDataResponse.ok) continue;
+
+                  const contactDataResult = await contactDataResponse.json();
+                  if (!contactDataResult.Data || contactDataResult.Data.length === 0) continue;
+
+                  const contactData = contactDataResult.Data[0];
+                  if (!contactData.Data) continue;
+
+                  // Parser les propriétés
+                  let properties = {};
+                  if (Array.isArray(contactData.Data)) {
+                    contactData.Data.forEach((item) => {
+                      if (item.Name && item.Value !== undefined) {
+                        properties[item.Name] = item.Value;
+                      }
+                    });
+                  } else if (typeof contactData.Data === 'object') {
+                    properties = contactData.Data;
+                  }
+
+                  const firstName = properties.firstname || contact.Name || '';
+                  const estClient = properties.est_client === 'True' || properties.est_client === true;
+                  const produitsAchetes = properties.produits_achetes || '';
+
+                  // Ignorer les clients (déjà traités plus haut)
+                  if (estClient || produitsAchetes.includes('21jours') || produitsAchetes.includes('complet')) {
+                    continue;
+                  }
+
+                  // Trouver le dernier email envoyé pour ce prospect
+                  // Note: On récupère tous les emails et on trie en mémoire pour éviter l'index composite
+                  const allEmailsQuery = await db.collection('contentEmailsSent')
+                      .where('email', '==', email)
+                      .get();
+
+                  if (allEmailsQuery.empty) continue;
+
+                  // Trouver le dernier email (avec sentAt le plus récent)
+                  let lastEmailSentAt = null;
+                  for (const doc of allEmailsQuery.docs) {
+                    const data = doc.data();
+                    if (data.sentAt) {
+                      const sentAtDate = data.sentAt.toDate ? data.sentAt.toDate() : new Date(data.sentAt);
+                      if (!lastEmailSentAt || sentAtDate > lastEmailSentAt) {
+                        lastEmailSentAt = sentAtDate;
+                      }
+                    }
+                  }
+
+                  if (!lastEmailSentAt) continue;
+
+                  // Calculer les jours depuis le dernier email
+                  const lastEmailDate = lastEmailSentAt;
+                  const daysSinceLastEmail = Math.floor((now - lastEmailDate) / (1000 * 60 * 60 * 24));
+
+                  // Envoyer si 10 jours se sont écoulés
+                  if (daysSinceLastEmail >= 10) {
+                    const emailSentDocId = `social_networks_${email.toLowerCase().trim()}`;
+                    const emailSentDoc = await db.collection('contentEmailsSent')
+                        .doc(emailSentDocId).get();
+
+                    if (!emailSentDoc.exists) {
+                      const namePart = firstName ? ` ${firstName}` : '';
+                      const emailSubject = 'Fluance : on se retrouve sur les reseaux sociaux ?';
+                      const emailHtml =
+                          '<p>Bonjour' + namePart + ',</p>' +
+                          '<p>En complement des e-mails de Fluance, je vous invite aussi a ' +
+                          'rejoindre le <a href="https://t.me/+TsD5YCuHvLB7Bdft">groupe Telegram</a> ' +
+                          'ou le <a href="https://www.facebook.com/groups/fluanceio/">groupe Facebook</a> ' +
+                          'pour vous aider a prendre le reflexe de bouger en conscience ' +
+                          'regulierement et vous donner de l\'inspiration.</p>' +
+                          '<p>Fluance est aussi <a href="https://www.youtube.com/@fluanceio">YouTube</a> ' +
+                          'et <a href="https://www.instagram.com/fluanceio/">Instagram</a>.</p>' +
+                          '<p>Les liens des autres reseaux sont au pied de ' +
+                          '<a href="https://fluance.io/">cette page</a>.</p>' +
+                          '<p>Une bonne pratique et a bientot,<br>Cedric</p>';
+
+                      const emailText = [
+                        `Bonjour${namePart},`,
+                        '',
+                        'En complement des e-mails de Fluance, je vous invite aussi a ' +
+                          'rejoindre le groupe Telegram ou le groupe Facebook pour vous aider ' +
+                          'a prendre le reflexe de bouger en conscience regulierement et vous ' +
+                          'donner de l\'inspiration.',
+                        '',
+                        'Fluance est aussi YouTube et Instagram.',
+                        'Les liens des autres reseaux sont au pied de cette page.',
+                        '',
+                        'Une bonne pratique et a bientot,',
+                        'Cedric',
+                        '',
+                        'Liens:',
+                        'Groupe Telegram: https://t.me/+TsD5YCuHvLB7Bdft',
+                        'Groupe Facebook: https://www.facebook.com/groups/fluanceio/',
+                        'YouTube: https://www.youtube.com/@fluanceio',
+                        'Instagram: https://www.instagram.com/fluanceio/',
+                        'Site web: https://fluance.io/',
+                      ].join('\n');
+
+                      await sendMailjetEmail(
+                          email,
+                          emailSubject,
+                          emailHtml,
+                          emailText,
+                          mailjetApiKey,
+                          mailjetApiSecret,
+                          'fluance@actu.fluance.io',
+                          'Cédric de Fluance',
+                      );
+
+                      await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                        email: email,
+                        type: 'social_networks',
+                        daysSinceLastEmail: daysSinceLastEmail,
+                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                      });
+
+                      console.log(`✅ Social networks email sent to ${email} (${daysSinceLastEmail} days after last email)`);
+                      socialEmailsSent++;
+                    }
+                  }
+                } catch (contactError) {
+                  console.error(`❌ Error processing contact ${email} for social networks email:`, contactError);
+                }
+              }
+            }
+          } catch (prospectError) {
+            console.error('❌ Error processing prospects for social networks email:', prospectError);
+          }
+        } catch (socialError) {
+          console.error('❌ Error in social networks email section:', socialError);
+          // Ne pas faire échouer toute la fonction si cette partie échoue
+        }
+
         console.log(`📧 Email job completed: ${emailsSent} sent (clients), ` +
             `${marketingEmailsSent} sent (marketing), ` +
+            `${socialEmailsSent} sent (social networks), ` +
             `${emailsSkipped + marketingEmailsSkipped} skipped, ${errors} errors`);
         return {
           success: true,
           emailsSent,
           marketingEmailsSent,
+          socialEmailsSent,
           emailsSkipped,
           marketingEmailsSkipped,
           errors,
