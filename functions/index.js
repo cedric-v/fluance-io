@@ -242,6 +242,54 @@ function loadEmailTemplate(templateName, variables = {}) {
   return html;
 }
 
+/**
+ * Envoie une notification à support@fluance.io pour chaque nouvel opt-in
+ */
+async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret) {
+  try {
+    const sourceLabel = sourceOptin === '2pratiques' ? '2 pratiques offertes' : '5 jours offerts';
+    const subject = `Nouvel opt-in : ${sourceLabel}`;
+    const dateStr = new Date().toLocaleString('fr-FR', {
+      timeZone: 'Europe/Zurich',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #7A1F3D; border-bottom: 2px solid #E6B84A; padding-bottom: 10px;">Nouvel opt-in Fluance</h2>
+        <div style="background-color: #fdfaf6; padding: 15px; border-radius: 5px; margin-top: 20px;">
+          <p style="margin: 5px 0;"><strong>Email :</strong> ` +
+            `<a href="mailto:${email}" style="color: #7A1F3D;">${email}</a></p>
+          ${name ? `<p style="margin: 5px 0;"><strong>Nom :</strong> ${name}</p>` : ''}
+          <p style="margin: 5px 0;"><strong>Source :</strong> ${sourceLabel}</p>
+          <p style="margin: 5px 0;"><strong>Date :</strong> ${dateStr}</p>
+        </div>
+      </div>
+    `;
+    const textContent =
+      `Nouvel opt-in Fluance\n\nEmail: ${email}\n${name ? `Nom: ${name}\n` : ''}Source: ${sourceLabel}\nDate: ${dateStr}`;
+
+    await sendMailjetEmail(
+        'support@fluance.io',
+        subject,
+        htmlContent,
+        textContent,
+        apiKey,
+        apiSecret,
+        'support@actu.fluance.io',
+        'Fluance - Notification Opt-in',
+    );
+    console.log(`✅ Opt-in notification sent to support@fluance.io for ${email} (${sourceLabel})`);
+  } catch (error) {
+    // Ne pas faire échouer l'opt-in si la notification échoue
+    console.error('Error sending opt-in notification:', error.message);
+  }
+}
+
 async function sendMailjetEmail(to, subject, htmlContent, textContent = null, apiKey, apiSecret, fromEmail = 'support@actu.fluance.io', fromName = 'Fluance') {
   // Vérifier que les credentials Mailjet sont configurés
   if (!apiKey || !apiSecret) {
@@ -1710,6 +1758,15 @@ exports.subscribeToNewsletter = onCall(
           console.error('Stack trace:', err.stack);
         }
 
+        // Envoyer une notification à support@fluance.io pour le nouvel opt-in
+        await sendOptInNotification(
+            contactData.Email,
+            name || '',
+            '2pratiques',
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+
         return {
           success: true,
           message: emailSent ?
@@ -2230,6 +2287,15 @@ exports.subscribeTo5Days = onCall(
           console.error('Exception sending confirmation email:', emailError);
           console.error('Stack trace:', err.stack);
         }
+
+        // Envoyer une notification à support@fluance.io pour le nouvel opt-in
+        await sendOptInNotification(
+            contactData.Email,
+            name || '',
+            '5joursofferts',
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
 
         return {
           success: true,

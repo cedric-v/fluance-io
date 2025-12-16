@@ -1,3 +1,4 @@
+
 # Guide : Trouver le template d'email de confirmation dans MailJet
 
 ## 🔍 Problème
