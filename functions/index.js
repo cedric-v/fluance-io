@@ -3481,7 +3481,9 @@ exports.sendNewContentEmails = onSchedule(
 
         try {
           // Traiter les clients (Firestore users)
-          for (const userId of userIds) {
+          const usersSnapshotForSocial = await db.collection('users').get();
+          for (const userDoc of usersSnapshotForSocial.docs) {
+            const userId = userDoc.id;
             try {
               const userDoc = await db.collection('users').doc(userId).get();
               if (!userDoc.exists) continue;
@@ -3580,7 +3582,10 @@ exports.sendNewContentEmails = onSchedule(
                     sentAt: admin.firestore.FieldValue.serverTimestamp(),
                   });
 
-                  console.log(`✅ Social networks email sent to ${email} (${daysSinceLastEmail} days after last email)`);
+                  console.log(
+                      `✅ Social networks email sent to ${email} ` +
+                      `(${daysSinceLastEmail} days after last email)`,
+                  );
                   socialEmailsSent++;
                 }
               }
@@ -3736,7 +3741,10 @@ exports.sendNewContentEmails = onSchedule(
                         sentAt: admin.firestore.FieldValue.serverTimestamp(),
                       });
 
-                      console.log(`✅ Social networks email sent to ${email} (${daysSinceLastEmail} days after last email)`);
+                      console.log(
+                          `✅ Social networks email sent to ${email} ` +
+                          `(${daysSinceLastEmail} days after last email)`,
+                      );
                       socialEmailsSent++;
                     }
                   }
