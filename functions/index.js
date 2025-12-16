@@ -3239,25 +3239,55 @@ exports.sendNewContentEmails = onSchedule(
                 if (properties.date_optin) {
                   const dateStr = properties.date_optin;
                   if (dateStr.includes('/')) {
+                    // Format DD/MM/YYYY
                     const [day, month, year] = dateStr.split('/');
                     optinDate = new Date(year, month - 1, day);
+                  } else if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} (AM|PM)$/i)) {
+                    // Format Mailjet: YYYY-MM-DD HH:MM AM/PM (ex: "2025-12-13 08:54 PM")
+                    const parts = dateStr.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}) (AM|PM)$/i);
+                    if (parts) {
+                      const [, year, month, day, hour, minute, ampm] = parts;
+                      let hour24 = parseInt(hour, 10);
+                      if (ampm.toUpperCase() === 'PM' && hour24 !== 12) {
+                        hour24 += 12;
+                      } else if (ampm.toUpperCase() === 'AM' && hour24 === 12) {
+                        hour24 = 0;
+                      }
+                      optinDate = new Date(year, parseInt(month, 10) - 1, day, hour24, parseInt(minute, 10));
+                    } else {
+                      optinDate = new Date(dateStr);
+                    }
                   } else {
+                    // Format ISO (YYYY-MM-DDTHH:MM:SS.sssZ) ou autre format
                     optinDate = new Date(dateStr);
+                  }
+
+                  // Vérifier que la date est valide
+                  if (isNaN(optinDate.getTime())) {
+                    console.warn(`⚠️ Date opt-in invalide pour ${email}: ${dateStr}`);
+                    continue;
                   }
                 } else {
                   // Pas de date d'opt-in, on skip
+                  console.log(`⏭️ Pas de date_optin pour ${email}, skip`);
                   continue;
                 }
 
                 const daysSinceOptin = Math.floor((now - optinDate) / (1000 * 60 * 60 * 24));
                 const currentDay = daysSinceOptin + 1;
 
+                console.log(
+                    `📊 Contact ${email}: source_optin="${sourceOptin}", ` +
+                    `date_optin="${properties.date_optin}", currentDay=${currentDay}`,
+                );
+
                 // Vérifier si inscrit aux 5 jours
                 const has5jours = sourceOptin.includes('5joursofferts');
                 const serie5joursDebut = properties.serie_5jours_debut;
 
-                // SCÉNARIO 1 : Opt-in "2 pratiques" → J+1 : Proposer "5 jours offerts"
-                if (sourceOptin.includes('2pratiques') && !has5jours && currentDay === 2) {
+                // SCÉNARIO 1 : Opt-in "2 pratiques" → J+1 à J+7 : Proposer "5 jours offerts"
+                // On envoie même si on a raté le jour exact (jusqu'à J+7 pour rattraper)
+                if (sourceOptin.includes('2pratiques') && !has5jours && currentDay >= 2 && currentDay <= 7) {
                   const emailSentDocId = `marketing_2pratiques_to_5jours_${email.toLowerCase().trim()}`;
                   const emailSentDoc = await db.collection('contentEmailsSent')
                       .doc(emailSentDocId).get();
