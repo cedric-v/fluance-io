@@ -252,18 +252,24 @@
       const isMobile = window.innerWidth < 768;
       const slogan = header.querySelector('.header-slogan');
       
-      // Appliquer l'effet uniquement sur desktop (md et plus)
+      // Appliquer l'effet sur desktop (md et plus)
       if (!isMobile) {
         if (isScrolled) {
           header.classList.add('header-scrolled');
+          header.classList.add('header-scrolled-mobile');
+          // Cacher le slogan sur desktop aussi lors du scroll
+          if (slogan) {
+            slogan.style.display = 'none';
+            slogan.style.visibility = 'hidden';
+          }
         } else {
           header.classList.remove('header-scrolled');
-        }
-        // Sur desktop, toujours afficher le slogan
-        header.classList.remove('header-scrolled-mobile');
-        if (slogan) {
-          slogan.style.display = '';
-          slogan.style.visibility = '';
+          header.classList.remove('header-scrolled-mobile');
+          // Réafficher le slogan
+          if (slogan) {
+            slogan.style.display = '';
+            slogan.style.visibility = '';
+          }
         }
       } else {
         // Sur mobile, garder le style original mais cacher le slogan au scroll
