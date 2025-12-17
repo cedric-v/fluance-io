@@ -175,7 +175,7 @@ header .group:hover .absolute {
 @media (max-width: 767px) {
   .header-container {
     padding-top: 0.125rem !important;
-    padding-bottom: 0.25rem !important;
+    padding-bottom: 0.5rem !important;
   }
 }
 
