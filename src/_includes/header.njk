@@ -1,12 +1,12 @@
 <header id="main-header" class="bg-fluance fixed inset-x-0 top-0 z-50 shadow-md overflow-visible transition-all duration-300">
-  <div class="max-w-6xl mx-auto px-4 pt-2 pb-3 flex items-center justify-between relative">
+  <div class="max-w-6xl mx-auto px-4 pt-1 pb-1.5 md:pt-2 md:pb-3 flex items-center justify-between relative">
     {% if locale == 'en' %}
     <a href="{{ '/en/' | relativeUrl }}" class="flex flex-col items-start gap-0.5">
     {% else %}
     <a href="{{ '/' | relativeUrl }}" class="flex flex-col items-start gap-0.5">
     {% endif %}
       {% image "assets/img/logo.png", "Fluance", "h-14 w-auto", "eager", "", "1536", "1024" %}
-      <span class="text-xs text-[#E6B84A]/80 italic">{% if locale == 'fr' %}Le mouvement qui éveil et apaise{% else %}The movement that awakens and soothes{% endif %}</span>
+      <span class="header-slogan text-xs text-[#E6B84A]/80 italic md:block">{% if locale == 'fr' %}Le mouvement qui éveil et apaise{% else %}The movement that awakens and soothes{% endif %}</span>
     </a>
 
     <button class="md:hidden text-[#E6B84A] z-50 relative" data-menu-toggle aria-label="Open menu">

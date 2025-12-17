@@ -171,6 +171,13 @@ header .group:hover .absolute {
   }
 }
 
+/* Cacher le slogan sur mobile lors du scroll */
+@media (max-width: 767px) {
+  #main-header.header-scrolled-mobile .header-slogan {
+    display: none;
+  }
+}
+
 /* Ajustement du positionnement des images d'en-tête pour mobile */
 .object-position-mobile {
   object-position: center 30%;

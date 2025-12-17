@@ -238,6 +238,7 @@
   });
 
   // Effet de menu iOS au scroll (desktop uniquement)
+  // Sur mobile: cache le slogan lors du scroll
   (function() {
     const header = document.getElementById('main-header');
     if (!header) return;
@@ -256,9 +257,16 @@
         } else {
           header.classList.remove('header-scrolled');
         }
+        // Sur desktop, toujours afficher le slogan
+        header.classList.remove('header-scrolled-mobile');
       } else {
-        // Sur mobile, garder le style original
+        // Sur mobile, garder le style original mais cacher le slogan au scroll
         header.classList.remove('header-scrolled');
+        if (isScrolled) {
+          header.classList.add('header-scrolled-mobile');
+        } else {
+          header.classList.remove('header-scrolled-mobile');
+        }
       }
       
       lastScrollY = scrollY;
