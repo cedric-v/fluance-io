@@ -171,10 +171,40 @@ header .group:hover .absolute {
   }
 }
 
-/* Cacher le slogan sur mobile lors du scroll */
+/* Padding réduit sur mobile uniquement */
 @media (max-width: 767px) {
+  .header-container {
+    padding-top: 0.125rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+}
+
+/* Padding réduit sur desktop aussi */
+@media (min-width: 768px) {
+  .header-container {
+    padding-top: 0.375rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Cacher le slogan sur mobile lors du scroll */
+/* Utilisation de max-width pour Safari */
+@media screen and (max-width: 767px) {
   #main-header.header-scrolled-mobile .header-slogan {
-    display: none;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    line-height: 0 !important;
+    font-size: 0 !important;
+  }
+  
+  /* Alternative pour Safari - cacher complètement l'élément */
+  #main-header.header-scrolled-mobile a .header-slogan {
+    display: none !important;
   }
 }
 

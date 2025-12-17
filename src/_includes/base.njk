@@ -249,9 +249,11 @@
     function updateHeader() {
       const scrollY = window.scrollY;
       const isScrolled = scrollY > 50;
+      const isMobile = window.innerWidth < 768;
+      const slogan = header.querySelector('.header-slogan');
       
       // Appliquer l'effet uniquement sur desktop (md et plus)
-      if (window.innerWidth >= 768) {
+      if (!isMobile) {
         if (isScrolled) {
           header.classList.add('header-scrolled');
         } else {
@@ -259,13 +261,27 @@
         }
         // Sur desktop, toujours afficher le slogan
         header.classList.remove('header-scrolled-mobile');
+        if (slogan) {
+          slogan.style.display = '';
+          slogan.style.visibility = '';
+        }
       } else {
         // Sur mobile, garder le style original mais cacher le slogan au scroll
         header.classList.remove('header-scrolled');
         if (isScrolled) {
           header.classList.add('header-scrolled-mobile');
+          // Forcer le masquage via JavaScript pour Safari
+          if (slogan) {
+            slogan.style.display = 'none';
+            slogan.style.visibility = 'hidden';
+          }
         } else {
           header.classList.remove('header-scrolled-mobile');
+          // Réafficher le slogan
+          if (slogan) {
+            slogan.style.display = '';
+            slogan.style.visibility = '';
+          }
         }
       }
       
