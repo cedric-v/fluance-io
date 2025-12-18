@@ -80,7 +80,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#3E3A35] text-center mb-6">
             <strong class="text-fluance">Les 14 premiers jours sont offerts</strong>
           </p>
-          <button onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block">
             <span>S'abonner mensuellement</span>
             <span>→</span>
           </button>
@@ -107,7 +107,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#3E3A35] text-center mb-6">
             <strong class="text-fluance">Les 14 premiers jours sont offerts</strong>
           </p>
-          <button onclick="window.FluancePayment.redirectToStripe('complet', 'trimestriel', 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'trimestriel', 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block">
             <span>S'abonner trimestriellement</span>
             <span>→</span>
           </button>

@@ -3018,6 +3018,9 @@ exports.sendNewContentEmails = onSchedule(
                           'vous propose une nouvelle mini-serie de pratiques ' +
                           'chaque semaine, toujours courtes, pour continuer a ' +
                           'entretenir votre dos, vos epaules et votre energie.</p>' +
+                          '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                          'vous pouvez tester sans engagement et decider ensuite ' +
+                          'si vous souhaitez continuer.</p>' +
                           '<p>Decouvrez la suite naturelle de votre parcours :</p>' +
                           '<p><a href="' + completUrl + '">' +
                           'Decouvrir l\'approche Fluance complete</a></p>';
@@ -3040,6 +3043,10 @@ exports.sendNewContentEmails = onSchedule(
                             'toujours courtes, pour continuer a entretenir ' +
                             'votre dos, vos epaules et votre energie.',
                           '',
+                          'Les 14 premiers jours sont offerts : vous pouvez ' +
+                            'tester sans engagement et decider ensuite si vous ' +
+                            'souhaitez continuer.',
+                          '',
                           'Decouvrez la suite naturelle de votre parcours :',
                           completUrl,
                         ].join('\n');
@@ -3058,6 +3065,9 @@ exports.sendNewContentEmails = onSchedule(
                           'vous recevez chaque semaine une nouvelle mini-serie. ' +
                           'Les seances restent simples, courtes, et pensees ' +
                           'pour s\'integrer a un quotidien charge.</p>' +
+                          '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                          'testez sans engagement et decidez ensuite si vous ' +
+                          'souhaitez continuer.</p>' +
                           '<p>Vous n\'avez pas besoin d\'etre plus ' +
                           'discipline(e) : vous avez deja commence. Il s\'agit ' +
                           'juste de continuer a petits pas.</p>' +
@@ -3080,6 +3090,10 @@ exports.sendNewContentEmails = onSchedule(
                             'chaque semaine une nouvelle mini-serie. Les ' +
                             'seances restent simples, courtes, et pensees ' +
                             'pour s\'integrer a un quotidien charge.',
+                          '',
+                          'Les 14 premiers jours sont offerts : testez sans ' +
+                            'engagement et decidez ensuite si vous souhaitez ' +
+                            'continuer.',
                           '',
                           'Vous n\'avez pas besoin d\'etre plus discipline(e) : ' +
                             'vous avez deja commence. Il s\'agit juste de ' +
@@ -3107,6 +3121,9 @@ exports.sendNewContentEmails = onSchedule(
                           'devenir votre rituel hebdomadaire : une nouvelle ' +
                           'mini-serie de pratiques chaque semaine, pour ' +
                           'continuer a delier, renforcer et apaiser.</p>' +
+                          '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                          'testez sans engagement et decidez ensuite si vous ' +
+                          'souhaitez continuer.</p>' +
                           '<p>Ceci est un dernier rappel doux : si c\'est le ' +
                           'bon moment pour vous, vous pouvez rejoindre ' +
                           'l\'approche complete ici :</p>' +
@@ -3128,6 +3145,10 @@ exports.sendNewContentEmails = onSchedule(
                             'hebdomadaire : une nouvelle mini-serie de ' +
                             'pratiques chaque semaine, pour continuer a ' +
                             'delier, renforcer et apaiser.',
+                          '',
+                          'Les 14 premiers jours sont offerts : testez sans ' +
+                            'engagement et decidez ensuite si vous souhaitez ' +
+                            'continuer.',
                           '',
                           'Ceci est un dernier rappel doux : si c\'est le ' +
                             'bon moment pour vous, vous pouvez rejoindre ' +
@@ -3527,6 +3548,248 @@ exports.sendNewContentEmails = onSchedule(
 
                       console.log(`✅ Marketing email sent to ${email} for 2pratiques→21jours day ${currentDay}`);
                       marketingEmailsSent++;
+                    }
+                  }
+                }
+
+                // SCÉNARIO 4 : Prospect qui n'a pas acheté le 21 jours → Proposer l'approche complète
+                // Pour "2pratiques" : après J+22 (dernière relance 21 jours)
+                // Pour "5jours" : après J+17 (dernière relance 21 jours)
+                const has21jours = produitsAchetes.includes('21jours');
+                if (!has21jours && !hasComplet) {
+                  // Vérifier aussi dans Firestore si l'utilisateur a acheté le 21 jours
+                  let has21joursInFirestore = false;
+                  try {
+                    const emailLower = email.toLowerCase().trim();
+                    const userQuery = await db.collection('users')
+                        .where('email', '==', emailLower)
+                        .limit(1)
+                        .get();
+                    
+                    if (!userQuery.empty) {
+                      const userData = userQuery.docs[0].data();
+                      const userProducts = userData.products || [];
+                      has21joursInFirestore = userProducts.some((p) => p && p.name === '21jours');
+                    }
+                  } catch (firestoreError) {
+                    console.warn(`⚠️ Error checking Firestore for ${email}:`, firestoreError.message);
+                  }
+
+                  if (!has21joursInFirestore) {
+                    let shouldProposeComplet = false;
+                    let daysAfterLast21joursPromo = 0;
+
+                    // Pour "2pratiques" : après J+22, proposer l'approche complète
+                    if (sourceOptin.includes('2pratiques') && !has5jours && currentDay > 22) {
+                      daysAfterLast21joursPromo = currentDay - 22;
+                      // Proposer l'approche complète à J+25, J+30, J+37 (soit 3, 8, 15 jours après la dernière relance 21 jours)
+                      const joursPromoComplet = [25, 30, 37];
+                      shouldProposeComplet = joursPromoComplet.includes(currentDay);
+                    }
+                    // Pour "5jours" : après J+17, proposer l'approche complète
+                    else if (has5jours && serie5joursDebut) {
+                      const cinqJoursStart = new Date(serie5joursDebut);
+                      const daysSince5jours = Math.floor((now - cinqJoursStart) / (1000 * 60 * 60 * 24));
+                      const joursApres5jours = daysSince5jours + 1;
+                      
+                      if (joursApres5jours > 17) {
+                        daysAfterLast21joursPromo = joursApres5jours - 17;
+                        // Proposer l'approche complète à J+20, J+25, J+32 (soit 3, 8, 15 jours après la dernière relance 21 jours)
+                        const joursPromoComplet = [20, 25, 32];
+                        shouldProposeComplet = joursPromoComplet.includes(joursApres5jours);
+                      }
+                    }
+
+                    if (shouldProposeComplet) {
+                      // Utiliser le bon jour selon le type de prospect pour l'ID
+                      let dayForId = currentDay;
+                      if (has5jours && serie5joursDebut) {
+                        const cinqJoursStart = new Date(serie5joursDebut);
+                        const daysSince5jours = Math.floor((now - cinqJoursStart) / (1000 * 60 * 60 * 24));
+                        dayForId = daysSince5jours + 1;
+                      }
+                      
+                      const emailSentDocId = `marketing_prospect_to_complet_` +
+                          `${email.toLowerCase().trim()}_day_${dayForId}`;
+                      const emailSentDoc = await db.collection('contentEmailsSent')
+                          .doc(emailSentDocId).get();
+
+                      if (!emailSentDoc.exists) {
+                        const baseUrl = 'https://fluance.io';
+                        const completUrl = `${baseUrl}/cours-en-ligne/approche-fluance-complete/`;
+                        const namePart = firstName ? ` ${firstName}` : '';
+
+                        let emailSubject;
+                        let emailHtml;
+                        let emailText;
+
+                        // Premier email : présentation de l'approche complète
+                        if (daysAfterLast21joursPromo === 3) {
+                          emailSubject = 'Et si vous continuiez avec Fluance ?';
+                          emailHtml =
+                            '<p>Bonjour' + namePart + ',</p>' +
+                            '<p>Vous avez peut-être hesite a vous lancer dans le defi ' +
+                            '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                            '<p>Je comprends : il peut etre difficile de s\'engager sur ' +
+                            '21 jours d\'un coup.</p>' +
+                            '<p>Mais peut-etre seriez-vous interesse(e) par ' +
+                            'l\'<strong>approche Fluance complete</strong> ?</p>' +
+                            '<p>C\'est une approche plus <strong>douce et progressive</strong> : ' +
+                            'une nouvelle mini-serie de pratiques chaque semaine, toujours ' +
+                            'courtes (2 a 5 minutes), pour continuer a entretenir votre dos, ' +
+                            'vos epaules et votre energie.</p>' +
+                            '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                            'vous pouvez tester sans engagement et decider ensuite ' +
+                            'si vous souhaitez continuer.</p>' +
+                            '<p>Decouvrez cette approche :</p>' +
+                            '<p><a href="' + completUrl + '">' +
+                            'Decouvrir l\'approche Fluance complete</a></p>';
+
+                          emailText = [
+                            `Bonjour${namePart},`,
+                            '',
+                            'Vous avez peut-etre hesite a vous lancer dans le defi ' +
+                              '"21 jours pour remettre du mouvement".',
+                            '',
+                            'Je comprends : il peut etre difficile de s\'engager sur ' +
+                              '21 jours d\'un coup.',
+                            '',
+                            'Mais peut-etre seriez-vous interesse(e) par ' +
+                              'l\'approche Fluance complete ?',
+                            '',
+                            'C\'est une approche plus douce et progressive : ' +
+                              'une nouvelle mini-serie de pratiques chaque semaine, toujours ' +
+                              'courtes (2 a 5 minutes), pour continuer a entretenir votre dos, ' +
+                              'vos epaules et votre energie.',
+                            '',
+                            'Les 14 premiers jours sont offerts : vous pouvez tester sans ' +
+                              'engagement et decider ensuite si vous souhaitez continuer.',
+                            '',
+                            'Decouvrez cette approche :',
+                            completUrl,
+                          ].join('\n');
+                        }
+                        // Deuxième email : relance
+                        else if (daysAfterLast21joursPromo === 8) {
+                          emailSubject = 'Vous aimeriez continuer... mais vous hesitez ?';
+                          emailHtml =
+                            '<p>Bonjour' + namePart + ',</p>' +
+                            '<p>Vous avez peut-etre hesite a vous lancer dans le defi ' +
+                            '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                            '<p>Peut-etre que vous hesitez : manque de temps, peur de ne pas tenir, ' +
+                            'doute sur l\'utilite sur le long terme...</p>' +
+                            '<p>Avec l\'<strong>approche Fluance complete</strong>, ' +
+                            'vous recevez chaque semaine une nouvelle mini-serie. ' +
+                            'Les seances restent simples, courtes, et pensees ' +
+                            'pour s\'integrer a un quotidien charge.</p>' +
+                            '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                            'testez sans engagement et decidez ensuite si vous ' +
+                            'souhaitez continuer.</p>' +
+                            '<p>Vous n\'avez pas besoin d\'etre plus ' +
+                            'discipline(e) : il s\'agit juste de commencer a petits pas.</p>' +
+                            '<p>Pour voir comment cela peut soutenir votre corps ' +
+                            'dans les prochaines semaines :</p>' +
+                            '<p><a href="' + completUrl + '">' +
+                            'Voir l\'approche Fluance complete</a></p>';
+
+                          emailText = [
+                            `Bonjour${namePart},`,
+                            '',
+                            'Vous avez peut-etre hesite a vous lancer dans le defi ' +
+                              '"21 jours pour remettre du mouvement".',
+                            '',
+                            'Vous hesitez peut-etre : manque de temps, peur de ne pas tenir, ' +
+                              'doute sur l\'utilite sur le long terme.',
+                            '',
+                            'Avec l\'approche Fluance complete, vous recevez ' +
+                              'chaque semaine une nouvelle mini-serie. Les ' +
+                              'seances restent simples, courtes, et pensees ' +
+                              'pour s\'integrer a un quotidien charge.',
+                            '',
+                            'Les 14 premiers jours sont offerts : testez sans ' +
+                              'engagement et decidez ensuite si vous souhaitez ' +
+                              'continuer.',
+                            '',
+                            'Vous n\'avez pas besoin d\'etre plus discipline(e) : ' +
+                              'il s\'agit juste de commencer a petits pas.',
+                            '',
+                            'Pour voir comment cela peut soutenir votre corps ' +
+                              'dans les prochaines semaines :',
+                            completUrl,
+                          ].join('\n');
+                        }
+                        // Troisième email : dernier rappel
+                        else {
+                          emailSubject = 'Dernier rappel pour continuer avec l\'approche Fluance complete';
+                          emailHtml =
+                            '<p>Bonjour' + namePart + ',</p>' +
+                            '<p>Il y a quelques jours, je vous ai parle du defi ' +
+                            '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                            '<p>Comment se sent votre corps aujourd\'hui ? Et ' +
+                            'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
+                            '6 mois ?</p>' +
+                            '<p>Si vous souhaitez garder un elan, ' +
+                            'l\'<strong>approche Fluance complete</strong> peut ' +
+                            'devenir votre rituel hebdomadaire : une nouvelle ' +
+                            'mini-serie de pratiques chaque semaine, pour ' +
+                            'continuer a delier, renforcer et apaiser.</p>' +
+                            '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                            'testez sans engagement et decidez ensuite si vous ' +
+                            'souhaitez continuer.</p>' +
+                            '<p>Ceci est un dernier rappel doux : si c\'est le ' +
+                            'bon moment pour vous, vous pouvez rejoindre ' +
+                            'l\'approche complete ici :</p>' +
+                            '<p><a href="' + completUrl + '">' +
+                            'Rejoindre l\'approche Fluance complete</a></p>';
+
+                          emailText = [
+                            `Bonjour${namePart},`,
+                            '',
+                            'Il y a quelques jours, je vous ai parle du defi ' +
+                              '"21 jours pour remettre du mouvement".',
+                            '',
+                            'Comment se sent votre corps aujourd\'hui ? Et ' +
+                              'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
+                              '6 mois ?',
+                            '',
+                            'Si vous souhaitez garder un elan, l\'approche ' +
+                              'Fluance complete peut devenir votre rituel ' +
+                              'hebdomadaire : une nouvelle mini-serie de ' +
+                              'pratiques chaque semaine, pour continuer a ' +
+                              'delier, renforcer et apaiser.',
+                            '',
+                            'Les 14 premiers jours sont offerts : testez sans ' +
+                              'engagement et decidez ensuite si vous souhaitez ' +
+                              'continuer.',
+                            '',
+                            'Ceci est un dernier rappel doux : si c\'est le ' +
+                              'bon moment pour vous, vous pouvez rejoindre ' +
+                              'l\'approche complete ici :',
+                            completUrl,
+                          ].join('\n');
+                        }
+
+                        await sendMailjetEmail(
+                            email,
+                            emailSubject,
+                            emailHtml,
+                            emailText,
+                            mailjetApiKey,
+                            mailjetApiSecret,
+                            'fluance@actu.fluance.io',
+                            'Cédric de Fluance',
+                        );
+
+                        await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                          email: email,
+                          type: 'marketing_prospect_to_complet',
+                          day: dayForId,
+                          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                        });
+
+                        console.log(`✅ Marketing email sent to ${email} for prospect→complet day ${dayForId}`);
+                        marketingEmailsSent++;
+                      }
                     }
                   }
                 }
