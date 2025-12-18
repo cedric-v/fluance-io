@@ -301,7 +301,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
 
     <div class="p-8 bg-fluance text-[#F5F7F6] space-y-4 rounded-2xl border border-fluance/20 shadow-lg">
       <h2 class="text-2xl font-semibold text-[#F5F7F6]">GARANTIE totale de satisfaction pendant 14 jours.</h2>
-      <p class="text-lg text-[#3E3A35]">
+      <p class="text-lg text-[#F5F7F6]">
         Un simple e-mail au support client (support@fluance.io), sans justification, suffit à vous faire rembourser.
       </p>
     </div>
