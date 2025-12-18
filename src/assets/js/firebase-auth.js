@@ -1138,6 +1138,30 @@ async function displayProtectedContent(contentId, containerElement) {
     // Afficher le contenu HTML
     containerElement.innerHTML = result.content;
     
+    // Gérer l'affichage conditionnel des liens selon les produits de l'utilisateur
+    // Récupérer les produits de l'utilisateur depuis loadProtectedContent
+    const user = auth.currentUser;
+    if (user) {
+      db.collection('users').doc(user.uid).get().then((userDoc) => {
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          const userProducts = userData.products || [];
+          const userProductNames = userProducts.map(p => p.name);
+          
+          // Masquer les liens qui ont data-hide-if-product correspondant à un produit possédé
+          const conditionalLinks = containerElement.querySelectorAll('[data-hide-if-product]');
+          conditionalLinks.forEach((link) => {
+            const productToHide = link.getAttribute('data-hide-if-product');
+            if (userProductNames.includes(productToHide)) {
+              link.style.display = 'none';
+            }
+          });
+        }
+      }).catch((error) => {
+        console.warn('Erreur lors de la récupération des produits utilisateur pour affichage conditionnel:', error);
+      });
+    }
+    
     // Ajouter automatiquement une section de commentaires
     // - pour chaque jour du défi "21jours" (jour défini)
     // - pour chaque contenu de l'approche "complet"
