@@ -53,7 +53,7 @@ const additionalContent = `
         → Découvrir les stages en présentiel
       </a>
     </li>
-    <li>
+    <li data-hide-if-product="complet">
       <a href="/cours-en-ligne/approche-fluance-complete/" class="text-fluance hover:underline font-medium">
         → Rejoindre l'approche Fluance complète (14 jours offerts)
       </a>
@@ -78,12 +78,27 @@ async function updateDay22() {
     }
 
     const existingData = existingDoc.data();
-    const currentContent = existingData.content || '';
+    let currentContent = existingData.content || '';
 
-    // Vérifier si le contenu supplémentaire n'est pas déjà présent
+    // Si le contenu supplémentaire existe déjà, le remplacer
     if (currentContent.includes('Pour continuer votre parcours')) {
-      console.log(`⚠️  Le contenu supplémentaire semble déjà présent dans ${docId}.`);
-      console.log('   Voulez-vous quand même le mettre à jour ? (le script va ajouter le contenu)');
+      console.log(`⚠️  Le contenu supplémentaire est déjà présent dans ${docId}.`);
+      console.log('   Remplacement du contenu existant avec la version conditionnelle...');
+      
+      // Supprimer l'ancien contenu supplémentaire (tout ce qui vient après la vidéo)
+      // On cherche la fin de la vidéo (fermeture de la div avec padding-top:56.25%)
+      const videoEndRegex = /<\/div>\s*(?=<div class="mt-8|$)/;
+      const match = currentContent.match(videoEndRegex);
+      if (match) {
+        // Garder seulement le contenu jusqu'à la fin de la vidéo
+        currentContent = currentContent.substring(0, match.index + match[0].length);
+      } else {
+        // Si on ne trouve pas la fin de la vidéo, supprimer tout ce qui contient "Pour continuer"
+        const continuationIndex = currentContent.indexOf('Pour continuer votre parcours');
+        if (continuationIndex !== -1) {
+          currentContent = currentContent.substring(0, continuationIndex).trim();
+        }
+      }
     }
 
     // Ajouter le contenu supplémentaire à la fin du contenu existant
