@@ -3556,6 +3556,7 @@ exports.sendNewContentEmails = onSchedule(
                 // Pour "2pratiques" : après J+22 (dernière relance 21 jours)
                 // Pour "5jours" : après J+17 (dernière relance 21 jours)
                 const has21jours = produitsAchetes.includes('21jours');
+                const hasComplet = produitsAchetes.includes('complet');
                 if (!has21jours && !hasComplet) {
                   // Vérifier aussi dans Firestore si l'utilisateur a acheté le 21 jours
                   let has21joursInFirestore = false;
@@ -3565,7 +3566,7 @@ exports.sendNewContentEmails = onSchedule(
                         .where('email', '==', emailLower)
                         .limit(1)
                         .get();
-                    
+
                     if (!userQuery.empty) {
                       const userData = userQuery.docs[0].data();
                       const userProducts = userData.products || [];
@@ -3582,19 +3583,21 @@ exports.sendNewContentEmails = onSchedule(
                     // Pour "2pratiques" : après J+22, proposer l'approche complète
                     if (sourceOptin.includes('2pratiques') && !has5jours && currentDay > 22) {
                       daysAfterLast21joursPromo = currentDay - 22;
-                      // Proposer l'approche complète à J+25, J+30, J+37 (soit 3, 8, 15 jours après la dernière relance 21 jours)
+                      // Proposer l'approche complète à J+25, J+30, J+37
+                      // (soit 3, 8, 15 jours après la dernière relance 21 jours)
                       const joursPromoComplet = [25, 30, 37];
                       shouldProposeComplet = joursPromoComplet.includes(currentDay);
-                    }
-                    // Pour "5jours" : après J+17, proposer l'approche complète
-                    else if (has5jours && serie5joursDebut) {
+                    } else if (has5jours && serie5joursDebut) {
+                      // Pour "5jours" : après J+17, proposer l'approche complète
                       const cinqJoursStart = new Date(serie5joursDebut);
-                      const daysSince5jours = Math.floor((now - cinqJoursStart) / (1000 * 60 * 60 * 24));
+                      const daysSince5jours = Math.floor(
+                          (now - cinqJoursStart) / (1000 * 60 * 60 * 24));
                       const joursApres5jours = daysSince5jours + 1;
-                      
+
                       if (joursApres5jours > 17) {
                         daysAfterLast21joursPromo = joursApres5jours - 17;
-                        // Proposer l'approche complète à J+20, J+25, J+32 (soit 3, 8, 15 jours après la dernière relance 21 jours)
+                        // Proposer l'approche complète à J+20, J+25, J+32
+                        // (soit 3, 8, 15 jours après la dernière relance 21 jours)
                         const joursPromoComplet = [20, 25, 32];
                         shouldProposeComplet = joursPromoComplet.includes(joursApres5jours);
                       }
@@ -3608,7 +3611,7 @@ exports.sendNewContentEmails = onSchedule(
                         const daysSince5jours = Math.floor((now - cinqJoursStart) / (1000 * 60 * 60 * 24));
                         dayForId = daysSince5jours + 1;
                       }
-                      
+
                       const emailSentDocId = `marketing_prospect_to_complet_` +
                           `${email.toLowerCase().trim()}_day_${dayForId}`;
                       const emailSentDoc = await db.collection('contentEmailsSent')
@@ -3668,9 +3671,8 @@ exports.sendNewContentEmails = onSchedule(
                             'Decouvrez cette approche :',
                             completUrl,
                           ].join('\n');
-                        }
-                        // Deuxième email : relance
-                        else if (daysAfterLast21joursPromo === 8) {
+                        } else if (daysAfterLast21joursPromo === 8) {
+                          // Deuxième email : relance
                           emailSubject = 'Vous aimeriez continuer... mais vous hesitez ?';
                           emailHtml =
                             '<p>Bonjour' + namePart + ',</p>' +
@@ -3717,9 +3719,8 @@ exports.sendNewContentEmails = onSchedule(
                               'dans les prochaines semaines :',
                             completUrl,
                           ].join('\n');
-                        }
-                        // Troisième email : dernier rappel
-                        else {
+                        } else {
+                          // Troisième email : dernier rappel
                           emailSubject = 'Dernier rappel pour continuer avec l\'approche Fluance complete';
                           emailHtml =
                             '<p>Bonjour' + namePart + ',</p>' +
