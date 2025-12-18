@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: Home
+ogTitle: "Release body tension through movement and breath"
 description: "Fluance: release tension, regain fluidity, mobility and serenity through a simple, natural approach based on movement, breath and play."
 locale: en
 permalink: /en/

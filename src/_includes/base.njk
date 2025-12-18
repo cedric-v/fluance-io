@@ -26,8 +26,10 @@
     {# Open Graph / Facebook #}
     {% if locale == 'fr' %}
       {% set pageTitle = title or 'Accueil' %}
+      {% set ogTitle = ogTitle or pageTitle %}
     {% else %}
       {% set pageTitle = title or 'Home' %}
+      {% set ogTitle = ogTitle or pageTitle %}
     {% endif %}
     {% if locale == 'fr' %}
       {% set pageDescription = description or 'Fluance : le mouvement qui éveille et apaise. Libérez votre corps des tensions grâce à une approche simple basée sur le mouvement, le souffle et le jeu.' %}
@@ -43,7 +45,7 @@
     
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ pageUrl }}">
-    <meta property="og:title" content="{{ pageTitle }} | Fluance">
+    <meta property="og:title" content="{{ ogTitle }} | Fluance">
     <meta property="og:description" content="{{ pageDescription }}">
     <meta property="og:image" content="{{ ogImageUrl }}">
     <meta property="og:image:width" content="1200">
