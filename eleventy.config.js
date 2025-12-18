@@ -284,6 +284,33 @@ module.exports = function(eleventyConfig) {
           "price": "19.00",
           "priceCurrency": "CHF"
         };
+        
+        // Ajouter un schéma VideoObject pour la vidéo de présentation
+        const videoSchema = {
+          "@context": "https://schema.org",
+          "@type": "VideoObject",
+          "name": pageLocale === 'fr' 
+            ? "Présentation de l'approche Fluance - 21 jours pour remettre du mouvement"
+            : "Fluance Approach Presentation - 21 days to get moving again",
+          "description": pageLocale === 'fr'
+            ? "Je vous présente brièvement cette approche douce, brève et accessible pour libérer votre corps des tensions et apaiser votre esprit. Fluance s'adresse à celles et ceux qui ont déjà essayé de nombreuses approches, sans jamais trouver de méthode qui s'adapte vraiment à votre corps, à votre énergie, à votre rythme."
+            : "I briefly present this gentle, brief and accessible approach to release your body from tension and calm your mind. Fluance is for those who have already tried many approaches, without ever finding a method that really adapts to your body, your energy, your rhythm.",
+          "thumbnailUrl": `${baseUrl}/assets/img/bienvenue-21-jour-bandeau.jpg`,
+          "uploadDate": "2024-01-01", // Date approximative, à ajuster si nécessaire
+          "contentUrl": "https://iframe.mediadelivery.net/embed/479894/86766f4f-3e65-4816-8946-ed75b39b4c96",
+          "embedUrl": "https://iframe.mediadelivery.net/embed/479894/86766f4f-3e65-4816-8946-ed75b39b4c96",
+          "duration": "PT5M", // Durée approximative
+          "inLanguage": pageLocale === 'fr' ? 'fr-FR' : 'en-US',
+          "publisher": {
+            "@type": "Organization",
+            "name": "Fluance",
+            "logo": {
+              "@type": "ImageObject",
+              "url": `${baseUrl}/assets/img/fond-cedric.jpg`
+            }
+          }
+        };
+        schemas.push(videoSchema);
       }
 
       // Schéma spécifique pour l'approche complète
