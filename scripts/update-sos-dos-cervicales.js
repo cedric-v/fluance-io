@@ -89,6 +89,7 @@ async function updateSosDosCervicales() {
       
       // Mettre à jour le document existant
       await docRef.update({
+        product: 'sos-dos-cervicales', // S'assurer que le champ product est correct
         content: fullContent,
         commentText: commentText,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),

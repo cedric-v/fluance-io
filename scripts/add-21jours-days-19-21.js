@@ -71,7 +71,7 @@ const daysContent = [
         → Découvrir les stages en présentiel
       </a>
     </li>
-    <li>
+    <li data-hide-if-product="complet">
       <a href="/cours-en-ligne/approche-fluance-complete/" class="text-fluance hover:underline font-medium">
         → Rejoindre l'approche Fluance complète (14 jours offerts)
       </a>

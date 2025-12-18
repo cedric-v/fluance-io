@@ -4,7 +4,7 @@
  * Script pour ajouter un produit à un utilisateur existant
  * 
  * Usage: node scripts/add-product-to-user.js <email> <product>
- * Exemple: node scripts/add-product-to-user.js cedricjourney+testauth@gmail.com complet
+ * Exemple: node scripts/add-product-to-user.js user@example.com complet
  */
 
 const fs = require('fs');
@@ -125,7 +125,7 @@ const args = process.argv.slice(2);
 
 if (args.length < 2) {
   console.error('Usage: node scripts/add-product-to-user.js <email> <product>');
-  console.error('Exemple: node scripts/add-product-to-user.js cedricjourney+testauth@gmail.com complet');
+  console.error('Exemple: node scripts/add-product-to-user.js user@example.com complet');
   process.exit(1);
 }
 
