@@ -20,7 +20,7 @@
     {% endif %}
     <meta name="description" content="{{ description or 'Accompagnement professionnel et développement personnel.' }}">
     
-    {% set canonicalUrl = fullUrl | url %}
+    {% set canonicalUrl = page.url | canonicalUrl %}
     <link rel="canonical" href="https://fluance.io{{ canonicalUrl }}">
     
     {# Open Graph / Facebook #}
@@ -67,8 +67,27 @@
     <meta name="twitter:description" content="{{ pageDescription }}">
     <meta name="twitter:image" content="{{ ogImageUrl }}">
     
-    <link rel="alternate" hreflang="fr" href="https://fluance.io{% if canonicalUrl.startsWith('/en/') %}{{ canonicalUrl | replace('/en/', '/fr/') }}{% else %}{{ canonicalUrl }}{% endif %}">
-    <link rel="alternate" hreflang="en" href="https://fluance.io{% if canonicalUrl.startsWith('/fr/') %}{{ canonicalUrl | replace('/fr/', '/en/') }}{% else %}{{ canonicalUrl }}{% endif %}">
+    {% if canonicalUrl.startsWith('/en/') %}
+      {% set frUrl = canonicalUrl | replace('/en/', '/fr/') %}
+      {% set enUrl = canonicalUrl %}
+    {% elif canonicalUrl.startsWith('/fr/') %}
+      {% set frUrl = canonicalUrl %}
+      {% set enUrl = canonicalUrl | replace('/fr/', '/en/') %}
+    {% elif canonicalUrl == '/' %}
+      {% set frUrl = '/fr/' %}
+      {% set enUrl = '/en/' %}
+    {% else %}
+      {# Pour les pages sans préfixe de langue, ajouter le préfixe selon la locale #}
+      {% if locale == 'fr' %}
+        {% set frUrl = canonicalUrl %}
+        {% set enUrl = '/en' + canonicalUrl %}
+      {% else %}
+        {% set frUrl = '/fr' + canonicalUrl %}
+        {% set enUrl = canonicalUrl %}
+      {% endif %}
+    {% endif %}
+    <link rel="alternate" hreflang="fr" href="https://fluance.io{{ frUrl }}">
+    <link rel="alternate" hreflang="en" href="https://fluance.io{{ enUrl }}">
     
     <!-- Précharger le CSS pour améliorer le FCP (chargement asynchrone) -->
     <link rel="preload" href="{{ '/assets/css/styles.css' | url }}" as="style" onload="this.onload=null;this.rel='stylesheet'">

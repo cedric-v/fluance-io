@@ -91,6 +91,34 @@ module.exports = function(eleventyConfig) {
     return 'https://fluance.io/' + imagePath;
   });
 
+  // 2d-bis. Filtre pour normaliser les URLs canoniques
+  eleventyConfig.addFilter("canonicalUrl", function(url) {
+    if (!url || url === '.' || url === './') return '/';
+    
+    // Normaliser l'URL : s'assurer qu'elle commence par /
+    let normalized = url.startsWith('/') ? url : '/' + url;
+    
+    // Gérer les cas spéciaux
+    if (normalized === '/' || normalized === './' || normalized === '.') {
+      return '/';
+    }
+    
+    // S'assurer que l'URL se termine par / pour les pages d'accueil
+    if (normalized === '/fr' || normalized === '/en') {
+      normalized = normalized + '/';
+    }
+    
+    // Normaliser les doubles slashes (sauf après le protocole)
+    normalized = normalized.replace(/\/+/g, '/');
+    
+    // S'assurer que les pages d'accueil se terminent par /
+    if (normalized === '/fr' || normalized === '/en') {
+      normalized = normalized + '/';
+    }
+    
+    return normalized;
+  });
+
   // 2e. Shortcode pour le contenu protégé
   // Le script JavaScript est dans un fichier externe (protected-content.js)
   // pour éviter les problèmes de minification HTML
