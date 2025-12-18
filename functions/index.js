@@ -1109,6 +1109,8 @@ exports.createStripeCheckoutSession = onCall(
               // Ajouter le variant pour rdv-clarte si présent
               ...(product === 'rdv-clarte' && variant ? {variant: variant} : {}),
             },
+            // Période d'essai gratuite de 14 jours pour le produit "complet"
+            ...(product === 'complet' ? {trial_period_days: 14} : {}),
           } : undefined,
         });
 
