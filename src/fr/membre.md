@@ -525,6 +525,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
               </div>
             `;
+          } else {
+            // Pour les autres produits (comme sos-dos-cervicales), afficher le contenu directement
+            const firstContent = contents.find(c => c.isAccessible) || contents[0];
+            
+            if (firstContent) {
+              contentHTML += `
+                <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
+                  <div class="mb-6">
+                    <h2 class="text-2xl font-semibold mb-4">${firstContent.title || prod.name}</h2>
+                    <div class="protected-content" data-content-id="${firstContent.id}">
+                      <div class="bg-gray-100 rounded-lg p-8 text-center">
+                        <p class="text-gray-600 mb-4">Chargement du contenu...</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else {
+              contentHTML += `
+                <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
+                  <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-blue-800">Aucun contenu disponible pour le moment.</p>
+                  </div>
+                </div>
+              `;
+            }
           }
         }
       });
