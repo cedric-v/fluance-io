@@ -59,13 +59,13 @@ const daysContent = [
     title: 'Joie de bouger et bilan',
     content: `<div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/d761bc2c-d6f3-41e1-85b7-244810a754b2?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
 <div class="mt-8 space-y-4">
+  <p class="mb-4">
+    <a href="/membre/" data-load-content="21jours-jour-0" class="text-fluance hover:underline font-medium">
+      → Voir la page du bilan de départ (Déroulé / bien démarrer)
+    </a>
+  </p>
   <h3 class="text-xl font-semibold mb-4">Pour continuer votre parcours :</h3>
   <ul class="space-y-3">
-    <li>
-      <a href="/membre/" data-content-id="21jours-jour-0" class="text-fluance hover:underline font-medium">
-        → Retourner au bilan de départ (Déroulé / bien démarrer)
-      </a>
-    </li>
     <li>
       <a href="/presentiel/prochains-stages/" class="text-fluance hover:underline font-medium">
         → Découvrir les stages en présentiel
@@ -73,7 +73,7 @@ const daysContent = [
     </li>
     <li>
       <a href="/cours-en-ligne/approche-fluance-complete/" class="text-fluance hover:underline font-medium">
-        → Rejoindre l'approche Fluance complète
+        → Rejoindre l'approche Fluance complète (14 jours offerts)
       </a>
     </li>
   </ul>

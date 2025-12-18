@@ -1198,6 +1198,22 @@ async function displayProtectedContent(contentId, containerElement) {
       }, 100);
     }
     
+    // Gérer les liens avec data-load-content pour charger d'autres contenus
+    const loadContentLinks = containerElement.querySelectorAll('a[data-load-content]');
+    loadContentLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const contentId = link.getAttribute('data-load-content');
+        if (contentId && window.FluanceAuth && window.FluanceAuth.displayProtectedContent) {
+          // Charger le contenu dans le même conteneur
+          window.FluanceAuth.displayProtectedContent(contentId, containerElement);
+        } else {
+          // Fallback : rediriger vers l'espace membre
+          window.location.href = '/membre/';
+        }
+      });
+    });
+    
     // Exécuter les scripts dans le contenu (pour les embeds vidéo, etc.)
     const scripts = containerElement.querySelectorAll('script');
     scripts.forEach((oldScript) => {
