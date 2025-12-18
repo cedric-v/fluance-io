@@ -4,6 +4,7 @@ title: Accueil
 description: "Fluance : libérez votre corps des tensions et retrouvez fluidité, mobilité et sérénité grâce à une approche simple basée sur le mouvement, le souffle et le jeu."
 locale: fr
 permalink: /fr/
+ogImage: assets/img/accueil-miniature-FR.jpg
 ---
 
 <section id="fond-cedric" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">

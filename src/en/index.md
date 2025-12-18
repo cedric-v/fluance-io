@@ -4,6 +4,7 @@ title: Home
 description: "Fluance: release tension, regain fluidity, mobility and serenity through a simple, natural approach based on movement, breath and play."
 locale: en
 permalink: /en/
+ogImage: assets/img/accueil-miniature-EN.jpg
 ---
 
 <section id="fond-cedric" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">
