@@ -66,17 +66,56 @@ async function grantFullAccess(db, auth, email) {
     // Calculer la date d'inscription (il y a 22 jours pour avoir accès complet)
     const registrationDate = new Date();
     registrationDate.setDate(registrationDate.getDate() - DAYS_BACK);
+    const startDateTimestamp = admin.firestore.Timestamp.fromDate(registrationDate);
+
+    // Récupérer le document utilisateur pour mettre à jour products[]
+    const userDocRef = db.collection('users').doc(userId);
+    const userDoc = await userDocRef.get();
+    
+    let products = [];
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      products = userData.products || [];
+      
+      // Migration depuis ancien format si nécessaire
+      if (products.length === 0 && userData.product) {
+        const existingStartDate = userData.registrationDate || userData.createdAt || admin.firestore.Timestamp.now();
+        products = [{
+          name: userData.product,
+          startDate: existingStartDate,
+          purchasedAt: userData.createdAt || existingStartDate,
+        }];
+      }
+    }
+    
+    // Mettre à jour ou ajouter le produit "21jours" avec la date de démarrage
+    const productIndex = products.findIndex(p => p.name === '21jours');
+    if (productIndex >= 0) {
+      // Mettre à jour la date de démarrage du produit existant
+      products[productIndex].startDate = startDateTimestamp;
+    } else {
+      // Ajouter le produit "21jours" avec la date de démarrage
+      products.push({
+        name: '21jours',
+        startDate: startDateTimestamp,
+        purchasedAt: admin.firestore.Timestamp.now(),
+      });
+    }
 
     // Mettre à jour le document utilisateur
-    await db.collection('users').doc(userId).update({
-      registrationDate: admin.firestore.Timestamp.fromDate(registrationDate),
+    await userDocRef.set({
+      products: products,
+      product: '21jours', // Garder pour compatibilité rétroactive
+      registrationDate: startDateTimestamp, // Garder pour compatibilité rétroactive
       fullAccessGranted: true, // Flag pour indiquer que l'accès complet a été accordé
       fullAccessGrantedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
 
     console.log(`✅ Accès complet accordé à ${email}`);
     console.log(`   User ID: ${userId}`);
     console.log(`   Registration date: ${registrationDate.toISOString().split('T')[0]} (il y a ${DAYS_BACK} jours)`);
+    console.log(`   Produits: ${products.map(p => p.name).join(', ')}`);
     console.log(`   Tous les jours (0-22) sont maintenant accessibles\n`);
 
     return { success: true, userId, email };

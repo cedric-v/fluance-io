@@ -80,10 +80,10 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#3E3A35] text-center mb-6">
             <strong class="text-fluance">The first 14 days are free</strong>
           </p>
-          <a href="https://espace.fluance.io/par/abo/bdc/mens" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'en', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block">
             <span>Subscribe monthly</span>
             <span>→</span>
-          </a>
+          </button>
           <p class="text-sm text-[#3E3A35]/70 text-center mt-2">
             Cancelable at any time with a simple email to <a href="#" id="cancel-email-link-en-1" class="text-fluance hover:underline"></a>
           </p>
@@ -107,10 +107,10 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#3E3A35] text-center mb-6">
             <strong class="text-fluance">The first 14 days are free</strong>
           </p>
-          <a href="https://espace.fluance.io/par/abo/bdc/tri" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'trimestriel', 'en', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block">
             <span>Subscribe quarterly</span>
             <span>→</span>
-          </a>
+          </button>
           <p class="text-sm text-[#3E3A35]/70 text-center mt-2">
             Cancelable at any time with a simple email to <a href="#" id="cancel-email-link-en-2" class="text-fluance hover:underline"></a>
           </p>
