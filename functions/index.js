@@ -172,6 +172,10 @@ async function ensureMailjetContactProperties(apiKey, apiSecret) {
     'est_client',
     'serie_5jours_debut',
     'serie_5jours_status',
+    'firstname',
+    'lastname',
+    'phone',
+    'address',
   ];
 
   console.log(`📋 Ensuring ${properties.length} MailJet contact properties exist`);
@@ -398,6 +402,9 @@ async function createTokenAndSendEmail(
     mailjetApiKey,
     mailjetApiSecret,
     amount = null,
+    customerName = null,
+    customerPhone = null,
+    customerAddress = null,
 ) {
   const token = generateUniqueToken();
   const expirationDate = new Date();
@@ -490,6 +497,18 @@ async function createTokenAndSendEmail(
         nombre_achats: currentNombreAchats + 1,
         est_client: 'True',
       };
+
+      // Ajouter les coordonnées complémentaires si disponibles
+      if (customerName) {
+        updatedProperties.firstname = customerName.split(' ')[0]; // Prénom (premier mot)
+        updatedProperties.lastname = customerName.split(' ').slice(1).join(' '); // Nom (reste)
+      }
+      if (customerPhone) {
+        updatedProperties.phone = customerPhone;
+      }
+      if (customerAddress) {
+        updatedProperties.address = customerAddress;
+      }
 
       // Si c'est le premier achat, définir date_premier_achat
       if (isFirstPurchase) {
@@ -649,6 +668,24 @@ exports.webhookStripe = onRequest(
           return res.status(400).send('No email found');
         }
 
+        // Récupérer les coordonnées complémentaires depuis Stripe
+        const customerName = session.customer_details?.name || null;
+        const customerPhone = session.customer_details?.phone || null;
+        const customerAddress = session.customer_details?.address || null;
+        // Formater l'adresse complète si disponible
+        let fullAddress = null;
+        if (customerAddress) {
+          const addressParts = [];
+          if (customerAddress.line1) addressParts.push(customerAddress.line1);
+          if (customerAddress.line2) addressParts.push(customerAddress.line2);
+          if (customerAddress.city) addressParts.push(customerAddress.city);
+          if (customerAddress.postal_code) addressParts.push(customerAddress.postal_code);
+          if (customerAddress.country) addressParts.push(customerAddress.country);
+          if (addressParts.length > 0) {
+            fullAddress = addressParts.join(', ');
+          }
+        }
+
         // Déterminer le produit depuis les métadonnées uniquement (pas de fallback)
         const product = session.metadata?.product;
         if (!product || (product !== '21jours' && product !== 'complet' && product !== 'rdv-clarte')) {
@@ -691,6 +728,9 @@ exports.webhookStripe = onRequest(
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
               amountCHF,
+              customerName,
+              customerPhone,
+              fullAddress,
           );
           console.log(
               `Token created and email sent to ${customerEmail} for product ${product}, amount: ${amountCHF} CHF`,
@@ -724,7 +764,7 @@ exports.webhookStripe = onRequest(
               }
             }
 
-            // Si le cross-sell a été détecté, créer un token pour ce produit
+            // Si le cross-sell a été détecté, créer un token pour ce produit (réutiliser les mêmes coordonnées)
             if (hasCrossSell) {
               await createTokenAndSendEmail(
                   customerEmail,
@@ -733,6 +773,9 @@ exports.webhookStripe = onRequest(
                   process.env.MAILJET_API_KEY,
                   process.env.MAILJET_API_SECRET,
                   17, // Montant du cross-sell en CHF
+                  customerName,
+                  customerPhone,
+                  fullAddress,
               );
               console.log(
                   `Token created and email sent to ${customerEmail} for cross-sell product sos-dos-cervicales`,
@@ -880,8 +923,29 @@ exports.webhookPayPal = onRequest(
         }
 
         try {
-          // Récupérer le montant en CHF depuis PayPal
+          // Récupérer les coordonnées complémentaires depuis PayPal
+          const payer = resource.payer || {};
           const purchaseUnits = resource.purchase_units || [];
+          const shipping = purchaseUnits[0]?.shipping || {};
+          const payerName = payer.name || {};
+          const customerName = payerName.given_name && payerName.surname ?
+            `${payerName.given_name} ${payerName.surname}` : null;
+          const customerPhone = payer.phone?.phone_number?.national_number || null;
+          // Formater l'adresse PayPal si disponible
+          let fullAddress = null;
+          if (shipping.address) {
+            const addressParts = [];
+            if (shipping.address.address_line_1) addressParts.push(shipping.address.address_line_1);
+            if (shipping.address.address_line_2) addressParts.push(shipping.address.address_line_2);
+            if (shipping.address.admin_area_2) addressParts.push(shipping.address.admin_area_2); // Ville
+            if (shipping.address.postal_code) addressParts.push(shipping.address.postal_code);
+            if (shipping.address.country_code) addressParts.push(shipping.address.country_code);
+            if (addressParts.length > 0) {
+              fullAddress = addressParts.join(', ');
+            }
+          }
+
+          // Récupérer le montant en CHF depuis PayPal
           const amount = purchaseUnits[0]?.amount || {};
           const value = parseFloat(amount.value || 0);
           const currency = (amount.currency_code || 'CHF').toUpperCase();
@@ -905,6 +969,9 @@ exports.webhookPayPal = onRequest(
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
               amountCHF,
+              customerName,
+              customerPhone,
+              fullAddress,
           );
           console.log(
               `Token created and email sent to ${customerEmail} for product ${product}, amount: ${amountCHF} CHF`,
@@ -1207,6 +1274,10 @@ exports.createUserToken = onCall(
             expirationDays || 30,
             process.env.MAILJET_API_KEY,
             process.env.MAILJET_API_SECRET,
+            null, // amount (null pour création manuelle)
+            null, // customerName (non disponible pour création manuelle)
+            null, // customerPhone (non disponible pour création manuelle)
+            null, // customerAddress (non disponible pour création manuelle)
         );
         return {success: true, token};
       } catch (error) {
@@ -1635,6 +1706,7 @@ exports.subscribeToNewsletter = onCall(
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           expiresAt: expirationDate,
           confirmed: false,
+          reminderSent: false,
           sourceOptin: '2pratiques',
         });
 
@@ -2093,6 +2165,7 @@ exports.subscribeTo5Days = onCall(
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           expiresAt: expirationDate,
           confirmed: false,
+          reminderSent: false,
           sourceOptin: '5joursofferts',
         });
 
@@ -4160,6 +4233,171 @@ exports.sendNewContentEmails = onSchedule(
         };
       } catch (error) {
         console.error('❌ Error in sendNewContentEmails:', error);
+        throw error;
+      }
+    });
+
+/**
+ * Fonction scheduled pour envoyer des relances aux opt-ins non confirmés
+ * S'exécute quotidiennement à 9h (Europe/Paris)
+ * Envoie une relance unique 3-4 jours après l'inscription si non confirmée
+ */
+exports.sendOptInReminders = onSchedule(
+    {
+      schedule: '0 9 * * *', // Tous les jours à 9h
+      timeZone: 'Europe/Paris',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      region: 'europe-west1',
+    },
+    async (_event) => {
+      console.log('📧 Starting scheduled job for opt-in reminders');
+      const now = new Date();
+      const mailjetApiKey = process.env.MAILJET_API_KEY;
+      const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+
+      if (!mailjetApiKey || !mailjetApiSecret) {
+        console.error('❌ Mailjet credentials not configured');
+        return;
+      }
+
+      try {
+        // Récupérer tous les opt-ins non confirmés qui n'ont pas encore reçu de relance
+        const unconfirmedQuery = await db.collection('newsletterConfirmations')
+            .where('confirmed', '==', false)
+            .where('reminderSent', '==', false)
+            .get();
+
+        if (unconfirmedQuery.empty) {
+          console.log('✅ No unconfirmed opt-ins to remind');
+          return;
+        }
+
+        console.log(`📋 Found ${unconfirmedQuery.size} unconfirmed opt-ins to check`);
+
+        let remindersSent = 0;
+        let remindersSkipped = 0;
+        let errors = 0;
+
+        for (const doc of unconfirmedQuery.docs) {
+          try {
+            const tokenData = doc.data();
+            const tokenId = doc.id;
+
+            // Vérifier que le token n'a pas expiré
+            if (!tokenData.expiresAt) {
+              console.warn(`⚠️ Token ${tokenId} has no expiration date, skipping`);
+              remindersSkipped++;
+              continue;
+            }
+
+            const expiresAt = tokenData.expiresAt.toDate();
+            if (now > expiresAt) {
+              console.log(`⏰ Token ${tokenId} has expired, skipping reminder`);
+              remindersSkipped++;
+              continue;
+            }
+
+            // Vérifier la date de création
+            if (!tokenData.createdAt) {
+              console.warn(`⚠️ Token ${tokenData.email} has no creation date, skipping`);
+              remindersSkipped++;
+              continue;
+            }
+
+            const createdAt = tokenData.createdAt.toDate();
+            const daysSinceCreation = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+
+            // Envoyer la relance entre 3 et 4 jours après l'inscription
+            if (daysSinceCreation < 3 || daysSinceCreation > 4) {
+              // Trop tôt ou trop tard, on attendra le prochain jour
+              continue;
+            }
+
+            const email = tokenData.email;
+            const name = tokenData.name || '';
+            const sourceOptin = tokenData.sourceOptin || '2pratiques';
+
+            // Déterminer le contenu de l'opt-in pour le message
+            let optinContent = 'vos contenus Fluance offerts';
+            let redirectParam = '2pratiques';
+            if (sourceOptin === '5joursofferts') {
+              optinContent = 'vos 5 pratiques Fluance offertes';
+              redirectParam = '5joursofferts';
+            } else if (sourceOptin === '2pratiques') {
+              optinContent = 'vos 2 pratiques Fluance offertes';
+            }
+
+            // Construire l'URL de confirmation
+            const confirmationUrl =
+              `https://fluance.io/confirm?email=${encodeURIComponent(email)}` +
+              `&token=${tokenId}&redirect=${redirectParam}`;
+
+            // Formater la date d'expiration pour l'email
+            const expirationDateStr = expiresAt.toLocaleDateString('fr-FR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            });
+
+            // Utiliser l'écriture inclusive pour éviter les suppositions de genre
+            const inscriptionText = 'inscrit·e';
+
+            // Charger et envoyer l'email de relance
+            const emailSubject =
+              `Un dernier clic pour recevoir vos contenus${name ? ' ' + name : ''}`;
+            const emailHtml = loadEmailTemplate('relance-confirmation-optin', {
+              firstName: name || '',
+              inscriptionText: inscriptionText,
+              optinContent: optinContent,
+              confirmationUrl: confirmationUrl,
+              expirationDate: expirationDateStr,
+            });
+            const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
+              `Il y a quelques jours, vous vous êtes ${inscriptionText} ` +
+              `pour recevoir ${optinContent} de Fluance.\n\n` +
+              `Pour finaliser votre inscription et recevoir vos contenus, ` +
+              `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
+              `${confirmationUrl}\n\n` +
+              `Ce lien est valide jusqu'au ${expirationDateStr}.\n\n` +
+              `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email. ` +
+              `Vous ne recevrez plus de relances.`;
+
+            await sendMailjetEmail(
+                email,
+                emailSubject,
+                emailHtml,
+                emailText,
+                mailjetApiKey,
+                mailjetApiSecret,
+                'support@actu.fluance.io',
+                'Cédric de Fluance',
+            );
+
+            // Marquer la relance comme envoyée
+            await db.collection('newsletterConfirmations').doc(tokenId).update({
+              reminderSent: true,
+              reminderSentAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            remindersSent++;
+            console.log(
+                `✅ Reminder sent to ${email} (${sourceOptin}, ${daysSinceCreation} days after signup)`,
+            );
+          } catch (error) {
+            errors++;
+            console.error(`❌ Error processing reminder for token ${doc.id}:`, error);
+          }
+        }
+
+        console.log(`📊 Reminders summary: ${remindersSent} sent, ${remindersSkipped} skipped, ${errors} errors`);
+        return {
+          success: true,
+          remindersSent,
+          remindersSkipped,
+          errors,
+        };
+      } catch (error) {
+        console.error('❌ Error in sendOptInReminders:', error);
         throw error;
       }
     });

@@ -290,12 +290,13 @@
         });
 
         if (result.data && result.data.success) {
-          // Envoyer l'événement de conversion à Google Analytics
+          // Envoyer l'événement de conversion à Google Analytics (événement recommandé generate_lead)
           if (window.dataLayer) {
             window.dataLayer.push({
-              event: 'generate_lead_5_jours',
+              event: 'generate_lead',
               source: 'newsletter_popup',
-              optin_type: '5joursofferts'
+              optin_type: '5joursofferts',
+              lead_type: '5_jours'
             });
             console.log('Opt-in 5 jours conversion tracked');
           }

@@ -212,23 +212,14 @@ eleventyExcludeFromCollections: true
           target = 'achat21';
         }
 
-        // Envoyer l'événement de conversion à Google Analytics
+        // Envoyer l'événement de conversion à Google Analytics (événement recommandé generate_lead)
         if (window.dataLayer) {
-          if (target === '2pratiques') {
-            // Événement pour opt-in 2 pratiques
-            window.dataLayer.push({
-              event: 'generate_lead_2_pratiques',
-              source: 'newsletter_optin',
-              optin_type: '2pratiques'
-            });
-          } else if (target === '5joursofferts') {
-            // Événement pour opt-in 5 jours
-            window.dataLayer.push({
-              event: 'generate_lead_5_jours',
-              source: 'newsletter_optin',
-              optin_type: '5joursofferts'
-            });
-          }
+          window.dataLayer.push({
+            event: 'generate_lead',
+            source: 'newsletter_optin',
+            optin_type: target === '5joursofferts' ? '5joursofferts' : '2pratiques',
+            lead_type: target === '5joursofferts' ? '5_jours' : '2_pratiques'
+          });
           console.log('Opt-in conversion tracked:', target);
         }
 

@@ -260,46 +260,63 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 ## Suivi des opt-in (2 pratiques et 5 jours)
 
-### Événements d'opt-in
+### Événement d'opt-in : `generate_lead` (événement recommandé GA4)
 
-Deux événements supplémentaires sont envoyés pour suivre les opt-in :
+Nous utilisons l'**événement recommandé** `generate_lead` de Google Analytics 4 au lieu d'événements personnalisés, ce qui permet de bénéficier des fonctionnalités prédéfinies de GA4 tout en différenciant les sources via des paramètres personnalisés.
 
-#### 1. `generate_lead_2_pratiques` (opt-in 2 pratiques)
-- **Envoyé depuis** : `src/fr/confirm.md` et `src/en/confirm.md` après confirmation par email
-- **Source** : `newsletter_optin`
-- **Moment** : Après confirmation réussie de l'opt-in pour les 2 pratiques offertes
+#### Envoi de l'événement
 
-#### 2. `generate_lead_5_jours` (opt-in 5 jours)
 - **Envoyé depuis** :
-  - `src/fr/confirm.md` après confirmation par email (source: `newsletter_optin`)
-  - `src/_includes/newsletter-popup-5jours.njk` après inscription directe (source: `newsletter_popup`)
-- **Moment** : Après confirmation réussie ou inscription directe pour les 5 jours offerts
+  - `src/fr/confirm.md` et `src/en/confirm.md` après confirmation par email
+  - `src/_includes/newsletter-popup-5jours.njk` après inscription directe (5 jours uniquement)
+- **Moment** : Après confirmation réussie ou inscription directe
 
-### Format des événements
+### Format de l'événement
 
 ```javascript
-// Opt-in 2 pratiques
+// Opt-in 2 pratiques (confirmation par email)
 window.dataLayer.push({
-  event: 'generate_lead_2_pratiques',
+  event: 'generate_lead',
   source: 'newsletter_optin',
-  optin_type: '2pratiques'
+  optin_type: '2pratiques',
+  lead_type: '2_pratiques'
 });
 
-// Opt-in 5 jours
+// Opt-in 5 jours (confirmation par email)
 window.dataLayer.push({
-  event: 'generate_lead_5_jours',
-  source: 'newsletter_optin' | 'newsletter_popup',
-  optin_type: '5joursofferts'
+  event: 'generate_lead',
+  source: 'newsletter_optin',
+  optin_type: '5joursofferts',
+  lead_type: '5_jours'
+});
+
+// Opt-in 5 jours (inscription directe via popup)
+window.dataLayer.push({
+  event: 'generate_lead',
+  source: 'newsletter_popup',
+  optin_type: '5joursofferts',
+  lead_type: '5_jours'
 });
 ```
 
+### Paramètres de l'événement
+
+- **`event`** : `generate_lead` (événement recommandé GA4)
+- **`source`** : `newsletter_optin` (confirmation par email) ou `newsletter_popup` (inscription directe)
+- **`optin_type`** : `2pratiques` ou `5joursofferts` (identifiant interne)
+- **`lead_type`** : `2_pratiques` ou `5_jours` (type de lead pour segmentation)
+
 ### Configuration dans Google Analytics 4
 
-1. Les événements sont **automatiquement envoyés** dès le premier opt-in confirmé
-2. Pour les marquer comme conversions :
+1. L'événement est **automatiquement envoyé** dès le premier opt-in confirmé
+2. Pour le marquer comme conversion :
    - Allez dans **Admin** → **Événements**
-   - Trouvez `generate_lead_2_pratiques` et `generate_lead_5_jours`
-   - Activez le toggle "Marquer comme conversion" (étoile) pour chacun
+   - Trouvez `generate_lead`
+   - Activez le toggle "Marquer comme conversion" (étoile)
+3. **Avantages de l'événement recommandé** :
+   - Rapports prédéfinis disponibles dans GA4
+   - Meilleure intégration avec les fonctionnalités GA4
+   - Segmentation possible via les paramètres `optin_type` et `lead_type`
 
 ## Vérification du tracking
 
@@ -317,7 +334,7 @@ window.dataLayer.push({
      ```javascript
      // Dans la console, tapez :
      window.dataLayer
-     // Cherchez l'objet avec event: 'generate_lead_2_pratiques' ou 'generate_lead_5_jours'
+     // Cherchez l'objet avec event: 'generate_lead' et optin_type: '2pratiques' ou '5joursofferts'
      ```
 
 #### Méthode 2 : Google Analytics - Temps réel
@@ -325,8 +342,8 @@ window.dataLayer.push({
 1. Allez dans **Google Analytics 4** → **Rapports** → **Temps réel**
 2. Effectuez un opt-in complet
 3. Dans la section **Événements**, vous devriez voir :
-   - `generate_lead_2_pratiques` (pour les 2 pratiques)
-   - `generate_lead_5_jours` (pour les 5 jours)
+   - `generate_lead` (événement recommandé)
+   - Cliquez sur l'événement pour voir les paramètres `optin_type` et `lead_type` qui différencient les sources
 4. Cliquez sur l'événement pour voir les détails (source, optin_type, etc.)
 
 #### Méthode 3 : Google Tag Manager - Mode aperçu
