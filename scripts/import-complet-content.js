@@ -78,6 +78,11 @@ const completContent = [
     week: 6,
     title: 'Bras souples et mobiles',
     content: `<div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/278c9314-7cfa-4a2b-babe-8cf0b082d8ee?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>`
+  },
+  {
+    week: 7,
+    title: 'Le mouvement part des hanches',
+    content: `<div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/00cd814d-a659-4edc-8bf7-aa8c67271aad?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>`
   }
 ];
 
