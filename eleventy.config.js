@@ -290,11 +290,11 @@ module.exports = function(eleventyConfig) {
           "@context": "https://schema.org",
           "@type": "VideoObject",
           "name": pageLocale === 'fr' 
-            ? "Présentation de l'approche Fluance - 21 jours pour remettre du mouvement"
-            : "Fluance Approach Presentation - 21 days to get moving again",
+            ? "Fluance - 21 jours - vidéo de vente"
+            : "Fluance - 21 days - sales video",
           "description": pageLocale === 'fr'
-            ? "Je vous présente brièvement cette approche douce, brève et accessible pour libérer votre corps des tensions et apaiser votre esprit. Fluance s'adresse à celles et ceux qui ont déjà essayé de nombreuses approches, sans jamais trouver de méthode qui s'adapte vraiment à votre corps, à votre énergie, à votre rythme."
-            : "I briefly present this gentle, brief and accessible approach to release your body from tension and calm your mind. Fluance is for those who have already tried many approaches, without ever finding a method that really adapts to your body, your energy, your rhythm.",
+            ? "Je vous présente brièvement cette approche douce, brève et accessible pour libérer votre corps des tensions et apaiser votre esprit. Fluance s'adresse à celles et ceux qui ont déjà essayé de nombreuses approches, sans jamais trouver de méthode qui s'adapte vraiment à votre corps, à votre énergie, à votre rythme. Retrouvez légèreté, mobilité et sérénité en seulement 2 à 5 minutes par jour, durant 21 jours."
+            : "I briefly present this gentle, brief and accessible approach to release your body from tension and calm your mind. Fluance is for those who have already tried many approaches, without ever finding a method that really adapts to your body, your energy, your rhythm. Find lightness, mobility and serenity in just 2 to 5 minutes a day, for 21 days.",
           "thumbnailUrl": `${baseUrl}/assets/img/bienvenue-21-jour-bandeau.jpg`,
           "uploadDate": "2024-01-01T00:00:00+01:00", // Format ISO 8601 avec fuseau horaire
           "contentUrl": "https://iframe.mediadelivery.net/embed/479894/86766f4f-3e65-4816-8946-ed75b39b4c96",
