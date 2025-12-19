@@ -1126,6 +1126,58 @@ exports.createStripeCheckoutSession = onCall(
     });
 
 /**
+ * Récupère les détails d'une session Stripe Checkout
+ * Utilisé pour le suivi de conversion Google Analytics
+ */
+exports.getStripeCheckoutSession = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['STRIPE_SECRET_KEY'],
+    },
+    async (request) => {
+      const {sessionId} = request.data;
+
+      if (!sessionId) {
+        throw new HttpsError('invalid-argument', 'sessionId is required');
+      }
+
+      try {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {
+          expand: ['line_items', 'customer'],
+        });
+
+        // Extraire les informations nécessaires
+        const product = session.metadata?.product || null;
+        const amount = session.amount_total ? session.amount_total / 100 : 0; // Convertir de centimes en unités
+        const currency = session.currency?.toUpperCase() || 'CHF';
+
+        // Déterminer le nom du produit
+        let productName = '';
+        if (product === '21jours') {
+          productName = 'Défi 21 jours';
+        } else if (product === 'complet') {
+          productName = 'Approche Fluance complète';
+        } else if (product === 'rdv-clarte') {
+          productName = 'RDV Clarté';
+        }
+
+        return {
+          success: true,
+          sessionId: session.id,
+          product: product,
+          productName: productName,
+          amount: amount,
+          currency: currency,
+          customerEmail: session.customer_details?.email || session.customer_email,
+        };
+      } catch (error) {
+        console.error('Error retrieving Stripe session:', error);
+        throw new HttpsError('internal', `Error retrieving session: ${error.message}`);
+      }
+    });
+
+/**
  * Fonction pour créer manuellement un token (paiement virement, cash, etc.)
  * Requiert une authentification admin
  * Région : europe-west1 (Belgique)
