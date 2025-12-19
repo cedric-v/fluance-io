@@ -301,6 +301,102 @@ window.dataLayer.push({
    - Trouvez `generate_lead_2_pratiques` et `generate_lead_5_jours`
    - Activez le toggle "Marquer comme conversion" (étoile) pour chacun
 
+## Vérification du tracking
+
+### Pour les opt-in (2 pratiques et 5 jours)
+
+#### Méthode 1 : Console du navigateur (recommandé)
+
+1. **Ouvrez la console du navigateur** (F12 ou Cmd+Option+I sur Mac)
+2. **Effectuez un opt-in complet** :
+   - Pour les 2 pratiques : Inscription → Confirmation par email → Clic sur le lien de confirmation
+   - Pour les 5 jours : Inscription via popup OU confirmation par email
+3. **Vérifiez dans la console** :
+   - Vous devriez voir : `Opt-in conversion tracked: 2pratiques` ou `Opt-in 5 jours conversion tracked`
+   - Vérifiez que `window.dataLayer` contient l'événement :
+     ```javascript
+     // Dans la console, tapez :
+     window.dataLayer
+     // Cherchez l'objet avec event: 'generate_lead_2_pratiques' ou 'generate_lead_5_jours'
+     ```
+
+#### Méthode 2 : Google Analytics - Temps réel
+
+1. Allez dans **Google Analytics 4** → **Rapports** → **Temps réel**
+2. Effectuez un opt-in complet
+3. Dans la section **Événements**, vous devriez voir :
+   - `generate_lead_2_pratiques` (pour les 2 pratiques)
+   - `generate_lead_5_jours` (pour les 5 jours)
+4. Cliquez sur l'événement pour voir les détails (source, optin_type, etc.)
+
+#### Méthode 3 : Google Tag Manager - Mode aperçu
+
+1. Installez l'extension **Google Tag Manager Preview** dans Chrome
+2. Activez le mode aperçu sur votre site
+3. Effectuez un opt-in complet
+4. Dans le panneau GTM Preview, vérifiez que l'événement apparaît dans **Tags Fired**
+
+### Pour les ventes (21 jours et approche complète)
+
+#### Méthode 1 : Console du navigateur
+
+1. **Effectuez un achat test** (ou utilisez un mode test Stripe)
+2. **Sur la page `/success`**, ouvrez la console (F12)
+3. **Vérifiez** :
+   - Message : `Conversion tracked: { product, productName, amount, currency }`
+   - Vérifiez `window.dataLayer` pour les événements `purchase` et `conversion_fluance`
+
+#### Méthode 2 : Google Analytics - Temps réel
+
+1. Allez dans **Google Analytics 4** → **Rapports** → **Temps réel**
+2. Effectuez un achat test
+3. Dans **Événements**, vous devriez voir :
+   - `purchase` (avec transaction_id, value, currency, items)
+   - `conversion_fluance` (avec product, product_name, value, currency)
+
+#### Méthode 3 : Vérifier les détails de la session Stripe
+
+1. Sur la page `/success`, vérifiez dans la console que la fonction Firebase a bien récupéré les détails :
+   ```javascript
+   // La fonction getStripeCheckoutSession devrait retourner :
+   {
+     success: true,
+     sessionId: 'cs_xxxxx',
+     product: '21jours' | 'complet',
+     productName: 'Défi 21 jours' | 'Approche Fluance complète',
+     amount: 19.00 | 30.00,
+     currency: 'CHF'
+   }
+   ```
+
+### Dépannage
+
+#### L'événement n'apparaît pas dans GA4
+
+1. **Vérifiez que GTM est chargé** :
+   ```javascript
+   // Dans la console
+   console.log(window.dataLayer); // Doit retourner un tableau
+   ```
+
+2. **Vérifiez le consentement aux cookies** :
+   ```javascript
+   // Dans la console
+   console.log(localStorage.getItem('cookieConsent')); // Doit être 'accepted'
+   ```
+
+3. **Vérifiez que l'événement est bien envoyé** :
+   ```javascript
+   // Dans la console, après l'opt-in ou l'achat
+   window.dataLayer.filter(e => e.event === 'generate_lead_2_pratiques' || e.event === 'purchase')
+   ```
+
+#### L'événement apparaît dans dataLayer mais pas dans GA4
+
+- Vérifiez que le tag Google Analytics 4 est bien configuré dans GTM
+- Vérifiez que le tag se déclenche sur les événements `generate_lead_*` et `purchase`
+- Vérifiez les filtres dans GA4 (Admin → Données → Filtres de données)
+
 ## Notes importantes
 
 - ⚠️ Les événements ne sont envoyés que si `window.dataLayer` existe (GTM chargé)
