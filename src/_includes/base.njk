@@ -421,7 +421,13 @@
   })();
 </script>
 
-<!-- Scripts de paiement Stripe -->
+<!-- Scripts de paiement Stripe (chargé uniquement sur les pages de vente) -->
+{% if page.url and (
+  page.url.includes('/cours-en-ligne/21-jours-mouvement/') or
+  page.url.includes('/cours-en-ligne/approche-fluance-complete/') or
+  page.url.includes('/en/cours-en-ligne/approche-fluance-complete/')
+) %}
 <script src="/assets/js/payment.js"></script>
+{% endif %}
 </body>
 </html>

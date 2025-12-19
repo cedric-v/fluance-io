@@ -120,6 +120,3 @@ window.FluancePayment = {
 
 // Fonctions de compatibilité (pour utilisation directe dans onclick)
 window.redirectToStripeCheckout = redirectToStripeCheckout;
-
-// Log pour vérifier que le script est chargé
-console.log('[Payment] Script payment.js chargé, FluancePayment disponible');
