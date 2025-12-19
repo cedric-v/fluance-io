@@ -3137,12 +3137,18 @@ exports.sendNewContentEmails = onSchedule(
                           '<p>Vous avez deja pose des bases importantes pour ' +
                           'votre corps : plus de mobilite, plus de conscience, ' +
                           'plus de respiration.</p>' +
+                          '<p><strong>Saviez-vous que l\'activite physique reguliere ' +
+                          'reduit le risque d\'Alzheimer de 30 a 40% ?</strong> ' +
+                          'La cle, c\'est la continuite.</p>' +
                           '<p>La question maintenant : <strong>comment garder ' +
                           'cet elan</strong> dans la duree ?</p>' +
                           '<p>L\'<strong>approche Fluance complete</strong> ' +
                           'vous propose une nouvelle mini-serie de pratiques ' +
                           'chaque semaine, toujours courtes, pour continuer a ' +
                           'entretenir votre dos, vos epaules et votre energie.</p>' +
+                          '<p>Avec l\'approche complete, vous continuez a honorer ' +
+                          'votre corps, sans forcer. Une nouvelle pratique chaque ' +
+                          'semaine, toujours dans cette approche respectueuse.</p>' +
                           '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
                           'vous pouvez tester sans engagement et decider ensuite ' +
                           'si vous souhaitez continuer.</p>' +
@@ -3160,6 +3166,10 @@ exports.sendNewContentEmails = onSchedule(
                             'corps : plus de mobilite, plus de conscience, ' +
                             'plus de respiration.',
                           '',
+                          'Saviez-vous que l\'activite physique reguliere ' +
+                            'reduit le risque d\'Alzheimer de 30 a 40% ? ' +
+                            'La cle, c\'est la continuite.',
+                          '',
                           'La question maintenant : comment garder cet elan ' +
                             'dans la duree ?',
                           '',
@@ -3167,6 +3177,10 @@ exports.sendNewContentEmails = onSchedule(
                             'nouvelle mini-serie de pratiques chaque semaine, ' +
                             'toujours courtes, pour continuer a entretenir ' +
                             'votre dos, vos epaules et votre energie.',
+                          '',
+                          'Avec l\'approche complete, vous continuez a honorer ' +
+                            'votre corps, sans forcer. Une nouvelle pratique ' +
+                            'chaque semaine, toujours dans cette approche respectueuse.',
                           '',
                           'Les 14 premiers jours sont offerts : vous pouvez ' +
                             'tester sans engagement et decider ensuite si vous ' +
@@ -3183,6 +3197,10 @@ exports.sendNewContentEmails = onSchedule(
                           '<p>Bonjour' + namePart + ',</p>' +
                           '<p>Vous avez deja montre que vous pouviez vous ' +
                           'offrir quelques minutes par jour pour votre corps.</p>' +
+                          '<p><strong>Apres 21 jours, vous avez cree une habitude. ' +
+                          'Mais saviez-vous qu\'avec 10h par jour assis, vous avez ' +
+                          '40% de risque de symptomes depressifs ?</strong> ' +
+                          'Continuer, c\'est proteger votre sante mentale.</p>' +
                           '<p>Peut-etre que vous hesitez a continuer : manque ' +
                           'de temps, peur de ne pas tenir, doute sur ' +
                           'l\'utilite sur le long terme...</p>' +
@@ -3190,12 +3208,12 @@ exports.sendNewContentEmails = onSchedule(
                           'vous recevez chaque semaine une nouvelle mini-serie. ' +
                           'Les seances restent simples, courtes, et pensees ' +
                           'pour s\'integrer a un quotidien charge.</p>' +
+                          '<p>L\'approche complete ne vous demande pas d\'etre ' +
+                          'plus discipline(e). Elle vous invite a continuer a ' +
+                          'honorer votre corps, a votre rythme, sans forcer.</p>' +
                           '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
                           'testez sans engagement et decidez ensuite si vous ' +
                           'souhaitez continuer.</p>' +
-                          '<p>Vous n\'avez pas besoin d\'etre plus ' +
-                          'discipline(e) : vous avez deja commence. Il s\'agit ' +
-                          'juste de continuer a petits pas.</p>' +
                           '<p>Pour voir comment cela peut soutenir votre corps ' +
                           'dans les prochaines semaines :</p>' +
                           '<p><a href="' + completUrl + '">' +
@@ -3220,9 +3238,13 @@ exports.sendNewContentEmails = onSchedule(
                             'engagement et decidez ensuite si vous souhaitez ' +
                             'continuer.',
                           '',
-                          'Vous n\'avez pas besoin d\'etre plus discipline(e) : ' +
-                            'vous avez deja commence. Il s\'agit juste de ' +
-                            'continuer a petits pas.',
+                          'L\'approche complete ne vous demande pas d\'etre ' +
+                            'plus discipline(e). Elle vous invite a continuer ' +
+                            'a honorer votre corps, a votre rythme, sans forcer.',
+                          '',
+                          'Les 14 premiers jours sont offerts : testez sans ' +
+                            'engagement et decidez ensuite si vous souhaitez ' +
+                            'continuer.',
                           '',
                           'Pour voir comment cela peut soutenir votre corps ' +
                             'dans les prochaines semaines :',
@@ -3238,6 +3260,8 @@ exports.sendNewContentEmails = onSchedule(
                           '<p>Il y a quelques jours, vous avez termine le ' +
                           'defi <strong>21 jours pour remettre du mouvement' +
                           '</strong>.</p>' +
+                          '<p><strong>Votre liberte de mouvement est un pilier ' +
+                          'de votre sante. Prenez-en soin.</strong></p>' +
                           '<p>Comment se sent votre corps aujourd\'hui ? Et ' +
                           'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
                           '6 mois ?</p>' +
@@ -3246,6 +3270,10 @@ exports.sendNewContentEmails = onSchedule(
                           'devenir votre rituel hebdomadaire : une nouvelle ' +
                           'mini-serie de pratiques chaque semaine, pour ' +
                           'continuer a delier, renforcer et apaiser.</p>' +
+                          '<p>Fluance n\'est pas une methode qui vous force a ' +
+                          'changer. C\'est un espace ou votre corps peut enfin ' +
+                          'se sentir en securite pour lacher prise, semaine ' +
+                          'apres semaine.</p>' +
                           '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
                           'testez sans engagement et decidez ensuite si vous ' +
                           'souhaitez continuer.</p>' +
@@ -3261,6 +3289,9 @@ exports.sendNewContentEmails = onSchedule(
                           'Il y a quelques jours, vous avez termine le defi ' +
                             '"21 jours pour remettre du mouvement".',
                           '',
+                          'Votre liberte de mouvement est un pilier de votre ' +
+                            'sante. Prenez-en soin.',
+                          '',
                           'Comment se sent votre corps aujourd\'hui ? Et ' +
                             'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
                             '6 mois ?',
@@ -3270,6 +3301,11 @@ exports.sendNewContentEmails = onSchedule(
                             'hebdomadaire : une nouvelle mini-serie de ' +
                             'pratiques chaque semaine, pour continuer a ' +
                             'delier, renforcer et apaiser.',
+                          '',
+                          'Fluance n\'est pas une methode qui vous force a ' +
+                            'changer. C\'est un espace ou votre corps peut ' +
+                            'enfin se sentir en securite pour lacher prise, ' +
+                            'semaine apres semaine.',
                           '',
                           'Les 14 premiers jours sont offerts : testez sans ' +
                             'engagement et decidez ensuite si vous souhaitez ' +
@@ -3758,6 +3794,9 @@ exports.sendNewContentEmails = onSchedule(
                             '<p>Bonjour' + namePart + ',</p>' +
                             '<p>Vous avez peut-être hesite a vous lancer dans le defi ' +
                             '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                            '<p><strong>Saviez-vous que la sedentarite tue +5 millions ' +
+                            'de personnes par an ?</strong> Rester assis 8h par jour ' +
+                            'augmente de 147% le risque de maladie cardiovasculaire.</p>' +
                             '<p>Je comprends : il peut etre difficile de s\'engager sur ' +
                             '21 jours d\'un coup.</p>' +
                             '<p>Mais peut-etre seriez-vous interesse(e) par ' +
@@ -3766,6 +3805,10 @@ exports.sendNewContentEmails = onSchedule(
                             'une nouvelle mini-serie de pratiques chaque semaine, toujours ' +
                             'courtes (2 a 5 minutes), pour continuer a entretenir votre dos, ' +
                             'vos epaules et votre energie.</p>' +
+                            '<p><strong>Fluance ne vous demande pas de forcer votre corps.</strong> ' +
+                            'Nous honorons vos tensions, vos resistances. C\'est en donnant ' +
+                            'a votre corps la permission de rester tel qu\'il est que le ' +
+                            'changement devient possible.</p>' +
                             '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
                             'vous pouvez tester sans engagement et decider ensuite ' +
                             'si vous souhaitez continuer.</p>' +
@@ -3779,6 +3822,10 @@ exports.sendNewContentEmails = onSchedule(
                             'Vous avez peut-etre hesite a vous lancer dans le defi ' +
                               '"21 jours pour remettre du mouvement".',
                             '',
+                            'Saviez-vous que la sedentarite tue +5 millions de personnes ' +
+                              'par an ? Rester assis 8h par jour augmente de 147% le risque ' +
+                              'de maladie cardiovasculaire.',
+                            '',
                             'Je comprends : il peut etre difficile de s\'engager sur ' +
                               '21 jours d\'un coup.',
                             '',
@@ -3789,6 +3836,10 @@ exports.sendNewContentEmails = onSchedule(
                               'une nouvelle mini-serie de pratiques chaque semaine, toujours ' +
                               'courtes (2 a 5 minutes), pour continuer a entretenir votre dos, ' +
                               'vos epaules et votre energie.',
+                            '',
+                            'Fluance ne vous demande pas de forcer votre corps. Nous honorons ' +
+                              'vos tensions, vos resistances. C\'est en donnant a votre corps ' +
+                              'la permission de rester tel qu\'il est que le changement devient possible.',
                             '',
                             'Les 14 premiers jours sont offerts : vous pouvez tester sans ' +
                               'engagement et decider ensuite si vous souhaitez continuer.',
@@ -3803,17 +3854,23 @@ exports.sendNewContentEmails = onSchedule(
                             '<p>Bonjour' + namePart + ',</p>' +
                             '<p>Vous avez peut-etre hesite a vous lancer dans le defi ' +
                             '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                            '<p><strong>L\'activite physique reguliere reduit le risque ' +
+                            'd\'Alzheimer de 30 a 40%.</strong> Chez les femmes traitees ' +
+                            'd\'un cancer du sein, 3h par semaine diminuent le risque de ' +
+                            'recidive de 20 a 50%.</p>' +
                             '<p>Peut-etre que vous hesitez : manque de temps, peur de ne pas tenir, ' +
                             'doute sur l\'utilite sur le long terme...</p>' +
                             '<p>Avec l\'<strong>approche Fluance complete</strong>, ' +
                             'vous recevez chaque semaine une nouvelle mini-serie. ' +
                             'Les seances restent simples, courtes, et pensees ' +
                             'pour s\'integrer a un quotidien charge.</p>' +
+                            '<p><strong>L\'approche complete ne vous demande pas d\'etre ' +
+                            'plus discipline(e).</strong> Elle vous invite a honorer votre ' +
+                            'corps, a votre rythme, sans forcer. C\'est la que la vraie ' +
+                            'transformation commence.</p>' +
                             '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
                             'testez sans engagement et decidez ensuite si vous ' +
                             'souhaitez continuer.</p>' +
-                            '<p>Vous n\'avez pas besoin d\'etre plus ' +
-                            'discipline(e) : il s\'agit juste de commencer a petits pas.</p>' +
                             '<p>Pour voir comment cela peut soutenir votre corps ' +
                             'dans les prochaines semaines :</p>' +
                             '<p><a href="' + completUrl + '">' +
@@ -3825,6 +3882,11 @@ exports.sendNewContentEmails = onSchedule(
                             'Vous avez peut-etre hesite a vous lancer dans le defi ' +
                               '"21 jours pour remettre du mouvement".',
                             '',
+                            'L\'activite physique reguliere reduit le risque ' +
+                              'd\'Alzheimer de 30 a 40%. Chez les femmes traitees ' +
+                              'd\'un cancer du sein, 3h par semaine diminuent le risque ' +
+                              'de recidive de 20 a 50%.',
+                            '',
                             'Vous hesitez peut-etre : manque de temps, peur de ne pas tenir, ' +
                               'doute sur l\'utilite sur le long terme.',
                             '',
@@ -3833,12 +3895,14 @@ exports.sendNewContentEmails = onSchedule(
                               'seances restent simples, courtes, et pensees ' +
                               'pour s\'integrer a un quotidien charge.',
                             '',
+                            'L\'approche complete ne vous demande pas d\'etre ' +
+                              'plus discipline(e). Elle vous invite a honorer votre ' +
+                              'corps, a votre rythme, sans forcer. C\'est la que la vraie ' +
+                              'transformation commence.',
+                            '',
                             'Les 14 premiers jours sont offerts : testez sans ' +
                               'engagement et decidez ensuite si vous souhaitez ' +
                               'continuer.',
-                            '',
-                            'Vous n\'avez pas besoin d\'etre plus discipline(e) : ' +
-                              'il s\'agit juste de commencer a petits pas.',
                             '',
                             'Pour voir comment cela peut soutenir votre corps ' +
                               'dans les prochaines semaines :',
@@ -3851,6 +3915,8 @@ exports.sendNewContentEmails = onSchedule(
                             '<p>Bonjour' + namePart + ',</p>' +
                             '<p>Il y a quelques jours, je vous ai parle du defi ' +
                             '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                            '<p><strong>Votre liberte de mouvement est un pilier ' +
+                            'de votre sante. Prenez-en soin.</strong></p>' +
                             '<p>Comment se sent votre corps aujourd\'hui ? Et ' +
                             'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
                             '6 mois ?</p>' +
@@ -3859,6 +3925,10 @@ exports.sendNewContentEmails = onSchedule(
                             'devenir votre rituel hebdomadaire : une nouvelle ' +
                             'mini-serie de pratiques chaque semaine, pour ' +
                             'continuer a delier, renforcer et apaiser.</p>' +
+                            '<p>Fluance n\'est pas une methode qui vous force a ' +
+                            'changer. C\'est un espace ou votre corps peut enfin ' +
+                            'se sentir en securite pour lacher prise, semaine ' +
+                            'apres semaine.</p>' +
                             '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
                             'testez sans engagement et decidez ensuite si vous ' +
                             'souhaitez continuer.</p>' +
@@ -3874,6 +3944,9 @@ exports.sendNewContentEmails = onSchedule(
                             'Il y a quelques jours, je vous ai parle du defi ' +
                               '"21 jours pour remettre du mouvement".',
                             '',
+                            'Votre liberte de mouvement est un pilier de votre ' +
+                              'sante. Prenez-en soin.',
+                            '',
                             'Comment se sent votre corps aujourd\'hui ? Et ' +
                               'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
                               '6 mois ?',
@@ -3883,6 +3956,11 @@ exports.sendNewContentEmails = onSchedule(
                               'hebdomadaire : une nouvelle mini-serie de ' +
                               'pratiques chaque semaine, pour continuer a ' +
                               'delier, renforcer et apaiser.',
+                            '',
+                            'Fluance n\'est pas une methode qui vous force a ' +
+                              'changer. C\'est un espace ou votre corps peut ' +
+                              'enfin se sentir en securite pour lacher prise, ' +
+                              'semaine apres semaine.',
                             '',
                             'Les 14 premiers jours sont offerts : testez sans ' +
                               'engagement et decidez ensuite si vous souhaitez ' +
