@@ -195,6 +195,17 @@ eleventyExcludeFromCollections: true
       if (result.data && result.data.success) {
         loadingState.classList.add('hidden');
         successState.classList.remove('hidden');
+
+        // Envoyer l'événement de conversion à Google Analytics
+        if (window.dataLayer) {
+          // Pour la version anglaise, on assume 2pratiques par défaut
+          window.dataLayer.push({
+            event: 'generate_lead_2_pratiques',
+            source: 'newsletter_optin',
+            optin_type: '2pratiques'
+          });
+          console.log('Opt-in conversion tracked: 2pratiques');
+        }
       } else {
         throw new Error(result.data?.message || 'Error during confirmation');
       }

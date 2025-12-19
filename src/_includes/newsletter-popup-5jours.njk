@@ -290,6 +290,16 @@
         });
 
         if (result.data && result.data.success) {
+          // Envoyer l'événement de conversion à Google Analytics
+          if (window.dataLayer) {
+            window.dataLayer.push({
+              event: 'generate_lead_5_jours',
+              source: 'newsletter_popup',
+              optin_type: '5joursofferts'
+            });
+            console.log('Opt-in 5 jours conversion tracked');
+          }
+          
           // Rediriger immédiatement vers le jour 1
           window.location.href = '/cours-en-ligne/5jours/j1/';
         } else {

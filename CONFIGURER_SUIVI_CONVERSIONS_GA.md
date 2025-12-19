@@ -258,8 +258,52 @@ document.addEventListener('DOMContentLoaded', async function() {
 - Permet un suivi plus détaillé des conversions par produit
 - Peut être marqué comme "événement de conversion" dans GA4
 
+## Suivi des opt-in (2 pratiques et 5 jours)
+
+### Événements d'opt-in
+
+Deux événements supplémentaires sont envoyés pour suivre les opt-in :
+
+#### 1. `generate_lead_2_pratiques` (opt-in 2 pratiques)
+- **Envoyé depuis** : `src/fr/confirm.md` et `src/en/confirm.md` après confirmation par email
+- **Source** : `newsletter_optin`
+- **Moment** : Après confirmation réussie de l'opt-in pour les 2 pratiques offertes
+
+#### 2. `generate_lead_5_jours` (opt-in 5 jours)
+- **Envoyé depuis** :
+  - `src/fr/confirm.md` après confirmation par email (source: `newsletter_optin`)
+  - `src/_includes/newsletter-popup-5jours.njk` après inscription directe (source: `newsletter_popup`)
+- **Moment** : Après confirmation réussie ou inscription directe pour les 5 jours offerts
+
+### Format des événements
+
+```javascript
+// Opt-in 2 pratiques
+window.dataLayer.push({
+  event: 'generate_lead_2_pratiques',
+  source: 'newsletter_optin',
+  optin_type: '2pratiques'
+});
+
+// Opt-in 5 jours
+window.dataLayer.push({
+  event: 'generate_lead_5_jours',
+  source: 'newsletter_optin' | 'newsletter_popup',
+  optin_type: '5joursofferts'
+});
+```
+
+### Configuration dans Google Analytics 4
+
+1. Les événements sont **automatiquement envoyés** dès le premier opt-in confirmé
+2. Pour les marquer comme conversions :
+   - Allez dans **Admin** → **Événements**
+   - Trouvez `generate_lead_2_pratiques` et `generate_lead_5_jours`
+   - Activez le toggle "Marquer comme conversion" (étoile) pour chacun
+
 ## Notes importantes
 
 - ⚠️ Les événements ne sont envoyés que si `window.dataLayer` existe (GTM chargé)
 - ⚠️ Les événements ne sont envoyés que si le consentement aux cookies a été donné
-- ⚠️ Le `session_id` doit être présent dans l'URL pour que le tracking fonctionne
+- ⚠️ Pour les ventes : Le `session_id` doit être présent dans l'URL pour que le tracking fonctionne
+- ⚠️ Pour les opt-in : Les événements sont envoyés uniquement après confirmation réussie (pas juste à la visite de la page)

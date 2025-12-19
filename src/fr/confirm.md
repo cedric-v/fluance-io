@@ -212,6 +212,26 @@ eleventyExcludeFromCollections: true
           target = 'achat21';
         }
 
+        // Envoyer l'événement de conversion à Google Analytics
+        if (window.dataLayer) {
+          if (target === '2pratiques') {
+            // Événement pour opt-in 2 pratiques
+            window.dataLayer.push({
+              event: 'generate_lead_2_pratiques',
+              source: 'newsletter_optin',
+              optin_type: '2pratiques'
+            });
+          } else if (target === '5joursofferts') {
+            // Événement pour opt-in 5 jours
+            window.dataLayer.push({
+              event: 'generate_lead_5_jours',
+              source: 'newsletter_optin',
+              optin_type: '5joursofferts'
+            });
+          }
+          console.log('Opt-in conversion tracked:', target);
+        }
+
         if (target === '5joursofferts') {
           successSubtext.textContent = 'Accédez maintenant au jour 1 de vos 5 pratiques offertes :';
           successCta.href = '/cours-en-ligne/5jours/j1/';
