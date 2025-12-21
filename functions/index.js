@@ -2462,30 +2462,129 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
         const normalizedEmail = email.toLowerCase().trim();
         const adminAuth = admin.auth();
 
-        // Vérifier que l'utilisateur existe
-        let userExists = false;
+        // Vérifier si l'utilisateur est client (a des produits dans Firestore)
+        let isClient = false;
+        let userRecord = null;
+
         try {
-          // eslint-disable-next-line no-unused-vars
-          const userRecord = await adminAuth.getUserByEmail(normalizedEmail);
-          userExists = true;
-          console.log(`✅ User found: ${normalizedEmail}`);
-        } catch (error) {
-          if (error.code === 'auth/user-not-found') {
-            // Pour des raisons de sécurité, ne pas révéler si l'utilisateur existe ou non
-            console.log(`⚠️ Password reset requested for non-existent user: ${email}`);
-            return {
-              success: true,
-              message: 'If an account exists with this email, a password reset link has been sent.',
-            };
+          // Chercher l'utilisateur dans Firebase Auth
+          userRecord = await adminAuth.getUserByEmail(normalizedEmail);
+          const userId = userRecord.uid;
+          console.log(`[Password Reset] User found in Firebase Auth: ${userId}`);
+
+          // Vérifier si l'utilisateur a des produits dans Firestore
+          const userDocRef = db.collection('users').doc(userId);
+          const userDoc = await userDocRef.get();
+
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            const products = userData.products || [];
+            console.log(`[Password Reset] User document exists, products:`, products);
+
+            // Migration depuis ancien format si nécessaire
+            if (products.length === 0 && userData.product) {
+              isClient = true; // Ancien format avec product unique
+              console.log(`[Password Reset] User is client (old format, product: ${userData.product})`);
+            } else if (products.length > 0) {
+              isClient = true; // Nouveau format avec products[]
+              console.log(`[Password Reset] User is client (new format, ${products.length} products)`);
+            } else {
+              console.log(`[Password Reset] User document exists but no products found - not a client`);
+            }
+          } else {
+            console.log(`[Password Reset] User document does not exist in Firestore - not a client`);
           }
-          throw error;
+        } catch (authError) {
+          if (authError.code === 'auth/user-not-found') {
+            // L'utilisateur n'existe pas dans Firebase Auth, donc pas client
+            isClient = false;
+            console.log(`[Password Reset] User ${normalizedEmail} not found in Firebase Auth - not a client`);
+          } else {
+            // Autre erreur, on continue quand même mais on log
+            console.warn(`[Password Reset] Error checking user status for ${normalizedEmail}:`, authError);
+            // Par défaut, on considère que ce n'est pas un client si on ne peut pas vérifier
+            isClient = false;
+          }
         }
 
-        if (!userExists) {
-          console.log(`⚠️ User does not exist, returning early`);
+        console.log(`[Password Reset] Final isClient status for ${normalizedEmail}: ${isClient}`);
+
+        // Si l'utilisateur n'est pas client, envoyer un email de redirection vers les opt-ins
+        if (!isClient) {
+          console.log(`[Password Reset] User ${normalizedEmail} is not a client, sending redirect email to opt-ins`);
+
+          // Créer ou mettre à jour le contact dans MailJet
+          const mailjetAuth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+          const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
+
+          try {
+            const checkResponse = await fetch(contactUrl, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${mailjetAuth}`,
+              },
+            });
+
+            if (!checkResponse.ok) {
+              const createUrl = 'https://api.mailjet.com/v3/REST/contact';
+              const contactData = {
+                Email: normalizedEmail,
+                IsExcludedFromCampaigns: false,
+              };
+
+              const createResponse = await fetch(createUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Basic ${mailjetAuth}`,
+                },
+                body: JSON.stringify(contactData),
+              });
+
+              if (createResponse.ok) {
+                console.log(`[Password Reset] Contact created in MailJet: ${normalizedEmail}`);
+              } else {
+                const errorText = await createResponse.text();
+                console.warn(`[Password Reset] Could not create contact in MailJet: ${errorText}`);
+              }
+            }
+          } catch (contactError) {
+            console.warn(`[Password Reset] Error managing contact in MailJet:`, contactError);
+          }
+
+          // Envoyer l'email de redirection vers les opt-ins
+          const emailSubject = 'Bienvenue sur Fluance - Découvrez nos offres gratuites';
+          const emailHtml = loadEmailTemplate('non-client-connexion', {});
+          const emailText = `Bienvenue sur Fluance\n\n` +
+              `Bonjour,\n\n` +
+              `Vous avez demandé à réinitialiser votre mot de passe, ` +
+              `mais nous n'avons pas trouvé de compte client associé à cette adresse email.\n\n` +
+              `Pas de souci ! Si vous souhaitez découvrir Fluance, ` +
+              `nous vous invitons à rejoindre l'une de nos offres gratuites :\n\n` +
+              `🎁 2 pratiques offertes : https://fluance.io/2-pratiques-offertes/\n` +
+              `🎁 5 jours offerts : https://fluance.io/cours-en-ligne/5jours/inscription/\n\n` +
+              `Vous êtes déjà client ? Vérifiez que vous utilisez bien l'adresse email ` +
+              `associée à votre achat. Si le problème persiste, contactez-nous à ` +
+              `support@fluance.io.\n\n` +
+              `Cordialement,\nL'équipe Fluance`;
+
+          console.log(`[Password Reset] Sending redirect email to ${normalizedEmail}`);
+
+          await sendMailjetEmail(
+              normalizedEmail,
+              emailSubject,
+              emailHtml,
+              emailText,
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+          );
+
+          console.log(`[Password Reset] Non-client redirect email sent via Mailjet to ${normalizedEmail}`);
+
           return {
             success: true,
             message: 'If an account exists with this email, a password reset link has been sent.',
+            isClient: false,
           };
         }
 
@@ -2744,6 +2843,7 @@ exports.sendSignInLinkViaMailjet = onCall(
           // Chercher l'utilisateur dans Firebase Auth
           userRecord = await adminAuth.getUserByEmail(normalizedEmail);
           const userId = userRecord.uid;
+          console.log(`[Non-client check] User found in Firebase Auth: ${userId}`);
 
           // Vérifier si l'utilisateur a des produits dans Firestore
           const userDocRef = db.collection('users').doc(userId);
@@ -2752,26 +2852,35 @@ exports.sendSignInLinkViaMailjet = onCall(
           if (userDoc.exists) {
             const userData = userDoc.data();
             const products = userData.products || [];
+            console.log(`[Non-client check] User document exists, products:`, products);
 
             // Migration depuis ancien format si nécessaire
             if (products.length === 0 && userData.product) {
               isClient = true; // Ancien format avec product unique
+              console.log(`[Non-client check] User is client (old format, product: ${userData.product})`);
             } else if (products.length > 0) {
               isClient = true; // Nouveau format avec products[]
+              console.log(`[Non-client check] User is client (new format, ${products.length} products)`);
+            } else {
+              console.log(`[Non-client check] User document exists but no products found - not a client`);
             }
+          } else {
+            console.log(`[Non-client check] User document does not exist in Firestore - not a client`);
           }
         } catch (authError) {
           if (authError.code === 'auth/user-not-found') {
             // L'utilisateur n'existe pas dans Firebase Auth, donc pas client
             isClient = false;
-            console.log(`User ${normalizedEmail} not found in Firebase Auth - not a client`);
+            console.log(`[Non-client check] User ${normalizedEmail} not found in Firebase Auth - not a client`);
           } else {
             // Autre erreur, on continue quand même mais on log
-            console.warn(`Error checking user status for ${normalizedEmail}:`, authError);
+            console.warn(`[Non-client check] Error checking user status for ${normalizedEmail}:`, authError);
             // Par défaut, on considère que ce n'est pas un client si on ne peut pas vérifier
             isClient = false;
           }
         }
+
+        console.log(`[Non-client check] Final isClient status for ${normalizedEmail}: ${isClient}`);
 
         // Si l'utilisateur n'est pas client, envoyer un email de redirection
         if (!isClient) {
@@ -2832,6 +2941,8 @@ exports.sendSignInLinkViaMailjet = onCall(
               `support@fluance.io.\n\n` +
               `Cordialement,\nL'équipe Fluance`;
 
+          console.log(`[Non-client] Sending redirect email to ${normalizedEmail}`);
+
           await sendMailjetEmail(
               normalizedEmail,
               emailSubject,
@@ -2851,6 +2962,7 @@ exports.sendSignInLinkViaMailjet = onCall(
         }
 
         // L'utilisateur est client, générer le lien de connexion normal
+        console.log(`[Client] User ${normalizedEmail} is a client, generating sign-in link`);
         const signInLink = await adminAuth.generateSignInWithEmailLink(
             normalizedEmail,
             {
@@ -2859,7 +2971,7 @@ exports.sendSignInLinkViaMailjet = onCall(
             },
         );
 
-        console.log(`Sign-in link generated for client ${normalizedEmail}`);
+        console.log(`[Client] Sign-in link generated for client ${normalizedEmail}`);
 
         // Créer ou mettre à jour le contact dans MailJet pour qu'il apparaisse dans l'historique
         const mailjetAuth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
