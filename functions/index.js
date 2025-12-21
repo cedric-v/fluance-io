@@ -2730,24 +2730,139 @@ exports.sendSignInLinkViaMailjet = onCall(
         throw new HttpsError('invalid-argument', 'Email is required');
       }
 
+      const normalizedEmail = email.toLowerCase().trim();
+
       try {
         // Utiliser admin.auth() directement pour éviter les problèmes d'initialisation
         const adminAuth = admin.auth();
 
-        // Générer le lien de connexion passwordless Firebase
+        // Vérifier si l'utilisateur est client (a des produits dans Firestore)
+        let isClient = false;
+        let userRecord = null;
+
+        try {
+          // Chercher l'utilisateur dans Firebase Auth
+          userRecord = await adminAuth.getUserByEmail(normalizedEmail);
+          const userId = userRecord.uid;
+
+          // Vérifier si l'utilisateur a des produits dans Firestore
+          const userDocRef = db.collection('users').doc(userId);
+          const userDoc = await userDocRef.get();
+
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            const products = userData.products || [];
+
+            // Migration depuis ancien format si nécessaire
+            if (products.length === 0 && userData.product) {
+              isClient = true; // Ancien format avec product unique
+            } else if (products.length > 0) {
+              isClient = true; // Nouveau format avec products[]
+            }
+          }
+        } catch (authError) {
+          if (authError.code === 'auth/user-not-found') {
+            // L'utilisateur n'existe pas dans Firebase Auth, donc pas client
+            isClient = false;
+            console.log(`User ${normalizedEmail} not found in Firebase Auth - not a client`);
+          } else {
+            // Autre erreur, on continue quand même mais on log
+            console.warn(`Error checking user status for ${normalizedEmail}:`, authError);
+            // Par défaut, on considère que ce n'est pas un client si on ne peut pas vérifier
+            isClient = false;
+          }
+        }
+
+        // Si l'utilisateur n'est pas client, envoyer un email de redirection
+        if (!isClient) {
+          console.log(`User ${normalizedEmail} is not a client, sending redirect email to opt-ins`);
+
+          // Créer ou mettre à jour le contact dans MailJet
+          const mailjetAuthNonClient = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+          const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
+
+          try {
+            const checkResponse = await fetch(contactUrl, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${mailjetAuthNonClient}`,
+              },
+            });
+
+            if (!checkResponse.ok) {
+              const createUrl = 'https://api.mailjet.com/v3/REST/contact';
+              const contactData = {
+                Email: normalizedEmail,
+                IsExcludedFromCampaigns: false,
+              };
+
+              const createResponse = await fetch(createUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Basic ${mailjetAuth}`,
+                },
+                body: JSON.stringify(contactData),
+              });
+
+              if (createResponse.ok) {
+                console.log(`Contact created in MailJet: ${normalizedEmail}`);
+              } else {
+                const errorText = await createResponse.text();
+                console.warn(`Could not create contact in MailJet: ${errorText}`);
+              }
+            }
+          } catch (contactError) {
+            console.warn(`Error managing contact in MailJet:`, contactError);
+          }
+
+          // Envoyer l'email de redirection vers les opt-ins
+          const emailSubject = 'Bienvenue sur Fluance - Découvrez nos offres gratuites';
+          const emailHtml = loadEmailTemplate('non-client-connexion', {});
+          const emailText = `Bienvenue sur Fluance\n\n` +
+              `Bonjour,\n\n` +
+              `Vous avez demandé à vous connecter à votre compte Fluance, ` +
+              `mais nous n'avons pas trouvé de compte client associé à cette adresse email.\n\n` +
+              `Pas de souci ! Si vous souhaitez découvrir Fluance, ` +
+              `nous vous invitons à rejoindre l'une de nos offres gratuites :\n\n` +
+              `🎁 2 pratiques offertes : https://fluance.io/2-pratiques-offertes/\n` +
+              `🎁 5 jours offerts : https://fluance.io/cours-en-ligne/5jours/inscription/\n\n` +
+              `Vous êtes déjà client ? Vérifiez que vous utilisez bien l'adresse email ` +
+              `associée à votre achat. Si le problème persiste, contactez-nous à ` +
+              `support@fluance.io.\n\n` +
+              `Cordialement,\nL'équipe Fluance`;
+
+          await sendMailjetEmail(
+              normalizedEmail,
+              emailSubject,
+              emailHtml,
+              emailText,
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+          );
+
+          console.log(`Non-client redirect email sent via Mailjet to ${normalizedEmail}`);
+
+          return {
+            success: true,
+            message: 'Redirect email sent successfully. User is not a client.',
+            isClient: false,
+          };
+        }
+
+        // L'utilisateur est client, générer le lien de connexion normal
         const signInLink = await adminAuth.generateSignInWithEmailLink(
-            email.toLowerCase().trim(),
+            normalizedEmail,
             {
               url: 'https://fluance.io/connexion-membre',
               handleCodeInApp: true,
             },
         );
 
-        console.log(`Sign-in link generated for ${email}`);
+        console.log(`Sign-in link generated for client ${normalizedEmail}`);
 
         // Créer ou mettre à jour le contact dans MailJet pour qu'il apparaisse dans l'historique
-        const normalizedEmail = email.toLowerCase().trim();
-        const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+        const mailjetAuth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
         const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
 
         try {
@@ -2803,7 +2918,7 @@ exports.sendSignInLinkViaMailjet = onCall(
             `Cordialement,\nL'équipe Fluance`;
 
         await sendMailjetEmail(
-            email.toLowerCase().trim(),
+            normalizedEmail,
             emailSubject,
             emailHtml,
             emailText,
@@ -2811,7 +2926,7 @@ exports.sendSignInLinkViaMailjet = onCall(
             process.env.MAILJET_API_SECRET,
         );
 
-        console.log(`Sign-in link email sent via Mailjet to ${email}`);
+        console.log(`Sign-in link email sent via Mailjet to ${normalizedEmail}`);
 
         return {
           success: true,
