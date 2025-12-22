@@ -45,6 +45,51 @@ const STRIPE_PRICE_ID_SOS_DOS_CERVICALES = 'price_1SeWdF2Esx6PN6y1XlbpIObG';
 // echo -n "votre_cle" | firebase functions:secrets:set STRIPE_SECRET_KEY
 
 /**
+ * Vérifie si une date est exclue (jours fériés où on ne veut pas envoyer d'emails marketing)
+ * @param {Date} date - La date à vérifier
+ * @returns {boolean} - true si la date est exclue, false sinon
+ */
+function isExcludedDate(date) {
+  const month = date.getMonth(); // 0-11 (0 = janvier, 11 = décembre)
+  const day = date.getDate();
+
+  // 25 décembre (Noël)
+  if (month === 11 && day === 25) return true;
+
+  // 26 décembre (Boxing Day)
+  if (month === 11 && day === 26) return true;
+
+  // 31 décembre (Nouvel An - veille)
+  if (month === 11 && day === 31) return true;
+
+  // 1er janvier (Jour de l'An)
+  if (month === 0 && day === 1) return true;
+
+  return false;
+}
+
+/**
+ * Calcule la date d'envoi prévue pour un email marketing basé sur la date d'opt-in et le jour
+ * @param {Date} optinDate - Date d'inscription (déjà normalisée à minuit)
+ * @param {number} currentDay - Jour calculé (currentDay = daysSinceOptin + 1)
+ * @returns {Date} - Date d'envoi prévue (normalisée à minuit en heure locale)
+ *
+ * Exemple : Si opt-in le 22 déc
+ * - currentDay = 1 → date prévue = 22 déc (même jour, 0 jours après)
+ * - currentDay = 2 → date prévue = 23 déc (1 jour après)
+ * - currentDay = 4 → date prévue = 25 déc (3 jours après)
+ */
+function getScheduledEmailDate(optinDate, currentDay) {
+  // Créer une nouvelle date pour éviter de modifier l'originale
+  // Utiliser les composants année/mois/jour pour éviter les problèmes de fuseau horaire
+  const year = optinDate.getFullYear();
+  const month = optinDate.getMonth();
+  const day = optinDate.getDate();
+  const scheduledDate = new Date(year, month, day + (currentDay - 1));
+  return scheduledDate;
+}
+
+/**
  * Génère un token unique à usage unique
  */
 function generateUniqueToken() {
@@ -3765,6 +3810,19 @@ exports.sendNewContentEmails = onSchedule(
                 // SCÉNARIO 1 : Opt-in "2 pratiques" → J+1 à J+7 : Proposer "5 jours offerts"
                 // On envoie même si on a raté le jour exact (jusqu'à J+7 pour rattraper)
                 if (sourceOptin.includes('2pratiques') && !has5jours && currentDay >= 2 && currentDay <= 7) {
+                  // Vérifier si la date d'envoi prévue est exclue (jours fériés)
+                  // Normaliser optinDate à minuit pour un calcul précis
+                  const normalizedOptinDate = new Date(optinDate);
+                  normalizedOptinDate.setHours(0, 0, 0, 0);
+                  const scheduledDate = getScheduledEmailDate(normalizedOptinDate, currentDay);
+                  if (isExcludedDate(scheduledDate)) {
+                    console.log(
+                        `⏸️ Email marketing 2pratiques→5jours reporté pour ${email} ` +
+                        `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue)`,
+                    );
+                    continue; // Passer au contact suivant, l'email sera envoyé le jour suivant
+                  }
+
                   const emailSentDocId = `marketing_2pratiques_to_5jours_${email.toLowerCase().trim()}`;
                   const emailSentDoc = await db.collection('contentEmailsSent')
                       .doc(emailSentDocId).get();
@@ -3807,6 +3865,20 @@ exports.sendNewContentEmails = onSchedule(
                   // Emails aux jours 6, 10, 17 après le début des 5 jours
                   const joursPromo21jours = [6, 10, 17];
                   if (joursPromo21jours.includes(joursApres5jours)) {
+                    // Vérifier si la date d'envoi prévue est exclue (jours fériés)
+                    // Normaliser cinqJoursStart à minuit pour un calcul précis
+                    const normalizedCinqJoursStart = new Date(cinqJoursStart);
+                    normalizedCinqJoursStart.setHours(0, 0, 0, 0);
+                    const scheduledDate = getScheduledEmailDate(normalizedCinqJoursStart, joursApres5jours);
+                    if (isExcludedDate(scheduledDate)) {
+                      console.log(
+                          `⏸️ Email marketing 5jours→21jours reporté pour ${email} ` +
+                          `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue, ` +
+                          `jour ${joursApres5jours})`,
+                      );
+                      continue; // Passer au contact suivant, l'email sera envoyé le jour suivant
+                    }
+
                     const emailSentDocId = `marketing_5jours_to_21jours_` +
                         `${email.toLowerCase().trim()}_day_${joursApres5jours}`;
                     const emailSentDoc = await db.collection('contentEmailsSent')
@@ -3858,36 +3930,50 @@ exports.sendNewContentEmails = onSchedule(
                 if (sourceOptin.includes('2pratiques') && !has5jours) {
                   // J+3 : 1 relance pour les 5 jours
                   if (currentDay === 4) {
-                    const emailSentDocId = `marketing_relance_5jours_${email.toLowerCase().trim()}`;
-                    const emailSentDoc = await db.collection('contentEmailsSent')
-                        .doc(emailSentDocId).get();
-
-                    if (!emailSentDoc.exists) {
-                      const emailSubject = 'Découvrez les 5 jours de pratiques offertes';
-                      const emailHtml = loadEmailTemplate('relance-5jours', {
-                        firstName: firstName || '',
-                      });
-
-                      await sendMailjetEmail(
-                          email,
-                          emailSubject,
-                          emailHtml,
-                          `${emailSubject}\n\nDécouvrez les 5 jours offerts : https://fluance.io/#5jours`,
-                          mailjetApiKey,
-                          mailjetApiSecret,
-                          'fluance@actu.fluance.io',
-                          'Cédric de Fluance',
+                    // Vérifier si la date d'envoi prévue est exclue (jours fériés)
+                    // Normaliser optinDate à minuit pour un calcul précis
+                    const normalizedOptinDate = new Date(optinDate);
+                    normalizedOptinDate.setHours(0, 0, 0, 0);
+                    const scheduledDate = getScheduledEmailDate(normalizedOptinDate, currentDay);
+                    if (isExcludedDate(scheduledDate)) {
+                      console.log(
+                          `⏸️ Email relance 5jours reporté pour ${email} ` +
+                          `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue)`,
                       );
+                      // Ne pas envoyer ce jour, sera envoyé le jour suivant grâce au système de rattrapage
+                      // Note: currentDay === 4 correspond à J+4, donc sera rattrapé le J+5 si pas exclu
+                    } else {
+                      const emailSentDocId = `marketing_relance_5jours_${email.toLowerCase().trim()}`;
+                      const emailSentDoc = await db.collection('contentEmailsSent')
+                          .doc(emailSentDocId).get();
 
-                      await db.collection('contentEmailsSent').doc(emailSentDocId).set({
-                        email: email,
-                        type: 'marketing_relance_5jours',
-                        day: currentDay,
-                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
-                      });
+                      if (!emailSentDoc.exists) {
+                        const emailSubject = 'Découvrez les 5 jours de pratiques offertes';
+                        const emailHtml = loadEmailTemplate('relance-5jours', {
+                          firstName: firstName || '',
+                        });
 
-                      console.log(`✅ Relance email sent to ${email} for 5jours`);
-                      marketingEmailsSent++;
+                        await sendMailjetEmail(
+                            email,
+                            emailSubject,
+                            emailHtml,
+                            `${emailSubject}\n\nDécouvrez les 5 jours offerts : https://fluance.io/#5jours`,
+                            mailjetApiKey,
+                            mailjetApiSecret,
+                            'fluance@actu.fluance.io',
+                            'Cédric de Fluance',
+                        );
+
+                        await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                          email: email,
+                          type: 'marketing_relance_5jours',
+                          day: currentDay,
+                          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                        });
+
+                        console.log(`✅ Relance email sent to ${email} for 5jours`);
+                        marketingEmailsSent++;
+                      }
                     }
                   }
 
@@ -3895,6 +3981,20 @@ exports.sendNewContentEmails = onSchedule(
                   // Jours 8, 15, 22 après l'opt-in initial (après la relance J+3)
                   const joursPromo21joursSans5jours = [8, 15, 22];
                   if (joursPromo21joursSans5jours.includes(currentDay)) {
+                    // Vérifier si la date d'envoi prévue est exclue (jours fériés)
+                    // Normaliser optinDate à minuit pour un calcul précis
+                    const normalizedOptinDate = new Date(optinDate);
+                    normalizedOptinDate.setHours(0, 0, 0, 0);
+                    const scheduledDate = getScheduledEmailDate(normalizedOptinDate, currentDay);
+                    if (isExcludedDate(scheduledDate)) {
+                      console.log(
+                          `⏸️ Email marketing 2pratiques→21jours reporté pour ${email} ` +
+                          `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue, ` +
+                          `jour ${currentDay})`,
+                      );
+                      continue; // Passer au contact suivant, l'email sera envoyé le jour suivant
+                    }
+
                     const emailSentDocId = `marketing_2pratiques_to_21jours_` +
                         `${email.toLowerCase().trim()}_day_${currentDay}`;
                     const emailSentDoc = await db.collection('contentEmailsSent')
@@ -3994,10 +4094,30 @@ exports.sendNewContentEmails = onSchedule(
                     if (shouldProposeComplet) {
                       // Utiliser le bon jour selon le type de prospect pour l'ID
                       let dayForId = currentDay;
+                      let scheduledDate;
                       if (has5jours && serie5joursDebut) {
                         const cinqJoursStart = new Date(serie5joursDebut);
                         const daysSince5jours = Math.floor((now - cinqJoursStart) / (1000 * 60 * 60 * 24));
                         dayForId = daysSince5jours + 1;
+                        // Normaliser cinqJoursStart à minuit pour un calcul précis
+                        const normalizedCinqJoursStart = new Date(cinqJoursStart);
+                        normalizedCinqJoursStart.setHours(0, 0, 0, 0);
+                        scheduledDate = getScheduledEmailDate(normalizedCinqJoursStart, dayForId);
+                      } else {
+                        // Normaliser optinDate à minuit pour un calcul précis
+                        const normalizedOptinDate = new Date(optinDate);
+                        normalizedOptinDate.setHours(0, 0, 0, 0);
+                        scheduledDate = getScheduledEmailDate(normalizedOptinDate, currentDay);
+                      }
+
+                      // Vérifier si la date d'envoi prévue est exclue (jours fériés)
+                      if (isExcludedDate(scheduledDate)) {
+                        console.log(
+                            `⏸️ Email marketing prospect→complet reporté pour ${email} ` +
+                            `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue, ` +
+                            `jour ${dayForId})`,
+                        );
+                        continue; // Passer au contact suivant, l'email sera envoyé le jour suivant
                       }
 
                       const emailSentDocId = `marketing_prospect_to_complet_` +
