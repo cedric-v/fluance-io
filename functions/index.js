@@ -109,22 +109,22 @@ function capitalizeName(name) {
   const separator = hasHyphen ? '-' : ' ';
 
   return name
-    .toLowerCase()
-    .split(hasHyphen ? '-' : /\s+/)
-    .map((word) => {
-      // Vérifier si le mot commence par un préfixe connu (sans espace)
-      for (const prefix of prefixes) {
-        if (word.startsWith(prefix) && word.length > prefix.length) {
-          // Capitaliser le préfixe et la lettre suivante
-          const afterPrefix = word.slice(prefix.length);
-          return prefix.charAt(0).toUpperCase() + prefix.slice(1) +
-                 afterPrefix.charAt(0).toUpperCase() + afterPrefix.slice(1);
+      .toLowerCase()
+      .split(hasHyphen ? '-' : /\s+/)
+      .map((word) => {
+        // Vérifier si le mot commence par un préfixe connu (sans espace)
+        for (const prefix of prefixes) {
+          if (word.startsWith(prefix) && word.length > prefix.length) {
+            // Capitaliser le préfixe et la lettre suivante
+            const afterPrefix = word.slice(prefix.length);
+            return prefix.charAt(0).toUpperCase() + prefix.slice(1) +
+                   afterPrefix.charAt(0).toUpperCase() + afterPrefix.slice(1);
+          }
         }
-      }
-      // Capitalisation normale : première lettre en majuscule
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    })
-    .join(separator);
+        // Capitalisation normale : première lettre en majuscule
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(separator);
 }
 
 /**
