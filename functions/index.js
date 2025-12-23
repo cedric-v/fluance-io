@@ -90,6 +90,44 @@ function getScheduledEmailDate(optinDate, currentDay) {
 }
 
 /**
+ * Capitalise un nom/prénom avec gestion des préfixes et prénoms composés
+ * @param {string} name - Le nom à capitaliser
+ * @returns {string} - Le nom avec capitalisation appropriée
+ *
+ * Gère :
+ * - Prénoms composés (tirets, espaces) : "jean-pierre" → "Jean-Pierre"
+ * - Préfixes courants : "mcdonald" → "McDonald", "o'brien" → "O'Brien"
+ */
+function capitalizeName(name) {
+  if (!name) return '';
+
+  // Liste des préfixes à gérer spécialement (sans espaces)
+  const prefixes = ['mc', 'mac', 'o\'', 'd\''];
+
+  // Détecter les séparateurs (espaces ou tirets) pour les préserver
+  const hasHyphen = name.includes('-');
+  const separator = hasHyphen ? '-' : ' ';
+
+  return name
+    .toLowerCase()
+    .split(hasHyphen ? '-' : /\s+/)
+    .map((word) => {
+      // Vérifier si le mot commence par un préfixe connu (sans espace)
+      for (const prefix of prefixes) {
+        if (word.startsWith(prefix) && word.length > prefix.length) {
+          // Capitaliser le préfixe et la lettre suivante
+          const afterPrefix = word.slice(prefix.length);
+          return prefix.charAt(0).toUpperCase() + prefix.slice(1) +
+                 afterPrefix.charAt(0).toUpperCase() + afterPrefix.slice(1);
+        }
+      }
+      // Capitalisation normale : première lettre en majuscule
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(separator);
+}
+
+/**
  * Génère un token unique à usage unique
  */
 function generateUniqueToken() {
@@ -545,8 +583,12 @@ async function createTokenAndSendEmail(
 
       // Ajouter les coordonnées complémentaires si disponibles
       if (customerName) {
-        updatedProperties.firstname = customerName.split(' ')[0]; // Prénom (premier mot)
-        updatedProperties.lastname = customerName.split(' ').slice(1).join(' '); // Nom (reste)
+        const firstName = customerName.split(' ')[0]; // Prénom (premier mot)
+        const lastName = customerName.split(' ').slice(1).join(' '); // Nom (reste)
+        updatedProperties.firstname = capitalizeName(firstName);
+        if (lastName) {
+          updatedProperties.lastname = capitalizeName(lastName);
+        }
       }
       if (customerPhone) {
         updatedProperties.phone = customerPhone;
@@ -1876,7 +1918,7 @@ exports.subscribeToNewsletter = onCall(
 
         // Ajouter le prénom aux propriétés si disponible
         if (name) {
-          properties.firstname = name;
+          properties.firstname = capitalizeName(name);
         }
 
         console.log('📋 Starting MailJet contact properties update for 2 pratiques:', contactData.Email);
@@ -2379,7 +2421,7 @@ exports.subscribeTo5Days = onCall(
 
         // Ajouter le prénom aux propriétés si disponible
         if (name) {
-          properties.firstname = name;
+          properties.firstname = capitalizeName(name);
         }
 
         // Si date_optin existe déjà et est plus ancienne, la conserver
