@@ -92,9 +92,64 @@
     <link rel="alternate" hreflang="fr" href="https://fluance.io{{ frUrl }}">
     <link rel="alternate" hreflang="en" href="https://fluance.io{{ enUrl }}">
     
+    <!-- Styles critiques inline pour éviter le FOUC (Flash of Unstyled Content) -->
+    <style>
+      /* Styles critiques pour le header et le logo */
+      #main-header {
+        background-color: #7A1F3D;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      }
+      #main-header img {
+        height: 3rem;
+        width: auto;
+      }
+      @media (min-width: 768px) {
+        #main-header img {
+          height: 3.5rem;
+        }
+      }
+      .header-slogan {
+        font-size: 0.75rem;
+        color: rgba(230, 184, 74, 0.8);
+        font-style: italic;
+        margin-top: -0.25rem;
+      }
+      body {
+        background-color: #fdfaf6;
+        color: #1f1f1f;
+      }
+      main {
+        padding-top: 7rem;
+      }
+      @media (min-width: 768px) {
+        main {
+          padding-top: 7.5rem;
+        }
+      }
+    </style>
+    
     <!-- Précharger le CSS pour améliorer le FCP (chargement asynchrone) -->
     <link rel="preload" href="{{ '/assets/css/styles.css' | url }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="{{ '/assets/css/styles.css' | url }}"></noscript>
+    <!-- Fallback pour navigateurs qui ne supportent pas onload sur link -->
+    <script>
+      (function() {
+        var link = document.querySelector('link[rel="preload"][as="style"]');
+        if (link) {
+          // Si le CSS n'est pas chargé après 200ms, forcer le chargement
+          setTimeout(function() {
+            if (link.rel !== 'stylesheet') {
+              link.rel = 'stylesheet';
+            }
+          }, 200);
+        }
+      })();
+    </script>
     
     <!-- Favicons selon les bonnes pratiques modernes -->
     <link rel="icon" type="image/x-icon" href="{{ '/assets/img/favicon.ico' | url }}">
