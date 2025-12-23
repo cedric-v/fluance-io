@@ -2598,7 +2598,7 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
           }
 
           // Envoyer l'email de redirection vers les opt-ins
-          const emailSubject = 'Bienvenue sur Fluance - Découvrez nos offres gratuites';
+          const emailSubject = 'Bienvenue sur Fluance : découvrez nos offres gratuites';
           const emailHtml = loadEmailTemplate('non-client-connexion', {});
           const emailText = `Bienvenue sur Fluance\n\n` +
               `Bonjour,\n\n` +
@@ -2971,7 +2971,7 @@ exports.sendSignInLinkViaMailjet = onCall(
           }
 
           // Envoyer l'email de redirection vers les opt-ins
-          const emailSubject = 'Bienvenue sur Fluance - Découvrez nos offres gratuites';
+          const emailSubject = 'Bienvenue sur Fluance : découvrez nos offres gratuites';
           const emailHtml = loadEmailTemplate('non-client-connexion', {});
           const emailText = `Bienvenue sur Fluance\n\n` +
               `Bonjour,\n\n` +
