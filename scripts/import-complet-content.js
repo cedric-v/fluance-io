@@ -83,6 +83,16 @@ const completContent = [
     week: 7,
     title: 'Le mouvement part des hanches',
     content: `<div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/00cd814d-a659-4edc-8bf7-aa8c67271aad?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>`
+  },
+  {
+    week: 8,
+    title: 'Équilibre et se sentir bien debout',
+    content: `<div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/469740b7-e6a9-4ab1-aad7-394ca453fe2d?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>`
+  },
+  {
+    week: 9,
+    title: 'Suivre vos ressentis',
+    content: `<div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/40ba5583-46ce-40ef-b786-776850a2edd5?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>`
   }
 ];
 
