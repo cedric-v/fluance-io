@@ -748,9 +748,10 @@ async function loadProtectedContent(contentId = null) {
         const functions = app.functions('europe-west1');
         const repairUserDocument = functions.httpsCallable('repairUserDocument');
         
+        // Ne pas spécifier de produit : la fonction détectera automatiquement depuis Mailjet
         const repairResult = await repairUserDocument({
           email: user.email,
-          product: '21jours', // Par défaut, on assume 21jours
+          // product non spécifié : détection automatique depuis Mailjet
         });
         
         if (repairResult.data && repairResult.data.success) {

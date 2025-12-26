@@ -1505,9 +1505,10 @@ exports.repairUserDocument = onCall(
     {
       region: 'europe-west1',
       cors: true,
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
     },
     async (request) => {
-      const {email, product = '21jours'} = request.data;
+      const {email, product = null} = request.data;
 
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
@@ -1537,44 +1538,108 @@ exports.repairUserDocument = onCall(
           // Le document existe déjà, retourner les informations
           const existingData = userDoc.data();
           console.log(`Document Firestore existe déjà pour ${normalizedEmail}`);
+          const products = existingData.products || [];
           return {
             success: true,
             message: 'Document Firestore existe déjà',
             userId: userId,
             email: normalizedEmail,
+            products: products.map((p) => p.name),
             product: existingData.product,
           };
         }
 
+        // Essayer de détecter les produits depuis Mailjet si disponible
+        let detectedProducts = [];
+        if (product) {
+          // Si un produit est spécifié, l'utiliser
+          detectedProducts = [product];
+        } else {
+          // Sinon, essayer de détecter depuis Mailjet
+          try {
+            const mailjetAuth = Buffer.from(
+                `${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`,
+            ).toString('base64');
+            const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(normalizedEmail)}`;
+            const contactResponse = await fetch(contactDataUrl, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${mailjetAuth}`,
+              },
+            });
+
+            if (contactResponse.ok) {
+              const contactData = await contactResponse.json();
+              if (contactData.Data && contactData.Data.length > 0) {
+                const contactProperties = contactData.Data[0].Data || {};
+                let properties = {};
+                if (Array.isArray(contactProperties)) {
+                  contactProperties.forEach((item) => {
+                    if (item.Name && item.Value !== undefined) {
+                      properties[item.Name] = item.Value;
+                    }
+                  });
+                } else {
+                  properties = contactProperties;
+                }
+
+                // Extraire les produits depuis produits_achetes
+                const produitsAchetes = properties.produits_achetes || '';
+                if (produitsAchetes) {
+                  detectedProducts = produitsAchetes.split(',')
+                      .map((p) => p.trim())
+                      .filter((p) => p && (p === '21jours' || p === 'complet' || p === 'sos-dos-cervicales'));
+                  console.log(`[repairUserDocument] Produits détectés depuis Mailjet: ${detectedProducts.join(', ')}`);
+                }
+              }
+            }
+          } catch (mailjetError) {
+            console.warn(
+                `[repairUserDocument] Impossible de récupérer les produits depuis Mailjet:`,
+                mailjetError.message,
+            );
+            // Continuer avec le produit par défaut
+          }
+        }
+
+        // Si aucun produit détecté, utiliser '21jours' par défaut
+        if (detectedProducts.length === 0) {
+          detectedProducts = ['21jours'];
+          console.log(`[repairUserDocument] Aucun produit détecté, utilisation de '21jours' par défaut`);
+        }
+
         // Créer le document Firestore avec products[]
         const now = admin.firestore.FieldValue.serverTimestamp();
+        const productsArray = detectedProducts.map((prod) => ({
+          name: prod,
+          startDate: now,
+          purchasedAt: now,
+        }));
+
         const userData = {
           email: normalizedEmail,
-          products: [{
-            name: product,
-            startDate: now,
-            purchasedAt: now,
-          }],
-          product: product, // Garder pour compatibilité rétroactive
+          products: productsArray,
+          product: detectedProducts[0], // Garder pour compatibilité rétroactive (premier produit)
           createdAt: now,
           updatedAt: now,
         };
 
         // Pour le produit "21jours", ajouter aussi registrationDate pour compatibilité
-        if (product === '21jours') {
+        if (detectedProducts.includes('21jours') && !userData.registrationDate) {
           userData.registrationDate = now;
         }
 
         await db.collection('users').doc(userId).set(userData);
 
-        console.log(`Document Firestore créé pour ${normalizedEmail} (${userId})`);
+        console.log(`Document Firestore créé pour ${normalizedEmail} (${userId}) avec produits: ${detectedProducts.join(', ')}`);
 
         return {
           success: true,
           message: 'Document Firestore créé avec succès',
           userId: userId,
           email: normalizedEmail,
-          product: product,
+          products: detectedProducts,
+          product: detectedProducts[0],
         };
       } catch (error) {
         console.error('Error repairing user document:', error);
