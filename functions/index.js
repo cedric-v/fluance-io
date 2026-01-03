@@ -1434,13 +1434,6 @@ exports.verifyToken = onCall(
           await auth.updateUser(userRecord.uid, {password: password});
         }
 
-        // Marquer le token comme utilisé
-        await db.collection('registrationTokens').doc(token).update({
-          used: true,
-          usedAt: admin.firestore.FieldValue.serverTimestamp(),
-          userId: userRecord.uid,
-        });
-
         // Récupérer le document utilisateur existant pour gérer les produits multiples
         const userDocRef = db.collection('users').doc(userRecord.uid);
         const userDoc = await userDocRef.get();
@@ -1474,6 +1467,8 @@ exports.verifyToken = onCall(
         }
 
         // Créer ou mettre à jour le document utilisateur dans Firestore
+        // IMPORTANT: Faire cela AVANT de marquer le token comme utilisé
+        // pour éviter que le token soit marqué comme utilisé si la création échoue
         const userData = {
           email: email,
           products: products,
@@ -1487,7 +1482,23 @@ exports.verifyToken = onCall(
           userData.registrationDate = admin.firestore.FieldValue.serverTimestamp();
         }
 
+        // Créer ou mettre à jour le document Firestore
+        // Utiliser set() au lieu de set(..., {merge: true}) pour s'assurer que le document est créé
+        // même s'il n'existe pas encore
         await userDocRef.set(userData, {merge: true});
+
+        // Vérifier que le document a bien été créé/mis à jour
+        const verifyDoc = await userDocRef.get();
+        if (!verifyDoc.exists) {
+          throw new Error('Failed to create Firestore document after set operation');
+        }
+
+        // Marquer le token comme utilisé UNIQUEMENT après avoir créé le document Firestore
+        await db.collection('registrationTokens').doc(token).update({
+          used: true,
+          usedAt: admin.firestore.FieldValue.serverTimestamp(),
+          userId: userRecord.uid,
+        });
 
         return {success: true, userId: userRecord.uid, email: email};
       } catch (error) {
