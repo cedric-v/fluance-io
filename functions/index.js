@@ -1429,9 +1429,17 @@ exports.verifyToken = onCall(
           }
         }
 
-        // Mettre à jour le mot de passe si l'utilisateur existe déjà
-        if (userRecord) {
+        // Mettre à jour le mot de passe pour s'assurer qu'il est défini correctement
+        // Cela est nécessaire si l'utilisateur existait déjà (créé via passwordless par exemple)
+        // ou si on veut s'assurer que le mot de passe correspond au token
+        try {
           await auth.updateUser(userRecord.uid, {password: password});
+          console.log(`[verifyToken] Password updated for user ${email}`);
+        } catch (updateError) {
+          console.error(`[verifyToken] Error updating password for ${email}:`, updateError);
+          // Si la mise à jour échoue, cela peut indiquer un problème
+          // Mais on continue quand même car l'utilisateur peut utiliser "mot de passe oublié"
+          // Ne pas faire échouer la fonction complètement
         }
 
         // Récupérer le document utilisateur existant pour gérer les produits multiples
