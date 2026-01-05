@@ -24,7 +24,12 @@
     <meta http-equiv="refresh" content="0; url={{ redirectTo | relativeUrl }}">
     {% endif %}
     
-    {% set canonicalUrl = page.url | canonicalUrl %}
+    {# Si la page redirige, le canonical doit pointer vers la destination de la redirection #}
+    {% if redirectTo %}
+      {% set canonicalUrl = redirectTo | canonicalUrl %}
+    {% else %}
+      {% set canonicalUrl = page.url | canonicalUrl %}
+    {% endif %}
     <link rel="canonical" href="https://fluance.io{{ canonicalUrl }}">
     
     {# Open Graph / Facebook #}
