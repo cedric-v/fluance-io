@@ -66,7 +66,7 @@ jobs:
           ls -la _site/.nojekyll
 
       - name: Upload artifact for smoke tests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           path: _site
           name: build-artifact
@@ -302,7 +302,7 @@ jobs:
 
       - name: Upload validation reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: validation-reports
           path: reports/
