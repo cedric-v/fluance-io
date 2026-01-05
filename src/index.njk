@@ -6,6 +6,7 @@ description: "Fluance : libérez votre corps des tensions et retrouvez fluidité
 locale: fr
 permalink: /
 ogImage: assets/img/accueil-miniature-FR.jpg
+redirectTo: /fr/
 ---
 
 <div class="flex items-center justify-center min-h-[60vh]">
@@ -13,15 +14,10 @@ ogImage: assets/img/accueil-miniature-FR.jpg
     <p class="text-lg text-gray-600">
       Vous êtes redirigé vers la version française du site...
     </p>
-    <a href="{{ '/fr/' | url }}" class="inline-block px-6 py-3 bg-fluance text-[#F5F7F6] rounded-lg hover:bg-fluance/90 transition">
+    <a href="{{ '/fr/' | relativeUrl }}" class="inline-block px-6 py-3 bg-fluance text-[#F5F7F6] rounded-lg hover:bg-fluance/90 transition">
       Accéder au site
     </a>
   </div>
 </div>
-
-<script>
-  // Redirection douce côté client
-  window.location.replace('{{ "/fr/" | url }}');
-</script>
 
 

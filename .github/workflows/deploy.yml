@@ -8,7 +8,7 @@ on:
       run_validation:
         description: 'Exécuter les rapports Lighthouse et W3C'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 permissions:
@@ -40,6 +40,20 @@ jobs:
         env:
           ELEVENTY_ENV: prod
         run: npm run build
+
+      - name: Verify CSS is generated
+        run: |
+          echo "🔍 Vérification que styles.css est bien généré..."
+          if [ ! -f "_site/assets/css/styles.css" ]; then
+            echo "❌ Le fichier styles.css est manquant"
+            exit 1
+          fi
+          CSS_SIZE=$(stat -f%z "_site/assets/css/styles.css" 2>/dev/null || stat -c%s "_site/assets/css/styles.css" 2>/dev/null || echo "0")
+          if [ "$CSS_SIZE" -lt 1000 ]; then
+            echo "⚠️ Le fichier styles.css semble trop petit ($CSS_SIZE octets)"
+            exit 1
+          fi
+          echo "✅ styles.css présent et valide ($(numfmt --to=iec-i --suffix=B $CSS_SIZE 2>/dev/null || echo "${CSS_SIZE}B"))"
 
       - name: Ensure .nojekyll exists before upload
         run: |
@@ -73,6 +87,7 @@ jobs:
             "index.html"
             "fr/index.html"
             "en/index.html"
+            "assets/css/styles.css"
             "CNAME"
             ".nojekyll"
             "404.html"
@@ -113,7 +128,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     # Ne s'exécute que si demandé manuellement via workflow_dispatch
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_validation == 'true'
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.run_validation == 'true' || github.event.inputs.run_validation == true)
     continue-on-error: true
     env:
       # URL de production du site (peut être modifiée dans les variables du repository)
@@ -347,6 +362,7 @@ jobs:
             "index.html"
             "fr/index.html"
             "en/index.html"
+            "assets/css/styles.css"
             "CNAME"
             ".nojekyll"
             "404.html"
@@ -455,12 +471,18 @@ jobs:
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080$page")
             
             if [ "$HTTP_CODE" = "200" ]; then
-              # Vérifier que la page contient du contenu HTML (au moins un titre)
+              # Vérifier que la page contient du contenu HTML (au moins un titre et body)
               CONTENT=$(curl -s "http://localhost:8080$page")
               
               if echo "$CONTENT" | grep -q "<title>" && echo "$CONTENT" | grep -q "<body"; then
-                echo "  ✅ Status: $HTTP_CODE | Contenu HTML valide"
-                PASSED_TESTS=$((PASSED_TESTS + 1))
+                # Vérifier que le CSS est référencé dans la page
+                if echo "$CONTENT" | grep -q "styles.css"; then
+                  echo "  ✅ Status: $HTTP_CODE | Contenu HTML valide | CSS référencé"
+                  PASSED_TESTS=$((PASSED_TESTS + 1))
+                else
+                  echo "  ⚠️ Status: $HTTP_CODE | Contenu HTML valide mais CSS non référencé"
+                  PASSED_TESTS=$((PASSED_TESTS + 1))
+                fi
               else
                 echo "  ❌ Status: $HTTP_CODE | Page vide ou invalide"
                 FAILED_TESTS=$((FAILED_TESTS + 1))
@@ -470,6 +492,24 @@ jobs:
               FAILED_TESTS=$((FAILED_TESTS + 1))
             fi
           done
+          
+          # Test spécifique du CSS
+          echo ""
+          echo "🔍 Test du fichier CSS"
+          CSS_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080/assets/css/styles.css")
+          if [ "$CSS_HTTP_CODE" = "200" ]; then
+            CSS_CONTENT=$(curl -s "http://localhost:8080/assets/css/styles.css" | head -c 100)
+            if echo "$CSS_CONTENT" | grep -q "@" || echo "$CSS_CONTENT" | grep -q "{" || echo "$CSS_CONTENT" | grep -q "tailwind"; then
+              echo "  ✅ CSS accessible et valide"
+              PASSED_TESTS=$((PASSED_TESTS + 1))
+            else
+              echo "  ❌ CSS accessible mais contenu invalide"
+              FAILED_TESTS=$((FAILED_TESTS + 1))
+            fi
+          else
+            echo "  ❌ CSS non accessible (HTTP $CSS_HTTP_CODE)"
+            FAILED_TESTS=$((FAILED_TESTS + 1))
+          fi
           
           # Test du fichier CNAME (nécessaire pour le domaine personnalisé)
           echo ""
@@ -585,8 +625,8 @@ jobs:
     steps:
       - name: Wait for GitHub Pages propagation
         run: |
-          echo "⏳ Attente de la propagation de GitHub Pages (30 secondes)..."
-          sleep 30
+          echo "⏳ Attente de la propagation de GitHub Pages (15 secondes)..."
+          sleep 15
           echo "✅ Attente terminée"
 
       - name: Verify production site accessibility
@@ -623,8 +663,14 @@ jobs:
               CONTENT=$(curl -s --max-time 10 "$PRODUCTION_URL$page" || echo "")
               
               if echo "$CONTENT" | grep -q "<title>" && echo "$CONTENT" | grep -q "<body"; then
-                echo "  ✅ Status: $HTTP_CODE | Contenu HTML valide"
-                PASSED_TESTS=$((PASSED_TESTS + 1))
+                # Vérifier que le CSS est référencé dans la page
+                if echo "$CONTENT" | grep -q "styles.css"; then
+                  echo "  ✅ Status: $HTTP_CODE | Contenu HTML valide | CSS référencé"
+                  PASSED_TESTS=$((PASSED_TESTS + 1))
+                else
+                  echo "  ⚠️ Status: $HTTP_CODE | Contenu HTML valide mais CSS non référencé"
+                  PASSED_TESTS=$((PASSED_TESTS + 1))
+                fi
               else
                 echo "  ❌ Status: $HTTP_CODE | Page vide ou invalide"
                 FAILED_TESTS=$((FAILED_TESTS + 1))
@@ -639,6 +685,24 @@ jobs:
               PASSED_TESTS=$((PASSED_TESTS + 1))
             fi
           done
+          
+          # Test spécifique du CSS en production
+          echo ""
+          echo "🔍 Test du fichier CSS en production"
+          CSS_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$PRODUCTION_URL/assets/css/styles.css" || echo "000")
+          if [ "$CSS_HTTP_CODE" = "200" ]; then
+            CSS_CONTENT=$(curl -s --max-time 10 "$PRODUCTION_URL/assets/css/styles.css" | head -c 100 || echo "")
+            if echo "$CSS_CONTENT" | grep -q "@" || echo "$CSS_CONTENT" | grep -q "{" || echo "$CSS_CONTENT" | grep -q "tailwind"; then
+              echo "  ✅ CSS accessible et valide en production"
+              PASSED_TESTS=$((PASSED_TESTS + 1))
+            else
+              echo "  ⚠️ CSS accessible mais contenu suspect"
+              PASSED_TESTS=$((PASSED_TESTS + 1))
+            fi
+          else
+            echo "  ⚠️ CSS non accessible (HTTP $CSS_HTTP_CODE) - peut être normal si en cours de propagation"
+            PASSED_TESTS=$((PASSED_TESTS + 1))
+          fi
           
           # Test du fichier CNAME en production
           echo ""

@@ -20,6 +20,10 @@
     {% endif %}
     <meta name="description" content="{{ description or 'Accompagnement professionnel et développement personnel.' }}">
     
+    {% if redirectTo %}
+    <meta http-equiv="refresh" content="0; url={{ redirectTo | relativeUrl }}">
+    {% endif %}
+    
     {% set canonicalUrl = page.url | canonicalUrl %}
     <link rel="canonical" href="https://fluance.io{{ canonicalUrl }}">
     
@@ -133,23 +137,8 @@
       }
     </style>
     
-    <!-- Précharger le CSS pour améliorer le FCP (chargement asynchrone) -->
-    <link rel="preload" href="{{ '/assets/css/styles.css' | url }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="{{ '/assets/css/styles.css' | url }}"></noscript>
-    <!-- Fallback pour navigateurs qui ne supportent pas onload sur link -->
-    <script>
-      (function() {
-        var link = document.querySelector('link[rel="preload"][as="style"]');
-        if (link) {
-          // Si le CSS n'est pas chargé après 200ms, forcer le chargement
-          setTimeout(function() {
-            if (link.rel !== 'stylesheet') {
-              link.rel = 'stylesheet';
-            }
-          }, 200);
-        }
-      })();
-    </script>
+    <!-- Chargement synchrone du CSS pour garantir qu'il se charge correctement -->
+    <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relativeUrl }}">
     
     <!-- Favicons selon les bonnes pratiques modernes -->
     <link rel="icon" type="image/x-icon" href="{{ '/assets/img/favicon.ico' | url }}">
