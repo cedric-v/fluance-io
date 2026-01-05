@@ -1806,7 +1806,7 @@ exports.subscribeToNewsletter = onCall(
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
-      const {email, name, turnstileToken, isLocalhost} = request.data;
+      const {email, name, turnstileToken, isLocalhost, turnstileSkipped} = request.data;
 
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
@@ -1818,14 +1818,23 @@ exports.subscribeToNewsletter = onCall(
         throw new HttpsError('invalid-argument', 'Invalid email format');
       }
 
-      // Valider le token Turnstile (sauf en développement local)
-      if (!isLocalhost && !turnstileToken) {
+      // Valider le token Turnstile (sauf en développement local ou si fallback activé)
+      if (!isLocalhost && !turnstileSkipped && !turnstileToken) {
         throw new HttpsError('invalid-argument', 'Turnstile verification required');
       }
 
       const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
-      // Valider Turnstile seulement si pas en localhost et si le secret est configuré
-      if (!isLocalhost && turnstileSecret && turnstileToken) {
+
+      // Si Turnstile a été ignoré (fallback), logger un avertissement mais continuer
+      if (turnstileSkipped) {
+        console.warn(
+            `[subscribeToNewsletter] Turnstile skipped for ${email} (fallback mode). ` +
+            'Double opt-in will still protect against bots.',
+        );
+      }
+
+      // Valider Turnstile seulement si pas en localhost, pas en fallback, et si le secret est configuré
+      if (!isLocalhost && !turnstileSkipped && turnstileSecret && turnstileToken) {
         try {
           // Obtenir l'IP du client depuis les headers
           const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||

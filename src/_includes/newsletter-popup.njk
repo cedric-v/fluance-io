@@ -29,7 +29,17 @@
            data-callback="onTurnstileSuccess"
            data-error-callback="onTurnstileError"
            id="turnstile-widget"
-           style="display: none;"></div>
+           style="display: none;"
+           aria-label="Vérification anti-bot Cloudflare Turnstile"
+           role="region"></div>
+      <!-- Message d'aide si Turnstile ne se charge pas -->
+      <div id="turnstile-loading-message" class="text-sm text-gray-600 mb-2" style="display: none;">
+        <span class="inline-block animate-spin mr-2">⏳</span>
+        Chargement de la vérification anti-bot...
+      </div>
+      <div id="turnstile-error-message" class="text-sm text-red-600 mb-2 hidden">
+        ⚠️ La vérification anti-bot ne se charge pas. Veuillez désactiver temporairement votre bloqueur de publicité ou réessayer.
+      </div>
       
       <button type="submit" id="submit-btn" class="w-full btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] py-3 px-6 rounded-md font-medium transition-colors">
         <span id="submit-text">Recevoir immédiatement</span>
@@ -78,16 +88,82 @@
     };
     
     // Configurer Turnstile selon l'environnement
-    if (turnstileWidget) {
-      if (isLocalhost) {
-        // En développement local, utiliser la clé de test Cloudflare
-        turnstileWidget.setAttribute('data-sitekey', '0x4AAAAAAABkMYinukE8K9X0');
+    const loadingMessage = document.getElementById('turnstile-loading-message');
+    const errorMessage = document.getElementById('turnstile-error-message');
+    let turnstileFailed = false; // Flag pour indiquer si Turnstile a échoué
+    let turnstileTimeout = null;
+    
+    if (turnstileWidget && !isLocalhost) {
+      // Afficher le message de chargement
+      if (loadingMessage) loadingMessage.style.display = 'block';
+      
+      // Timeout : si Turnstile ne se charge pas après 5 secondes, permettre le fallback
+      turnstileTimeout = setTimeout(() => {
+        const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+        if (!turnstileResponse || !turnstileResponse.value) {
+          // Turnstile n'a pas réussi à se charger
+          turnstileFailed = true;
+          if (loadingMessage) loadingMessage.style.display = 'none';
+          if (errorMessage) {
+            errorMessage.classList.remove('hidden');
+            errorMessage.innerHTML = '⚠️ La vérification anti-bot ne se charge pas. Vous pouvez quand même vous inscrire, mais vous devrez confirmer votre email.';
+          }
+          if (turnstileWidget) turnstileWidget.style.display = 'none';
+          console.warn('[Turnstile] Widget failed to load, fallback mode enabled');
+        }
+      }, 5000); // 5 secondes de timeout
+      
+      // Attendre que le script Turnstile soit chargé
+      function initTurnstile() {
+        if (typeof turnstile === 'undefined') {
+          // Le script Turnstile n'est pas encore chargé, réessayer
+          setTimeout(initTurnstile, 100);
+          return;
+        }
+        
+        // Le script est chargé, annuler le timeout
+        if (turnstileTimeout) {
+          clearTimeout(turnstileTimeout);
+          turnstileTimeout = null;
+        }
+        
+        // Le script est chargé, configurer le widget
+        if (isLocalhost) {
+          // En développement local, utiliser la clé de test Cloudflare
+          turnstileWidget.setAttribute('data-sitekey', '0x4AAAAAAABkMYinukE8K9X0');
+        } else {
+          // En production, utiliser la clé de production
+          turnstileWidget.setAttribute('data-sitekey', '0x4AAAAAACF5HWhHHcGA5yJk');
+        }
+        
+        // Afficher le widget
         turnstileWidget.style.display = 'block';
-      } else {
-        // En production, utiliser la clé de production
-        turnstileWidget.setAttribute('data-sitekey', '0x4AAAAAACF5HWhHHcGA5yJk');
-        turnstileWidget.style.display = 'block';
+        if (loadingMessage) loadingMessage.style.display = 'none';
+        if (errorMessage) errorMessage.classList.add('hidden');
+        
+        // Vérifier après 2 secondes supplémentaires si le widget s'est bien initialisé
+        setTimeout(() => {
+          const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+          if (!turnstileResponse && !isLocalhost) {
+            // Le widget ne s'est pas initialisé correctement
+            turnstileFailed = true;
+            if (errorMessage) {
+              errorMessage.classList.remove('hidden');
+              errorMessage.innerHTML = '⚠️ La vérification anti-bot ne se charge pas. Vous pouvez quand même vous inscrire, mais vous devrez confirmer votre email.';
+            }
+            if (turnstileWidget) turnstileWidget.style.display = 'none';
+            console.warn('[Turnstile] Widget failed to initialize, fallback mode enabled');
+          }
+        }, 2000);
       }
+      
+      // Démarrer l'initialisation
+      initTurnstile();
+    } else if (isLocalhost) {
+      // En localhost, pas besoin de Turnstile
+      if (turnstileWidget) turnstileWidget.style.display = 'none';
+      if (loadingMessage) loadingMessage.style.display = 'none';
+      if (errorMessage) errorMessage.classList.add('hidden');
     }
     
     // Fonction pour charger Firebase et Firebase Functions
@@ -267,13 +343,34 @@
         
         // Vérifier que Turnstile est complété (seulement si pas en localhost)
         let turnstileToken = null;
+        let turnstileSkipped = false;
+        
         if (!isLocalhost) {
           const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
           if (!turnstileResponse || !turnstileResponse.value) {
-            showMessage('Veuillez compléter la vérification anti-bot', 'error');
-            return;
+            // Si Turnstile a échoué à se charger (fallback activé), permettre la soumission
+            if (turnstileFailed) {
+              turnstileSkipped = true;
+              console.log('[Form] Submitting without Turnstile (fallback mode)');
+              // Afficher un message informatif mais ne pas bloquer
+              if (messageDiv) {
+                messageDiv.textContent = '⚠️ Inscription en cours sans vérification anti-bot. Vous devrez confirmer votre email.';
+                messageDiv.className = 'text-sm text-yellow-600';
+                messageDiv.classList.remove('hidden');
+              }
+            } else {
+              // Turnstile devrait être disponible mais n'est pas complété
+              const widgetVisible = turnstileWidget && turnstileWidget.style.display !== 'none';
+              if (!widgetVisible) {
+                showMessage('La vérification anti-bot ne se charge pas. Veuillez désactiver votre bloqueur de publicité ou réessayer dans quelques instants.', 'error');
+              } else {
+                showMessage('Veuillez compléter la vérification anti-bot ci-dessus', 'error');
+              }
+              return;
+            }
+          } else {
+            turnstileToken = turnstileResponse.value;
           }
-          turnstileToken = turnstileResponse.value;
         }
         
         // Désactiver le bouton et afficher le loading
@@ -307,11 +404,15 @@
             email: email, 
             name: name, 
             turnstileToken: turnstileToken,
-            isLocalhost: isLocalhost // Informer le serveur si on est en localhost
+            isLocalhost: isLocalhost, // Informer le serveur si on est en localhost
+            turnstileSkipped: turnstileSkipped // Informer le serveur si Turnstile a été ignoré (fallback)
           });
           
           if (result.data && result.data.success) {
-            showMessage('Merci ! Un email de confirmation vous a été envoyé. Veuillez cliquer sur le lien dans l\'email pour confirmer votre inscription. Pensez à vérifier vos spams / courriers indésirables.', 'success');
+            const successMessage = turnstileSkipped 
+              ? 'Merci ! Un email de confirmation vous a été envoyé. Veuillez cliquer sur le lien dans l\'email pour confirmer votre inscription. Pensez à vérifier vos spams / courriers indésirables. (Inscription effectuée sans vérification anti-bot)'
+              : 'Merci ! Un email de confirmation vous a été envoyé. Veuillez cliquer sur le lien dans l\'email pour confirmer votre inscription. Pensez à vérifier vos spams / courriers indésirables.';
+            showMessage(successMessage, 'success');
             // Rediriger vers la page 2-pratiques-offertes après 3 secondes
             setTimeout(() => {
               window.location.href = '/2-pratiques-offertes/';
