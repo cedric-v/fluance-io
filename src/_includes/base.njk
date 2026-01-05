@@ -137,8 +137,24 @@
       }
     </style>
     
-    <!-- Chargement synchrone du CSS pour garantir qu'il se charge correctement -->
-    <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relativeUrl }}">
+    <!-- Chargement CSS optimisé : preload asynchrone avec fallback synchrone robuste -->
+    <link rel="preload" href="{{ '/assets/css/styles.css' | relativeUrl }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ '/assets/css/styles.css' | relativeUrl }}"></noscript>
+    <!-- Fallback synchrone si le preload échoue (plus robuste que l'ancien système) -->
+    <script>
+      (function() {
+        var link = document.querySelector('link[rel="preload"][as="style"]');
+        if (link) {
+          // Vérifier après 100ms si le CSS s'est chargé, sinon forcer le chargement synchrone
+          setTimeout(function() {
+            if (link.rel !== 'stylesheet') {
+              link.rel = 'stylesheet';
+              link.onload = null; // Nettoyer le handler
+            }
+          }, 100);
+        }
+      })();
+    </script>
     
     <!-- Favicons selon les bonnes pratiques modernes -->
     <link rel="icon" type="image/x-icon" href="{{ '/assets/img/favicon.ico' | url }}">
