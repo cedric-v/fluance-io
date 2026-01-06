@@ -37,8 +37,8 @@
         <span class="inline-block animate-spin mr-2">⏳</span>
         Chargement de la vérification anti-bot...
       </div>
-      <div id="turnstile-error-message" class="text-sm text-red-600 mb-2 hidden">
-        ⚠️ La vérification anti-bot ne se charge pas. Veuillez désactiver temporairement votre bloqueur de publicité ou réessayer.
+      <div id="turnstile-error-message" class="text-sm text-yellow-600 mb-2 hidden">
+        ⚠️ La vérification anti-bot ne se charge pas. <strong>Vous pouvez quand même vous inscrire en cliquant sur le bouton ci-dessous</strong>. Vous devrez confirmer votre email.
       </div>
       
       <button type="submit" id="submit-btn" class="w-full btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] py-3 px-6 rounded-md font-medium transition-colors">
@@ -97,7 +97,7 @@
       // Afficher le message de chargement
       if (loadingMessage) loadingMessage.style.display = 'block';
       
-      // Timeout : si Turnstile ne se charge pas après 5 secondes, permettre le fallback
+      // Timeout : si Turnstile ne se charge pas après 3 secondes, permettre le fallback
       turnstileTimeout = setTimeout(() => {
         const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
         if (!turnstileResponse || !turnstileResponse.value) {
@@ -106,12 +106,13 @@
           if (loadingMessage) loadingMessage.style.display = 'none';
           if (errorMessage) {
             errorMessage.classList.remove('hidden');
-            errorMessage.innerHTML = '⚠️ La vérification anti-bot ne se charge pas. Vous pouvez quand même vous inscrire, mais vous devrez confirmer votre email.';
+            errorMessage.innerHTML = '⚠️ La vérification anti-bot ne se charge pas. <strong>Vous pouvez quand même vous inscrire en cliquant sur le bouton ci-dessous</strong>. Vous devrez confirmer votre email.';
+            errorMessage.className = 'text-sm text-yellow-600 mb-2';
           }
           if (turnstileWidget) turnstileWidget.style.display = 'none';
           console.warn('[Turnstile] Widget failed to load, fallback mode enabled');
         }
-      }, 5000); // 5 secondes de timeout
+      }, 3000); // 3 secondes de timeout (réduit pour une meilleure UX)
       
       // Attendre que le script Turnstile soit chargé
       function initTurnstile() {
@@ -147,9 +148,11 @@
           if (!turnstileResponse && !isLocalhost) {
             // Le widget ne s'est pas initialisé correctement
             turnstileFailed = true;
+            if (loadingMessage) loadingMessage.style.display = 'none';
             if (errorMessage) {
               errorMessage.classList.remove('hidden');
-              errorMessage.innerHTML = '⚠️ La vérification anti-bot ne se charge pas. Vous pouvez quand même vous inscrire, mais vous devrez confirmer votre email.';
+              errorMessage.innerHTML = '⚠️ La vérification anti-bot ne se charge pas. <strong>Vous pouvez quand même vous inscrire en cliquant sur le bouton ci-dessous</strong>. Vous devrez confirmer votre email.';
+              errorMessage.className = 'text-sm text-yellow-600 mb-2';
             }
             if (turnstileWidget) turnstileWidget.style.display = 'none';
             console.warn('[Turnstile] Widget failed to initialize, fallback mode enabled');
@@ -360,13 +363,28 @@
               }
             } else {
               // Turnstile devrait être disponible mais n'est pas complété
-              const widgetVisible = turnstileWidget && turnstileWidget.style.display !== 'none';
-              if (!widgetVisible) {
-                showMessage('La vérification anti-bot ne se charge pas. Veuillez désactiver votre bloqueur de publicité ou réessayer dans quelques instants.', 'error');
+              // Vérifier si le script Turnstile s'est chargé du tout
+              if (typeof turnstile === 'undefined') {
+                // Le script ne s'est jamais chargé, activer le fallback automatiquement
+                turnstileFailed = true;
+                turnstileSkipped = true;
+                console.log('[Form] Turnstile script never loaded, enabling fallback automatically');
+                // Ne pas bloquer, continuer avec le fallback
               } else {
-                showMessage('Veuillez compléter la vérification anti-bot ci-dessus', 'error');
+                // Le script est chargé mais le widget n'est pas complété
+                const widgetVisible = turnstileWidget && turnstileWidget.style.display !== 'none';
+                if (!widgetVisible) {
+                  // Le widget n'est pas visible, activer le fallback
+                  turnstileFailed = true;
+                  turnstileSkipped = true;
+                  console.log('[Form] Turnstile widget not visible, enabling fallback automatically');
+                  // Ne pas bloquer, continuer avec le fallback
+                } else {
+                  // Le widget est visible mais pas complété
+                  showMessage('Veuillez compléter la vérification anti-bot ci-dessus', 'error');
+                  return;
+                }
               }
-              return;
             }
           } else {
             turnstileToken = turnstileResponse.value;
