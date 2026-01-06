@@ -109,18 +109,21 @@
             </svg>
           </a>
         </div>
-        <p class="text-sm text-[#E6B84A]/80 h-card">
-          <span class="p-org">{% if locale == 'fr' %}Société Instants Zen Sàrl{% else %}Instants Zen Sàrl{% endif %}</span><br>
-          <span class="p-name">Fluance</span><br>
-          {% if locale == 'fr' %}E-mail :{% else %}E-mail:{% endif %} 
-          <a href="#" id="support-email-link" class="u-email hover:text-[#E6B84A]"></a>
-          <span class="p-adr h-adr" style="display: none;">
-            <span class="p-street-address">Case postale</span><br>
-            <span class="p-locality">Belfaux</span>, 
-            <span class="p-postal-code">1782</span><br>
-            <span class="p-country-name">CH</span>
+        <p class="text-sm text-[#E6B84A]/80">
+          <span class="h-card" style="display: none;">
+            <span class="p-org">{% if locale == 'fr' %}Société Instants Zen Sàrl{% else %}Instants Zen Sàrl{% endif %}</span>
+            <span class="p-name">Fluance</span>
+            <span class="p-adr h-adr">
+              <span class="p-street-address">Case postale</span>
+              <span class="p-locality">Belfaux</span>
+              <span class="p-postal-code">1782</span>
+              <span class="p-country-name">CH</span>
+            </span>
+            <a href="https://fluance.io" class="u-url">https://fluance.io</a>
           </span>
-          <a href="https://fluance.io" class="u-url" style="display: none;">https://fluance.io</a>
+          {% if locale == 'fr' %}Société Instants Zen Sàrl{% else %}Instants Zen Sàrl{% endif %}<br>
+          {% if locale == 'fr' %}E-mail :{% else %}E-mail:{% endif %} 
+          <a href="#" id="support-email-link" class="hover:text-[#E6B84A]"></a>
         </p>
         <script>
           // Protection anti-spam : construction dynamique de l'email
