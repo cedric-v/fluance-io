@@ -1,0 +1,77 @@
+---
+layout: false
+permalink: /emails/suspension-abonnement.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#d32f2f" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold">
+          Votre abonnement a été suspendu
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Malheureusement, après plusieurs tentatives infructueuses, nous avons dû suspendre votre abonnement <strong>{{productName}}</strong>.
+        </mj-text>
+        <mj-text>
+          Vous n'avez plus accès au contenu de votre espace membre pour le moment.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#648ED8">
+          Réactiver votre abonnement
+        </mj-text>
+        <mj-text>
+          Vous pouvez réactiver votre abonnement à tout moment en mettant à jour votre moyen de paiement :
+        </mj-text>
+        <mj-button
+          href="{{reactivateLink}}"
+          background-color="#648ED8"
+          color="#ffffff"
+          border-radius="5px"
+          padding="15px 30px">
+          Réactiver l'abonnement
+        </mj-button>
+        <mj-text>
+          Une fois le paiement effectué, votre accès sera rétabli immédiatement.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          <strong>Besoin d'aide ?</strong> Nous sommes là pour vous accompagner. Contactez-nous à <a href="mailto:support@fluance.io">support@fluance.io</a> ou répondez directement à cet email.
+        </mj-text>
+        <mj-text>
+          Nous pouvons également vous proposer d'autres options de paiement adaptées à votre situation.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f5f5f5" padding="20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666">
+          Fluance - Instants Zen Sàrl<br/>
+          Case postale, 1782 Belfaux, Suisse
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+

@@ -635,6 +635,292 @@ async function createTokenAndSendEmail(
 }
 
 /**
+ * Gère les échecs de paiement avec relances progressives et désactivation après plusieurs tentatives
+ * Conforme aux bonnes pratiques européennes (délai de grâce, plusieurs tentatives, options alternatives)
+ * @param {object} invoice - Objet invoice Stripe
+ * @param {object} subscription - Objet subscription Stripe (optionnel)
+ * @param {string} customerEmail - Email du client
+ * @param {string} apiKey - Clé API Mailjet
+ * @param {string} apiSecret - Secret API Mailjet
+ */
+async function handlePaymentFailure(invoice, subscription, customerEmail, apiKey, apiSecret) {
+  try {
+    const emailLower = customerEmail.toLowerCase().trim();
+    const subscriptionId = invoice.subscription;
+    const invoiceId = invoice.id;
+    const amount = invoice.amount_due / 100; // Convertir de centimes
+    const currency = invoice.currency.toUpperCase();
+
+    // Déterminer si c'est un premier paiement ou un renouvellement
+    const isFirstPayment = !subscription || subscription.status === 'incomplete' || subscription.status === 'incomplete_expired';
+    const product = subscription?.metadata?.product || 'complet';
+    const system = subscription?.metadata?.system;
+
+    // Vérifier que c'est pour le système Firebase
+    if (system !== 'firebase') {
+      console.log(`Payment failure ignored - système: ${system || 'non défini'}`);
+      return {ignored: true, reason: 'Not Firebase system'};
+    }
+
+    // Récupérer ou créer le document de suivi des échecs
+    const failureDocRef = db.collection('paymentFailures').doc(`${subscriptionId || invoiceId}_${emailLower}`);
+    const failureDoc = await failureDocRef.get();
+
+    let failureData;
+    if (failureDoc.exists) {
+      failureData = failureDoc.data();
+      failureData.attemptCount = (failureData.attemptCount || 0) + 1;
+      failureData.lastFailureAt = admin.firestore.FieldValue.serverTimestamp();
+      failureData.failureReasons = failureData.failureReasons || [];
+      failureData.failureReasons.push({
+        invoiceId: invoiceId,
+        reason: invoice.last_payment_error?.message || 'Unknown error',
+        amount: amount,
+        currency: currency,
+        failedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } else {
+      failureData = {
+        email: emailLower,
+        subscriptionId: subscriptionId,
+        invoiceId: invoiceId,
+        product: product,
+        amount: amount,
+        currency: currency,
+        attemptCount: 1,
+        firstFailureAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastFailureAt: admin.firestore.FieldValue.serverTimestamp(),
+        isFirstPayment: isFirstPayment,
+        failureReasons: [{
+          invoiceId: invoiceId,
+          reason: invoice.last_payment_error?.message || 'Unknown error',
+          amount: amount,
+          currency: currency,
+          failedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }],
+        emailsSent: [],
+        status: 'active', // active, suspended, resolved
+      };
+    }
+
+    // Constantes pour les bonnes pratiques européennes
+    const MAX_ATTEMPTS = 3; // 3 tentatives avant suspension
+
+    const isLastAttempt = failureData.attemptCount >= MAX_ATTEMPTS;
+    const shouldSuspend = failureData.attemptCount >= MAX_ATTEMPTS;
+
+    // Mettre à jour le document
+    await failureDocRef.set(failureData, {merge: true});
+
+    // Récupérer les informations du client depuis Firestore
+    let firstName = '';
+    try {
+      const userQuery = await db.collection('users')
+          .where('email', '==', emailLower)
+          .limit(1)
+          .get();
+      if (!userQuery.empty) {
+        const userData = userQuery.docs[0].data();
+        firstName = userData.name?.split(' ')[0] || '';
+      }
+    } catch (error) {
+      console.warn('Error fetching user data:', error.message);
+    }
+
+    // Générer les liens de paiement
+    let stripePaymentLink = '';
+    let updatePaymentLink = '';
+    let reactivateLink = '';
+
+    if (process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
+      try {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+        if (isFirstPayment) {
+          // Pour le premier paiement, créer un lien de paiement
+          const checkoutSession = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [{
+              price: subscription?.items?.data[0]?.price?.id || invoice.lines.data[0]?.price?.id,
+              quantity: 1,
+            }],
+            mode: 'subscription',
+            customer_email: emailLower,
+            success_url: `https://fluance.io/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `https://fluance.io/cancel`,
+            metadata: {
+              system: 'firebase',
+              product: product,
+            },
+            subscription_data: {
+              metadata: {
+                system: 'firebase',
+                product: product,
+              },
+            },
+          });
+          stripePaymentLink = checkoutSession.url;
+        } else if (subscriptionId) {
+          // Pour les renouvellements, créer un lien de mise à jour de carte
+          const customerPortal = await stripe.billingPortal.sessions.create({
+            customer: subscription.customer,
+            return_url: 'https://fluance.io/mon-compte',
+          });
+          updatePaymentLink = customerPortal.url;
+          reactivateLink = customerPortal.url;
+        }
+      } catch (stripeError) {
+        console.error('Error creating Stripe links:', stripeError.message);
+      }
+    }
+
+    // Préparer les variables pour les emails
+    const productName = product === 'complet' ? 'Approche Fluance complète' : product;
+    const failureReason = invoice.last_payment_error?.message || 'Carte refusée ou fonds insuffisants';
+    const warningMessage = isLastAttempt ?
+      '⚠️ Attention : Il s\'agit de votre dernière tentative. Si le paiement n\'est pas effectué dans les 3 jours, votre abonnement sera suspendu.' :
+      `Vous avez encore ${MAX_ATTEMPTS - failureData.attemptCount} tentative(s) avant la suspension.`;
+
+    // Envoyer l'email approprié
+    let emailTemplate;
+    let emailSubject;
+    let emailVariables;
+
+    if (isFirstPayment) {
+      // Email pour premier paiement échoué
+      emailTemplate = 'echec-paiement-premier-abonnement';
+      emailSubject = `Finaliser votre abonnement Fluance - Paiement requis`;
+      emailVariables = {
+        firstName: firstName || 'Bonjour',
+        productName: productName,
+        failureReason: failureReason,
+        stripePaymentLink: stripePaymentLink ||
+          'https://fluance.io/cours-en-ligne/approche-fluance-complete/',
+        paypalRequestLink: `mailto:support@fluance.io?subject=Demande%20lien%20PayPal&` +
+          `body=Bonjour,%20je%20souhaite%20recevoir%20un%20lien%20de%20paiement%20PayPal%20pour%20mon%20abonnement.`,
+        amount: `${amount} ${currency}`,
+        reference: `FLU-${subscriptionId?.substring(0, 8) || invoiceId.substring(0, 8)}`,
+      };
+    } else {
+      // Email pour renouvellement échoué
+      emailTemplate = 'echec-paiement-renouvellement';
+      emailSubject = `⚠️ Problème de paiement - Action requise pour votre abonnement`;
+      emailVariables = {
+        firstName: firstName || 'Bonjour',
+        productName: productName,
+        failureReason: failureReason,
+        attemptNumber: failureData.attemptCount,
+        maxAttempts: MAX_ATTEMPTS,
+        warningMessage: warningMessage,
+        updatePaymentLink: updatePaymentLink ||
+          'https://billing.stripe.com/p/login/4gM3coe0tgPp3Qcd608k800',
+        paypalRequestLink: `mailto:support@fluance.io?subject=Demande%20lien%20PayPal&` +
+          `body=Bonjour,%20je%20souhaite%20recevoir%20un%20lien%20de%20paiement%20PayPal%20pour%20mon%20abonnement.`,
+      };
+    }
+
+    // Envoyer l'email
+    try {
+      const emailHtml = loadEmailTemplate(emailTemplate, emailVariables);
+      const emailText = `${emailSubject}\n\nBonjour ${firstName || ''},\n\nVotre paiement n'a pas pu être effectué. Veuillez mettre à jour votre moyen de paiement.`;
+
+      await sendMailjetEmail(
+          emailLower,
+          emailSubject,
+          emailHtml,
+          emailText,
+          apiKey,
+          apiSecret,
+          'support@actu.fluance.io',
+          'Cédric de Fluance',
+      );
+
+      // Enregistrer l'email envoyé
+      failureData.emailsSent = failureData.emailsSent || [];
+      failureData.emailsSent.push({
+        template: emailTemplate,
+        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+        attemptNumber: failureData.attemptCount,
+      });
+      await failureDocRef.update({emailsSent: failureData.emailsSent});
+
+      console.log(
+          `✅ Payment failure email sent to ${emailLower} ` +
+          `(attempt ${failureData.attemptCount}/${MAX_ATTEMPTS})`,
+      );
+    } catch (emailError) {
+      console.error(`❌ Error sending payment failure email to ${emailLower}:`, emailError.message);
+    }
+
+    // Si c'est la dernière tentative, suspendre l'abonnement après le délai de grâce
+    if (shouldSuspend) {
+      // Programmer la suspension dans 3 jours (délai de grâce supplémentaire)
+      const suspendAt = new Date();
+      suspendAt.setDate(suspendAt.getDate() + 3);
+
+      await failureDocRef.update({
+        status: 'pending_suspension',
+        suspendAt: admin.firestore.Timestamp.fromDate(suspendAt),
+      });
+
+      console.log(`⚠️ Subscription ${subscriptionId} will be suspended on ${suspendAt.toISOString()}`);
+
+      // Envoyer un email de suspension
+      try {
+        const suspendEmailHtml = loadEmailTemplate('suspension-abonnement', {
+          firstName: firstName || 'Bonjour',
+          productName: productName,
+          reactivateLink: reactivateLink || updatePaymentLink || 'https://billing.stripe.com/p/login/4gM3coe0tgPp3Qcd608k800',
+        });
+        const suspendEmailText =
+          `Votre abonnement ${productName} a été suspendu après plusieurs tentatives de paiement échouées.`;
+
+        await sendMailjetEmail(
+            emailLower,
+            `Votre abonnement Fluance a été suspendu`,
+            suspendEmailHtml,
+            suspendEmailText,
+            apiKey,
+            apiSecret,
+            'support@actu.fluance.io',
+            'Cédric de Fluance',
+        );
+      } catch (suspendEmailError) {
+        console.error(`❌ Error sending suspension email:`, suspendEmailError.message);
+      }
+
+      // Suspendre l'abonnement dans Stripe
+      if (subscriptionId && process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
+        try {
+          const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+          await stripe.subscriptions.update(subscriptionId, {
+            pause_collection: {
+              behavior: 'mark_uncollectible',
+            },
+          });
+          console.log(`✅ Subscription ${subscriptionId} paused in Stripe`);
+        } catch (stripeError) {
+          console.error(`❌ Error pausing subscription in Stripe:`, stripeError.message);
+        }
+      }
+
+      // L'accès sera retiré par la fonction scheduled `processPendingSuspensions`
+      // qui vérifie quotidiennement les suspensions en attente
+    }
+
+    return {
+      success: true,
+      attemptCount: failureData.attemptCount,
+      isLastAttempt: isLastAttempt,
+      willSuspend: shouldSuspend,
+    };
+  } catch (error) {
+    console.error('Error handling payment failure:', error);
+    throw error;
+  }
+}
+
+/**
  * Retire un produit du tableau products d'un utilisateur dans Firestore
  * @param {string} email - Email de l'utilisateur
  * @param {string} productName - Nom du produit à retirer ('complet' ou '21jours')
@@ -943,12 +1229,36 @@ exports.webhookStripe = onRequest(
         const subscriptionId = invoice.subscription;
         if (subscriptionId) {
           try {
-            // Note: Pour invoice.payment_failed, on ne retire pas immédiatement l'accès
-            // On pourrait envoyer un email de notification au client
-            // L'accès sera retiré seulement si l'abonnement est finalement annulé
+            // Récupérer la subscription depuis Stripe pour avoir les métadonnées
+            let subscription = null;
+            if (process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
+              try {
+                const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+                subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+                  expand: ['customer', 'items.data.price'],
+                });
+              } catch (stripeError) {
+                console.warn('Error retrieving subscription from Stripe:', stripeError.message);
+              }
+            }
+
+            // Vérifier si c'est pour le système Firebase
+            const system = subscription?.metadata?.system;
+            if (system !== 'firebase') {
+              console.log(`Payment failure ignored - système: ${system || 'non défini'}`);
+              return res.status(200).json({received: true, ignored: true});
+            }
+
+            // Gérer l'échec de paiement avec relances progressives
             console.log(`Payment failed for ${customerEmail}, subscription: ${subscriptionId}`);
-            // TODO: Envoyer un email de notification au client
-            // Pour le RDV Clarté, pas d'action supplémentaire nécessaire
+            await handlePaymentFailure(
+                invoice,
+                subscription,
+                customerEmail,
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+
             return res.status(200).json({received: true});
           } catch (error) {
             console.error('Error processing payment failed event:', error);
@@ -956,9 +1266,95 @@ exports.webhookStripe = onRequest(
           }
         }
 
-        console.log(`Payment failed for ${customerEmail}, subscription: ${subscriptionId}`);
-        // TODO: Envoyer un email de notification au client
+        // Pour les paiements sans subscription (one-time), juste logger
+        console.log(`Payment failed for ${customerEmail}, no subscription (one-time payment)`);
         return res.status(200).json({received: true});
+      }
+
+      // Gérer les événements de remboursement
+      // Note: Stripe n'a pas d'événement payment_intent.refunded
+      // Les remboursements déclenchent charge.refunded (pour les charges directes)
+      // ou peuvent être liés à un Payment Intent via la charge associée
+      if (event.type === 'charge.refunded') {
+        const charge = event.data.object;
+        let customerEmail = null;
+        let product = null;
+        let system = null;
+
+        // Récupérer l'email depuis les métadonnées de la charge ou du customer
+        customerEmail = charge.metadata?.email || charge.billing_details?.email;
+        product = charge.metadata?.product;
+        system = charge.metadata?.system;
+
+        // Si l'email n'est pas dans les métadonnées, essayer de récupérer depuis le customer
+        if (!customerEmail && charge.customer) {
+          try {
+            if (process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
+              const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+              const customer = await stripe.customers.retrieve(charge.customer);
+              customerEmail = customer.email || customer.metadata?.email;
+              // Si le produit n'est pas dans les métadonnées de la charge, vérifier le customer
+              if (!product) {
+                product = customer.metadata?.product;
+              }
+              if (!system) {
+                system = customer.metadata?.system;
+              }
+            }
+          } catch (stripeError) {
+            console.warn('Error retrieving customer from Stripe:', stripeError.message);
+          }
+        }
+
+        // Si l'email n'est toujours pas trouvé, essayer de récupérer depuis le Payment Intent associé
+        if (!customerEmail && charge.payment_intent) {
+          try {
+            if (process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
+              const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+              const paymentIntent = await stripe.paymentIntents.retrieve(charge.payment_intent);
+              customerEmail = paymentIntent.metadata?.email || customerEmail;
+              if (!product) {
+                product = paymentIntent.metadata?.product;
+              }
+              if (!system) {
+                system = paymentIntent.metadata?.system;
+              }
+            }
+          } catch (stripeError) {
+            console.warn('Error retrieving payment intent from Stripe:', stripeError.message);
+          }
+        }
+
+        if (!customerEmail) {
+          console.error('No email found in refund event');
+          return res.status(200).json({received: true, ignored: true});
+        }
+
+        // Vérifier si c'est pour le système Firebase
+        if (system !== 'firebase') {
+          console.log(`Refund ignored - système: ${system || 'non défini'}`);
+          return res.status(200).json({received: true, ignored: true});
+        }
+
+        // Vérifier le produit (seuls 21jours et sos-dos-cervicales peuvent être remboursés,
+        // pas "complet" qui est un abonnement)
+        if (!product || (product !== '21jours' && product !== 'sos-dos-cervicales')) {
+          console.log(
+              `Refund ignored - produit: ${product} ` +
+              `(seuls '21jours' et 'sos-dos-cervicales' peuvent être remboursés)`,
+          );
+          return res.status(200).json({received: true, ignored: true});
+        }
+
+        try {
+          // Retirer le produit de l'utilisateur
+          await removeProductFromUser(customerEmail, product);
+          console.log(`Refund processed and product '${product}' removed for ${customerEmail}`);
+          return res.status(200).json({received: true});
+        } catch (error) {
+          console.error('Error removing product after refund:', error);
+          return res.status(500).send('Error processing refund');
+        }
       }
 
       res.status(200).json({received: true});
@@ -1255,6 +1651,16 @@ exports.createStripeCheckoutSession = onCall(
             // Ajouter le variant pour rdv-clarte si présent
             ...(product === 'rdv-clarte' && variant ? {variant: variant} : {}),
           },
+          // Pour les paiements uniques, s'assurer que les métadonnées sont aussi sur le Payment Intent
+          // (nécessaire pour les remboursements qui récupèrent les métadonnées depuis le Payment Intent)
+          payment_intent_data: mode === 'payment' ? {
+            metadata: {
+              system: 'firebase',
+              product: product,
+              // Ajouter le variant pour rdv-clarte si présent
+              ...(product === 'rdv-clarte' && variant ? {variant: variant} : {}),
+            },
+          } : undefined,
           // Pour les abonnements, passer les métadonnées aussi dans la subscription
           subscription_data: mode === 'subscription' ? {
             metadata: {
@@ -1276,6 +1682,124 @@ exports.createStripeCheckoutSession = onCall(
       } catch (error) {
         console.error('Error creating Stripe Checkout session:', error);
         throw new HttpsError('internal', `Error creating checkout session: ${error.message}`);
+      }
+    });
+
+/**
+ * Vérifie les métadonnées d'un Payment Intent Stripe pour les remboursements
+ * Utilisé pour vérifier que les métadonnées sont présentes avant un remboursement
+ */
+exports.checkStripePaymentMetadata = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['STRIPE_SECRET_KEY'],
+    },
+    async (request) => {
+      const {paymentIntentId} = request.data;
+
+      if (!paymentIntentId) {
+        throw new HttpsError('invalid-argument', 'paymentIntentId is required');
+      }
+
+      try {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+        // Récupérer le Payment Intent avec les charges et le customer
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+          expand: ['charges.data.customer', 'customer'],
+        });
+
+        const result = {
+          paymentIntentId: paymentIntent.id,
+          status: paymentIntent.status,
+          amount: paymentIntent.amount / 100,
+          currency: paymentIntent.currency.toUpperCase(),
+          metadata: paymentIntent.metadata || {},
+          charges: [],
+          customer: null,
+          refundReady: false,
+          issues: [],
+        };
+
+        // Vérifier les métadonnées du Payment Intent
+        const system = paymentIntent.metadata?.system;
+        const product = paymentIntent.metadata?.product;
+
+        result.metadataCheck = {
+          system: system || null,
+          product: product || null,
+          systemValid: system === 'firebase',
+          productValid: product === '21jours' || product === 'sos-dos-cervicales',
+        };
+
+        // Récupérer les charges associées
+        if (paymentIntent.charges && paymentIntent.charges.data.length > 0) {
+          for (const charge of paymentIntent.charges.data) {
+            const chargeData = {
+              id: charge.id,
+              status: charge.status,
+              refunded: charge.refunded,
+              amountRefunded: charge.amount_refunded / 100,
+              billingEmail: charge.billing_details?.email || null,
+              metadata: charge.metadata || {},
+            };
+
+            // Vérifier les métadonnées de la charge
+            chargeData.metadataCheck = {
+              system: charge.metadata?.system || null,
+              product: charge.metadata?.product || null,
+              systemValid: charge.metadata?.system === 'firebase',
+              productValid: charge.metadata?.product === '21jours' ||
+                           charge.metadata?.product === 'sos-dos-cervicales',
+            };
+
+            result.charges.push(chargeData);
+          }
+        }
+
+        // Récupérer le customer si disponible
+        if (paymentIntent.customer) {
+          let customer;
+          if (typeof paymentIntent.customer === 'string') {
+            customer = await stripe.customers.retrieve(paymentIntent.customer);
+          } else {
+            customer = paymentIntent.customer;
+          }
+
+          result.customer = {
+            id: customer.id,
+            email: customer.email || null,
+            metadata: customer.metadata || {},
+          };
+        }
+
+        // Déterminer si le remboursement automatique fonctionnera
+        const hasSystem = result.metadataCheck.systemValid ||
+                         (result.charges[0]?.metadataCheck?.systemValid || false);
+        const hasProduct = result.metadataCheck.productValid ||
+                          (result.charges[0]?.metadataCheck?.productValid || false);
+        const hasEmail = result.charges[0]?.billingEmail ||
+                        result.customer?.email;
+
+        result.refundReady = hasSystem && hasProduct && hasEmail;
+
+        if (!hasSystem) {
+          result.issues.push('Le système n\'est pas identifié comme "firebase" dans les métadonnées');
+        }
+        if (!hasProduct) {
+          result.issues.push('Le produit n\'est pas identifié comme "21jours" ou "sos-dos-cervicales" dans les métadonnées');
+        }
+        if (!hasEmail) {
+          result.issues.push('L\'email n\'est pas disponible dans la charge ou le customer');
+        }
+
+        return result;
+      } catch (error) {
+        console.error('Error checking Stripe payment metadata:', error);
+        if (error.type === 'StripeInvalidRequestError') {
+          throw new HttpsError('not-found', `Payment Intent "${paymentIntentId}" not found`);
+        }
+        throw new HttpsError('internal', `Error checking metadata: ${error.message}`);
       }
     });
 
@@ -4793,6 +5317,122 @@ exports.sendNewContentEmails = onSchedule(
         };
       } catch (error) {
         console.error('❌ Error in sendNewContentEmails:', error);
+        throw error;
+      }
+    });
+
+/**
+ * Fonction scheduled pour traiter les suspensions d'abonnements en attente
+ * S'exécute quotidiennement à 10h (Europe/Paris)
+ * Retire l'accès aux utilisateurs après le délai de grâce (3 jours après la dernière tentative)
+ */
+exports.processPendingSuspensions = onSchedule(
+    {
+      schedule: '0 10 * * *', // Tous les jours à 10h
+      timeZone: 'Europe/Paris',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      region: 'europe-west1',
+    },
+    async (_event) => {
+      console.log('🔍 Starting scheduled job for pending subscription suspensions');
+      const now = admin.firestore.Timestamp.now();
+      const mailjetApiKey = process.env.MAILJET_API_KEY;
+      const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+
+      if (!mailjetApiKey || !mailjetApiSecret) {
+        console.error('❌ Mailjet credentials not configured');
+        return;
+      }
+
+      try {
+        // Récupérer tous les échecs de paiement en attente de suspension
+        const pendingSuspensions = await db.collection('paymentFailures')
+            .where('status', '==', 'pending_suspension')
+            .where('suspendAt', '<=', now)
+            .get();
+
+        console.log(`📊 Found ${pendingSuspensions.size} subscriptions to suspend`);
+
+        for (const doc of pendingSuspensions.docs) {
+          const failureData = doc.data();
+          const email = failureData.email;
+          const product = failureData.product;
+          const subscriptionId = failureData.subscriptionId;
+
+          try {
+            // Retirer l'accès au produit
+            await removeProductFromUser(email, product);
+            console.log(`✅ Access removed for ${email} (product: ${product})`);
+
+            // Mettre à jour le statut
+            await doc.ref.update({
+              status: 'suspended',
+              suspendedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            // Récupérer le prénom pour l'email
+            let firstName = '';
+            try {
+              const userQuery = await db.collection('users')
+                  .where('email', '==', email)
+                  .limit(1)
+                  .get();
+              if (!userQuery.empty) {
+                const userData = userQuery.docs[0].data();
+                firstName = userData.name?.split(' ')[0] || '';
+              }
+            } catch (error) {
+              console.warn('Error fetching user data:', error.message);
+            }
+
+            // Générer le lien de réactivation
+            let reactivateLink = 'https://fluance.io/mon-compte';
+            if (subscriptionId && process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
+              try {
+                const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                if (subscription.customer) {
+                  const customerPortal = await stripe.billingPortal.sessions.create({
+                    customer: subscription.customer,
+                    return_url: 'https://fluance.io/mon-compte',
+                  });
+                  reactivateLink = customerPortal.url;
+                }
+              } catch (stripeError) {
+                console.warn('Error creating reactivation link:', stripeError.message);
+              }
+            }
+
+            // Envoyer l'email de suspension
+            const productName = product === 'complet' ? 'Approche Fluance complète' : product;
+            const suspendEmailHtml = loadEmailTemplate('suspension-abonnement', {
+              firstName: firstName || 'Bonjour',
+              productName: productName,
+              reactivateLink: reactivateLink,
+            });
+            const suspendEmailText =
+          `Votre abonnement ${productName} a été suspendu après plusieurs tentatives de paiement échouées.`;
+
+            await sendMailjetEmail(
+                email,
+                `Votre abonnement Fluance a été suspendu`,
+                suspendEmailHtml,
+                suspendEmailText,
+                mailjetApiKey,
+                mailjetApiSecret,
+                'support@actu.fluance.io',
+                'Cédric de Fluance',
+            );
+
+            console.log(`✅ Suspension email sent to ${email}`);
+          } catch (error) {
+            console.error(`❌ Error processing suspension for ${email}:`, error.message);
+          }
+        }
+
+        console.log(`✅ Processed ${pendingSuspensions.size} pending suspensions`);
+      } catch (error) {
+        console.error('❌ Error in processPendingSuspensions:', error);
         throw error;
       }
     });

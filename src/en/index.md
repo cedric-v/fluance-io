@@ -33,7 +33,7 @@ ogImage: assets/img/accueil-miniature-EN.jpg
         <span class="text-sm font-normal opacity-90">online</span>
       </a>
       <a href="{{ '/en/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-secondary border-[3px] border-[#F5F7F6] bg-[#7A1F3D]/80 text-[#F5F7F6] hover:bg-[#7A1F3D]/90 text-center flex flex-col">
-        <span>Classes in Fribourg (Switzerland)</span>
+        <span>Classes in Fribourg region (Switzerland)</span>
         <span class="text-sm font-normal opacity-90">in-person</span>
       </a>
     </div>
@@ -108,8 +108,8 @@ ogImage: assets/img/accueil-miniature-EN.jpg
       <span>Try 2 liberating practices</span>
       <span class="text-sm font-normal opacity-90">online</span>
     </a>
-    <a href="{{ '/en/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-secondary border-[3px] border-fluance text-[#3E3A35] bg-gray-50 hover:bg-fluance hover:text-[#F5F7F6] text-center font-bold shadow-lg flex flex-col">
-      <span>Classes in Fribourg (Switzerland)</span>
+    <a href="{{ '/en/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="inline-flex flex-col items-center justify-center rounded-full border-[3px] border-fluance text-fluance bg-[#F5F7F6]/30 hover:bg-fluance hover:text-[#F5F7F6] px-6 py-3 font-bold shadow-lg transition-all duration-200">
+      <span>Classes in Fribourg region (Switzerland)</span>
       <span class="text-sm font-normal opacity-90">in-person</span>
     </a>
   </div>

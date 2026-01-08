@@ -8,7 +8,7 @@ permalink: /presentiel/cours-hebdomadaires/
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="space-y-4 text-center">
-    <p class="cta-pill bg-[#8bc34a]/20 text-fluance inline-flex">Suisse - Fribourg</p>
+    <p class="cta-pill bg-[#8bc34a]/20 text-fluance inline-flex">Suisse - région Fribourg</p>
     <h1 class="text-4xl font-semibold text-[#3E3A35]">Cours hebdomadaires</h1>
   </header>
 
@@ -29,25 +29,21 @@ permalink: /presentiel/cours-hebdomadaires/
         <li>• Ambiance bienveillante et conviviale</li>
       </ul>
       <div class="mt-6 pt-6 border-t border-fluance/20">
-        <h3 class="text-xl font-semibold text-fluance mb-3">Lieu : Fribourg (Suisse)</h3>
-        <p class="text-[#3E3A35] mb-3">Lieu exact communiqué prochainement.</p>
-        <!--
-        <p class="text-lg font-semibold text-[#3E3A35] mb-2">Arsen'Alt</p>
+        <h3 class="text-xl font-semibold text-fluance mb-3">Lieu : Granges-Paccot, agglomération de Fribourg (Suisse)</h3>
+        <p class="text-lg font-semibold text-[#3E3A35] mb-2">Le Duplex - Danse & Bien-Être</p>
         <p class="text-[#3E3A35] mb-3">
-          Association du Quartier d'Alt<br>
-          Derrière-les-Remparts 12<br>
-          1700 Fribourg, Suisse
+          Rte de Chantemerle 58d<br>
+          1763 Granges-Paccot
         </p>
-        <a href="https://www.google.com/maps/search/?api=1&query=Derrière-les-Remparts+12,+1700+Fribourg,+Suisse" target="_blank" rel="noopener noreferrer" class="text-fluance hover:text-fluance/80 underline inline-flex items-center">
+        <a href="https://maps.app.goo.gl/2a3AZBFTjirjEfm99" target="_blank" rel="noopener noreferrer" class="text-fluance hover:text-fluance/80 underline inline-flex items-center">
           Voir sur Google Maps →
         </a>
-        -->
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-3">Horaires</h3>
-        <p class="text-[#3E3A35] mb-2"><strong>Les cours débuteront dès janvier 2026.</strong></p>
+        <p class="text-[#3E3A35] mb-2"><strong>Les cours débuteront dès le 22 janvier 2026.</strong></p>
         <p class="text-[#3E3A35] mb-2">Les jeudis de 12h15 à 13h</p>
-        <p class="text-[#3E3A35] mb-2">Les mercredis de 18h à 18h45</p>
+        <p class="text-[#3E3A35] mb-2">Les jeudis de 20h15 à 21h</p>
         <p class="text-[#3E3A35]">Vous souhaitez un autre moment ? <a href="{{ '/contact/' | relativeUrl }}" class="text-fluance hover:underline">Faites la demande</a>. S'il y a assez de demandes, un nouveau créneau sera ouvert.</p>
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
@@ -94,6 +90,44 @@ permalink: /presentiel/cours-hebdomadaires/
             <img src="{{ '/assets/img/payment-logos/mastercard.svg' | relativeUrl }}" alt="Mastercard" class="h-8 object-contain" loading="lazy">
             <img src="{{ '/assets/img/payment-logos/google-pay.svg' | relativeUrl }}" alt="Google Pay" class="h-8 object-contain" loading="lazy">
             <img src="{{ '/assets/img/payment-logos/apple-pay.svg' | relativeUrl }}" alt="Apple Pay" class="h-8 object-contain" loading="lazy">
+          </div>
+        </div>
+        <div>
+          <h3 class="text-xl font-semibold text-fluance mb-2">Comment accéder au lieu de cours ?</h3>
+          <p class="text-[#3E3A35] mb-4">L'endroit de cours est facilement accessible en bus et de nombreuses places de parking l'entourent.</p>
+          
+          <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+            <h4 class="text-lg font-semibold text-fluance mb-3">Les transports en commun</h4>
+            <ul class="space-y-3 text-[#3E3A35] mb-3">
+              <li><strong>Bus n°9 et 10</strong> – Fribourg, Plateau-de-Pérolles<br/>
+                Fréquence : toutes les ~15min<br/>
+                Arrêt : Granges-Paccot, Chantemerle (+1min à pied)</li>
+              <li><strong>Bus n°1</strong> – Marly-Gérine<br/>
+                Fréquence : toutes les ~7min<br/>
+                Arrêt : Granges-Paccot, Agy (+15min à pied)</li>
+            </ul>
+            <p class="text-[#3E3A35]">
+              <a href="https://www.tpf.ch/fr/horaires-et-reseaux/horaire-en-ligne/recherche-ditineraire" target="_blank" rel="noopener noreferrer" class="text-fluance hover:text-fluance/80 underline">
+                Itinéraire TPF →
+              </a>
+            </p>
+          </div>
+          
+          <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+            <h4 class="text-lg font-semibold text-fluance mb-3">AUTORISATIONS DE PARKING</h4>
+            <ul class="space-y-2 text-[#3E3A35] mb-4">
+              <li><strong>Zone jaune :</strong> uniquement devant le duplex, 4 places, stationnement autorisé pendant vos cours ou ceux de vos enfants</li>
+              <li><strong>Zone bleue :</strong> devant le restaurant "À la louche", 20 places, disque nécessaire 08:00-18:30 (samedi compris), maximum 1h</li>
+              <li><strong>Zones blanches :</strong> au-dessus de la commune, proches de la place de jeux et de la bibliothèque + devant l'école primaire de Chantemerle, + 90 places, disque nécessaire 08:00-18:30 (samedi compris), maximum 2h</li>
+            </ul>
+          </div>
+          
+          <div class="bg-red-50 border-l-4 border-red-400 p-4">
+            <h4 class="text-lg font-semibold text-fluance mb-3">INTERDICTIONS DE PARKING</h4>
+            <ul class="space-y-2 text-[#3E3A35]">
+              <li>Il est <strong>strictement interdit</strong> d'arrêter sa voiture dans la cour devant le duplex (même si vous y restez). Le dépose-minute est toléré.</li>
+              <li>Il est <strong>interdit</strong> de se parquer sur toute autre place attenante au duplex car ce sont celles de nos voisins.</li>
+            </ul>
           </div>
         </div>
       </div>

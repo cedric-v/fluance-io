@@ -33,7 +33,7 @@ ogImage: assets/img/accueil-miniature-FR.jpg
         <span class="text-sm font-normal opacity-90">en ligne</span>
       </a>
       <a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-secondary border-[3px] border-[#F5F7F6] bg-[#7A1F3D]/80 text-[#F5F7F6] hover:bg-[#7A1F3D]/90 text-center flex flex-col">
-        <span>Cours en présentiel à Fribourg</span>
+        <span>Cours en présentiel, région Fribourg</span>
         <span class="text-sm font-normal opacity-90">(Suisse)</span>
       </a>
     </div>

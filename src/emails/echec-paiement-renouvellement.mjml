@@ -1,0 +1,102 @@
+---
+layout: false
+permalink: /emails/echec-paiement-renouvellement.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#ff9800" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold">
+          ⚠️ Problème de paiement pour votre abonnement
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Nous avons tenté de renouveler votre abonnement <strong>{{productName}}</strong>, mais le paiement n'a pas pu être effectué.
+        </mj-text>
+        <mj-text>
+          <strong>Raison :</strong> {{failureReason}}
+        </mj-text>
+        <mj-text>
+          <strong>Tentative :</strong> {{attemptNumber}} sur {{maxAttempts}}
+        </mj-text>
+        <mj-text color="#d32f2f" font-weight="bold">
+          {{warningMessage}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#648ED8">
+          Mettre à jour votre moyen de paiement
+        </mj-text>
+        <mj-text>
+          Pour éviter l'interruption de votre abonnement, veuillez mettre à jour votre carte bancaire ou votre moyen de paiement :
+        </mj-text>
+        <mj-button
+          href="{{updatePaymentLink}}"
+          background-color="#648ED8"
+          color="#ffffff"
+          border-radius="5px"
+          padding="15px 30px">
+          Mettre à jour le paiement
+        </mj-button>
+        <mj-text font-size="14px" color="#666666">
+          Ce lien est sécurisé et vous redirigera vers Stripe pour mettre à jour vos informations de paiement.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#648ED8">
+          Autres options de paiement
+        </mj-text>
+        <mj-text>
+          Si vous préférez utiliser un autre moyen de paiement :
+        </mj-text>
+        <mj-text>
+          • <strong>PayPal :</strong> <a href="{{paypalRequestLink}}">Demander un lien PayPal</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#fff3cd" padding="20px">
+      <mj-column>
+        <mj-text>
+          <strong>Important :</strong> Votre accès au contenu reste actif pendant <strong>7 jours</strong> pour vous permettre de régulariser la situation. Passé ce délai, votre abonnement sera suspendu et vous perdrez l'accès au contenu.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          <strong>Besoin d'aide ?</strong> Nous sommes là pour vous aider. Contactez-nous à <a href="mailto:support@fluance.io">support@fluance.io</a> ou répondez directement à cet email.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f5f5f5" padding="20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666">
+          Fluance - Instants Zen Sàrl<br/>
+          Case postale, 1782 Belfaux, Suisse
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+
