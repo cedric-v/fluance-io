@@ -30,7 +30,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
       </ul>
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-3">Location: Granges-Paccot, Fribourg agglomeration (Switzerland)</h3>
-        <p class="text-lg font-semibold text-[#3E3A35] mb-2">Le Duplex - Danse & Bien-Être</p>
+        <p class="text-lg font-semibold text-[#3E3A35] mb-2">le duplex danse & bien-être</p>
         <p class="text-[#3E3A35] mb-3">
           Rte de Chantemerle 58d<br>
           1763 Granges-Paccot
