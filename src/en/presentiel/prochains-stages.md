@@ -395,11 +395,10 @@ permalink: /en/presentiel/prochains-stages/
           });
           
           if (result.data && result.data.success) {
-            const successMessage = 'Thank you! You are now on the waiting list. We will notify you as soon as upcoming workshops are announced in your region.<br><br>' +
-              '<strong>In the meantime</strong>, you can:<br>' +
-              '• <a href="/en/cours-en-ligne/21-jours-mouvement/" class="text-fluance hover:underline font-medium">Follow the 21-day online course</a><br>' +
-              '• <a href="https://www.youtube.com/@fluanceio" target="_blank" rel="noopener noreferrer" class="text-fluance hover:underline font-medium">Subscribe to the YouTube channel</a>';
-            showMessageHTML(successMessage, 'success');
+            const successMessage = result.data.emailSent ?
+              'Thank you! A confirmation email has been sent to you. Please click on the link in the email to confirm your registration to the waiting list. Please check your spam / junk mail folder.' :
+              'Thank you! Your request has been recorded. A confirmation email should be sent to you shortly.';
+            showMessage(successMessage, 'success');
             form.reset();
             if (window.turnstile && turnstileWidget) {
               window.turnstile.reset();
@@ -434,14 +433,6 @@ permalink: /en/presentiel/prochains-stages/
     function showMessage(text, type) {
       if (messageDiv) {
         messageDiv.textContent = text;
-        messageDiv.className = 'text-sm ' + (type === 'success' ? 'text-green-600' : 'text-red-600');
-        messageDiv.classList.remove('hidden');
-      }
-    }
-    
-    function showMessageHTML(html, type) {
-      if (messageDiv) {
-        messageDiv.innerHTML = html;
         messageDiv.className = 'text-sm ' + (type === 'success' ? 'text-green-600' : 'text-red-600');
         messageDiv.classList.remove('hidden');
       }

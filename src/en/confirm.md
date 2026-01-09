@@ -23,15 +23,15 @@ eleventyExcludeFromCollections: true
         </svg>
       </div>
       <h1 class="text-4xl font-semibold text-[#3E3A35]">Subscription confirmed!</h1>
-      <p class="text-xl text-[#3E3A35]">
+      <p id="success-description" class="text-xl text-[#3E3A35]">
         Thank you for confirming your subscription. You will now receive our emails.
       </p>
-      <p class="text-lg text-[#3E3A35]/70">
+      <p id="success-subtext" class="text-lg text-[#3E3A35]/70">
         Access the 2 free liberating practices now:
       </p>
       <div class="pt-4">
-        <a href="{{ '/en/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
-          <span>Access the 2 free practices</span>
+        <a id="success-cta" href="{{ '/en/2-pratiques-offertes/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
+          <span id="success-cta-text">Access the 2 free practices</span>
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
           </svg>
@@ -62,11 +62,17 @@ eleventyExcludeFromCollections: true
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get('email');
     const token = urlParams.get('token');
+    const redirectParam = urlParams.get('redirect');
+    const sourceParam = urlParams.get('source');
 
     const loadingState = document.getElementById('loading-state');
     const successState = document.getElementById('success-state');
     const errorState = document.getElementById('error-state');
     const errorMessage = document.getElementById('error-message');
+    const successDescription = document.getElementById('success-description');
+    const successSubtext = document.getElementById('success-subtext');
+    const successCta = document.getElementById('success-cta');
+    const successCtaText = document.getElementById('success-cta-text');
 
     if (!email || !token) {
       loadingState.classList.add('hidden');
@@ -196,16 +202,47 @@ eleventyExcludeFromCollections: true
         loadingState.classList.add('hidden');
         successState.classList.remove('hidden');
 
+        // Déterminer la destination en fonction de la source
+        const sourceOptin = sourceParam || result.data.sourceOptin || redirectParam || '2pratiques';
+        let target = '2pratiques';
+        if (redirectParam === 'stages' || sourceOptin === 'stages') {
+          target = 'stages';
+        } else if (sourceOptin && sourceOptin.includes('5joursofferts')) {
+          target = '5joursofferts';
+        } else if (redirectParam === 'achat21' || sourceOptin === 'achat21') {
+          target = 'achat21';
+        }
+
         // Envoyer l'événement de conversion à Google Analytics (événement recommandé generate_lead)
         if (window.dataLayer) {
-          // Pour la version anglaise, on assume 2pratiques par défaut
           window.dataLayer.push({
             event: 'generate_lead',
             source: 'newsletter_optin',
-            optin_type: '2pratiques',
-            lead_type: '2_pratiques'
+            optin_type: target === 'stages' ? 'stages' : (target === '5joursofferts' ? '5joursofferts' : '2pratiques'),
+            lead_type: target === 'stages' ? 'stages' : (target === '5joursofferts' ? '5_jours' : '2_pratiques')
           });
-          console.log('Opt-in conversion tracked: 2pratiques');
+          console.log('Opt-in conversion tracked:', target);
+        }
+
+        // Mettre à jour le contenu selon le type d'opt-in
+        if (target === 'stages' && successDescription && successSubtext && successCta && successCtaText) {
+          successDescription.textContent = 'Thank you for confirming your registration to the waiting list for upcoming workshops!';
+          successSubtext.textContent = 'You will be notified first as soon as upcoming workshops are announced in your region.';
+          successCta.href = '/en/presentiel/prochains-stages/';
+          successCtaText.textContent = 'Back to workshops page';
+        } else if (target === '5joursofferts' && successSubtext && successCta && successCtaText) {
+          successSubtext.textContent = 'Access day 1 of your 5 free practices now:';
+          successCta.href = '/en/cours-en-ligne/5jours/j1/';
+          successCtaText.textContent = 'Access day 1 of the 5 practices';
+        } else if (target === 'achat21' && successSubtext && successCta && successCtaText) {
+          successSubtext.textContent = 'Access your purchase confirmation for 21 days:';
+          successCta.href = '/en/confirmation/';
+          successCtaText.textContent = 'Access my purchase confirmation';
+        } else if (successSubtext && successCta && successCtaText) {
+          // Par défaut : 2 pratiques
+          successSubtext.textContent = 'Access the 2 free liberating practices now:';
+          successCta.href = '/en/2-pratiques-offertes/';
+          successCtaText.textContent = 'Access the 2 free practices';
         }
       } else {
         throw new Error(result.data?.message || 'Error during confirmation');

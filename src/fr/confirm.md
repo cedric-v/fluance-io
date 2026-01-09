@@ -206,7 +206,9 @@ eleventyExcludeFromCollections: true
         // Déterminer la destination en fonction de la source
         const sourceOptin = sourceParam || result.data.sourceOptin || redirectParam || '2pratiques';
         let target = '2pratiques';
-        if (sourceOptin && sourceOptin.includes('5joursofferts')) {
+        if (redirectParam === 'stages' || sourceOptin === 'stages') {
+          target = 'stages';
+        } else if (sourceOptin && sourceOptin.includes('5joursofferts')) {
           target = '5joursofferts';
         } else if (redirectParam === 'achat21' || sourceOptin === 'achat21') {
           target = 'achat21';
@@ -217,13 +219,19 @@ eleventyExcludeFromCollections: true
           window.dataLayer.push({
             event: 'generate_lead',
             source: 'newsletter_optin',
-            optin_type: target === '5joursofferts' ? '5joursofferts' : '2pratiques',
-            lead_type: target === '5joursofferts' ? '5_jours' : '2_pratiques'
+            optin_type: target === 'stages' ? 'stages' : (target === '5joursofferts' ? '5joursofferts' : '2pratiques'),
+            lead_type: target === 'stages' ? 'stages' : (target === '5joursofferts' ? '5_jours' : '2_pratiques')
           });
           console.log('Opt-in conversion tracked:', target);
         }
 
-        if (target === '5joursofferts') {
+        // Mettre à jour le contenu selon le type d'opt-in
+        if (target === 'stages' && successDescription && successSubtext && successCta && successCtaText) {
+          successDescription.textContent = 'Merci d\'avoir confirmé votre inscription à la liste d\'attente des prochains stages !';
+          successSubtext.textContent = 'Vous serez informé(e) en priorité dès que les prochains stages seront annoncés dans votre région.';
+          successCta.href = '/presentiel/prochains-stages/';
+          successCtaText.textContent = 'Retour à la page des stages';
+        } else if (target === '5joursofferts') {
           successSubtext.textContent = 'Accédez maintenant au jour 1 de vos 5 pratiques offertes :';
           successCta.href = '/cours-en-ligne/5jours/j1/';
           successCtaText.textContent = 'Accéder au jour 1 des 5 pratiques';

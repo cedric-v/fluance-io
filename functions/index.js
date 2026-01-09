@@ -2841,98 +2841,105 @@ exports.subscribeToStagesWaitingList = onCall(
           console.error('Error adding contact to MailJet list');
         }
 
-        // Définir les contact properties pour l'inscription à la liste d'attente des stages
-        const now = new Date();
-        const dateStr = now.toISOString(); // Format: YYYY-MM-DDTHH:MM:SS.sssZ
+        // Générer un token de confirmation unique pour le double opt-in
+        const confirmationToken = generateUniqueToken();
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 7); // Token valide 7 jours
+
+        // Stocker le token de confirmation dans Firestore
+        await db.collection('newsletterConfirmations').doc(confirmationToken).set({
+          email: email.toLowerCase().trim(),
+          name: name || '',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: expirationDate,
+          confirmed: false,
+          reminderSent: false,
+          sourceOptin: 'stages',
+          region: region,
+          locale: locale,
+        });
 
         // Valider et normaliser la langue
         const langue = (locale === 'en' || locale === 'EN') ? 'en' : 'fr';
 
-        const properties = {
-          region: region,
-          liste_attente_stages: dateStr,
-          langue: langue,
-        };
+        // Déterminer les URLs selon la langue
+        const baseUrl = 'https://fluance.io';
+        const url21jours = langue === 'en' ?
+          `${baseUrl}/en/cours-en-ligne/21-jours-mouvement/` :
+          `${baseUrl}/cours-en-ligne/21-jours-mouvement/`;
 
-        // Ajouter le prénom aux propriétés si disponible
-        if (name) {
-          properties.firstname = capitalizeName(name);
-        }
+        // Envoyer l'email de confirmation avec le template spécifique aux stages
+        console.log('📧 Starting email confirmation process for stages waiting list:', contactData.Email);
+        const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(contactData.Email)}&token=${confirmationToken}&redirect=stages`;
 
-        // Si source_optin existe déjà, l'ajouter à la liste (séparée par virgules)
-        // Sinon, créer une nouvelle entrée
-        let currentProperties = {};
+        let emailSent = false;
+        let emailError = null;
+
+        console.log('📧 About to send confirmation email, token:', confirmationToken);
         try {
-          const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(contactData.Email)}`;
-          const getResponse = await fetch(contactDataUrl, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Basic ${auth}`,
-            },
+          const emailSubject = langue === 'en' ?
+            `Last step${name ? ' ' + name : ''}` :
+            `Dernière étape indispensable${name ? ' ' + name : ''}`;
+
+          // Préparer le texte de région pour le template
+          const regionText = region ? ` dans votre région (${region})` : '';
+
+          const emailHtml = loadEmailTemplate('confirmation-stages', {
+            firstName: name || '',
+            confirmationUrl: confirmationUrl,
+            regionText: regionText,
+            url21jours: url21jours,
           });
-          if (getResponse.ok) {
-            const getData = await getResponse.json();
-            if (getData.Data && getData.Data.length > 0) {
-              const contactDataResult = getData.Data[0];
-              if (contactDataResult.Data) {
-                if (Array.isArray(contactDataResult.Data)) {
-                  contactDataResult.Data.forEach((item) => {
-                    if (item.Name && item.Value !== undefined) {
-                      currentProperties[item.Name] = item.Value;
-                    }
-                  });
-                } else if (typeof contactDataResult.Data === 'object') {
-                  currentProperties = contactDataResult.Data;
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.log('Error fetching contact properties, will create new ones:', error.message);
+
+          const emailText = langue === 'en' ?
+            `Hello${name ? ' ' + name : ''},\n\n` +
+            `Thank you for signing up for the waiting list for upcoming Fluance workshops${region ? ' in your region (' + region + ')' : ''}!\n\n` +
+            `To finalize your registration and be notified first when upcoming workshops are announced, ` +
+            `please confirm your email address by clicking on this link:\n\n` +
+            `${confirmationUrl}\n\n` +
+            `This link is valid for 7 days.\n\n` +
+            `In the meantime, you can:\n` +
+            `• Follow the 21-day online course: ${url21jours}\n` +
+            `• Subscribe to the YouTube channel: https://www.youtube.com/@fluanceio\n\n` +
+            `If you did not request this registration, you can ignore this email.` :
+            `Bonjour${name ? ' ' + name : ''},\n\n` +
+            `Merci pour votre inscription à la liste d'attente des prochains stages Fluance${region ? ' dans votre région (' + region + ')' : ''} !\n\n` +
+            `Pour finaliser votre inscription et être informé(e) en priorité dès que les prochains stages seront annoncés, ` +
+            `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
+            `${confirmationUrl}\n\n` +
+            `Ce lien est valide pendant 7 jours.\n\n` +
+            `En attendant, vous pouvez :\n` +
+            `• Suivre le cours en ligne de 21 jours : ${url21jours}\n` +
+            `• S'abonner à la chaîne YouTube : https://www.youtube.com/@fluanceio\n\n` +
+            `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email.`;
+
+          await sendMailjetEmail(
+              contactData.Email,
+              emailSubject,
+              emailHtml,
+              emailText,
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+              'support@actu.fluance.io',
+              'Cédric de Fluance',
+          );
+
+          emailSent = true;
+          console.log(`✅ Confirmation email sent successfully to ${contactData.Email}`);
+        } catch (err) {
+          emailError = `Exception: ${err.message}`;
+          console.error('Exception sending confirmation email:', emailError);
+          console.error('Stack trace:', err.stack);
         }
-
-        // Si source_optin existe déjà, l'ajouter à la liste (séparée par virgules)
-        const currentSourceOptin = currentProperties.source_optin || '';
-        const sourceOptinListBase = currentSourceOptin ? currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
-        const sourceOptinList = sourceOptinListBase.includes('stages') ?
-          sourceOptinListBase :
-          [...sourceOptinListBase, 'stages'];
-
-        if (sourceOptinList.length > 0) {
-          properties.source_optin = sourceOptinList.join(',');
-        } else {
-          properties.source_optin = 'stages';
-        }
-
-        // Si statut n'existe pas, le définir comme prospect
-        if (!currentProperties.statut) {
-          properties.statut = 'prospect';
-        }
-
-        // Si date_optin n'existe pas, la définir
-        if (!currentProperties.date_optin) {
-          properties.date_optin = dateStr;
-        }
-
-        // Si est_client n'existe pas, le définir comme False
-        if (!currentProperties.est_client) {
-          properties.est_client = 'False';
-        }
-
-        console.log('📋 Starting MailJet contact properties update for stages waiting list:', contactData.Email);
-        console.log('📋 Properties to set:', JSON.stringify(properties));
-        await updateMailjetContactProperties(
-            contactData.Email,
-            properties,
-            process.env.MAILJET_API_KEY,
-            process.env.MAILJET_API_SECRET,
-        );
-        console.log('📋 MailJet contact properties update completed for:', contactData.Email);
 
         return {
           success: true,
-          message: 'Successfully added to waiting list',
+          message: emailSent ?
+            'Confirmation email sent. Please check your inbox.' :
+            'Contact created but confirmation email may not have been sent. Please check logs.',
           email: contactData.Email,
+          emailSent: emailSent,
+          emailError: emailError || null,
         };
       } catch (error) {
         console.error('Error subscribing to stages waiting list:', error);
@@ -3044,46 +3051,52 @@ exports.confirmNewsletterOptIn = onCall(
           console.error('Error adding contact to MailJet list');
         }
 
+        // Mettre à jour les propriétés MailJet selon le type d'opt-in
+        const confirmationDate = new Date();
+        const dateStr = confirmationDate.toISOString();
+
+        // Récupérer les propriétés actuelles
+        let currentProperties = {};
+        try {
+          const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
+          const getResponse = await fetch(contactDataUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            },
+          });
+
+          if (getResponse.ok) {
+            const getData = await getResponse.json();
+            if (getData.Data && getData.Data.length > 0) {
+              const contactData = getData.Data[0];
+              if (contactData.Data) {
+                if (Array.isArray(contactData.Data)) {
+                  contactData.Data.forEach((item) => {
+                    if (item.Name && item.Value !== undefined) {
+                      currentProperties[item.Name] = item.Value;
+                    }
+                  });
+                } else if (typeof contactData.Data === 'object') {
+                  currentProperties = contactData.Data;
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.log('Error fetching contact properties:', error.message);
+        }
+
         // Si c'est une confirmation pour les 5 jours, mettre à jour le statut de la série
         if (tokenData.sourceOptin === '5joursofferts') {
           try {
-            const now = new Date();
-            const dateStr = now.toISOString();
             const properties = {
               'serie_5jours_status': 'started', // Série démarrée après confirmation
             };
 
-            // Récupérer les propriétés actuelles pour vérifier si serie_5jours_debut existe
-            const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
-            const getResponse = await fetch(contactDataUrl, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Basic ${auth}`,
-              },
-            });
-
-            if (getResponse.ok) {
-              const getData = await getResponse.json();
-              if (getData.Data && getData.Data.length > 0) {
-                const contactData = getData.Data[0];
-                if (contactData.Data) {
-                  let currentProperties = {};
-                  if (Array.isArray(contactData.Data)) {
-                    contactData.Data.forEach((item) => {
-                      if (item.Name && item.Value !== undefined) {
-                        currentProperties[item.Name] = item.Value;
-                      }
-                    });
-                  } else if (typeof contactData.Data === 'object') {
-                    currentProperties = contactData.Data;
-                  }
-
-                  // Si serie_5jours_debut n'existe pas, l'ajouter maintenant
-                  if (!currentProperties['serie_5jours_debut']) {
-                    properties['serie_5jours_debut'] = dateStr;
-                  }
-                }
-              }
+            // Si serie_5jours_debut n'existe pas, l'ajouter maintenant
+            if (!currentProperties['serie_5jours_debut']) {
+              properties['serie_5jours_debut'] = dateStr;
             }
 
             await updateMailjetContactProperties(
@@ -3096,6 +3109,67 @@ exports.confirmNewsletterOptIn = onCall(
           } catch (error) {
             console.error('Error updating 5jours series status:', error);
             // Ne pas faire échouer la confirmation si la mise à jour du statut échoue
+          }
+        }
+
+        // Si c'est une confirmation pour les stages, mettre à jour les propriétés
+        if (tokenData.sourceOptin === 'stages') {
+          try {
+            // Valider et normaliser la langue
+            const locale = tokenData.locale || 'fr';
+            const langue = (locale === 'en' || locale === 'EN') ? 'en' : 'fr';
+
+            const properties = {
+              region: tokenData.region || '',
+              liste_attente_stages: dateStr,
+              langue: langue,
+            };
+
+            // Ajouter le prénom aux propriétés si disponible
+            if (tokenData.name) {
+              properties.firstname = capitalizeName(tokenData.name);
+            }
+
+            // Si source_optin existe déjà, l'ajouter à la liste (séparée par virgules)
+            const currentSourceOptin = currentProperties.source_optin || '';
+            const sourceOptinListBase = currentSourceOptin ? currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
+            const sourceOptinList = sourceOptinListBase.includes('stages') ?
+              sourceOptinListBase :
+              [...sourceOptinListBase, 'stages'];
+
+            if (sourceOptinList.length > 0) {
+              properties.source_optin = sourceOptinList.join(',');
+            } else {
+              properties.source_optin = 'stages';
+            }
+
+            // Si statut n'existe pas, le définir comme prospect
+            if (!currentProperties.statut) {
+              properties.statut = 'prospect';
+            }
+
+            // Si date_optin n'existe pas, la définir
+            if (!currentProperties.date_optin) {
+              properties.date_optin = dateStr;
+            }
+
+            // Si est_client n'existe pas, le définir comme False
+            if (!currentProperties.est_client) {
+              properties.est_client = 'False';
+            }
+
+            console.log('📋 Starting MailJet contact properties update for confirmed stages waiting list:', email);
+            console.log('📋 Properties to set:', JSON.stringify(properties));
+            await updateMailjetContactProperties(
+                email.toLowerCase().trim(),
+                properties,
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+            console.log('📋 MailJet contact properties update completed for confirmed stages:', email);
+          } catch (error) {
+            console.error('Error updating stages waiting list properties:', error);
+            // Ne pas faire échouer la confirmation si la mise à jour des propriétés échoue
           }
         }
 
