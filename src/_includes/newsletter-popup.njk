@@ -417,13 +417,17 @@
           }
           
           const functions = app.functions('europe-west1');
+          // Détecter la langue depuis l'URL
+          const locale = window.location.pathname.startsWith('/en/') ? 'en' : 'fr';
+
           const subscribeToNewsletter = functions.httpsCallable('subscribeToNewsletter');
           const result = await subscribeToNewsletter({ 
             email: email, 
             name: name, 
             turnstileToken: turnstileToken,
             isLocalhost: isLocalhost, // Informer le serveur si on est en localhost
-            turnstileSkipped: turnstileSkipped // Informer le serveur si Turnstile a été ignoré (fallback)
+            turnstileSkipped: turnstileSkipped, // Informer le serveur si Turnstile a été ignoré (fallback)
+            locale: locale // Langue détectée depuis l'URL
           });
           
           if (result.data && result.data.success) {

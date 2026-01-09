@@ -19,6 +19,9 @@ Les properties suivantes sont gérées automatiquement :
 | `valeur_client` | Decimal | Montant total dépensé | Montant en CHF (format: `"123.45"`) |
 | `nombre_achats` | Integer | Nombre total de commandes | Nombre entier |
 | `est_client` | Boolean | Indicateur client | `"True"` ou `"False"` |
+| `langue` | String | Langue préférée du contact | `"fr"` ou `"en"` (détectée depuis l'URL `/en/` ou paramètre `locale`) |
+| `region` | String | Région du contact | `"France : Est"`, `"Suisse"`, etc. |
+| `liste_attente_stages` | Date | Date d'inscription à la liste d'attente des stages | Format ISO 8601 |
 
 ## 🔄 Flux d'intégration
 
@@ -31,10 +34,11 @@ Les properties suivantes sont gérées automatiquement :
 - Définit les properties :
   - `statut`: `"prospect"`
   - `source_optin`: `"2pratiques"`
-  - `date_optin`: Date actuelle (format `JJ/MM/AAAA`)
+  - `date_optin`: Date actuelle (format ISO 8601)
   - `est_client`: `"False"`
+  - `langue`: `"fr"` ou `"en"` (détectée depuis l'URL `/en/`)
 
-**Code** : `functions/index.js` ligne ~905-951
+**Code** : `functions/index.js` ligne ~2326-2613
 
 ### 2. Opt-in "5 jours offerts"
 
@@ -47,10 +51,11 @@ Les properties suivantes sont gérées automatiquement :
   - `source_optin`: `"5joursofferts"` (ajouté à la liste si déjà présent)
   - `date_optin`: Date actuelle (ou conserve la plus ancienne si existe)
   - `est_client`: `"False"`
+  - `langue`: `"fr"` ou `"en"` (détectée depuis l'URL `/en/`)
 
 **Note** : Si le contact a déjà `source_optin="2pratiques"`, il aura `source_optin="2pratiques,5joursofferts"`
 
-**Code** : `functions/index.js` ligne ~1403-1510
+**Code** : `functions/index.js` ligne ~3103-3444
 
 ### 3. Achat via Stripe ou PayPal
 
@@ -65,9 +70,10 @@ Les properties suivantes sont gérées automatiquement :
   - `valeur_client`: Montant total (somme de tous les achats)
   - `nombre_achats`: Incrémente de 1
   - `est_client`: `"True"`
+  - `langue`: `"fr"` ou `"en"` (extraite depuis les métadonnées Stripe/PayPal `locale`)
 - Ajoute le contact à la liste **10524140** si pas déjà dedans
 
-**Code** : `functions/index.js` ligne ~165-315 (fonction `createTokenAndSendEmail`)
+**Code** : `functions/index.js` ligne ~484-642 (fonction `createTokenAndSendEmail`)
 
 ## 🔧 Fonction helper
 
@@ -95,8 +101,9 @@ Met à jour les contact properties MailJet pour un contact.
 {
   "statut": "prospect",
   "source_optin": "2pratiques",
-  "date_optin": "11/12/2025",
-  "est_client": "False"
+  "date_optin": "2025-12-11T10:30:00.000Z",
+  "est_client": "False",
+  "langue": "fr"
 }
 ```
 
@@ -105,8 +112,9 @@ Met à jour les contact properties MailJet pour un contact.
 {
   "statut": "prospect",
   "source_optin": "2pratiques,5joursofferts",
-  "date_optin": "10/12/2025",  // Conserve la date la plus ancienne
-  "est_client": "False"
+  "date_optin": "2025-12-10T09:00:00.000Z",  // Conserve la date la plus ancienne
+  "est_client": "False",
+  "langue": "en"
 }
 ```
 
@@ -115,13 +123,14 @@ Met à jour les contact properties MailJet pour un contact.
 {
   "statut": "client",
   "source_optin": "2pratiques",
-  "date_optin": "10/12/2025",
+  "date_optin": "2025-12-10T09:00:00.000Z",
   "produits_achetes": "21jours",
-  "date_premier_achat": "11/12/2025",
-  "date_dernier_achat": "11/12/2025",
+  "date_premier_achat": "2025-12-11T14:20:00.000Z",
+  "date_dernier_achat": "2025-12-11T14:20:00.000Z",
   "valeur_client": "19.00",
   "nombre_achats": 1,
-  "est_client": "True"
+  "est_client": "True",
+  "langue": "fr"
 }
 ```
 
@@ -130,13 +139,14 @@ Met à jour les contact properties MailJet pour un contact.
 {
   "statut": "client",
   "source_optin": "2pratiques,5joursofferts",
-  "date_optin": "10/12/2025",
+  "date_optin": "2025-12-10T09:00:00.000Z",
   "produits_achetes": "21jours,complet",
-  "date_premier_achat": "11/12/2025",
-  "date_dernier_achat": "15/12/2025",
+  "date_premier_achat": "2025-12-11T14:20:00.000Z",
+  "date_dernier_achat": "2025-12-15T16:45:00.000Z",
   "valeur_client": "49.00",
   "nombre_achats": 2,
-  "est_client": "True"
+  "est_client": "True",
+  "langue": "en"
 }
 ```
 
@@ -164,6 +174,12 @@ Avec ces properties, vous pouvez créer des segments dans MailJet :
 
 ### Segment : Clients premium
 - `valeur_client` >= Montant (ex: >= 50 CHF)
+
+### Segment : Contacts francophones
+- `langue` = `"fr"`
+
+### Segment : Contacts anglophones
+- `langue` = `"en"`
 
 ## 🔍 Vérifier les properties d'un contact
 
@@ -196,7 +212,7 @@ Pour voir les contact properties, vous devrez utiliser l'API MailJet directement
 
 2. Vérifier que les properties existent dans MailJet Dashboard
 
-3. Vérifier le format des dates (JJ/MM/AAAA)
+3. Vérifier le format des dates (ISO 8601)
 
 ### Erreur lors de la mise à jour des properties
 

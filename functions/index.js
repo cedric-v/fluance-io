@@ -259,6 +259,9 @@ async function ensureMailjetContactProperties(apiKey, apiSecret) {
     'lastname',
     'phone',
     'address',
+    'region',
+    'liste_attente_stages',
+    'langue',
   ];
 
   console.log(`📋 Ensuring ${properties.length} MailJet contact properties exist`);
@@ -488,6 +491,7 @@ async function createTokenAndSendEmail(
     customerName = null,
     customerPhone = null,
     customerAddress = null,
+    langue = 'fr',
 ) {
   const token = generateUniqueToken();
   const expirationDate = new Date();
@@ -572,6 +576,9 @@ async function createTokenAndSendEmail(
 
       const isFirstPurchase = !currentProperties.date_premier_achat;
 
+      // Valider et normaliser la langue
+      const langueNormalisee = (langue === 'en' || langue === 'EN') ? 'en' : 'fr';
+
       const updatedProperties = {
         statut: 'client',
         produits_achetes: productsList.join(','),
@@ -579,6 +586,7 @@ async function createTokenAndSendEmail(
         valeur_client: (currentValeur + amount).toFixed(2),
         nombre_achats: currentNombreAchats + 1,
         est_client: 'True',
+        langue: langueNormalisee,
       };
 
       // Ajouter les coordonnées complémentaires si disponibles
@@ -1066,6 +1074,9 @@ exports.webhookStripe = onRequest(
           return res.status(200).json({received: true, ignored: true});
         }
 
+        // Extraire la langue depuis les métadonnées (défaut: 'fr')
+        const langue = session.metadata?.locale || session.metadata?.langue || 'fr';
+
         // Pour le RDV Clarté (cedricv.com), pas besoin de créer un token ni d'envoyer d'email
         // Le paiement est juste loggé et la redirection se fait via success_url
         if (product === 'rdv-clarte') {
@@ -1104,6 +1115,7 @@ exports.webhookStripe = onRequest(
               customerName,
               customerPhone,
               fullAddress,
+              langue,
           );
           console.log(
               `Token created and email sent to ${customerEmail} for product ${product}, amount: ${amountCHF} CHF`,
@@ -1149,6 +1161,7 @@ exports.webhookStripe = onRequest(
                   customerName,
                   customerPhone,
                   fullAddress,
+                  langue,
               );
               console.log(
                   `Token created and email sent to ${customerEmail} for cross-sell product sos-dos-cervicales`,
@@ -1445,6 +1458,9 @@ exports.webhookPayPal = onRequest(
             amountCHF = value; // Par défaut, considérer comme CHF
           }
 
+          // Extraire la langue depuis les métadonnées PayPal (défaut: 'fr')
+          const langue = resource.custom_id?.locale || resource.custom_id?.langue || 'fr';
+
           await createTokenAndSendEmail(
               customerEmail,
               product,
@@ -1455,6 +1471,7 @@ exports.webhookPayPal = onRequest(
               customerName,
               customerPhone,
               fullAddress,
+              langue,
           );
           console.log(
               `Token created and email sent to ${customerEmail} for product ${product}, amount: ${amountCHF} CHF`,
@@ -1648,6 +1665,7 @@ exports.createStripeCheckoutSession = onCall(
           metadata: {
             system: 'firebase',
             product: product,
+            locale: locale === 'en' ? 'en' : 'fr',
             // Ajouter le variant pour rdv-clarte si présent
             ...(product === 'rdv-clarte' && variant ? {variant: variant} : {}),
           },
@@ -1657,6 +1675,7 @@ exports.createStripeCheckoutSession = onCall(
             metadata: {
               system: 'firebase',
               product: product,
+              locale: locale === 'en' ? 'en' : 'fr',
               // Ajouter le variant pour rdv-clarte si présent
               ...(product === 'rdv-clarte' && variant ? {variant: variant} : {}),
             },
@@ -1889,6 +1908,7 @@ exports.createUserToken = onCall(
             null, // customerName (non disponible pour création manuelle)
             null, // customerPhone (non disponible pour création manuelle)
             null, // customerAddress (non disponible pour création manuelle)
+            'fr', // langue (par défaut 'fr' pour création manuelle admin)
         );
         return {success: true, token};
       } catch (error) {
@@ -2330,7 +2350,7 @@ exports.subscribeToNewsletter = onCall(
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
-      const {email, name, turnstileToken, isLocalhost, turnstileSkipped} = request.data;
+      const {email, name, turnstileToken, isLocalhost, turnstileSkipped, locale = 'fr'} = request.data;
 
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
@@ -2526,11 +2546,15 @@ exports.subscribeToNewsletter = onCall(
         // Format ISO 8601 complet avec heure pour les propriétés datetime Mailjet
         const dateStr = now.toISOString(); // Format: YYYY-MM-DDTHH:MM:SS.sssZ
 
+        // Valider et normaliser la langue
+        const langue = (locale === 'en' || locale === 'EN') ? 'en' : 'fr';
+
         const properties = {
           statut: 'prospect',
           source_optin: '2pratiques',
           date_optin: dateStr,
           est_client: 'False',
+          langue: langue,
         };
 
         // Ajouter le prénom aux propriétés si disponible
@@ -2609,6 +2633,310 @@ exports.subscribeToNewsletter = onCall(
       } catch (error) {
         console.error('Error subscribing to newsletter:', error);
         throw new HttpsError('internal', 'Error subscribing to newsletter: ' + error.message);
+      }
+    });
+
+/**
+ * Inscription à la liste d'attente pour les prochains stages
+ * Cette fonction est publique (pas besoin d'authentification admin)
+ * Région : europe-west1 (Belgique)
+ * Utilise les secrets Firebase pour Mailjet
+ */
+exports.subscribeToStagesWaitingList = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'TURNSTILE_SECRET_KEY'],
+      cors: true, // Autoriser CORS pour toutes les origines
+    },
+    async (request) => {
+      const {email, name, region, turnstileToken, isLocalhost, turnstileSkipped, locale = 'fr'} = request.data;
+
+      if (!email) {
+        throw new HttpsError('invalid-argument', 'Email is required');
+      }
+
+      if (!name) {
+        throw new HttpsError('invalid-argument', 'Name is required');
+      }
+
+      if (!region) {
+        throw new HttpsError('invalid-argument', 'Region is required');
+      }
+
+      // Valider le format de l'email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new HttpsError('invalid-argument', 'Invalid email format');
+      }
+
+      // Valider la région
+      const validRegions = [
+        'France : Est',
+        'France : Nord',
+        'France : Sud',
+        'France : Ouest',
+        'France : outre-mer',
+        'Belgique',
+        'Québec',
+        'Suisse',
+        'Autres régions',
+      ];
+      if (!validRegions.includes(region)) {
+        throw new HttpsError('invalid-argument', 'Invalid region');
+      }
+
+      // Valider le token Turnstile (sauf en développement local ou si fallback activé)
+      if (!isLocalhost && !turnstileSkipped && !turnstileToken) {
+        throw new HttpsError('invalid-argument', 'Turnstile verification required');
+      }
+
+      const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+
+      // Si Turnstile a été ignoré (fallback), logger un avertissement mais continuer
+      if (turnstileSkipped) {
+        console.warn(
+            `[subscribeToStagesWaitingList] Turnstile skipped for ${email} (fallback mode)`,
+        );
+      }
+
+      // Valider Turnstile seulement si pas en localhost, pas en fallback, et si le secret est configuré
+      if (!isLocalhost && !turnstileSkipped && turnstileSecret && turnstileToken) {
+        try {
+          // Obtenir l'IP du client depuis les headers
+          const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
+                          request.rawRequest?.headers?.['x-real-ip'] ||
+                          '';
+
+          // Valider le token avec Cloudflare Turnstile
+          const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              secret: turnstileSecret,
+              response: turnstileToken,
+              remoteip: clientIP,
+            }),
+          });
+
+          const turnstileResult = await turnstileResponse.json();
+
+          if (!turnstileResult.success) {
+            console.error('Turnstile verification failed:', turnstileResult);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+        } catch (error) {
+          if (error instanceof HttpsError) {
+            throw error;
+          }
+          console.error('Error verifying Turnstile token:', error);
+          throw new HttpsError('internal', 'Error verifying bot protection');
+        }
+      } else if (!isLocalhost && !turnstileSecret) {
+        console.warn('TURNSTILE_SECRET_KEY not configured. Skipping bot verification.');
+      } else if (isLocalhost) {
+        console.log('Skipping Turnstile verification in localhost environment.');
+      }
+
+      try {
+        // Ajouter le contact à MailJet
+        const url = 'https://api.mailjet.com/v3/REST/contact';
+
+        const contactData = {
+          Email: email.toLowerCase().trim(),
+          IsExcludedFromCampaigns: false,
+        };
+
+        if (name) {
+          contactData.Name = name;
+        }
+
+        const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+
+        // Vérifier si le contact existe déjà
+        const checkUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(contactData.Email)}`;
+        let contactExists = false;
+
+        try {
+          const checkResponse = await fetch(checkUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            },
+          });
+
+          if (checkResponse.ok) {
+            contactExists = true;
+            // Mettre à jour le contact existant si un nom est fourni
+            if (name) {
+              const updateResponse = await fetch(checkUrl, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Basic ${auth}`,
+                },
+                body: JSON.stringify(contactData),
+              });
+
+              if (!updateResponse.ok) {
+                const errorText = await updateResponse.text();
+                console.error('Error updating contact:', errorText);
+              }
+            }
+          }
+        } catch {
+          // Contact n'existe pas, on va le créer
+          console.log('Contact does not exist, will create it');
+        }
+
+        // Créer le contact s'il n'existe pas
+        if (!contactExists) {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify(contactData),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Mailjet API error:', errorText);
+            throw new Error(`Mailjet API error: ${response.status} - ${errorText}`);
+          }
+        }
+
+        // Ajouter le contact à la liste principale MailJet (10524140)
+        const listId = '10524140';
+        const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
+
+        try {
+          const listResponse = await fetch(addToListUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify({
+              IsUnsubscribed: false,
+              ContactAlt: contactData.Email,
+              ListID: parseInt(listId, 10),
+            }),
+          });
+
+          if (!listResponse.ok) {
+            const errorText = await listResponse.text();
+            // Si le contact est déjà dans la liste, ce n'est pas une erreur critique
+            if (listResponse.status === 400 && errorText.includes('already')) {
+              console.log(`Contact ${contactData.Email} is already in list ${listId}`);
+            } else {
+              console.error('Error adding contact to MailJet list:', errorText);
+            }
+          } else {
+            console.log(`Contact ${contactData.Email} successfully added to list ${listId}`);
+          }
+        } catch {
+          console.error('Error adding contact to MailJet list');
+        }
+
+        // Définir les contact properties pour l'inscription à la liste d'attente des stages
+        const now = new Date();
+        const dateStr = now.toISOString(); // Format: YYYY-MM-DDTHH:MM:SS.sssZ
+
+        // Valider et normaliser la langue
+        const langue = (locale === 'en' || locale === 'EN') ? 'en' : 'fr';
+
+        const properties = {
+          region: region,
+          liste_attente_stages: dateStr,
+          langue: langue,
+        };
+
+        // Ajouter le prénom aux propriétés si disponible
+        if (name) {
+          properties.firstname = capitalizeName(name);
+        }
+
+        // Si source_optin existe déjà, l'ajouter à la liste (séparée par virgules)
+        // Sinon, créer une nouvelle entrée
+        let currentProperties = {};
+        try {
+          const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(contactData.Email)}`;
+          const getResponse = await fetch(contactDataUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+            },
+          });
+          if (getResponse.ok) {
+            const getData = await getResponse.json();
+            if (getData.Data && getData.Data.length > 0) {
+              const contactDataResult = getData.Data[0];
+              if (contactDataResult.Data) {
+                if (Array.isArray(contactDataResult.Data)) {
+                  contactDataResult.Data.forEach((item) => {
+                    if (item.Name && item.Value !== undefined) {
+                      currentProperties[item.Name] = item.Value;
+                    }
+                  });
+                } else if (typeof contactDataResult.Data === 'object') {
+                  currentProperties = contactDataResult.Data;
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.log('Error fetching contact properties, will create new ones:', error.message);
+        }
+
+        // Si source_optin existe déjà, l'ajouter à la liste (séparée par virgules)
+        const currentSourceOptin = currentProperties.source_optin || '';
+        const sourceOptinListBase = currentSourceOptin ? currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
+        const sourceOptinList = sourceOptinListBase.includes('stages') ?
+          sourceOptinListBase :
+          [...sourceOptinListBase, 'stages'];
+
+        if (sourceOptinList.length > 0) {
+          properties.source_optin = sourceOptinList.join(',');
+        } else {
+          properties.source_optin = 'stages';
+        }
+
+        // Si statut n'existe pas, le définir comme prospect
+        if (!currentProperties.statut) {
+          properties.statut = 'prospect';
+        }
+
+        // Si date_optin n'existe pas, la définir
+        if (!currentProperties.date_optin) {
+          properties.date_optin = dateStr;
+        }
+
+        // Si est_client n'existe pas, le définir comme False
+        if (!currentProperties.est_client) {
+          properties.est_client = 'False';
+        }
+
+        console.log('📋 Starting MailJet contact properties update for stages waiting list:', contactData.Email);
+        console.log('📋 Properties to set:', JSON.stringify(properties));
+        await updateMailjetContactProperties(
+            contactData.Email,
+            properties,
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+        console.log('📋 MailJet contact properties update completed for:', contactData.Email);
+
+        return {
+          success: true,
+          message: 'Successfully added to waiting list',
+          email: contactData.Email,
+        };
+      } catch (error) {
+        console.error('Error subscribing to stages waiting list:', error);
+        throw new HttpsError('internal', 'Error subscribing to stages waiting list: ' + error.message);
       }
     });
 
@@ -2800,7 +3128,7 @@ exports.subscribeTo5Days = onCall(
       cors: true,
     },
     async (request) => {
-      const {email, name, turnstileToken, isLocalhost} = request.data;
+      const {email, name, turnstileToken, isLocalhost, locale = 'fr'} = request.data;
 
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
@@ -3029,11 +3357,15 @@ exports.subscribeTo5Days = onCall(
           sourceOptinListBase :
           [...sourceOptinListBase, '5joursofferts'];
 
+        // Valider et normaliser la langue
+        const langue = (locale === 'en' || locale === 'EN') ? 'en' : 'fr';
+
         const properties = {
           statut: 'prospect',
           source_optin: sourceOptinList.join(','),
           date_optin: dateStr,
           est_client: 'False',
+          langue: langue,
         };
 
         // Ajouter le prénom aux propriétés si disponible

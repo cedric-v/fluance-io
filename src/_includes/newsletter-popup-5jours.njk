@@ -280,13 +280,17 @@
         // Appeler la fonction Firebase
         const app = firebase.app();
         const functions = app.functions('europe-west1');
+        // Détecter la langue depuis l'URL
+        const locale = window.location.pathname.startsWith('/en/') ? 'en' : 'fr';
+
         const subscribeTo5Days = functions.httpsCallable('subscribeTo5Days');
         
         const result = await subscribeTo5Days({ 
           email: email, 
           name: name, 
           turnstileToken: turnstileToken,
-          isLocalhost: isLocalhost
+          isLocalhost: isLocalhost,
+          locale: locale // Langue détectée depuis l'URL
         });
 
         if (result.data && result.data.success) {
