@@ -19,7 +19,7 @@ const admin = require('firebase-admin');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-// fetch est natif dans Node.js 20+ (pas besoin de node-fetch)
+// fetch est natif dans Node.js 18+ (pas besoin de node-fetch)
 
 // Définir les options globales (région par défaut)
 setGlobalOptions({
@@ -2870,7 +2870,8 @@ exports.subscribeToStagesWaitingList = onCall(
 
         // Envoyer l'email de confirmation avec le template spécifique aux stages
         console.log('📧 Starting email confirmation process for stages waiting list:', contactData.Email);
-        const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(contactData.Email)}&token=${confirmationToken}&redirect=stages`;
+        const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(contactData.Email)}` +
+            `&token=${confirmationToken}&redirect=stages`;
 
         let emailSent = false;
         let emailError = null;
@@ -2904,8 +2905,9 @@ exports.subscribeToStagesWaitingList = onCall(
             `If you did not request this registration, you can ignore this email.` :
             `Bonjour${name ? ' ' + name : ''},\n\n` +
             `Merci pour votre inscription à la liste d'attente des prochains stages Fluance${region ? ' dans votre région (' + region + ')' : ''} !\n\n` +
-            `Pour finaliser votre inscription et être informé(e) en priorité dès que les prochains stages seront annoncés, ` +
-            `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
+            `Pour finaliser votre inscription et être informé(e) en priorité dès que les prochains ` +
+            `stages seront annoncés, il vous suffit de confirmer votre adresse email en cliquant ` +
+            `sur ce lien :\n\n` +
             `${confirmationUrl}\n\n` +
             `Ce lien est valide pendant 7 jours.\n\n` +
             `En attendant, vous pouvez :\n` +
