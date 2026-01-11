@@ -1,0 +1,98 @@
+---
+layout: false
+permalink: /emails/bienvenue-presentiel.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold">
+          Bienvenue chez Fluance !
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Merci pour votre inscription sur Momoyoga ! Vous êtes désormais prêt(e) à réserver vos 
+          premiers cours Fluance en présentiel.
+        </mj-text>
+        <mj-text>
+          Pour recevoir les informations sur les prochains cours (horaires, nouveaux créneaux, 
+          événements spéciaux), veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous.
+        </mj-text>
+        <mj-text>
+          Cette confirmation est nécessaire pour nous assurer que vous êtes bien le propriétaire 
+          de cette adresse email et pour vous protéger contre les inscriptions non désirées.
+        </mj-text>
+        <mj-button
+          href="{{confirmationUrl}}"
+          background-color="#E6B84A"
+          color="#0f172a"
+          font-weight="bold"
+          padding="15px 30px"
+          border-radius="5px"
+        >
+          Confirmer mon inscription
+        </mj-button>
+        <mj-text>
+          Si le bouton ne fonctionne pas, vous pouvez copier et coller ce lien dans votre navigateur :
+        </mj-text>
+        <mj-text>
+          <a href="{{confirmationUrl}}" style="color: #648ED8; word-break: break-all;">
+            {{confirmationUrl}}
+          </a>
+        </mj-text>
+        <mj-text>
+          Ce lien est valide pendant 7 jours.
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="16px" font-weight="bold" color="#648ED8">
+          Comment réserver un cours ?
+        </mj-text>
+        <mj-text>
+          1. Connectez-vous sur <a href="https://momoyoga.com" style="color: #648ED8;">Momoyoga</a><br>
+          2. Choisissez le cours qui vous convient<br>
+          3. Réservez votre place en un clic
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="16px" font-weight="bold" color="#648ED8">
+          Informations pratiques
+        </mj-text>
+        <mj-text>
+          📍 <strong>Lieu :</strong> le duplex danse & bien-être<br>
+          Rte de Chantemerle 58d, 1763 Granges-Paccot
+        </mj-text>
+        <mj-text>
+          🕐 <strong>Horaire :</strong> Jeudis de 20h15 à 21h00
+        </mj-text>
+        <mj-text>
+          👕 <strong>Tenue :</strong> Vêtements confortables permettant le mouvement
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="14px" color="#666666">
+          Si vous n'avez pas créé de compte sur Momoyoga, vous pouvez ignorer cet email.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" color="#666666">
+          À très bientôt en cours !<br><br>
+          Cédric<br>
+          Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

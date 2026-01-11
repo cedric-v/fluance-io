@@ -266,6 +266,7 @@ async function ensureMailjetContactProperties(apiKey, apiSecret) {
     'nombre_cours_presentiel',
     'premier_cours_presentiel',
     'dernier_cours_presentiel',
+    'compte_momoyoga',
   ];
 
   console.log(`📋 Ensuring ${properties.length} MailJet contact properties exist`);
@@ -6096,6 +6097,254 @@ exports.sendOptInReminders = onSchedule(
     });
 
 /**
+ * Enregistre la création d'un compte Momoyoga (appelé par Google Apps Script)
+ * Envoie un email de bienvenue avec double opt-in
+ * Région : europe-west1 (Belgique)
+ * Utilise les secrets Firebase pour Mailjet
+ */
+exports.registerMomoyogaAccount = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      cors: true,
+    },
+    async (req, res) => {
+      // Vérifier la méthode HTTP
+      if (req.method !== 'POST') {
+        return res.status(405).send('Method Not Allowed');
+      }
+
+      const {email, name, apiKey} = req.body;
+
+      // Vérification simple de l'API key
+      const expectedApiKey = process.env.PRESENTIEL_API_KEY || 'fluance-presentiel-2024';
+      if (apiKey !== expectedApiKey) {
+        console.error('Invalid API key for registerMomoyogaAccount');
+        return res.status(401).json({success: false, error: 'Unauthorized'});
+      }
+
+      // Validation des paramètres requis
+      if (!email) {
+        return res.status(400).json({success: false, error: 'Email is required'});
+      }
+
+      // Valider le format de l'email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({success: false, error: 'Invalid email format'});
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+
+      try {
+        const auth = Buffer.from(
+            `${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`,
+        ).toString('base64');
+
+        // S'assurer que les contact properties existent
+        await ensureMailjetContactProperties(
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+
+        // Vérifier si le contact a déjà une confirmation en attente ou confirmée pour le présentiel
+        const existingConfirmation = await db.collection('newsletterConfirmations')
+            .where('email', '==', normalizedEmail)
+            .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
+            .limit(1)
+            .get();
+
+        if (!existingConfirmation.empty) {
+          const existingData = existingConfirmation.docs[0].data();
+          if (existingData.confirmed) {
+            // Contact déjà confirmé - juste mettre à jour la date du compte si pas déjà définie
+            console.log(`📝 Contact ${normalizedEmail} already confirmed for presentiel`);
+
+            await updateMailjetContactProperties(
+                normalizedEmail,
+                {compte_momoyoga: new Date().toISOString().split('T')[0]},
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+
+            return res.json({
+              success: true,
+              isNewContact: false,
+              confirmationEmailSent: false,
+              alreadyConfirmed: true,
+              message: 'Contact already confirmed',
+              email: normalizedEmail,
+            });
+          } else {
+            // Confirmation en attente - ne pas renvoyer d'email
+            console.log(`📝 Contact ${normalizedEmail} has pending confirmation`);
+            return res.json({
+              success: true,
+              isNewContact: false,
+              confirmationEmailSent: false,
+              pendingConfirmation: true,
+              message: 'Confirmation already pending',
+              email: normalizedEmail,
+            });
+          }
+        }
+
+        // Enregistrer la création du compte dans Firestore
+        const accountData = {
+          email: normalizedEmail,
+          name: name || '',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          source: 'momoyoga_account',
+        };
+
+        await db.collection('momoyogaAccounts').add(accountData);
+        console.log(`📝 Momoyoga account saved for ${normalizedEmail}`);
+
+        // Vérifier si le contact existe dans MailJet
+        let contactExists = false;
+        try {
+          const checkUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
+          const checkResponse = await fetch(checkUrl, {
+            method: 'GET',
+            headers: {'Authorization': `Basic ${auth}`},
+          });
+          contactExists = checkResponse.ok;
+        } catch {
+          console.log('Contact does not exist in MailJet, will create it');
+        }
+
+        // Créer le contact s'il n'existe pas
+        if (!contactExists) {
+          const createUrl = 'https://api.mailjet.com/v3/REST/contact';
+          const createResponse = await fetch(createUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify({
+              Email: normalizedEmail,
+              IsExcludedFromCampaigns: false,
+              Name: name || '',
+            }),
+          });
+
+          if (!createResponse.ok) {
+            const errorText = await createResponse.text();
+            console.error('Error creating MailJet contact:', errorText);
+          } else {
+            console.log(`✅ MailJet contact created: ${normalizedEmail}`);
+          }
+        }
+
+        // Ajouter à la liste MailJet
+        const listId = '10524140';
+        try {
+          const addToListUrl = 'https://api.mailjet.com/v3/REST/listrecipient';
+          await fetch(addToListUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${auth}`,
+            },
+            body: JSON.stringify({
+              IsUnsubscribed: false,
+              ContactAlt: normalizedEmail,
+              ListID: parseInt(listId, 10),
+            }),
+          });
+        } catch {
+          console.log('Contact may already be in list');
+        }
+
+        // Générer un token de confirmation
+        const confirmationToken = generateUniqueToken();
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 7);
+
+        // Stocker le token dans Firestore
+        await db.collection('newsletterConfirmations').doc(confirmationToken).set({
+          email: normalizedEmail,
+          name: name || '',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: expirationDate,
+          confirmed: false,
+          reminderSent: false,
+          sourceOptin: 'presentiel_compte',
+        });
+
+        // Envoyer l'email de bienvenue
+        const baseUrl = 'https://fluance.io';
+        const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(normalizedEmail)}` +
+          `&token=${confirmationToken}&redirect=presentiel`;
+
+        const emailSubject = `Bienvenue${name ? ' ' + name : ''} !`;
+
+        const emailHtml = loadEmailTemplate('bienvenue-presentiel', {
+          firstName: name || '',
+          confirmationUrl: confirmationUrl,
+        });
+
+        const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
+          `Bienvenue et merci pour votre inscription sur Momoyoga !\n\n` +
+          `Pour recevoir les informations sur les prochains cours Fluance en présentiel ` +
+          `(horaires, nouveaux créneaux, événements spéciaux), veuillez confirmer votre adresse email :\n\n` +
+          `${confirmationUrl}\n\n` +
+          `Ce lien est valide pendant 7 jours.\n\n` +
+          `À très bientôt !\n\n` +
+          `Cédric de Fluance`;
+
+        await sendMailjetEmail(
+            normalizedEmail,
+            emailSubject,
+            emailHtml,
+            emailText,
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+            'support@actu.fluance.io',
+            'Cédric de Fluance',
+        );
+
+        console.log(`📧 Welcome email sent to ${normalizedEmail} for Momoyoga account`);
+
+        // Mettre à jour les propriétés MailJet
+        const properties = {
+          compte_momoyoga: new Date().toISOString().split('T')[0],
+          source_optin: 'presentiel_compte',
+          statut: 'prospect',
+          est_client: 'False',
+          langue: 'fr',
+        };
+
+        if (name) {
+          properties.firstname = name.split(' ')[0];
+        }
+
+        await updateMailjetContactProperties(
+            normalizedEmail,
+            properties,
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+
+        return res.json({
+          success: true,
+          isNewContact: true,
+          confirmationEmailSent: true,
+          message: 'Welcome email sent',
+          email: normalizedEmail,
+        });
+      } catch (error) {
+        console.error('Error in registerMomoyogaAccount:', error);
+        return res.status(500).json({
+          success: false,
+          error: 'Internal server error: ' + error.message,
+        });
+      }
+    },
+);
+
+/**
  * Enregistre une inscription à un cours en présentiel (appelé par Google Apps Script)
  * Gère le double opt-in pour les nouveaux contacts et l'historique des inscriptions
  * Région : europe-west1 (Belgique)
@@ -6146,15 +6395,21 @@ exports.registerPresentielCourse = onRequest(
             process.env.MAILJET_API_SECRET,
         );
 
-        // Vérifier si le contact a déjà confirmé son email pour le présentiel
+        // Vérifier si le contact a déjà une confirmation (confirmée ou en attente) pour le présentiel
         const existingConfirmation = await db.collection('newsletterConfirmations')
             .where('email', '==', normalizedEmail)
-            .where('sourceOptin', '==', 'presentiel')
-            .where('confirmed', '==', true)
+            .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
             .limit(1)
             .get();
 
-        const isAlreadyConfirmed = !existingConfirmation.empty;
+        let isAlreadyConfirmed = false;
+        let hasPendingConfirmation = false;
+
+        if (!existingConfirmation.empty) {
+          const confirmationData = existingConfirmation.docs[0].data();
+          isAlreadyConfirmed = confirmationData.confirmed === true;
+          hasPendingConfirmation = !isAlreadyConfirmed;
+        }
 
         // Enregistrer l'inscription au cours dans Firestore
         const registrationData = {
@@ -6206,8 +6461,8 @@ exports.registerPresentielCourse = onRequest(
             new Date().toISOString().split('T')[0];
         }
 
-        // Si le contact est nouveau ou n'a pas encore confirmé, préparer le double opt-in
-        if (!isAlreadyConfirmed) {
+        // Si le contact est nouveau (pas de confirmation en attente ni confirmée), préparer le double opt-in
+        if (!isAlreadyConfirmed && !hasPendingConfirmation) {
           // Vérifier si le contact existe dans MailJet
           let contactExists = false;
           try {
@@ -6339,6 +6594,26 @@ exports.registerPresentielCourse = onRequest(
             isNewContact: true,
             confirmationEmailSent: true,
             message: 'New contact - confirmation email sent',
+            email: normalizedEmail,
+            nombreCours: nombreCours,
+          });
+        } else if (hasPendingConfirmation) {
+          // Confirmation en attente - mettre à jour les propriétés mais pas d'email
+          console.log(`📝 Contact ${normalizedEmail} has pending confirmation - updating properties only`);
+
+          await updateMailjetContactProperties(
+              normalizedEmail,
+              properties,
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+          );
+
+          return res.json({
+            success: true,
+            isNewContact: false,
+            confirmationEmailSent: false,
+            pendingConfirmation: true,
+            message: 'Confirmation pending - registration recorded',
             email: normalizedEmail,
             nombreCours: nombreCours,
           });
