@@ -6105,7 +6105,7 @@ exports.sendOptInReminders = onSchedule(
 exports.registerMomoyogaAccount = onRequest(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'PRESENTIEL_API_KEY'],
       cors: true,
     },
     async (req, res) => {
@@ -6117,9 +6117,9 @@ exports.registerMomoyogaAccount = onRequest(
       const {email, name, apiKey} = req.body;
 
       // Vérification simple de l'API key
-      const expectedApiKey = process.env.PRESENTIEL_API_KEY || 'fluance-presentiel-2024';
-      if (apiKey !== expectedApiKey) {
-        console.error('Invalid API key for registerMomoyogaAccount');
+      const expectedApiKey = process.env.PRESENTIEL_API_KEY;
+      if (!expectedApiKey || apiKey !== expectedApiKey) {
+        console.error('Invalid or missing API key for registerMomoyogaAccount');
         return res.status(401).json({success: false, error: 'Unauthorized'});
       }
 
@@ -6353,7 +6353,7 @@ exports.registerMomoyogaAccount = onRequest(
 exports.registerPresentielCourse = onRequest(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'PRESENTIEL_API_KEY'],
       cors: true,
     },
     async (req, res) => {
@@ -6365,9 +6365,9 @@ exports.registerPresentielCourse = onRequest(
       const {email, name, courseName, courseDate, courseTime, apiKey} = req.body;
 
       // Vérification simple de l'API key (à remplacer par une vraie clé secrète)
-      const expectedApiKey = process.env.PRESENTIEL_API_KEY || 'fluance-presentiel-2024';
-      if (apiKey !== expectedApiKey) {
-        console.error('Invalid API key for registerPresentielCourse');
+      const expectedApiKey = process.env.PRESENTIEL_API_KEY;
+      if (!expectedApiKey || apiKey !== expectedApiKey) {
+        console.error('Invalid or missing API key for registerPresentielCourse');
         return res.status(401).json({success: false, error: 'Unauthorized'});
       }
 
@@ -6543,6 +6543,44 @@ exports.registerPresentielCourse = onRequest(
           const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(normalizedEmail)}` +
             `&token=${confirmationToken}&redirect=presentiel`;
 
+          // Générer l'URL Google Calendar
+          let calendarUrl = '';
+          if (courseDate && courseTime) {
+            try {
+              // Parser la date DD/MM/YYYY et l'heure HH:MM
+              const [day, month, year] = courseDate.split('/');
+              const [hours, minutes] = courseTime.split(':');
+
+              // Date de début (format: YYYYMMDDTHHMMSS)
+              const startDate = `${year}${month}${day}T${hours}${minutes}00`;
+
+              // Date de fin (45 minutes plus tard)
+              const startTime = new Date(
+                  parseInt(year), parseInt(month) - 1, parseInt(day),
+                  parseInt(hours), parseInt(minutes),
+              );
+              startTime.setMinutes(startTime.getMinutes() + 45);
+              const endYear = startTime.getFullYear();
+              const endMonth = String(startTime.getMonth() + 1).padStart(2, '0');
+              const endDay = String(startTime.getDate()).padStart(2, '0');
+              const endHours = String(startTime.getHours()).padStart(2, '0');
+              const endMinutes = String(startTime.getMinutes()).padStart(2, '0');
+              const endDate = `${endYear}${endMonth}${endDay}T${endHours}${endMinutes}00`;
+
+              const calendarTitle = encodeURIComponent(courseName || 'Cours Fluance');
+              const calendarLocation = encodeURIComponent('le duplex danse & bien-être, Rte de Chantemerle 58d, 1763 Granges-Paccot, Suisse');
+              const calendarDetails = encodeURIComponent('Cours Fluance - le mouvement qui éveille et apaise\n\nTenue : vêtements confortables\nPlus d\'infos : https://fluance.io/presentiel/cours-hebdomadaires/');
+
+              calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+                `&text=${calendarTitle}` +
+                `&dates=${startDate}/${endDate}` +
+                `&details=${calendarDetails}` +
+                `&location=${calendarLocation}`;
+            } catch (e) {
+              console.error('Error generating calendar URL:', e);
+            }
+          }
+
           const emailSubject = `Confirmez votre inscription${name ? ' ' + name : ''}`;
 
           const emailHtml = loadEmailTemplate('confirmation-presentiel', {
@@ -6551,6 +6589,7 @@ exports.registerPresentielCourse = onRequest(
             courseDate: courseDate || '',
             courseTime: courseTime || '',
             confirmationUrl: confirmationUrl,
+            calendarUrl: calendarUrl || 'https://fluance.io/presentiel/cours-hebdomadaires/',
           });
 
           const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +

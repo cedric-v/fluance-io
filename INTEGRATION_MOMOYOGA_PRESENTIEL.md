@@ -74,11 +74,21 @@ const CONFIG = {
   COURSE_FUNCTION_URL: 'https://europe-west1-fluance-protected-content.cloudfunctions.net/registerPresentielCourse',
   
   // Clé API pour authentifier les requêtes
-  API_KEY: 'fluance-presentiel-2024',
+  API_KEY: 'VOTRE_CLE_SECRETE',  // À remplacer par votre clé personnelle
   
-  // Noms des feuilles Google Sheets pour le log
+  // ID de la feuille Google Sheets pour les logs (trouvez-le dans l'URL de votre Sheet)
+  // Ex: https://docs.google.com/spreadsheets/d/VOTRE_SPREADSHEET_ID/edit
+  SPREADSHEET_ID: 'VOTRE_SPREADSHEET_ID',  // À remplacer par l'ID de votre feuille
+  
+  // Noms des onglets dans la feuille Google Sheets
   ACCOUNTS_SHEET_NAME: 'Comptes',
   COURSES_SHEET_NAME: 'Inscriptions',
+  
+  // Label Gmail pour classer les emails traités (sera créé automatiquement s'il n'existe pas)
+  GMAIL_LABEL: 'Momoyoga/Traité',
+  
+  // Archiver les emails après traitement (les retire de la boîte de réception)
+  ARCHIVE_AFTER_PROCESSING: true,
   
   // Requêtes Gmail pour trouver les emails Momoyoga
   GMAIL_QUERY_ACCOUNT: 'from:momoyoga.com is:unread "s\'est inscrit"',
@@ -87,7 +97,7 @@ const CONFIG = {
 
 /**
  * Fonction principale - Traite tous les emails Momoyoga non lus
- * À exécuter via un déclencheur temporel (ex: toutes les 5 minutes)
+ * À exécuter via un déclencheur temporel (ex: toutes les 10 minutes)
  */
 function processMomoyogaEmails() {
   // Traiter d'abord les créations de compte
@@ -111,23 +121,33 @@ function processAccountEmails() {
 
   threads.forEach(thread => {
     const messages = thread.getMessages();
+    let threadHasUnread = false;
+    
     messages.forEach(message => {
       if (message.isUnread()) {
+        threadHasUnread = true;
         try {
           const result = processAccountMessage(message, sheet);
           if (result.success) {
             processed++;
           } else {
             errors++;
+            Logger.log('ERREUR compte: ' + result.error);
             logError(sheet, message, result.error, 6);
           }
         } catch (error) {
           errors++;
+          Logger.log('ERREUR compte: ' + error.message);
           logError(sheet, message, error.message, 6);
         }
         message.markRead();
       }
     });
+    
+    // Appliquer le label et archiver après traitement du thread
+    if (threadHasUnread) {
+      markThreadAsProcessed(thread);
+    }
   });
 
   Logger.log(`Comptes traités: ${processed} inscriptions, ${errors} erreurs`);
@@ -148,23 +168,33 @@ function processCourseEmails() {
 
   threads.forEach(thread => {
     const messages = thread.getMessages();
+    let threadHasUnread = false;
+    
     messages.forEach(message => {
       if (message.isUnread()) {
+        threadHasUnread = true;
         try {
           const result = processCourseMessage(message, sheet);
           if (result.success) {
             processed++;
           } else {
             errors++;
+            Logger.log('ERREUR cours: ' + result.error);
             logError(sheet, message, result.error, 10);
           }
         } catch (error) {
           errors++;
+          Logger.log('ERREUR cours: ' + error.message);
           logError(sheet, message, error.message, 10);
         }
         message.markRead();
       }
     });
+    
+    // Appliquer le label et archiver après traitement du thread
+    if (threadHasUnread) {
+      markThreadAsProcessed(thread);
+    }
   });
 
   Logger.log(`Cours traités: ${processed} inscriptions, ${errors} erreurs`);
@@ -269,16 +299,22 @@ function processCourseMessage(message, sheet) {
  * Format: "Nom : Prénom Nom" et "Adresse e-mail : email@example.com"
  */
 function extractAccountDataFromEmail(body) {
-  // Pattern pour le nom: "Nom : Prénom Nom"
-  const nameMatch = body.match(/Nom\s*:\s*(.+?)(?:\n|$)/);
+  // Normaliser les espaces et sauts de ligne
+  const normalizedBody = body.replace(/\r\n/g, '\n').replace(/\s+/g, ' ');
+  
+  // Pattern pour le nom: "Nom : Prénom Nom" (jusqu'à "Adresse" ou fin)
+  const nameMatch = normalizedBody.match(/Nom\s*:\s*([^:]+?)(?=\s*Adresse|$)/i);
   
   // Pattern pour l'email: "Adresse e-mail : email@example.com"
-  const emailMatch = body.match(/Adresse\s*e-mail\s*:\s*([^\s]+)/i);
+  const emailMatch = body.match(/Adresse\s*e-mail\s*:\s*([^\s\n]+)/i);
 
-  return {
-    name: nameMatch ? nameMatch[1].trim() : '',
-    email: emailMatch ? emailMatch[1].trim().toLowerCase() : '',
-  };
+  const name = nameMatch ? nameMatch[1].trim() : '';
+  const email = emailMatch ? emailMatch[1].trim().toLowerCase() : '';
+  
+  // Log pour debug
+  Logger.log('Extraction compte - Nom: "' + name + '", Email: "' + email + '"');
+
+  return { name, email };
 }
 
 /**
@@ -381,7 +417,7 @@ function isCourseAlreadyRegistered(sheet, email, courseName, courseDate) {
  * Récupère ou crée une feuille de calcul
  */
 function getOrCreateSheet(sheetName, headers) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   let sheet = ss.getSheetByName(sheetName);
   
   if (!sheet) {
@@ -408,6 +444,35 @@ function logError(sheet, message, errorMsg, totalColumns) {
   row[totalColumns - 2] = 'ERREUR';
   row[totalColumns - 1] = errorMsg;
   sheet.appendRow(row);
+}
+
+/**
+ * Récupère ou crée le label Gmail pour les emails traités
+ */
+function getOrCreateLabel() {
+  let label = GmailApp.getUserLabelByName(CONFIG.GMAIL_LABEL);
+  
+  if (!label) {
+    label = GmailApp.createLabel(CONFIG.GMAIL_LABEL);
+    Logger.log('Label créé: ' + CONFIG.GMAIL_LABEL);
+  }
+  
+  return label;
+}
+
+/**
+ * Applique le label et archive le thread après traitement
+ */
+function markThreadAsProcessed(thread) {
+  const label = getOrCreateLabel();
+  
+  // Ajouter le label
+  thread.addLabel(label);
+  
+  // Archiver si configuré (retire de la boîte de réception)
+  if (CONFIG.ARCHIVE_AFTER_PROCESSING) {
+    thread.moveToArchive();
+  }
 }
 
 /**
@@ -462,13 +527,13 @@ function setupTrigger() {
     }
   });
 
-  // Créer un nouveau déclencheur toutes les 5 minutes
+  // Créer un nouveau déclencheur toutes les 10 minutes (recommandé pour compte Gmail gratuit)
   ScriptApp.newTrigger('processMomoyogaEmails')
     .timeBased()
-    .everyMinutes(5)
+    .everyMinutes(10)
     .create();
 
-  Logger.log('Déclencheur configuré: toutes les 5 minutes');
+  Logger.log('Déclencheur configuré: toutes les 10 minutes');
 }
 
 /**
@@ -485,7 +550,7 @@ function removeTriggers() {
 
 1. Dans Google Apps Script, exécutez la fonction `setupTrigger()`
 2. Autorisez les permissions demandées
-3. Le script s'exécutera automatiquement toutes les 5 minutes
+3. Le script s'exécutera automatiquement toutes les 10 minutes
 
 ## 2. Cloud Functions Firebase
 
@@ -655,7 +720,7 @@ curl -X POST https://europe-west1-fluance-protected-content.cloudfunctions.net/r
   -d '{
     "email": "test@example.com",
     "name": "Test User",
-    "apiKey": "fluance-presentiel-2024"
+    "apiKey": "VOTRE_CLE_SECRETE"
   }'
 
 # Réservation de cours
@@ -667,7 +732,7 @@ curl -X POST https://europe-west1-fluance-protected-content.cloudfunctions.net/r
     "courseName": "Fluance - Test",
     "courseDate": "01/01/2026",
     "courseTime": "20:15",
-    "apiKey": "fluance-presentiel-2024"
+    "apiKey": "VOTRE_CLE_SECRETE"
   }'
 ```
 
