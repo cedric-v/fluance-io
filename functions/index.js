@@ -262,6 +262,10 @@ async function ensureMailjetContactProperties(apiKey, apiSecret) {
     'region',
     'liste_attente_stages',
     'langue',
+    'inscrit_presentiel',
+    'nombre_cours_presentiel',
+    'premier_cours_presentiel',
+    'dernier_cours_presentiel',
   ];
 
   console.log(`📋 Ensuring ${properties.length} MailJet contact properties exist`);
@@ -3175,6 +3179,87 @@ exports.confirmNewsletterOptIn = onCall(
           }
         }
 
+        // Gérer la confirmation pour les inscriptions aux cours en présentiel
+        if (tokenData.sourceOptin === 'presentiel') {
+          try {
+            // Valider et normaliser la langue
+            const langue = 'fr'; // Présentiel uniquement en français pour l'instant
+
+            // Compter le nombre de cours pour ce contact
+            const courseCountQuery = await db.collection('presentielRegistrations')
+                .where('email', '==', email.toLowerCase().trim())
+                .get();
+            const nombreCours = courseCountQuery.size;
+
+            // Récupérer les dates des cours
+            let premierCours = null;
+            let dernierCours = null;
+            if (nombreCours > 0) {
+              const allCourses = courseCountQuery.docs
+                  .map((doc) => doc.data())
+                  .filter((d) => d.courseDate)
+                  .sort((a, b) => {
+                    const dateA = a.courseDate.split('/').reverse().join('-');
+                    const dateB = b.courseDate.split('/').reverse().join('-');
+                    return dateA.localeCompare(dateB);
+                  });
+              if (allCourses.length > 0) {
+                premierCours = allCourses[0].courseDate;
+                dernierCours = allCourses[allCourses.length - 1].courseDate;
+              }
+            }
+
+            const properties = {
+              inscrit_presentiel: 'True',
+              nombre_cours_presentiel: nombreCours.toString(),
+              langue: langue,
+            };
+
+            if (premierCours) {
+              properties.premier_cours_presentiel = premierCours;
+            }
+            if (dernierCours) {
+              properties.dernier_cours_presentiel = dernierCours;
+            }
+
+            // Ajouter 'presentiel' à source_optin
+            const currentSourceOptin = currentProperties.source_optin || '';
+            const sourceOptinListBase = currentSourceOptin ?
+              currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
+            const sourceOptinList = sourceOptinListBase.includes('presentiel') ?
+              sourceOptinListBase :
+              [...sourceOptinListBase, 'presentiel'];
+
+            properties.source_optin = sourceOptinList.join(',');
+
+            // Définir le statut comme prospect si pas déjà client
+            if (!currentProperties.statut || currentProperties.statut === 'prospect') {
+              properties.statut = 'prospect';
+            }
+
+            // Définir date_optin si pas déjà définie
+            if (!currentProperties.date_optin) {
+              properties.date_optin = dateStr;
+            }
+
+            // Définir est_client si pas déjà défini
+            if (!currentProperties.est_client) {
+              properties.est_client = 'False';
+            }
+
+            await updateMailjetContactProperties(
+                email.toLowerCase().trim(),
+                properties,
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+            console.log('📋 MailJet contact properties update completed for confirmed presentiel:', email);
+          } catch (error) {
+            console.error('Error updating presentiel properties:', error);
+            // Ne pas faire échouer la confirmation si la mise à jour des propriétés échoue
+          }
+        }
+
         return {
           success: true,
           message: 'Email confirmed successfully',
@@ -6010,3 +6095,315 @@ exports.sendOptInReminders = onSchedule(
       }
     });
 
+/**
+ * Enregistre une inscription à un cours en présentiel (appelé par Google Apps Script)
+ * Gère le double opt-in pour les nouveaux contacts et l'historique des inscriptions
+ * Région : europe-west1 (Belgique)
+ * Utilise les secrets Firebase pour Mailjet
+ */
+exports.registerPresentielCourse = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      cors: true,
+    },
+    async (req, res) => {
+      // Vérifier la méthode HTTP
+      if (req.method !== 'POST') {
+        return res.status(405).send('Method Not Allowed');
+      }
+
+      const {email, name, courseName, courseDate, courseTime, apiKey} = req.body;
+
+      // Vérification simple de l'API key (à remplacer par une vraie clé secrète)
+      const expectedApiKey = process.env.PRESENTIEL_API_KEY || 'fluance-presentiel-2024';
+      if (apiKey !== expectedApiKey) {
+        console.error('Invalid API key for registerPresentielCourse');
+        return res.status(401).json({success: false, error: 'Unauthorized'});
+      }
+
+      // Validation des paramètres requis
+      if (!email) {
+        return res.status(400).json({success: false, error: 'Email is required'});
+      }
+
+      // Valider le format de l'email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({success: false, error: 'Invalid email format'});
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+
+      try {
+        const auth = Buffer.from(
+            `${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`,
+        ).toString('base64');
+
+        // S'assurer que les contact properties existent
+        await ensureMailjetContactProperties(
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+
+        // Vérifier si le contact a déjà confirmé son email pour le présentiel
+        const existingConfirmation = await db.collection('newsletterConfirmations')
+            .where('email', '==', normalizedEmail)
+            .where('sourceOptin', '==', 'presentiel')
+            .where('confirmed', '==', true)
+            .limit(1)
+            .get();
+
+        const isAlreadyConfirmed = !existingConfirmation.empty;
+
+        // Enregistrer l'inscription au cours dans Firestore
+        const registrationData = {
+          email: normalizedEmail,
+          name: name || '',
+          courseName: courseName || 'Cours Fluance',
+          courseDate: courseDate || null,
+          courseTime: courseTime || null,
+          registeredAt: admin.firestore.FieldValue.serverTimestamp(),
+          source: 'momoyoga',
+        };
+
+        await db.collection('presentielRegistrations').add(registrationData);
+        console.log(`📝 Course registration saved for ${normalizedEmail}: ${courseName} on ${courseDate}`);
+
+        // Compter le nombre de cours pour ce contact
+        const courseCountQuery = await db.collection('presentielRegistrations')
+            .where('email', '==', normalizedEmail)
+            .get();
+        const nombreCours = courseCountQuery.size;
+
+        // Récupérer la date du premier cours
+        let premierCours = courseDate;
+        let dernierCours = courseDate;
+        if (nombreCours > 1) {
+          const allCourses = courseCountQuery.docs
+              .map((doc) => doc.data())
+              .filter((d) => d.courseDate)
+              .sort((a, b) => {
+                const dateA = a.courseDate.split('/').reverse().join('-');
+                const dateB = b.courseDate.split('/').reverse().join('-');
+                return dateA.localeCompare(dateB);
+              });
+          if (allCourses.length > 0) {
+            premierCours = allCourses[0].courseDate;
+            dernierCours = allCourses[allCourses.length - 1].courseDate;
+          }
+        }
+
+        // Mettre à jour les propriétés MailJet
+        const properties = {
+          inscrit_presentiel: 'True',
+          nombre_cours_presentiel: nombreCours.toString(),
+          dernier_cours_presentiel: dernierCours || new Date().toISOString().split('T')[0],
+        };
+
+        if (nombreCours === 1) {
+          properties.premier_cours_presentiel = premierCours ||
+            new Date().toISOString().split('T')[0];
+        }
+
+        // Si le contact est nouveau ou n'a pas encore confirmé, préparer le double opt-in
+        if (!isAlreadyConfirmed) {
+          // Vérifier si le contact existe dans MailJet
+          let contactExists = false;
+          try {
+            const checkUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
+            const checkResponse = await fetch(checkUrl, {
+              method: 'GET',
+              headers: {'Authorization': `Basic ${auth}`},
+            });
+            contactExists = checkResponse.ok;
+          } catch {
+            console.log('Contact does not exist in MailJet, will create it');
+          }
+
+          // Créer le contact s'il n'existe pas
+          if (!contactExists) {
+            const createUrl = 'https://api.mailjet.com/v3/REST/contact';
+            const createResponse = await fetch(createUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${auth}`,
+              },
+              body: JSON.stringify({
+                Email: normalizedEmail,
+                IsExcludedFromCampaigns: false,
+                Name: name || '',
+              }),
+            });
+
+            if (!createResponse.ok) {
+              const errorText = await createResponse.text();
+              console.error('Error creating MailJet contact:', errorText);
+            } else {
+              console.log(`✅ MailJet contact created: ${normalizedEmail}`);
+            }
+          }
+
+          // Ajouter à la liste MailJet
+          const listId = '10524140';
+          try {
+            const addToListUrl = 'https://api.mailjet.com/v3/REST/listrecipient';
+            await fetch(addToListUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${auth}`,
+              },
+              body: JSON.stringify({
+                IsUnsubscribed: false,
+                ContactAlt: normalizedEmail,
+                ListID: parseInt(listId, 10),
+              }),
+            });
+          } catch {
+            console.log('Contact may already be in list');
+          }
+
+          // Générer un token de confirmation
+          const confirmationToken = generateUniqueToken();
+          const expirationDate = new Date();
+          expirationDate.setDate(expirationDate.getDate() + 7);
+
+          // Stocker le token dans Firestore
+          await db.collection('newsletterConfirmations').doc(confirmationToken).set({
+            email: normalizedEmail,
+            name: name || '',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            expiresAt: expirationDate,
+            confirmed: false,
+            reminderSent: false,
+            sourceOptin: 'presentiel',
+            courseName: courseName || 'Cours Fluance',
+            courseDate: courseDate || null,
+          });
+
+          // Envoyer l'email de confirmation
+          const baseUrl = 'https://fluance.io';
+          const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(normalizedEmail)}` +
+            `&token=${confirmationToken}&redirect=presentiel`;
+
+          const emailSubject = `Confirmez votre inscription${name ? ' ' + name : ''}`;
+
+          const emailHtml = loadEmailTemplate('confirmation-presentiel', {
+            firstName: name || '',
+            courseName: courseName || 'Cours Fluance',
+            courseDate: courseDate || '',
+            courseTime: courseTime || '',
+            confirmationUrl: confirmationUrl,
+          });
+
+          const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
+            `Merci pour votre inscription au cours "${courseName || 'Cours Fluance'}"` +
+            `${courseDate ? ' du ' + courseDate : ''}${courseTime ? ' à ' + courseTime : ''} !\n\n` +
+            `Pour finaliser votre inscription et recevoir les informations importantes ` +
+            `concernant vos prochains cours, veuillez confirmer votre adresse email :\n\n` +
+            `${confirmationUrl}\n\n` +
+            `Ce lien est valide pendant 7 jours.\n\n` +
+            `À très bientôt en cours !\n\n` +
+            `Cédric de Fluance`;
+
+          await sendMailjetEmail(
+              normalizedEmail,
+              emailSubject,
+              emailHtml,
+              emailText,
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+              'support@actu.fluance.io',
+              'Cédric de Fluance',
+          );
+
+          console.log(`📧 Confirmation email sent to ${normalizedEmail} for presentiel course`);
+
+          // Mettre à jour les propriétés (en attente de confirmation)
+          properties.source_optin = 'presentiel';
+          properties.statut = 'prospect';
+          properties.est_client = 'False';
+          properties.langue = 'fr';
+
+          await updateMailjetContactProperties(
+              normalizedEmail,
+              properties,
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+          );
+
+          return res.json({
+            success: true,
+            isNewContact: true,
+            confirmationEmailSent: true,
+            message: 'New contact - confirmation email sent',
+            email: normalizedEmail,
+            nombreCours: nombreCours,
+          });
+        } else {
+          // Contact déjà confirmé - mettre à jour uniquement les propriétés
+          console.log(`📝 Existing confirmed contact ${normalizedEmail} - updating properties only`);
+
+          // Récupérer les propriétés actuelles pour ne pas écraser source_optin
+          const currentProperties = {};
+          try {
+            const contactDataUrl =
+              `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(normalizedEmail)}`;
+            const getResponse = await fetch(contactDataUrl, {
+              method: 'GET',
+              headers: {'Authorization': `Basic ${auth}`},
+            });
+
+            if (getResponse.ok) {
+              const getData = await getResponse.json();
+              if (getData.Data && getData.Data.length > 0 && getData.Data[0].Data) {
+                const data = getData.Data[0].Data;
+                if (Array.isArray(data)) {
+                  data.forEach((item) => {
+                    if (item.Name && item.Value !== undefined) {
+                      currentProperties[item.Name] = item.Value;
+                    }
+                  });
+                }
+              }
+            }
+          } catch (error) {
+            console.log('Error fetching current properties:', error.message);
+          }
+
+          // Ajouter 'presentiel' à source_optin si pas déjà présent
+          const currentSourceOptin = currentProperties.source_optin || '';
+          const sourceOptinList = currentSourceOptin ?
+            currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
+          if (!sourceOptinList.includes('presentiel')) {
+            sourceOptinList.push('presentiel');
+            properties.source_optin = sourceOptinList.join(',');
+          }
+
+          await updateMailjetContactProperties(
+              normalizedEmail,
+              properties,
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+          );
+
+          return res.json({
+            success: true,
+            isNewContact: false,
+            confirmationEmailSent: false,
+            message: 'Existing contact - registration recorded',
+            email: normalizedEmail,
+            nombreCours: nombreCours,
+          });
+        }
+      } catch (error) {
+        console.error('Error in registerPresentielCourse:', error);
+        return res.status(500).json({
+          success: false,
+          error: 'Internal server error: ' + error.message,
+        });
+      }
+    },
+);

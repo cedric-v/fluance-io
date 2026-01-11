@@ -22,6 +22,10 @@ Les properties suivantes sont gérées automatiquement :
 | `langue` | String | Langue préférée du contact | `"fr"` ou `"en"` (détectée depuis l'URL `/en/` ou paramètre `locale`) |
 | `region` | String | Région du contact | `"France : Est"`, `"Suisse"`, etc. |
 | `liste_attente_stages` | Date | Date d'inscription à la liste d'attente des stages | Format ISO 8601 |
+| `inscrit_presentiel` | Boolean | Inscrit aux cours en présentiel | `"True"` ou `"False"` |
+| `nombre_cours_presentiel` | Integer | Nombre total de cours en présentiel réservés | Nombre entier |
+| `premier_cours_presentiel` | Date | Date du premier cours en présentiel | Format `DD/MM/YYYY` |
+| `dernier_cours_presentiel` | Date | Date du dernier cours en présentiel | Format `DD/MM/YYYY` |
 
 ## 🔄 Flux d'intégration
 

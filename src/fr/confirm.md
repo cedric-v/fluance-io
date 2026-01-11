@@ -206,7 +206,9 @@ eleventyExcludeFromCollections: true
         // Déterminer la destination en fonction de la source
         const sourceOptin = sourceParam || result.data.sourceOptin || redirectParam || '2pratiques';
         let target = '2pratiques';
-        if (redirectParam === 'stages' || sourceOptin === 'stages') {
+        if (redirectParam === 'presentiel' || sourceOptin === 'presentiel') {
+          target = 'presentiel';
+        } else if (redirectParam === 'stages' || sourceOptin === 'stages') {
           target = 'stages';
         } else if (sourceOptin && sourceOptin.includes('5joursofferts')) {
           target = '5joursofferts';
@@ -219,14 +221,19 @@ eleventyExcludeFromCollections: true
           window.dataLayer.push({
             event: 'generate_lead',
             source: 'newsletter_optin',
-            optin_type: target === 'stages' ? 'stages' : (target === '5joursofferts' ? '5joursofferts' : '2pratiques'),
-            lead_type: target === 'stages' ? 'stages' : (target === '5joursofferts' ? '5_jours' : '2_pratiques')
+            optin_type: target,
+            lead_type: target === 'presentiel' ? 'cours_presentiel' : (target === 'stages' ? 'stages' : (target === '5joursofferts' ? '5_jours' : '2_pratiques'))
           });
           console.log('Opt-in conversion tracked:', target);
         }
 
         // Mettre à jour le contenu selon le type d'opt-in
-        if (target === 'stages' && successDescription && successSubtext && successCta && successCtaText) {
+        if (target === 'presentiel' && successDescription && successSubtext && successCta && successCtaText) {
+          successDescription.textContent = 'Merci d\'avoir confirmé votre inscription aux cours Fluance en présentiel !';
+          successSubtext.textContent = 'Vous recevrez désormais les informations importantes concernant vos prochains cours.';
+          successCta.href = '/presentiel/confirmation/';
+          successCtaText.textContent = 'Voir les informations pratiques';
+        } else if (target === 'stages' && successDescription && successSubtext && successCta && successCtaText) {
           successDescription.textContent = 'Merci d\'avoir confirmé votre inscription à la liste d\'attente des prochains stages !';
           successSubtext.textContent = 'Vous serez informé(e) en priorité dès que les prochains stages seront annoncés dans votre région.';
           successCta.href = '/presentiel/prochains-stages/';
