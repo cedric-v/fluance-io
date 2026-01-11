@@ -60,23 +60,9 @@ permalink: /emails/bienvenue-presentiel.html
           Comment réserver un cours ?
         </mj-text>
         <mj-text>
-          1. Connectez-vous sur <a href="https://momoyoga.com" style="color: #648ED8;">Momoyoga</a><br>
+          1. Rendez-vous sur <a href="https://www.momoyoga.com/fluance/schedule" style="color: #648ED8;" target="_blank">le planning Fluance</a><br>
           2. Choisissez le cours qui vous convient<br>
           3. Réservez votre place en un clic
-        </mj-text>
-        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
-        <mj-text font-size="16px" font-weight="bold" color="#648ED8">
-          Informations pratiques
-        </mj-text>
-        <mj-text>
-          📍 <strong>Lieu :</strong> le duplex danse & bien-être<br>
-          Rte de Chantemerle 58d, 1763 Granges-Paccot
-        </mj-text>
-        <mj-text>
-          🕐 <strong>Horaire :</strong> Jeudis de 20h15 à 21h00
-        </mj-text>
-        <mj-text>
-          👕 <strong>Tenue :</strong> Vêtements confortables permettant le mouvement
         </mj-text>
         <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
         <mj-text font-size="14px" color="#666666">
