@@ -6278,7 +6278,7 @@ exports.registerMomoyogaAccount = onRequest(
         const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(normalizedEmail)}` +
           `&token=${confirmationToken}&redirect=presentiel`;
 
-        const emailSubject = `Bienvenue${name ? ' ' + name : ''} !`;
+        const emailSubject = `Dernière étape${name ? ' ' + name : ''} : confirmez votre inscription`;
 
         const emailHtml = loadEmailTemplate('bienvenue-presentiel', {
           firstName: name || '',
@@ -6581,7 +6581,7 @@ exports.registerPresentielCourse = onRequest(
             }
           }
 
-          const emailSubject = `Confirmez votre inscription${name ? ' ' + name : ''}`;
+          const emailSubject = `Dernière étape${name ? ' ' + name : ''} : confirmez votre inscription au cours`;
 
           const emailHtml = loadEmailTemplate('confirmation-presentiel', {
             firstName: name || '',
