@@ -116,8 +116,8 @@ eleventyExcludeFromCollections: true
               <strong>Lieu :</strong> ${course.location}
             </p>
             <div class="flex items-center justify-between mb-4">
-              <span class="text-sm text-[#3E3A35]/60">
-                ${course.spotsRemaining} place${course.spotsRemaining > 1 ? 's' : ''} disponible${course.spotsRemaining > 1 ? 's' : ''}
+              <span class="text-sm ${course.spotsRemaining === 0 ? 'text-red-600 font-semibold' : course.spotsRemaining < 3 ? 'text-red-600 font-semibold' : course.spotsRemaining <= 5 ? 'text-orange-600 font-semibold' : course.spotsRemaining <= 10 ? 'text-amber-600 font-semibold' : 'text-green-600 font-semibold'}">
+                ${course.spotsRemaining === 0 ? '⚠️ Complet' : course.spotsRemaining === 1 ? '🔥 Dernière place !' : course.spotsRemaining < 3 ? `🔥 ${course.spotsRemaining} places restantes` : course.spotsRemaining <= 5 ? `⚡ ${course.spotsRemaining} places restantes` : course.spotsRemaining <= 10 ? `✨ ${course.spotsRemaining} places disponibles` : `✓ ${course.spotsRemaining} places disponibles`}
               </span>
               <span class="text-lg font-semibold text-fluance">${course.price} CHF</span>
             </div>
