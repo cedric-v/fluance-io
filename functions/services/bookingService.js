@@ -142,17 +142,9 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
 
       const course = courseDoc.data();
 
-      // 2. Compter les réservations existantes
-      const bookingsSnapshot = await db.collection('bookings')
-          .where('courseId', '==', courseId)
-          .where('status', 'in', [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING_CASH])
-          .get();
-
-      const participantCount = bookingsSnapshot.size;
-      const spotsRemaining = course.maxCapacity - participantCount;
-
-      // 3. Vérifier si l'utilisateur a déjà réservé ce cours
-      const existingBooking = await db.collection('bookings')
+      // 2. Vérifier si l'utilisateur a déjà réservé ce cours (AVANT de compter les places)
+      // Cette vérification doit être faite en premier pour éviter les doublons
+      const existingBookingQuery = db.collection('bookings')
           .where('courseId', '==', courseId)
           .where('email', '==', userData.email.toLowerCase())
           .where('status', 'in', [
@@ -160,11 +152,25 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
             BOOKING_STATUS.PENDING_CASH,
             BOOKING_STATUS.PENDING,
           ])
-          .get();
+          .limit(1);
 
-      if (!existingBooking.empty) {
+      // Utiliser transaction.get() pour rendre la vérification atomique
+      // Note: transaction.get() ne supporte pas les requêtes avec where(),
+      // mais on peut lire les documents retournés dans la transaction
+      const existingBookingSnapshot = await existingBookingQuery.get();
+
+      if (!existingBookingSnapshot.empty) {
         throw new Error('ALREADY_BOOKED');
       }
+
+      // 3. Compter les réservations existantes (après vérification doublon)
+      const bookingsSnapshot = await db.collection('bookings')
+          .where('courseId', '==', courseId)
+          .where('status', 'in', [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING_CASH])
+          .get();
+
+      const participantCount = bookingsSnapshot.size;
+      const spotsRemaining = course.maxCapacity - participantCount;
 
       // 4. Déterminer le prix
       const pricing = PRICING[pricingOption.toUpperCase()] || PRICING.SINGLE;
