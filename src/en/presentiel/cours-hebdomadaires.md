@@ -55,29 +55,29 @@ permalink: /en/presentiel/cours-hebdomadaires/
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-6 text-center">Our Pricing Options</h3>
         <div class="grid md:grid-cols-4 gap-6">
-          <div class="text-center p-4 rounded-xl border-2 border-green-200 bg-green-50">
+          <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="text-center p-4 rounded-xl border-2 border-green-200 bg-green-50 hover:shadow-lg hover:scale-105 transition-all cursor-pointer block">
             <span class="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full mb-3">FREE</span>
             <h4 class="font-semibold text-[#3E3A35] mb-1">Trial Class</h4>
             <p class="text-2xl font-bold text-green-600 mb-2">Free</p>
             <p class="text-sm text-[#3E3A35]/60">First session offered</p>
-          </div>
-          <div class="text-center p-4 rounded-xl border-2 border-gray-200">
+          </a>
+          <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="text-center p-4 rounded-xl border-2 border-gray-200 hover:shadow-lg hover:scale-105 transition-all cursor-pointer block">
             <h4 class="font-semibold text-[#3E3A35] mb-1">À la carte</h4>
             <p class="text-2xl font-bold text-fluance mb-2">25 CHF</p>
             <p class="text-sm text-[#3E3A35]/60">Single session</p>
-          </div>
-          <div class="text-center p-4 rounded-xl border-2 border-fluance bg-fluance/5 relative">
+          </a>
+          <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="text-center p-4 rounded-xl border-2 border-fluance bg-fluance/5 relative hover:shadow-lg hover:scale-105 transition-all cursor-pointer block">
             <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-fluance text-white text-xs px-3 py-1 rounded-full">POPULAR</span>
             <h4 class="font-semibold text-[#3E3A35] mb-1">Flow Pass</h4>
             <p class="text-2xl font-bold text-fluance mb-2">210 CHF</p>
             <p class="text-sm text-[#3E3A35]/60">10 sessions (valid for 12 months)</p>
-          </div>
-          <div class="text-center p-4 rounded-xl border-2 border-[#E6B84A] bg-[#E6B84A]/5 relative">
+          </a>
+          <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="text-center p-4 rounded-xl border-2 border-[#E6B84A] bg-[#E6B84A]/5 relative hover:shadow-lg hover:scale-105 transition-all cursor-pointer block">
             <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#E6B84A] text-[#7A1F3D] text-xs px-3 py-1 rounded-full font-semibold">UNLIMITED</span>
             <h4 class="font-semibold text-[#3E3A35] mb-1">Semester Pass</h4>
             <p class="text-2xl font-bold text-[#E6B84A] mb-2">340 CHF</p>
             <p class="text-sm text-[#3E3A35]/60">Unlimited for 6 months</p>
-          </div>
+          </a>
         </div>
       </div>
     </div>
