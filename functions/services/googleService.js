@@ -8,6 +8,7 @@
  */
 
 const {google} = require('googleapis');
+const admin = require('firebase-admin');
 
 // Configuration des IDs (à définir via les secrets Firebase)
 // firebase functions:secrets:set GOOGLE_CALENDAR_ID
@@ -42,21 +43,48 @@ class GoogleService {
       // Nettoyer et parser le JSON
       let credentials;
       try {
-        // Essayer de parser directement
-        credentials = JSON.parse(serviceAccountJson);
-      } catch (parseError) {
-        // Si échec, essayer de nettoyer (retirer les espaces/retours à la ligne en début/fin)
-        const cleaned = serviceAccountJson.trim();
-        try {
-          credentials = JSON.parse(cleaned);
-        } catch {
-          console.error('❌ Failed to parse GOOGLE_SERVICE_ACCOUNT JSON');
-          console.error('First 200 chars:', serviceAccountJson.substring(0, 200));
-          throw new Error(
-              `Invalid JSON in GOOGLE_SERVICE_ACCOUNT: ${parseError.message}. ` +
-              'Make sure you copied the ENTIRE JSON file content (from { to }).',
-          );
+        // Nettoyer le JSON (retirer BOM, espaces, retours à la ligne)
+        let cleaned = serviceAccountJson.trim();
+        // Retirer BOM UTF-8 si présent
+        if (cleaned.charCodeAt(0) === 0xFEFF) {
+          cleaned = cleaned.slice(1);
         }
+        // Retirer les caractères invisibles en début
+        cleaned = cleaned.replace(/^\s+/, '');
+
+        // Essayer de parser
+        credentials = JSON.parse(cleaned);
+      } catch (parseError) {
+        // Diagnostic détaillé
+        const firstChars = serviceAccountJson.substring(0, 100);
+        const lastChars = serviceAccountJson.substring(Math.max(0, serviceAccountJson.length - 100));
+        const length = serviceAccountJson.length;
+        const startsWithBrace = serviceAccountJson.trim().startsWith('{');
+        const endsWithBrace = serviceAccountJson.trim().endsWith('}');
+
+        console.error('❌ Failed to parse GOOGLE_SERVICE_ACCOUNT JSON');
+        console.error('Length:', length);
+        console.error('Starts with {:', startsWithBrace);
+        console.error('Ends with }:', endsWithBrace);
+        console.error('First 100 chars:', JSON.stringify(firstChars));
+        console.error('Last 100 chars:', JSON.stringify(lastChars));
+        console.error('Parse error:', parseError.message);
+
+        // Messages d'aide selon le problème
+        let helpMessage = 'Make sure you copied the ENTIRE JSON file content (from { to }).';
+        if (!startsWithBrace) {
+          helpMessage += ' The JSON should start with {. Check for hidden characters or BOM.';
+        }
+        if (!endsWithBrace) {
+          helpMessage += ' The JSON should end with }. The content might be truncated.';
+        }
+        if (length < 100) {
+          helpMessage += ' The content seems too short. Make sure you copied the complete file.';
+        }
+
+        throw new Error(
+            `Invalid JSON in GOOGLE_SERVICE_ACCOUNT: ${parseError.message}. ${helpMessage}`,
+        );
       }
 
       this.auth = new google.auth.GoogleAuth({
@@ -130,8 +158,9 @@ class GoogleService {
 
       // Nettoyer les anciens cours (passés depuis plus de 7 jours)
       const cleanupDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const cleanupTimestamp = admin.firestore.Timestamp.fromDate(cleanupDate);
       const oldCourses = await db.collection('courses')
-          .where('startTime', '<', cleanupDate)
+          .where('startTime', '<', cleanupTimestamp)
           .get();
 
       for (const doc of oldCourses.docs) {
@@ -159,6 +188,7 @@ class GoogleService {
 
     const startDateTime = event.start.dateTime || event.start.date;
     const endDateTime = event.end?.dateTime || event.end?.date;
+    const timeZone = event.start.timeZone || 'Europe/Zurich'; // Fuseau horaire du calendrier
 
     // Extraire la capacité max depuis la description [max:XX]
     let maxCapacity = 10; // Valeur par défaut
@@ -181,26 +211,91 @@ class GoogleService {
         .replace(/\[price:\d+\]/gi, '')
         .trim();
 
-    const startTime = new Date(startDateTime);
-    const endTime = endDateTime ? new Date(endDateTime) : null;
+    // Convertir la date/heure en tenant compte du fuseau horaire
+    // Google Calendar envoie les dates en ISO avec timezone
+    // On crée un objet Date qui représente le moment exact dans le fuseau horaire spécifié
+    let startTime;
+    let endTime = null;
 
-    return {
-      gcalId: event.id,
-      title: event.summary,
-      description: cleanDescription,
-      location: event.location || 'le duplex danse & bien-être, Rte de Chantemerle 58d, 1763 Granges-Paccot',
-      startTime: startTime,
-      endTime: endTime,
-      date: startTime.toISOString().split('T')[0],
-      time: startTime.toLocaleTimeString('fr-CH', {hour: '2-digit', minute: '2-digit'}),
-      maxCapacity: maxCapacity,
-      price: price,
-      participants: [], // Liste des IDs de réservations confirmées
-      participantCount: 0,
-      status: 'active',
-      updatedAt: new Date(),
-      createdAt: new Date(),
-    };
+    try {
+      // Parser la date ISO (qui contient déjà le timezone)
+      startTime = new Date(startDateTime);
+      if (isNaN(startTime.getTime())) {
+        console.error(`Invalid start date: ${startDateTime}`);
+        return null;
+      }
+
+      if (endDateTime) {
+        endTime = new Date(endDateTime);
+        if (isNaN(endTime.getTime())) {
+          endTime = null;
+        }
+      }
+
+      // Formater la date et l'heure en utilisant le fuseau horaire du calendrier
+      // On utilise Intl.DateTimeFormat pour formater dans le bon fuseau horaire
+      const dateFormatter = new Intl.DateTimeFormat('fr-CH', {
+        timeZone: timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+
+      const timeFormatter = new Intl.DateTimeFormat('fr-CH', {
+        timeZone: timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+
+      // Formater la date (DD/MM/YYYY) et l'heure (HH:MM) dans le fuseau horaire du calendrier
+      const dateParts = dateFormatter.formatToParts(startTime);
+      const timeParts = timeFormatter.formatToParts(startTime);
+
+      // Extraire la date au format DD/MM/YYYY (format utilisé dans le reste du code)
+      const yearPart = dateParts.find((p) => p.type === 'year');
+      const monthPart = dateParts.find((p) => p.type === 'month');
+      const dayPart = dateParts.find((p) => p.type === 'day');
+      const hourPart = timeParts.find((p) => p.type === 'hour');
+      const minutePart = timeParts.find((p) => p.type === 'minute');
+
+      if (!yearPart || !monthPart || !dayPart || !hourPart || !minutePart) {
+        console.error('Error parsing date/time parts from formatter');
+        return null;
+      }
+
+      const formattedDate = `${dayPart.value}/${monthPart.value}/${yearPart.value}`;
+      const formattedTime = `${hourPart.value}:${minutePart.value}`;
+
+      // Convertir en Firestore Timestamp pour le stockage
+      const startTimestamp = admin.firestore.Timestamp.fromDate(startTime);
+      const endTimestamp = endTime ? admin.firestore.Timestamp.fromDate(endTime) : null;
+
+      return {
+        gcalId: event.id,
+        title: event.summary,
+        description: cleanDescription,
+        location: event.location || 'le duplex danse & bien-être, Rte de Chantemerle 58d, 1763 Granges-Paccot',
+        startTime: startTimestamp,
+        endTime: endTimestamp,
+        date: formattedDate,
+        time: formattedTime,
+        maxCapacity: maxCapacity,
+        price: price,
+        participants: [], // Liste des IDs de réservations confirmées
+        participantCount: 0,
+        status: 'active',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+    } catch (error) {
+      console.error(`Error parsing calendar event date/time: ${error.message}`, {
+        startDateTime,
+        endDateTime,
+        timeZone,
+      });
+      return null;
+    }
   }
 
   /**
