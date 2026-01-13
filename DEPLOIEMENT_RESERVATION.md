@@ -74,7 +74,7 @@ firebase functions:secrets:set GOOGLE_CALENDAR_ID
 
 # 3. ID du Google Sheet
 firebase functions:secrets:set GOOGLE_SHEET_ID
-# Format: 1bAbNzo_bkywtfhGWlSLh3yTZaMDrRa8_GRCRN1g23d4
+# Format: VOTRE_SPREADSHEET_ID (ex: 1bAbNzo_bkywtfhGWlSLh3yTZaMDrRa8_GRCRN1g23d4)
 
 # 4. Webhook Stripe pour les réservations
 firebase functions:secrets:set STRIPE_BOOKING_WEBHOOK_SECRET

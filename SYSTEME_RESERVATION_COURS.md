@@ -125,7 +125,7 @@ Alternative à MomoYoga - Système intégré de réservation avec synchronisatio
 | `getAvailableCourses` | HTTP | Liste tous les cours à venir |
 | `checkUserPass` | HTTP | Vérifie si l'utilisateur a un pass actif |
 | `bookCourse` | HTTP POST | Crée une réservation (avec ou sans pass) |
-| `stripeBookingWebhook` | HTTP POST | Webhook Stripe (paiements + création de pass) |
+| `webhookStripe` | HTTP POST | Webhook Stripe unifié (produits en ligne + réservations + pass) |
 | `cancelCourseBooking` | HTTP POST | Annule une réservation |
 | `getUserBookings` | HTTP | Liste les réservations d'un utilisateur |
 
@@ -176,7 +176,7 @@ firebase functions:secrets:set GOOGLE_CALENDAR_ID
 
 # 3. ID du Google Sheet pour le suivi
 firebase functions:secrets:set GOOGLE_SHEET_ID
-# Format: 1bAbNzo_bkywtfhGWlSLh3yTZaMDrRa8_GRCRN1g23d4
+# Format: VOTRE_SPREADSHEET_ID (ex: 1bAbNzo_bkywtfhGWlSLh3yTZaMDrRa8_GRCRN1g23d4)
 
 # 4. Webhook Stripe pour les réservations
 firebase functions:secrets:set STRIPE_BOOKING_WEBHOOK_SECRET
@@ -373,18 +373,18 @@ stripe prices create --product=prod_xxx --currency=chf --unit-amount=34000 --rec
 
 ### Configurer le Webhook
 
-1. Dashboard Stripe > Developers > Webhooks
-2. Add endpoint :
-   - URL : `https://europe-west1-fluance-protected-content.cloudfunctions.net/stripeBookingWebhook`
-   - Events à sélectionner :
-     - `payment_intent.succeeded` (paiements réussis)
-     - `payment_intent.payment_failed` (paiements échoués)
-     - `checkout.session.completed` (achat de pass via Checkout)
-     - `invoice.paid` (renouvellement Pass Semestriel)
-     - `customer.subscription.deleted` (annulation abonnement)
-3. Copiez le signing secret (`whsec_xxx`)
+**Le webhook existant `webhookStripe` gère maintenant tout** (produits en ligne + réservations + pass).
 
-> **Note** : Vous pouvez utiliser le même webhook que celui existant (`webhookStripe`) si vous préférez centraliser. Le système différencie les paiements via les métadonnées.
+1. Dashboard Stripe > Developers > Webhooks > `fluance-io-website`
+2. Vérifiez que ces événements sont sélectionnés :
+   - `payment_intent.succeeded` ✅ (déjà présent)
+   - `payment_intent.payment_failed` ⚠️ **À ajouter**
+   - `checkout.session.completed` ✅ (déjà présent)
+   - `invoice.paid` ⚠️ **À ajouter** (pour renouvellement Pass Semestriel)
+   - `customer.subscription.deleted` ✅ (déjà présent)
+3. Le signing secret est déjà configuré : `STRIPE_WEBHOOK_SECRET`
+
+> **Note** : Toute la logique est centralisée dans `webhookStripe`. Le système différencie automatiquement les types de paiements via les métadonnées (`metadata.type`, `metadata.passType`, `metadata.system`).
 
 ### Activer TWINT
 
