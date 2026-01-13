@@ -18,6 +18,65 @@
     REFRESH_INTERVAL: 30000, // Rafraîchir toutes les 30 secondes
   };
 
+  // Détecter la langue depuis l'URL ou l'attribut lang du document
+  function getCurrentLocale() {
+    // Vérifier l'URL pour /en/
+    if (window.location.pathname.includes('/en/')) {
+      return 'en';
+    }
+    // Vérifier l'attribut lang du document
+    const lang = document.documentElement.lang || document.documentElement.getAttribute('lang');
+    if (lang && lang.startsWith('en')) {
+      return 'en';
+    }
+    // Par défaut: français
+    return 'fr';
+  }
+
+  const currentLocale = getCurrentLocale();
+
+  // Traductions
+  const translations = {
+    fr: {
+      step1Title: 'Entrez votre email',
+      emailLabel: 'Email *',
+      emailPlaceholder: 'votre@email.com',
+      continue: 'Continuer',
+      checking: 'Vérification...',
+      firstName: 'Prénom *',
+      lastName: 'Nom',
+      phone: 'Téléphone',
+      bookingError: 'Erreur de connexion. Veuillez réessayer.',
+      sessionsRemaining: 'Séances restantes',
+      unlimitedAccess: 'Accès illimité',
+      daysRemaining: 'jours restants',
+      bookWithFlowPass: 'Réserver (1 séance sera décomptée)',
+      bookWithSemesterPass: 'Réserver avec mon Pass Semestriel',
+      useOtherEmail: '← Utiliser une autre adresse email',
+      close: 'Fermer',
+    },
+    en: {
+      step1Title: 'Enter your email',
+      emailLabel: 'Email *',
+      emailPlaceholder: 'your@email.com',
+      continue: 'Continue',
+      checking: 'Checking...',
+      firstName: 'First name *',
+      lastName: 'Last name',
+      phone: 'Phone',
+      bookingError: 'Connection error. Please try again.',
+      sessionsRemaining: 'Sessions remaining',
+      unlimitedAccess: 'Unlimited access',
+      daysRemaining: 'days remaining',
+      bookWithFlowPass: 'Book (1 session will be deducted)',
+      bookWithSemesterPass: 'Book with my Semester Pass',
+      useOtherEmail: '← Use another email address',
+      close: 'Close',
+    },
+  };
+
+  const t = translations[currentLocale] || translations.fr;
+
   // Options tarifaires
   const PRICING_OPTIONS = {
     trial: {
@@ -114,10 +173,16 @@
       const data = await response.json();
 
       if (!data.success || !data.courses.length) {
+        const noCoursesText = currentLocale === 'en'
+          ? 'No classes available at the moment.'
+          : 'Aucun cours disponible pour le moment.';
+        const comeBackText = currentLocale === 'en'
+          ? 'Come back soon!'
+          : 'Revenez bientôt !';
         container.innerHTML = `
           <div class="text-center py-8 text-[#3E3A35]/60">
-            <p>Aucun cours disponible pour le moment.</p>
-            <p class="mt-2">Revenez bientôt !</p>
+            <p>${noCoursesText}</p>
+            <p class="mt-2">${comeBackText}</p>
           </div>
         `;
         return;
@@ -137,11 +202,17 @@
 
     } catch (error) {
       console.error('Error loading courses:', error);
-      container.innerHTML = `
+        const errorText = currentLocale === 'en' 
+          ? 'Error loading classes.'
+          : 'Erreur lors du chargement des cours.';
+        const retryText = currentLocale === 'en'
+          ? 'Retry'
+          : 'Réessayer';
+        container.innerHTML = `
         <div class="text-center py-8 text-red-500">
-          <p>Erreur lors du chargement des cours.</p>
+          <p>${errorText}</p>
           <button onclick="window.FluanceBooking.loadAvailableCourses()" class="mt-2 text-fluance underline">
-            Réessayer
+            ${retryText}
           </button>
         </div>
       `;
@@ -157,12 +228,14 @@
    * @returns {Object} - { colorClass, bgClass, text, urgency }
    */
   function getAvailabilityStyle(spotsRemaining, maxCapacity, isFull) {
+    const isEnglish = currentLocale === 'en';
+
     if (isFull || spotsRemaining <= 0) {
       return {
         colorClass: 'text-red-600',
         bgClass: 'bg-red-50',
         borderClass: 'border-red-200',
-        text: 'Complet',
+        text: isEnglish ? 'Full' : 'Complet',
         urgency: 'high',
         icon: '⚠️'
       };
@@ -180,8 +253,8 @@
         bgClass: 'bg-red-50',
         borderClass: 'border-red-200',
         text: spotsCount === 1 
-          ? `Dernière place !` 
-          : `${spotsCount} places restantes`,
+          ? (isEnglish ? 'Last spot!' : 'Dernière place !')
+          : (isEnglish ? `${spotsCount} spots left` : `${spotsCount} places restantes`),
         urgency: 'critical',
         icon: '🔥'
       };
@@ -193,7 +266,9 @@
         colorClass: 'text-orange-600',
         bgClass: 'bg-orange-50',
         borderClass: 'border-orange-200',
-        text: `${spotsCount} place${spotsCount > 1 ? 's' : ''} restante${spotsCount > 1 ? 's' : ''}`,
+        text: isEnglish 
+          ? `${spotsCount} spot${spotsCount > 1 ? 's' : ''} left`
+          : `${spotsCount} place${spotsCount > 1 ? 's' : ''} restante${spotsCount > 1 ? 's' : ''}`,
         urgency: 'high',
         icon: '⚡'
       };
@@ -205,7 +280,9 @@
         colorClass: 'text-amber-600',
         bgClass: 'bg-amber-50',
         borderClass: 'border-amber-200',
-        text: `${spotsCount} place${spotsCount > 1 ? 's' : ''} disponible${spotsCount > 1 ? 's' : ''}`,
+        text: isEnglish
+          ? `${spotsCount} spot${spotsCount > 1 ? 's' : ''} available`
+          : `${spotsCount} place${spotsCount > 1 ? 's' : ''} disponible${spotsCount > 1 ? 's' : ''}`,
         urgency: 'medium',
         icon: '✨'
       };
@@ -216,7 +293,9 @@
       colorClass: 'text-green-600',
       bgClass: 'bg-green-50',
       borderClass: 'border-green-200',
-      text: `${spotsCount} place${spotsCount > 1 ? 's' : ''} disponible${spotsCount > 1 ? 's' : ''}`,
+      text: isEnglish
+        ? `${spotsCount} spot${spotsCount > 1 ? 's' : ''} available`
+        : `${spotsCount} place${spotsCount > 1 ? 's' : ''} disponible${spotsCount > 1 ? 's' : ''}`,
       urgency: 'low',
       icon: '✓'
     };
@@ -242,7 +321,9 @@
            <span>${availability.text}</span>
          </span>`;
 
-    const buttonText = course.isFull ? 'Liste d\'attente' : 'Réserver';
+    const buttonText = course.isFull 
+      ? (currentLocale === 'en' ? 'Waitlist' : 'Liste d\'attente')
+      : (currentLocale === 'en' ? 'Book' : 'Réserver');
     const buttonClass = course.isFull 
       ? 'bg-gray-400 hover:bg-gray-500'
       : 'bg-[#E6B84A] hover:bg-[#E8C15A] !text-[#7A1F3D]';
@@ -389,7 +470,7 @@
     const errorContainer = document.getElementById('email-check-error');
     
     btn.disabled = true;
-    btn.textContent = 'Vérification...';
+    btn.textContent = t.checking;
     errorContainer.classList.add('hidden');
 
     try {
@@ -411,11 +492,11 @@
 
     } catch (error) {
       console.error('Error checking email:', error);
-      errorContainer.textContent = 'Erreur de connexion. Veuillez réessayer.';
+      errorContainer.textContent = t.bookingError;
       errorContainer.classList.remove('hidden');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Continuer';
+      btn.textContent = t.continue;
     }
   }
 
@@ -461,7 +542,7 @@
           <div class="mt-4 pt-4 border-t border-white/20">
             ${isFlowPass ? `
               <div class="flex justify-between items-center">
-                <span>Séances restantes</span>
+                <span>${t.sessionsRemaining}</span>
                 <span class="text-2xl font-bold">${pass.sessionsRemaining}/${pass.sessionsTotal}</span>
               </div>
               <div class="mt-2 bg-white/20 rounded-full h-2">
@@ -469,8 +550,8 @@
               </div>
             ` : `
               <div class="flex justify-between items-center">
-                <span>Accès illimité</span>
-                <span class="text-lg font-bold">${pass.daysRemaining} jours restants</span>
+                <span>${t.unlimitedAccess}</span>
+                <span class="text-lg font-bold">${pass.daysRemaining} ${t.daysRemaining}</span>
               </div>
             `}
           </div>
@@ -505,13 +586,13 @@
 
           <button type="submit"
                   class="w-full py-3 ${passColor} text-white font-semibold rounded-lg hover:opacity-90 transition-colors">
-            ${isFlowPass ? `Réserver (1 séance sera décomptée)` : `Réserver avec mon Pass Semestriel`}
+            ${isFlowPass ? t.bookWithFlowPass : t.bookWithSemesterPass}
           </button>
         </form>
 
         <button onclick="window.FluanceBooking.goBackToEmail()" 
                 class="w-full mt-3 py-2 text-[#3E3A35]/60 hover:text-[#3E3A35] text-sm">
-          ← Utiliser une autre adresse email
+          ${t.useOtherEmail}
         </button>
       </div>
     `;
@@ -868,7 +949,7 @@
     const errorContainer = document.getElementById('booking-error');
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Traitement...';
+    submitBtn.textContent = currentLocale === 'en' ? 'Processing...' : 'Traitement...';
     errorContainer?.classList.add('hidden');
 
     const formData = new FormData(form);
@@ -893,28 +974,34 @@
 
       if (result.success) {
         if (result.status === 'waitlisted') {
-          showSuccessMessage(
-            'Ajouté à la liste d\'attente',
-            `Vous êtes en position ${result.position}. Nous vous contacterons si une place se libère.`
-          );
+          const waitlistTitle = currentLocale === 'en' ? 'Added to waitlist' : 'Ajouté à la liste d\'attente';
+          const waitlistMsg = currentLocale === 'en'
+            ? `You are in position ${result.position}. We will contact you if a spot becomes available.`
+            : `Vous êtes en position ${result.position}. Nous vous contacterons si une place se libère.`;
+          showSuccessMessage(waitlistTitle, waitlistMsg);
         } else if (result.requiresPayment && result.clientSecret) {
           await handleStripePayment(result.clientSecret, data);
         } else {
-          showSuccessMessage(
-            'Réservation confirmée !',
-            result.message || 'Vous recevrez un email de confirmation.'
-          );
+          const confirmTitle = currentLocale === 'en' ? 'Booking confirmed!' : 'Réservation confirmée !';
+          const confirmMsg = currentLocale === 'en'
+            ? (result.message || 'You will receive a confirmation email.')
+            : (result.message || 'Vous recevrez un email de confirmation.');
+          showSuccessMessage(confirmTitle, confirmMsg);
         }
       } else {
         if (errorContainer) {
-          errorContainer.textContent = result.message || 'Une erreur est survenue';
+          const errorMsg = result.message || (currentLocale === 'en' ? 'An error occurred' : 'Une erreur est survenue');
+          errorContainer.textContent = errorMsg;
           errorContainer.classList.remove('hidden');
         }
       }
     } catch (error) {
       console.error('Booking error:', error);
       if (errorContainer) {
-        errorContainer.textContent = 'Erreur de connexion. Veuillez réessayer.';
+        const errorMsg = currentLocale === 'en'
+          ? 'Connection error. Please try again.'
+          : 'Erreur de connexion. Veuillez réessayer.';
+        errorContainer.textContent = errorMsg;
         errorContainer.classList.remove('hidden');
       }
     } finally {
@@ -928,7 +1015,10 @@
    */
   async function handleStripePayment(clientSecret, bookingData) {
     if (!stripe) {
-      showErrorMessage('Le système de paiement n\'est pas disponible. Veuillez choisir "Espèces sur place".');
+      const errorMsg = currentLocale === 'en'
+        ? 'Payment system is not available. Please choose "Cash on site".'
+        : 'Le système de paiement n\'est pas disponible. Veuillez choisir "Espèces sur place".';
+      showErrorMessage(errorMsg);
       return;
     }
 
@@ -1021,7 +1111,7 @@
           <p class="text-[#3E3A35]/70 mb-6">${message}</p>
           <button onclick="window.FluanceBooking.closeBookingModal()" 
                   class="px-6 py-2 bg-fluance text-white rounded-full hover:bg-fluance/90 transition-colors">
-            Fermer
+            ${t.close}
           </button>
         </div>
       `;

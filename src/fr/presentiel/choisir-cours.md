@@ -14,13 +14,9 @@ eleventyExcludeFromCollections: true
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
       </svg>
     </div>
-    <h1 class="text-3xl font-semibold text-[#3E3A35] mb-4">Désinscription confirmée</h1>
-    <p class="text-lg text-[#3E3A35]/70 mb-6">
-      Votre désinscription a été effectuée avec succès. Vous pouvez maintenant choisir un autre cours.
-    </p>
-    <p class="text-sm text-[#3E3A35]/50">
-      Votre paiement reste valide pour le nouveau cours que vous choisirez.
-    </p>
+    <h1 class="text-3xl font-semibold text-[#3E3A35] mb-4" data-i18n="unsubscribe-confirmed-title">Désinscription confirmée</h1>
+    <p class="text-lg text-[#3E3A35]/70 mb-6" data-i18n="unsubscribe-confirmed-message">Votre désinscription a été effectuée avec succès. Vous pouvez maintenant choisir un autre cours.</p>
+    <p class="text-sm text-[#3E3A35]/50" data-i18n="unsubscribe-payment-info">Votre paiement reste valide pour le nouveau cours que vous choisirez.</p>
   </div>
 
   <div id="loading" class="text-center py-12">
@@ -39,16 +35,18 @@ eleventyExcludeFromCollections: true
   <div id="courses-list" class="hidden grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8"></div>
 
   <div id="no-courses" class="hidden text-center py-12">
-    <p class="text-lg text-[#3E3A35]/70 mb-4">Aucun cours disponible pour le moment.</p>
+    <p class="text-lg text-[#3E3A35]/70 mb-4" data-i18n="no-courses-available">Aucun cours disponible pour le moment.</p>
     <a href="{{ '/presentiel/reserver/' | relativeUrl }}" 
-       class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] px-6 py-3 rounded-full font-semibold inline-block">
+       class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] px-6 py-3 rounded-full font-semibold inline-block"
+       data-i18n="view-all-courses">
       Voir tous les cours
     </a>
   </div>
 
   <div class="text-center mt-8">
     <a href="{{ '/' | relativeUrl }}" 
-       class="px-6 py-3 rounded-full font-semibold border-2 border-fluance text-fluance hover:bg-fluance hover:text-white transition-colors inline-block">
+       class="px-6 py-3 rounded-full font-semibold border-2 border-fluance text-fluance hover:bg-fluance hover:text-white transition-colors inline-block"
+       data-i18n="back-to-home">
       Retour à l'accueil
     </a>
   </div>
@@ -64,8 +62,134 @@ eleventyExcludeFromCollections: true
     if (!bookingId || !email || cancelled !== 'true') {
       document.getElementById('loading').classList.add('hidden');
       document.getElementById('error').classList.remove('hidden');
-      document.getElementById('error-message').textContent = 'Informations de réservation manquantes. Veuillez utiliser le lien de désinscription depuis votre email.';
+      const errorMsg = currentLocale === 'en' 
+        ? 'Missing booking information. Please use the unsubscribe link from your email.'
+        : 'Informations de réservation manquantes. Veuillez utiliser le lien de désinscription depuis votre email.';
+      document.getElementById('error-message').textContent = errorMsg;
       return;
+    }
+
+    // Détecter la langue
+    function getCurrentLocale() {
+      if (window.location.pathname.includes('/en/')) {
+        return 'en';
+      }
+      const lang = document.documentElement.lang || document.documentElement.getAttribute('lang');
+      if (lang && lang.startsWith('en')) {
+        return 'en';
+      }
+      return 'fr';
+    }
+
+    const currentLocale = getCurrentLocale();
+
+    // Traduire les textes statiques selon la langue
+    function updateStaticTexts() {
+      const texts = {
+        fr: {
+          title: 'Désinscription confirmée',
+          message: 'Votre désinscription a été effectuée avec succès. Vous pouvez maintenant choisir un autre cours.',
+          paymentInfo: 'Votre paiement reste valide pour le nouveau cours que vous choisirez.',
+          noCourses: 'Aucun cours disponible pour le moment.',
+          viewAll: 'Voir tous les cours',
+          backHome: 'Retour à l\'accueil'
+        },
+        en: {
+          title: 'Unsubscription confirmed',
+          message: 'Your unsubscription was successful. You can now choose another class.',
+          paymentInfo: 'Your payment remains valid for the new class you choose.',
+          noCourses: 'No classes available at the moment.',
+          viewAll: 'View all classes',
+          backHome: 'Back to home'
+        }
+      };
+
+      const t = texts[currentLocale] || texts.fr;
+
+      const titleEl = document.querySelector('[data-i18n="unsubscribe-confirmed-title"]');
+      const messageEl = document.querySelector('[data-i18n="unsubscribe-confirmed-message"]');
+      const paymentEl = document.querySelector('[data-i18n="unsubscribe-payment-info"]');
+      const noCoursesEl = document.querySelector('[data-i18n="no-courses-available"]');
+      const viewAllEl = document.querySelector('[data-i18n="view-all-courses"]');
+      const backHomeEl = document.querySelector('[data-i18n="back-to-home"]');
+
+      if (titleEl) titleEl.textContent = t.title;
+      if (messageEl) messageEl.textContent = t.message;
+      if (paymentEl) paymentEl.textContent = t.paymentInfo;
+      if (noCoursesEl) noCoursesEl.textContent = t.noCourses;
+      if (viewAllEl) viewAllEl.textContent = t.viewAll;
+      if (backHomeEl) backHomeEl.textContent = t.backHome;
+    }
+
+    updateStaticTexts();
+
+    // Fonction pour déterminer le style de disponibilité (identique à booking.js)
+    function getAvailabilityStyle(spotsRemaining, maxCapacity, isFull) {
+      const isEnglish = currentLocale === 'en';
+
+      if (isFull || spotsRemaining <= 0) {
+        return {
+          colorClass: 'text-red-600',
+          bgClass: 'bg-red-50',
+          borderClass: 'border-red-200',
+          text: isEnglish ? 'Full' : 'Complet',
+          urgency: 'high',
+          icon: '⚠️'
+        };
+      }
+
+      const availabilityPercent = (spotsRemaining / maxCapacity) * 100;
+      const spotsCount = spotsRemaining;
+
+      if (availabilityPercent < 20 || spotsCount < 3) {
+        return {
+          colorClass: 'text-red-600',
+          bgClass: 'bg-red-50',
+          borderClass: 'border-red-200',
+          text: spotsCount === 1 
+            ? (isEnglish ? 'Last spot!' : 'Dernière place !')
+            : (isEnglish ? `${spotsCount} spots left` : `${spotsCount} places restantes`),
+          urgency: 'critical',
+          icon: '🔥'
+        };
+      }
+
+      if (availabilityPercent < 40 || spotsCount <= 5) {
+        return {
+          colorClass: 'text-orange-600',
+          bgClass: 'bg-orange-50',
+          borderClass: 'border-orange-200',
+          text: isEnglish 
+            ? `${spotsCount} spot${spotsCount > 1 ? 's' : ''} left`
+            : `${spotsCount} place${spotsCount > 1 ? 's' : ''} restante${spotsCount > 1 ? 's' : ''}`,
+          urgency: 'high',
+          icon: '⚡'
+        };
+      }
+
+      if (availabilityPercent < 70 || spotsCount <= 10) {
+        return {
+          colorClass: 'text-amber-600',
+          bgClass: 'bg-amber-50',
+          borderClass: 'border-amber-200',
+          text: isEnglish
+            ? `${spotsCount} spot${spotsCount > 1 ? 's' : ''} available`
+            : `${spotsCount} place${spotsCount > 1 ? 's' : ''} disponible${spotsCount > 1 ? 's' : ''}`,
+          urgency: 'medium',
+          icon: '✨'
+        };
+      }
+
+      return {
+        colorClass: 'text-green-600',
+        bgClass: 'bg-green-50',
+        borderClass: 'border-green-200',
+        text: isEnglish
+          ? `${spotsCount} spot${spotsCount > 1 ? 's' : ''} available`
+          : `${spotsCount} place${spotsCount > 1 ? 's' : ''} disponible${spotsCount > 1 ? 's' : ''}`,
+        urgency: 'low',
+        icon: '✓'
+      };
     }
 
     // Charger les cours disponibles
@@ -106,18 +230,33 @@ eleventyExcludeFromCollections: true
         coursesList.classList.remove('hidden');
 
         data.courses.forEach(course => {
+          const availability = getAvailabilityStyle(
+            course.spotsRemaining,
+            course.maxCapacity || 15,
+            course.isFull
+          );
+
+          const spotsText = `<span class="${availability.colorClass} font-semibold flex items-center gap-1">
+            <span>${availability.icon}</span>
+            <span>${availability.text}</span>
+          </span>`;
+
+          const buttonText = course.isFull
+            ? (currentLocale === 'en' ? 'Full' : 'Complet')
+            : (currentLocale === 'en' ? 'Choose this class' : 'Choisir ce cours');
+
           const courseCard = document.createElement('div');
           courseCard.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow';
           courseCard.innerHTML = `
             <h3 class="text-xl font-semibold text-[#3E3A35] mb-2">${course.title}</h3>
             <p class="text-[#3E3A35]/70 mb-4">
-              <strong>Date :</strong> ${course.date}<br>
-              <strong>Heure :</strong> ${course.time}<br>
-              <strong>Lieu :</strong> ${course.location}
+              <strong>${currentLocale === 'en' ? 'Date' : 'Date'} :</strong> ${course.date}<br>
+              <strong>${currentLocale === 'en' ? 'Time' : 'Heure'} :</strong> ${course.time}<br>
+              <strong>${currentLocale === 'en' ? 'Location' : 'Lieu'} :</strong> ${course.location}
             </p>
             <div class="flex items-center justify-between mb-4">
-              <span class="text-sm ${course.spotsRemaining === 0 ? 'text-red-600 font-semibold' : course.spotsRemaining < 3 ? 'text-red-600 font-semibold' : course.spotsRemaining <= 5 ? 'text-orange-600 font-semibold' : course.spotsRemaining <= 10 ? 'text-amber-600 font-semibold' : 'text-green-600 font-semibold'}">
-                ${course.spotsRemaining === 0 ? '⚠️ Complet' : course.spotsRemaining === 1 ? '🔥 Dernière place !' : course.spotsRemaining < 3 ? `🔥 ${course.spotsRemaining} places restantes` : course.spotsRemaining <= 5 ? `⚡ ${course.spotsRemaining} places restantes` : course.spotsRemaining <= 10 ? `✨ ${course.spotsRemaining} places disponibles` : `✓ ${course.spotsRemaining} places disponibles`}
+              <span class="px-3 py-1.5 rounded-full ${availability.bgClass} border ${availability.borderClass} ${availability.urgency === 'critical' ? 'animate-pulse' : ''}">
+                ${spotsText}
               </span>
               <span class="text-lg font-semibold text-fluance">${course.price} CHF</span>
             </div>
@@ -125,7 +264,7 @@ eleventyExcludeFromCollections: true
               onclick="transferToCourse('${bookingId}', '${course.id}')"
               class="w-full btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] px-4 py-2 rounded-full font-semibold ${course.isFull ? 'opacity-50 cursor-not-allowed' : ''}"
               ${course.isFull ? 'disabled' : ''}>
-              ${course.isFull ? 'Complet' : 'Choisir ce cours'}
+              ${buttonText}
             </button>
           `;
           coursesList.appendChild(courseCard);
@@ -134,19 +273,28 @@ eleventyExcludeFromCollections: true
         console.error('Error loading courses:', error);
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('error').classList.remove('hidden');
-        document.getElementById('error-message').textContent = 'Erreur lors du chargement des cours. Veuillez réessayer.';
+        const errorMsg = currentLocale === 'en'
+          ? 'Error loading courses. Please try again.'
+          : 'Erreur lors du chargement des cours. Veuillez réessayer.';
+        document.getElementById('error-message').textContent = errorMsg;
       }
     }
 
     window.transferToCourse = async function(oldBookingId, newCourseId) {
       if (!oldBookingId || !newCourseId) {
-        alert('Erreur : informations manquantes.');
+        const msg = currentLocale === 'en' 
+          ? 'Error: missing information.'
+          : 'Erreur : informations manquantes.';
+        alert(msg);
         return;
       }
 
       const email = urlParams.get('email');
       if (!email) {
-        alert('Erreur : email manquant. Veuillez réessayer depuis le lien de désinscription.');
+        const msg = currentLocale === 'en'
+          ? 'Error: email missing. Please try again from the unsubscribe link.'
+          : 'Erreur : email manquant. Veuillez réessayer depuis le lien de désinscription.';
+        alert(msg);
         return;
       }
 
@@ -169,21 +317,40 @@ eleventyExcludeFromCollections: true
           // Afficher un message de succès
           const successMessage = document.createElement('div');
           successMessage.className = 'fixed top-0 left-0 right-0 bg-green-500 text-white p-4 text-center z-50';
-          successMessage.textContent = 'Transfert réussi ! Redirection en cours...';
+          const successText = currentLocale === 'en'
+            ? 'Transfer successful! Redirecting...'
+            : 'Transfert réussi ! Redirection en cours...';
+          successMessage.textContent = successText;
           document.body.appendChild(successMessage);
           
           setTimeout(() => {
-            window.location.href = '{{ "/presentiel/reservation-confirmee/" | relativeUrl }}';
+            const redirectUrl = currentLocale === 'en'
+              ? '{{ "/en/presentiel/confirmation/" | relativeUrl }}'
+              : '{{ "/presentiel/reservation-confirmee/" | relativeUrl }}';
+            window.location.href = redirectUrl;
           }, 2000);
         } else {
-          const errorMsg = data.error === 'COURSE_FULL' ? 
-            'Ce cours est maintenant complet. Veuillez choisir un autre cours.' :
-            (data.error || 'Impossible de transférer la réservation.');
-          alert('Erreur : ' + errorMsg);
+          let errorMsg;
+          if (data.error === 'COURSE_FULL') {
+            errorMsg = currentLocale === 'en'
+              ? 'This class is now full. Please choose another class.'
+              : 'Ce cours est maintenant complet. Veuillez choisir un autre cours.';
+          } else {
+            errorMsg = currentLocale === 'en'
+              ? (data.error || 'Unable to transfer booking.')
+              : (data.error || 'Impossible de transférer la réservation.');
+          }
+          const alertMsg = currentLocale === 'en'
+            ? 'Error: ' + errorMsg
+            : 'Erreur : ' + errorMsg;
+          alert(alertMsg);
         }
       } catch (error) {
         console.error('Error transferring course:', error);
-        alert('Erreur lors du transfert. Veuillez réessayer.');
+        const msg = currentLocale === 'en'
+          ? 'Error during transfer. Please try again.'
+          : 'Erreur lors du transfert. Veuillez réessayer.';
+        alert(msg);
       }
     };
 
