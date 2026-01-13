@@ -1,0 +1,1 @@
+Date d'inscription	Prénom	Nom	Email	Téléphone	Nom du cours	Date du cours	Heure	Méthode de paiement	Statut de paiement	Montant	Statut	CourseId	BookingId	Notes	Lieu	Participant payant	Date de paiement	Pass Type	Séances restantes	IP Address	Source	Annulé	Date d'annulation	Raison annulation	Liste d'attente

@@ -1,9 +1,9 @@
 ---
 layout: base.njk
-title: Réservation confirmée
-description: "Votre réservation pour un cours Fluance est confirmée"
-locale: fr
-permalink: /presentiel/reservation-confirmee/
+title: Booking Confirmed
+description: "Your Fluance course booking is confirmed"
+locale: en
+permalink: /en/presentiel/booking-confirmed/
 eleventyExcludeFromCollections: true
 ---
 
@@ -11,41 +11,41 @@ eleventyExcludeFromCollections: true
   <div class="mb-8">
     <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
       <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
       </svg>
     </div>
-    <h1 class="text-3xl font-semibold text-[#3E3A35] mb-4">Réservation confirmée !</h1>
+    <h1 class="text-3xl font-semibold text-[#3E3A35] mb-4">Booking Confirmed!</h1>
     <p class="text-lg text-[#3E3A35]/70">
-      Merci pour votre réservation. Un email de confirmation vous a été envoyé.
+      Thank you for your booking. A confirmation email has been sent to you.
     </p>
   </div>
 
   <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 text-left">
-    <h2 class="text-xl font-semibold text-fluance mb-4">📧 Vérifiez votre email</h2>
+    <h2 class="text-xl font-semibold text-fluance mb-4">📧 Check your email</h2>
     <p class="text-[#3E3A35]/70 mb-4">
-      Vous recevrez un email avec :
+      You will receive an email with:
     </p>
     <ul class="space-y-2 text-[#3E3A35]/80">
       <li class="flex items-center gap-2">
         <span class="text-fluance">✓</span>
-        <span>Le récapitulatif de votre réservation</span>
+        <span>Your booking summary</span>
       </li>
       <li class="flex items-center gap-2">
         <span class="text-fluance">✓</span>
-        <span>L'adresse et les informations pratiques</span>
+        <span>Address and practical information</span>
       </li>
       <li class="flex items-center gap-2">
         <span class="text-fluance">✓</span>
-        <span>Un lien pour ajouter le cours à votre calendrier</span>
+        <span>A link to add the class to your calendar</span>
       </li>
     </ul>
     <p class="text-sm text-[#3E3A35]/50 mt-4">
-      Pensez à vérifier vos spams si vous ne trouvez pas l'email.
+      Please check your spam folder if you can't find the email.
     </p>
   </div>
 
   <div class="bg-fluance/5 rounded-2xl p-6 mb-8">
-    <h3 class="font-semibold text-[#3E3A35] mb-3">📍 Rappel du lieu</h3>
+    <h3 class="font-semibold text-[#3E3A35] mb-3">📍 Location reminder</h3>
     <p class="text-[#3E3A35]/80">
       <strong>le duplex danse & bien-être</strong><br>
       Rte de Chantemerle 58d, 1763 Granges-Paccot
@@ -54,69 +54,69 @@ eleventyExcludeFromCollections: true
        target="_blank" 
        rel="noopener noreferrer"
        class="inline-flex items-center gap-1 text-fluance mt-2 hover:underline">
-      Voir sur Google Maps →
+      View on Google Maps →
     </a>
   </div>
 
   <div class="flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="{{ '/presentiel/reserver/' | relativeUrl }}" 
+    <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" 
        class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] px-6 py-3 rounded-full font-semibold">
-      Réserver un autre cours
+      Book another class
     </a>
-    <a href="{{ '/' | relativeUrl }}" 
+    <a href="{{ '/en/' | relativeUrl }}" 
        class="px-6 py-3 rounded-full font-semibold border-2 border-fluance text-fluance hover:bg-fluance hover:text-white transition-colors">
-      Retour à l'accueil
+      Back to home
     </a>
   </div>
 </section>
 
 <script>
-  // Vérifier le statut du paiement après le retour de Stripe
+  // Check payment status after return from Stripe
   (async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentIntent = urlParams.get('payment_intent');
     const paymentIntentClientSecret = urlParams.get('payment_intent_client_secret');
     const redirectStatus = urlParams.get('redirect_status');
     
-    // Si Stripe indique explicitement que le paiement a été annulé ou a échoué
+    // If Stripe explicitly indicates payment was canceled or failed
     if (redirectStatus === 'failed' || redirectStatus === 'canceled') {
-      // Rediriger vers la page d'annulation
+      // Redirect to cancellation page
       const bookingId = urlParams.get('booking_id');
       const cancelUrl = bookingId 
-        ? `/presentiel/paiement-annule/?booking_id=${bookingId}`
-        : '/presentiel/paiement-annule/';
+        ? `/en/presentiel/payment-cancelled/?booking_id=${bookingId}`
+        : '/en/presentiel/payment-cancelled/';
       window.location.href = cancelUrl;
       return;
     }
     
-    // Si on a un payment_intent mais pas de redirect_status, vérifier le statut
+    // If we have a payment_intent but no redirect_status, check the status
     if (paymentIntent && paymentIntentClientSecret && !redirectStatus) {
       try {
-        // Vérifier le statut via notre API backend
+        // Check status via our backend API
         const response = await fetch(`https://europe-west1-fluance-protected-content.cloudfunctions.net/checkPaymentStatus?payment_intent=${paymentIntent}`);
         if (response.ok) {
           const data = await response.json();
           
           if (data.status === 'canceled' || data.status === 'requires_payment_method' || data.status === 'requires_action') {
-            // Le paiement a été annulé ou nécessite une action
+            // Payment was canceled or requires action
             const bookingId = urlParams.get('booking_id');
             const cancelUrl = bookingId 
-              ? `/presentiel/paiement-annule/?booking_id=${bookingId}`
-              : '/presentiel/paiement-annule/';
+              ? `/en/presentiel/payment-cancelled/?booking_id=${bookingId}`
+              : '/en/presentiel/payment-cancelled/';
             window.location.href = cancelUrl;
             return;
           }
           
-          // Si le statut est 'succeeded' ou 'processing', on reste sur cette page (confirmation)
+          // If status is 'succeeded' or 'processing', stay on this page (confirmation)
         }
       } catch (error) {
         console.error('Error checking payment status:', error);
-        // En cas d'erreur, on reste sur la page de confirmation
-        // (mieux vaut afficher une confirmation que de perdre l'utilisateur)
+        // On error, stay on confirmation page
+        // (better to show confirmation than lose the user)
       }
     }
     
-    // Nettoyer l'URL après traitement (garder seulement les paramètres utiles)
+    // Clean URL after processing (keep only useful parameters)
     const cleanParams = new URLSearchParams();
     if (paymentIntent) cleanParams.set('payment_intent', paymentIntent);
     if (redirectStatus) cleanParams.set('redirect_status', redirectStatus);
