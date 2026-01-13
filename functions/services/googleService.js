@@ -39,7 +39,25 @@ class GoogleService {
         throw new Error('GOOGLE_SERVICE_ACCOUNT secret not configured');
       }
 
-      const credentials = JSON.parse(serviceAccountJson);
+      // Nettoyer et parser le JSON
+      let credentials;
+      try {
+        // Essayer de parser directement
+        credentials = JSON.parse(serviceAccountJson);
+      } catch (parseError) {
+        // Si échec, essayer de nettoyer (retirer les espaces/retours à la ligne en début/fin)
+        const cleaned = serviceAccountJson.trim();
+        try {
+          credentials = JSON.parse(cleaned);
+        } catch {
+          console.error('❌ Failed to parse GOOGLE_SERVICE_ACCOUNT JSON');
+          console.error('First 200 chars:', serviceAccountJson.substring(0, 200));
+          throw new Error(
+              `Invalid JSON in GOOGLE_SERVICE_ACCOUNT: ${parseError.message}. ` +
+              'Make sure you copied the ENTIRE JSON file content (from { to }).',
+          );
+        }
+      }
 
       this.auth = new google.auth.GoogleAuth({
         credentials,

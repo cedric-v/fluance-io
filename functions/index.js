@@ -6927,7 +6927,11 @@ exports.syncPlanningManual = onRequest(
         });
       } catch (error) {
         console.error('Error syncing calendar:', error);
-        return res.status(500).json({error: error.message});
+        const errorMessage = error.message || 'Unknown error';
+        return res.status(500).json({
+          error: errorMessage,
+          details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        });
       }
     },
 );
@@ -6972,7 +6976,7 @@ exports.getAvailableCourses = onRequest(
     },
     async (req, res) => {
       try {
-        const now = new Date();
+        const now = admin.firestore.Timestamp.now();
 
         const coursesSnapshot = await db.collection('courses')
             .where('startTime', '>=', now)
