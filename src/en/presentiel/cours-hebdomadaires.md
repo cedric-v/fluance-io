@@ -48,8 +48,8 @@ permalink: /en/presentiel/cours-hebdomadaires/
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-3">Mandatory registration</h3>
-        <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex">
-          View the schedule of upcoming classes and register →
+        <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex">
+          Book a class →
         </a>
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
@@ -68,6 +68,16 @@ permalink: /en/presentiel/cours-hebdomadaires/
             <p class="text-[#3E3A35]">For regular practice, enjoy 10 sessions.</p>
             <p class="text-[#3E3A35] mt-2">
               Your card is valid for 12 months to give you time to practice at your own pace.
+            </p>
+          </div>
+          <div class="border-l-4 border-[#E6B84A] pl-4 bg-[#E6B84A]/5 py-3 -ml-4 pl-8 rounded-r-lg">
+            <div class="flex items-center gap-2 mb-2">
+              <h4 class="text-lg font-semibold text-fluance">Semester Pass: 340 CHF / 6 months</h4>
+              <span class="bg-fluance text-white text-xs px-2 py-0.5 rounded-full">UNLIMITED</span>
+            </div>
+            <p class="text-[#3E3A35]">Unlimited access to all classes for 6 months.</p>
+            <p class="text-[#3E3A35] mt-2">
+              Automatic renewal. Cancelable at any time before the end of the period.
             </p>
           </div>
         </div>
@@ -134,7 +144,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
     </div>
 
     <div class="text-center pt-6">
-      <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex">View the schedule and register for a session →</a>
+      <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex">Book a class →</a>
     </div>
   </article>
 </section>

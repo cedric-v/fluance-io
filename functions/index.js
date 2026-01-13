@@ -7097,6 +7097,228 @@ async function handleDoubleOptInForBooking(db, email, firstName, courseId, booki
 }
 
 /**
+ * Envoie un rappel par email 1 jour avant chaque cours
+ * S'exécute quotidiennement à 9h (Europe/Zurich)
+ */
+exports.sendCourseReminders = onSchedule(
+    {
+      schedule: '0 9 * * *', // Tous les jours à 9h
+      timeZone: 'Europe/Zurich',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      region: 'europe-west1',
+    },
+    async (_event) => {
+      console.log('📧 Starting scheduled job for course reminders');
+      const mailjetApiKey = process.env.MAILJET_API_KEY;
+      const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+
+      if (!mailjetApiKey || !mailjetApiSecret) {
+        console.error('❌ Mailjet credentials not configured');
+        return;
+      }
+
+      try {
+        // Calculer la date de demain (1 jour avant)
+        const now = admin.firestore.Timestamp.now();
+        const tomorrow = new Date(now.toDate());
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        const tomorrowEnd = new Date(tomorrow);
+        tomorrowEnd.setHours(23, 59, 59, 999);
+
+        const tomorrowStartTimestamp = admin.firestore.Timestamp.fromDate(tomorrow);
+        const tomorrowEndTimestamp = admin.firestore.Timestamp.fromDate(tomorrowEnd);
+
+        console.log(`🔍 Looking for courses on ${tomorrow.toISOString().split('T')[0]}`);
+
+        // Récupérer tous les cours qui ont lieu demain
+        const coursesSnapshot = await db.collection('courses')
+            .where('startTime', '>=', tomorrowStartTimestamp)
+            .where('startTime', '<=', tomorrowEndTimestamp)
+            .where('status', '==', 'active')
+            .get();
+
+        if (coursesSnapshot.empty) {
+          console.log('✅ No courses tomorrow, no reminders to send');
+          return;
+        }
+
+        console.log(`📋 Found ${coursesSnapshot.size} course(s) tomorrow`);
+
+        let remindersSent = 0;
+        let errors = 0;
+
+        for (const courseDoc of coursesSnapshot.docs) {
+          const course = courseDoc.data();
+          const courseId = courseDoc.id;
+
+          try {
+            // Récupérer toutes les réservations confirmées pour ce cours
+            const bookingsSnapshot = await db.collection('bookings')
+                .where('courseId', '==', courseId)
+                .where('status', 'in', ['confirmed', 'pending_cash'])
+                .get();
+
+            if (bookingsSnapshot.empty) {
+              console.log(`⏭️  No bookings for course ${courseId}, skipping`);
+              continue;
+            }
+
+            console.log(`📧 Sending reminders for ${bookingsSnapshot.size} booking(s) for course: ${course.title}`);
+
+            for (const bookingDoc of bookingsSnapshot.docs) {
+              const booking = bookingDoc.data();
+              const email = booking.email.toLowerCase().trim();
+
+              // Vérifier si un rappel a déjà été envoyé
+              const reminderKey = `reminder_sent_${courseId}`;
+              if (booking[reminderKey]) {
+                console.log(`⏭️  Reminder already sent for booking ${bookingDoc.id}, skipping`);
+                continue;
+              }
+
+              // Vérifier que l'utilisateur a confirmé son opt-in
+              const confirmationSnapshot = await db.collection('newsletterConfirmations')
+                  .where('email', '==', email)
+                  .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
+                  .where('confirmed', '==', true)
+                  .limit(1)
+                  .get();
+
+              if (confirmationSnapshot.empty) {
+                console.log(`⏭️  User ${email} has not confirmed opt-in, skipping reminder`);
+                continue;
+              }
+
+              // Générer l'URL Google Calendar
+              let calendarUrl = '';
+              if (course.date && course.time) {
+                try {
+                  const [day, month, year] = course.date.split('/');
+                  const [hours, minutes] = course.time.split(':');
+                  const startDate = `${year}${month}${day}T${hours}${minutes}00`;
+                  const startTime = new Date(
+                      parseInt(year), parseInt(month) - 1, parseInt(day),
+                      parseInt(hours), parseInt(minutes),
+                  );
+                  startTime.setMinutes(startTime.getMinutes() + 45);
+                  const endYear = startTime.getFullYear();
+                  const endMonth = String(startTime.getMonth() + 1).padStart(2, '0');
+                  const endDay = String(startTime.getDate()).padStart(2, '0');
+                  const endHours = String(startTime.getHours()).padStart(2, '0');
+                  const endMinutes = String(startTime.getMinutes()).padStart(2, '0');
+                  const endDate = `${endYear}${endMonth}${endDay}T${endHours}${endMinutes}00`;
+
+                  const calendarTitle = encodeURIComponent(course.title || 'Cours Fluance');
+                  const calendarLocation = encodeURIComponent(course.location || 'le duplex danse & bien-être, Rte de Chantemerle 58d, 1763 Granges-Paccot, Suisse');
+                  const calendarDetails = encodeURIComponent('Cours Fluance - le mouvement qui éveille et apaise\n\nTenue : vêtements confortables\nPlus d\'infos : https://fluance.io/presentiel/cours-hebdomadaires/');
+
+                  calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+                    `&text=${calendarTitle}` +
+                    `&dates=${startDate}/${endDate}` +
+                    `&details=${calendarDetails}` +
+                    `&location=${calendarLocation}`;
+                } catch (e) {
+                  console.error('Error generating calendar URL:', e);
+                }
+              }
+
+              // Préparer l'email de rappel
+              const emailSubject = `Rappel : Votre cours Fluance demain${booking.firstName ? ' ' + booking.firstName : ''} !`;
+
+              const emailHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; ` +
+                `max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <div style="background-color: #648ED8; padding: 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Rappel : Votre cours Fluance demain</h1>
+                  </div>
+                  <div style="background-color: #ffffff; padding: 20px;">
+                    <p>Bonjour${booking.firstName ? ' ' + booking.firstName : ''},</p>
+                    <p>Ceci est un rappel amical : vous avez un cours Fluance <strong>demain</strong> !</p>
+                    <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                      <p style="margin: 5px 0;"><strong>📅 Cours :</strong> ${course.title || 'Cours Fluance'}</p>
+                      <p style="margin: 5px 0;"><strong>📆 Date :</strong> ${course.date || ''}</p>
+                      <p style="margin: 5px 0;"><strong>🕐 Heure :</strong> ${course.time || ''}</p>
+                      <p style="margin: 5px 0;"><strong>📍 Lieu :</strong> ${course.location || 'le duplex danse & bien-être, Rte de Chantemerle 58d, 1763 Granges-Paccot'}</p>
+                    </div>
+                    ${calendarUrl ? `
+                    <p style="text-align: center; margin: 20px 0;">
+                      <a href="${calendarUrl}" ` +
+                    `style="background-color: #E6B84A; color: #0f172a; ` +
+                    `padding: 15px 30px; text-decoration: none; border-radius: 5px; ` +
+                    `font-weight: bold; display: inline-block;">
+                        Ajouter à mon calendrier
+                      </a>
+                    </p>
+                    ` : ''}
+                    <p><strong>Informations pratiques :</strong></p>
+                    <ul>
+                      <li><strong>Tenue :</strong> Vêtements confortables permettant le mouvement</li>
+                      <li><strong>Transport :</strong> Bus n°9 et 10, ` +
+                    `arrêt Granges-Paccot, Chantemerle (+1min à pied)</li>
+                      <li><strong>Parking :</strong> Zones bleues et blanches disponibles (disque nécessaire)</li>
+                    </ul>
+                    <p>Nous avons hâte de vous voir demain !</p>
+                    <p>À très bientôt,<br>Cédric de Fluance</p>
+                  </div>
+                </body>
+                </html>
+              `;
+
+              const emailText = `Bonjour${booking.firstName ? ' ' + booking.firstName : ''},\n\n` +
+                `Ceci est un rappel amical : vous avez un cours Fluance demain !\n\n` +
+                `📅 Cours : ${course.title || 'Cours Fluance'}\n` +
+                `📆 Date : ${course.date || ''}\n` +
+                `🕐 Heure : ${course.time || ''}\n` +
+                `📍 Lieu : ${course.location || 'le duplex danse & bien-être, Rte de Chantemerle 58d, 1763 Granges-Paccot'}\n\n` +
+                `Informations pratiques :\n` +
+                `- Tenue : Vêtements confortables permettant le mouvement\n` +
+                `- Transport : Bus n°9 et 10, arrêt Granges-Paccot, Chantemerle (+1min à pied)\n` +
+                `- Parking : Zones bleues et blanches disponibles (disque nécessaire)\n\n` +
+                `Nous avons hâte de vous voir demain !\n\n` +
+                `À très bientôt,\nCédric de Fluance`;
+
+              // Envoyer l'email via Mailjet
+              await sendMailjetEmail(
+                  email,
+                  emailSubject,
+                  emailHtml,
+                  emailText,
+                  mailjetApiKey,
+                  mailjetApiSecret,
+                  'support@actu.fluance.io',
+                  'Cédric de Fluance',
+              );
+
+              // Marquer le rappel comme envoyé dans la réservation
+              await bookingDoc.ref.update({
+                [reminderKey]: admin.firestore.FieldValue.serverTimestamp(),
+              });
+
+              remindersSent++;
+              console.log(`✅ Reminder sent to ${email} for course ${courseId}`);
+            }
+          } catch (courseError) {
+            errors++;
+            console.error(`❌ Error processing course ${courseId}:`, courseError);
+          }
+        }
+
+        console.log(`✅ Course reminders job completed: ${remindersSent} sent, ${errors} errors`);
+      } catch (error) {
+        console.error('❌ Error in sendCourseReminders:', error);
+        throw error;
+      }
+    },
+);
+
+/**
  * Synchronise le calendrier Google avec Firestore
  * Exécuté toutes les 30 minutes
  */
@@ -7621,6 +7843,81 @@ exports.bookCourse = onRequest(
             existingConfirmation.docs[0].data().confirmed === true;
 
           if (!isConfirmed) {
+            // Nouveau contact : déclencher double opt-in
+            await handleDoubleOptInForBooking(
+                db,
+                normalizedEmail,
+                userData.firstName || '',
+                courseId,
+                result.bookingId,
+            );
+          }
+        } else if (result.success && result.status === 'confirmed') {
+          // Cours gratuit (essai) : ajouter au Google Sheet et gérer les emails
+          try {
+            const sheetId = process.env.GOOGLE_SHEET_ID;
+            if (sheetId && googleService) {
+              const courseDoc = await db.collection('courses').doc(courseId).get();
+              const course = courseDoc.data();
+
+              await googleService.appendUserToSheet(
+                  sheetId,
+                  courseId,
+                  userData,
+                  {
+                    courseName: course?.title || '',
+                    courseDate: course?.date || '',
+                    courseTime: course?.time || '',
+                    paymentMethod: 'Cours d\'essai gratuit',
+                    paymentStatus: 'Confirmé',
+                    amount: '0 CHF',
+                    status: 'Confirmé (essai gratuit)',
+                    bookingId: result.bookingId,
+                    notes: 'Cours d\'essai gratuit - première séance',
+                  },
+              );
+              console.log(`📊 Free trial booking added to Google Sheet for ${normalizedEmail}`);
+            }
+          } catch (sheetError) {
+            console.error('Error updating sheet for free trial:', sheetError);
+          }
+
+          // Vérifier le statut de double opt-in et envoyer email de confirmation
+          const existingConfirmation = await db.collection('newsletterConfirmations')
+              .where('email', '==', normalizedEmail)
+              .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
+              .limit(1)
+              .get();
+
+          const isConfirmed = !existingConfirmation.empty &&
+            existingConfirmation.docs[0].data().confirmed === true;
+
+          if (isConfirmed) {
+            // Contact confirmé : envoyer email de confirmation immédiatement
+            const courseDoc = await db.collection('courses').doc(courseId).get();
+            const course = courseDoc.data();
+
+            try {
+              await db.collection('mail').add({
+                to: normalizedEmail,
+                template: {
+                  name: 'booking-confirmation',
+                  data: {
+                    firstName: userData.firstName,
+                    courseName: course?.title || '',
+                    courseDate: course?.date || '',
+                    courseTime: course?.time || '',
+                    location: course?.location || '',
+                    bookingId: result.bookingId,
+                    paymentMethod: 'Cours d\'essai gratuit',
+                  },
+                },
+              });
+              console.log(`📧 Confirmation email sent to ${normalizedEmail} for free trial booking`);
+            } catch (emailError) {
+              console.error('Error sending confirmation email:', emailError);
+            }
+          } else {
             // Nouveau contact : déclencher double opt-in
             await handleDoubleOptInForBooking(
                 db,
