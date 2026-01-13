@@ -1030,13 +1030,81 @@ exports.webhookStripe = onRequest(
         return res.status(400).send(`Webhook Error: ${err.message}`);
       }
 
+      // Gérer les événements de paiement échoué (réservations de cours)
+      if (event.type === 'payment_intent.payment_failed') {
+        const paymentIntent = event.data.object;
+        const bookingId = paymentIntent.metadata?.bookingId;
+
+        if (bookingId && bookingService) {
+          console.log(`❌ Payment failed for booking ${bookingId}`);
+          try {
+            await db.collection('bookings').doc(bookingId).update({
+              status: 'payment_failed',
+              paymentError: paymentIntent.last_payment_error?.message || 'Payment failed',
+              updatedAt: new Date(),
+            });
+            return res.status(200).json({received: true, bookingUpdated: true});
+          } catch (error) {
+            console.error('Error updating booking status:', error);
+          }
+        }
+      }
+
       // Gérer les événements de paiement réussi
       if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
         const session = event.data.object;
-        // amount et currency ne sont plus utilisés car on utilise uniquement les métadonnées
-        // const amount = session.amount_total || session.amount;
-        // const currency = session.currency || 'chf';
 
+        // ============================================================
+        // GESTION DES RÉSERVATIONS DE COURS ET PASS
+        // ============================================================
+        // Vérifier si c'est une réservation de cours ou un achat de pass
+        if (session.metadata?.type === 'course_booking' || session.metadata?.passType) {
+          if (bookingService || passService) {
+            const paymentIntent = session;
+            const bookingId = paymentIntent.metadata?.bookingId;
+            const passType = paymentIntent.metadata?.passType;
+            const customerEmail = paymentIntent.metadata?.email ||
+                paymentIntent.receipt_email ||
+                session.customer_details?.email;
+
+            // Cas 1: Réservation de cours simple
+            if (bookingId && paymentIntent.metadata?.type === 'course_booking' && bookingService) {
+              console.log(`✅ Payment succeeded for booking ${bookingId}`);
+              try {
+                const result = await bookingService.confirmBookingPayment(
+                    db,
+                    bookingId,
+                    paymentIntent.id || session.id,
+                );
+                console.log('Confirmation result:', result);
+                return res.status(200).json({received: true, bookingConfirmed: true});
+              } catch (error) {
+                console.error('Error confirming booking:', error);
+              }
+            }
+
+            // Cas 2: Achat d'un Flow Pass ou Pass Semestriel
+            if (passType && customerEmail && passService) {
+              console.log(`✅ ${passType} purchased for ${customerEmail}`);
+              try {
+                const pass = await passService.createUserPass(db, customerEmail, passType, {
+                  stripePaymentIntentId: paymentIntent.id || session.id,
+                  firstName: paymentIntent.metadata?.firstName || '',
+                  lastName: paymentIntent.metadata?.lastName || '',
+                  phone: paymentIntent.metadata?.phone || '',
+                });
+                console.log(`✅ Pass created: ${pass.passId}`);
+                return res.status(200).json({received: true, passCreated: true});
+              } catch (error) {
+                console.error('Error creating pass:', error);
+              }
+            }
+          }
+        }
+
+        // ============================================================
+        // GESTION DES PRODUITS EN LIGNE (21jours, complet, etc.)
+        // ============================================================
         // Vérifier d'abord si ce paiement est destiné au système Firebase.
         // ⚠️ IMPORTANT : Pas de fallback - seuls les paiements avec metadata.system = 'firebase' sont traités.
         const system = session.metadata?.system;
@@ -1184,17 +1252,78 @@ exports.webhookStripe = onRequest(
         }
       }
 
+      // Gérer les événements de renouvellement d'abonnement (Pass Semestriel)
+      if (event.type === 'invoice.paid' && passService) {
+        const invoice = event.data.object;
+        const subscriptionId = invoice.subscription;
+        const customerEmail = invoice.customer_email;
+
+        if (subscriptionId && customerEmail) {
+          // Vérifier si c'est un nouveau pass ou un renouvellement
+          const existingPass = await db.collection('userPasses')
+              .where('stripeSubscriptionId', '==', subscriptionId)
+              .limit(1)
+              .get();
+
+          if (existingPass.empty) {
+            // Nouveau Pass Semestriel
+            console.log(`✅ New Semester Pass for ${customerEmail}`);
+            try {
+              const pass = await passService.createUserPass(db, customerEmail, 'semester_pass', {
+                stripeSubscriptionId: subscriptionId,
+                stripePaymentIntentId: invoice.payment_intent,
+                firstName: invoice.customer_name || '',
+              });
+              console.log(`✅ Semester Pass created: ${pass.passId}`);
+            } catch (passError) {
+              console.error('Error creating Semester Pass:', passError);
+            }
+          } else {
+            // Renouvellement du Pass Semestriel
+            console.log(`✅ Semester Pass renewed for ${customerEmail}`);
+            try {
+              await passService.renewSemesterPass(db, subscriptionId);
+            } catch (renewError) {
+              console.error('Error renewing Semester Pass:', renewError);
+            }
+          }
+          return res.status(200).json({received: true, passProcessed: true});
+        }
+      }
+
       // Gérer les événements d'annulation d'abonnement
       if (event.type === 'customer.subscription.deleted') {
         const subscription = event.data.object;
         const customerEmail = subscription.metadata?.email || subscription.customer_email;
+
+        // Gérer l'annulation du Pass Semestriel
+        if (passService) {
+          const existingPass = await db.collection('userPasses')
+              .where('stripeSubscriptionId', '==', subscription.id)
+              .limit(1)
+              .get();
+
+          if (!existingPass.empty) {
+            console.log(`⚠️ Semester Pass subscription cancelled: ${subscription.id}`);
+            try {
+              await existingPass.docs[0].ref.update({
+                status: 'cancelled',
+                cancelledAt: new Date(),
+                updatedAt: new Date(),
+              });
+              return res.status(200).json({received: true, passCancelled: true});
+            } catch (error) {
+              console.error('Error cancelling pass:', error);
+            }
+          }
+        }
 
         if (!customerEmail) {
           console.error('No email found in subscription cancellation event');
           return res.status(400).send('No email found');
         }
 
-        // Vérifier si c'est pour le système Firebase
+        // Vérifier si c'est pour le système Firebase (produits en ligne)
         const system = subscription.metadata?.system;
         if (system !== 'firebase') {
           console.log(`Subscription cancellation ignored - système: ${system || 'non défini'}`);
@@ -7208,13 +7337,14 @@ exports.bookCourse = onRequest(
 );
 
 /**
- * Webhook Stripe pour les réservations de cours
- * Gère les confirmations de paiement (card, TWINT, SEPA)
+ * Note: La logique de webhook pour les réservations de cours et pass
+ * a été fusionnée dans webhookStripe pour simplifier la gestion.
+ * Cette fonction a été supprimée - tout est géré dans webhookStripe.
  */
-exports.stripeBookingWebhook = onRequest(
+/* exports.stripeBookingWebhook = onRequest(
     {
       region: 'europe-west1',
-      secrets: ['STRIPE_SECRET_KEY', 'STRIPE_BOOKING_WEBHOOK_SECRET', 'GOOGLE_SHEET_ID', 'GOOGLE_SERVICE_ACCOUNT'],
+      secrets: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'GOOGLE_SHEET_ID', 'GOOGLE_SERVICE_ACCOUNT'],
     },
     async (req, res) => {
       if (!bookingService) {
@@ -7222,7 +7352,7 @@ exports.stripeBookingWebhook = onRequest(
       }
 
       const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-      const webhookSecret = process.env.STRIPE_BOOKING_WEBHOOK_SECRET;
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
       if (!stripeSecretKey || !webhookSecret) {
         console.error('Stripe secrets not configured');
@@ -7419,7 +7549,7 @@ exports.stripeBookingWebhook = onRequest(
 
       return res.json({received: true});
     },
-);
+); */
 
 /**
  * Annule une réservation
