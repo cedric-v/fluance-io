@@ -3315,6 +3315,39 @@ exports.confirmNewsletterOptIn = onCall(
             // Valider et normaliser la langue
             const langue = 'fr'; // Présentiel uniquement en français pour l'instant
 
+            // Vérifier s'il y a une réservation en attente liée à cette confirmation
+            if (tokenData.bookingId) {
+              try {
+                const bookingDoc = await db.collection('bookings').doc(tokenData.bookingId).get();
+                if (bookingDoc.exists) {
+                  const booking = bookingDoc.data();
+                  const courseDoc = await db.collection('courses').doc(booking.courseId).get();
+                  const course = courseDoc.exists ? courseDoc.data() : null;
+
+                  // Envoyer l'email de confirmation du cours
+                  await db.collection('mail').add({
+                    to: email.toLowerCase().trim(),
+                    template: {
+                      name: 'booking-confirmation',
+                      data: {
+                        firstName: booking.firstName || tokenData.name || '',
+                        courseName: course?.title || booking.courseName || 'Cours Fluance',
+                        courseDate: course?.date || booking.courseDate || '',
+                        courseTime: course?.time || booking.courseTime || '',
+                        location: course?.location || booking.courseLocation || '',
+                        bookingId: tokenData.bookingId,
+                        paymentMethod: booking.paymentMethod || 'Non spécifié',
+                      },
+                    },
+                  });
+                  console.log(`📧 Course confirmation email sent to ${email} after opt-in confirmation`);
+                }
+              } catch (bookingError) {
+                console.error('Error sending course confirmation email:', bookingError);
+                // Ne pas bloquer la confirmation si l'email échoue
+              }
+            }
+
             // Compter le nombre de cours pour ce contact
             const courseCountQuery = await db.collection('presentielRegistrations')
                 .where('email', '==', email.toLowerCase().trim())
@@ -6869,6 +6902,201 @@ try {
 }
 
 /**
+ * Gère le double opt-in pour une réservation de cours
+ * @param {Object} db - Instance Firestore
+ * @param {string} email - Email de l'utilisateur
+ * @param {string} firstName - Prénom
+ * @param {string} courseId - ID du cours
+ * @param {string} bookingId - ID de la réservation
+ */
+async function handleDoubleOptInForBooking(db, email, firstName, courseId, bookingId) {
+  try {
+    const normalizedEmail = email.toLowerCase().trim();
+    const mailjetApiKey = process.env.MAILJET_API_KEY;
+    const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+
+    if (!mailjetApiKey || !mailjetApiSecret) {
+      console.warn('MailJet credentials not available, skipping double opt-in');
+      return;
+    }
+
+    // Vérifier si une confirmation existe déjà
+    const existingConfirmation = await db.collection('newsletterConfirmations')
+        .where('email', '==', normalizedEmail)
+        .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
+        .limit(1)
+        .get();
+
+    if (!existingConfirmation.empty) {
+      const confirmationData = existingConfirmation.docs[0].data();
+      if (confirmationData.confirmed === true) {
+        // Déjà confirmé, pas besoin de double opt-in
+        return;
+      }
+      // Confirmation en attente, ne pas renvoyer d'email
+      return;
+    }
+
+    // Récupérer les infos du cours
+    const courseDoc = await db.collection('courses').doc(courseId).get();
+    const course = courseDoc.exists ? courseDoc.data() : null;
+
+    // Vérifier si le contact existe dans MailJet
+    const auth = Buffer.from(`${mailjetApiKey}:${mailjetApiSecret}`).toString('base64');
+    let contactExists = false;
+    try {
+      const checkUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
+      const checkResponse = await fetch(checkUrl, {
+        method: 'GET',
+        headers: {'Authorization': `Basic ${auth}`},
+      });
+      contactExists = checkResponse.ok;
+    } catch {
+      console.log('Contact does not exist in MailJet, will create it');
+    }
+
+    // Créer le contact s'il n'existe pas
+    if (!contactExists) {
+      const createUrl = 'https://api.mailjet.com/v3/REST/contact';
+      const createResponse = await fetch(createUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${auth}`,
+        },
+        body: JSON.stringify({
+          Email: normalizedEmail,
+          IsExcludedFromCampaigns: false,
+          Name: firstName || '',
+        }),
+      });
+
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        console.error('Error creating MailJet contact:', errorText);
+      } else {
+        console.log(`✅ MailJet contact created: ${normalizedEmail}`);
+      }
+    }
+
+    // Générer un token de confirmation
+    const confirmationToken = generateUniqueToken();
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + 7);
+
+    // Stocker le token dans Firestore
+    await db.collection('newsletterConfirmations').doc(confirmationToken).set({
+      email: normalizedEmail,
+      name: firstName || '',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt: expirationDate,
+      confirmed: false,
+      reminderSent: false,
+      sourceOptin: 'presentiel',
+      courseId: courseId,
+      bookingId: bookingId,
+      courseName: course?.title || 'Cours Fluance',
+      courseDate: course?.date || null,
+    });
+
+    // Envoyer l'email de confirmation
+    const baseUrl = 'https://fluance.io';
+    const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(normalizedEmail)}` +
+      `&token=${confirmationToken}&redirect=presentiel`;
+
+    // Générer l'URL Google Calendar si disponible
+    let calendarUrl = '';
+    if (course?.date && course?.time) {
+      try {
+        // Parser la date DD/MM/YYYY et l'heure HH:MM (dans le fuseau horaire Europe/Zurich)
+        const [day, month, year] = course.date.split('/');
+        const [hours, minutes] = course.time.split(':');
+
+        // Créer une date dans le fuseau horaire Europe/Zurich
+        // Format ISO pour Google Calendar: YYYYMMDDTHHMMSS avec timezone
+        const startDate = `${year}${month}${day}T${hours}${minutes}00`;
+
+        // Pour calculer la fin, créer une date locale en Europe/Zurich
+        // On utilise une approche simple : ajouter 45 minutes
+        const startTime = new Date(
+            parseInt(year), parseInt(month) - 1, parseInt(day),
+            parseInt(hours), parseInt(minutes),
+        );
+        startTime.setMinutes(startTime.getMinutes() + 45);
+        const endYear = startTime.getFullYear();
+        const endMonth = String(startTime.getMonth() + 1).padStart(2, '0');
+        const endDay = String(startTime.getDate()).padStart(2, '0');
+        const endHours = String(startTime.getHours()).padStart(2, '0');
+        const endMinutes = String(startTime.getMinutes()).padStart(2, '0');
+        const endDate = `${endYear}${endMonth}${endDay}T${endHours}${endMinutes}00`;
+
+        const calendarTitle = encodeURIComponent(course.title || 'Cours Fluance');
+        const calendarLocation = encodeURIComponent(course.location || 'le duplex danse & bien-être, Rte de Chantemerle 58d, 1763 Granges-Paccot, Suisse');
+        const calendarDetails = encodeURIComponent('Cours Fluance - le mouvement qui éveille et apaise\n\nTenue : vêtements confortables\nPlus d\'infos : https://fluance.io/presentiel/cours-hebdomadaires/');
+
+        calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+          `&text=${calendarTitle}` +
+          `&dates=${startDate}/${endDate}` +
+          `&details=${calendarDetails}` +
+          `&location=${calendarLocation}`;
+      } catch (e) {
+        console.error('Error generating calendar URL:', e);
+      }
+    }
+
+    const emailSubject = `Dernière étape${firstName ? ' ' + firstName : ''} : confirmez votre réservation`;
+
+    const emailHtml = loadEmailTemplate('confirmation-presentiel', {
+      firstName: firstName || '',
+      courseName: course?.title || 'Cours Fluance',
+      courseDate: course?.date || '',
+      courseTime: course?.time || '',
+      confirmationUrl: confirmationUrl,
+      calendarUrl: calendarUrl || 'https://fluance.io/presentiel/cours-hebdomadaires/',
+    });
+
+    const emailText = `Bonjour${firstName ? ' ' + firstName : ''},\n\n` +
+      `Merci pour votre réservation au cours "${course?.title || 'Cours Fluance'}"` +
+      `${course?.date ? ' du ' + course.date : ''}${course?.time ? ' à ' + course.time : ''} !\n\n` +
+      `Pour finaliser votre réservation et recevoir les informations importantes ` +
+      `concernant vos prochains cours, veuillez confirmer votre adresse email :\n\n` +
+      `${confirmationUrl}\n\n` +
+      `Ce lien est valide pendant 7 jours.\n\n` +
+      `À très bientôt en cours !\n\n` +
+      `Cédric de Fluance`;
+
+    await sendMailjetEmail(
+        normalizedEmail,
+        emailSubject,
+        emailHtml,
+        emailText,
+        mailjetApiKey,
+        mailjetApiSecret,
+        'support@actu.fluance.io',
+        'Cédric de Fluance',
+    );
+
+    console.log(`📧 Double opt-in email sent to ${normalizedEmail} for course booking`);
+
+    // Mettre à jour les propriétés MailJet (en attente de confirmation)
+    await updateMailjetContactProperties(
+        normalizedEmail,
+        {
+          inscrit_presentiel: 'True',
+          source_optin: 'presentiel',
+          statut: 'prospect',
+          est_client: 'False',
+        },
+        mailjetApiKey,
+        mailjetApiSecret,
+    );
+  } catch (error) {
+    console.error('Error handling double opt-in for booking:', error);
+    // Ne pas bloquer la réservation en cas d'erreur
+  }
+}
+
+/**
  * Synchronise le calendrier Google avec Firestore
  * Exécuté toutes les 30 minutes
  */
@@ -6928,8 +7156,15 @@ exports.syncPlanningManual = onRequest(
       } catch (error) {
         console.error('Error syncing calendar:', error);
         const errorMessage = error.message || 'Unknown error';
+
+        // Message d'aide spécifique pour les erreurs JSON
+        let helpMessage = '';
+        if (errorMessage.includes('JSON') || errorMessage.includes('parse')) {
+          helpMessage = ' See CORRIGER_SECRET_GOOGLE_SERVICE_ACCOUNT.md for help.';
+        }
+
         return res.status(500).json({
-          error: errorMessage,
+          error: errorMessage + helpMessage,
           details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
         });
       }
@@ -6982,7 +7217,7 @@ exports.getAvailableCourses = onRequest(
             .where('startTime', '>=', now)
             .where('status', '==', 'active')
             .orderBy('startTime', 'asc')
-            .limit(50)
+            .limit(6)
             .get();
 
         const courses = [];
@@ -7061,7 +7296,7 @@ exports.checkUserPass = onRequest(
 exports.bookCourse = onRequest(
     {
       region: 'europe-west1',
-      secrets: ['STRIPE_SECRET_KEY', 'GOOGLE_SHEET_ID', 'GOOGLE_SERVICE_ACCOUNT'],
+      secrets: ['STRIPE_SECRET_KEY', 'GOOGLE_SHEET_ID', 'GOOGLE_SERVICE_ACCOUNT', 'MAILJET_API_KEY', 'MAILJET_API_SECRET'],
       cors: true,
     },
     async (req, res) => {
@@ -7299,7 +7534,7 @@ exports.bookCourse = onRequest(
             pricingOption || 'single',
         );
 
-        // Si paiement espèces, ajouter au Google Sheet immédiatement
+        // Si paiement espèces, ajouter au Google Sheet et envoyer email
         if (result.success && result.status === 'confirmed_pending_cash') {
           try {
             const sheetId = process.env.GOOGLE_SHEET_ID;
@@ -7324,8 +7559,76 @@ exports.bookCourse = onRequest(
                   },
               );
             }
+
+            // Vérifier le statut de double opt-in et envoyer email de confirmation
+            const existingConfirmation = await db.collection('newsletterConfirmations')
+                .where('email', '==', normalizedEmail)
+                .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
+                .limit(1)
+                .get();
+
+            const isConfirmed = !existingConfirmation.empty &&
+              existingConfirmation.docs[0].data().confirmed === true;
+
+            if (isConfirmed) {
+              // Contact confirmé : envoyer email de confirmation immédiatement
+              const courseDoc = await db.collection('courses').doc(courseId).get();
+              const course = courseDoc.data();
+
+              try {
+                await db.collection('mail').add({
+                  to: normalizedEmail,
+                  template: {
+                    name: 'booking-confirmation',
+                    data: {
+                      firstName: userData.firstName,
+                      courseName: course?.title || '',
+                      courseDate: course?.date || '',
+                      courseTime: course?.time || '',
+                      location: course?.location || '',
+                      bookingId: result.bookingId,
+                      paymentMethod: 'Espèces',
+                    },
+                  },
+                });
+                console.log(`📧 Confirmation email sent to ${normalizedEmail} for cash booking`);
+              } catch (emailError) {
+                console.error('Error sending confirmation email:', emailError);
+              }
+            } else {
+              // Nouveau contact : déclencher double opt-in
+              await handleDoubleOptInForBooking(
+                  db,
+                  normalizedEmail,
+                  userData.firstName || '',
+                  courseId,
+                  result.bookingId,
+              );
+            }
           } catch (sheetError) {
             console.error('Error updating sheet:', sheetError);
+          }
+        } else if (result.success && result.status === 'pending_payment') {
+          // Pour les paiements en ligne, vérifier le double opt-in
+          // L'email de confirmation sera envoyé après paiement réussi via webhook
+          const existingConfirmation = await db.collection('newsletterConfirmations')
+              .where('email', '==', normalizedEmail)
+              .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
+              .limit(1)
+              .get();
+
+          const isConfirmed = !existingConfirmation.empty &&
+            existingConfirmation.docs[0].data().confirmed === true;
+
+          if (!isConfirmed) {
+            // Nouveau contact : déclencher double opt-in
+            await handleDoubleOptInForBooking(
+                db,
+                normalizedEmail,
+                userData.firstName || '',
+                courseId,
+                result.bookingId,
+            );
           }
         }
 

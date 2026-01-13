@@ -98,7 +98,9 @@
         return;
       }
 
-      container.innerHTML = data.courses.map(course => renderCourseCard(course)).join('');
+      // Limiter à 6 cours maximum (même si l'API en retourne plus)
+      const coursesToDisplay = data.courses.slice(0, 6);
+      container.innerHTML = coursesToDisplay.map(course => renderCourseCard(course)).join('');
 
       // Attacher les événements de clic
       container.querySelectorAll('[data-course-id]').forEach(card => {
@@ -151,14 +153,9 @@
            data-course-location="${course.location}"
            data-course-price="${course.price}"
            data-is-full="${course.isFull}">
-        <div class="flex justify-between items-start mb-3">
-          <div>
-            <h3 class="text-lg font-semibold text-[#3E3A35]">${course.title}</h3>
-            <p class="text-sm text-[#3E3A35]/60">${course.location}</p>
-          </div>
-          <span class="bg-fluance/10 text-fluance px-3 py-1 rounded-full text-sm font-medium">
-            ${course.price} CHF
-          </span>
+        <div class="mb-3">
+          <h3 class="text-lg font-semibold text-[#3E3A35]">${course.title}</h3>
+          <p class="text-sm text-[#3E3A35]/60">${course.location}</p>
         </div>
         <div class="flex items-center gap-4 text-sm text-[#3E3A35]/80 mb-4">
           <span class="flex items-center gap-1">
@@ -245,9 +242,6 @@
             <div class="w-8 h-8 rounded-full bg-fluance text-white flex items-center justify-center text-sm font-bold">1</div>
             <h4 class="text-lg font-semibold text-[#3E3A35]">Entrez votre email</h4>
           </div>
-          <p class="text-sm text-[#3E3A35]/60 mb-4">
-            Nous vérifierons si vous avez déjà un pass actif (Flow Pass ou Pass Semestriel).
-          </p>
           
           <form id="email-check-form" class="space-y-4">
             <div>
@@ -261,7 +255,7 @@
             
             <button type="submit" id="check-email-btn"
                     class="w-full py-3 bg-fluance text-white font-semibold rounded-lg hover:bg-fluance/90 transition-colors">
-              Vérifier mon compte
+              Continuer
             </button>
           </form>
         </div>
@@ -306,7 +300,7 @@
       errorContainer.classList.remove('hidden');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Vérifier mon compte';
+      btn.textContent = 'Continuer';
     }
   }
 
