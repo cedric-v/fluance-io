@@ -4,6 +4,8 @@ const htmlmin = require("html-minifier-next"); // Le paquet sécurisé
 const fs = require("fs");
 const path = require("path");
 const mjml = require("mjml");
+// Charger les variables d'environnement depuis .env
+require('dotenv').config();
 
 // PathPrefix conditionnel : vide en dev, /fluance-io en prod (GitHub Pages), vide en prod (fluance.io)
 const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "" : "";
@@ -135,6 +137,19 @@ module.exports = function(eleventyConfig) {
     </div>
   </div>
 </div>`;
+  });
+
+  // 2e-bis. Shortcode pour injecter la configuration Stripe
+  // Permet d'injecter la clé publique Stripe depuis une variable d'environnement
+  eleventyConfig.addShortcode("stripeConfig", function() {
+    const stripeKey = process.env.STRIPE_PUBLISHABLE_KEY || '';
+    // Échapper la clé pour JavaScript
+    const escapedKey = stripeKey.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    return `<script>
+  window.FLUANCE_STRIPE_CONFIG = {
+    publishableKey: '${escapedKey}'
+  };
+</script>`;
   });
 
   // 2f. Shortcode pour générer les schémas Schema.org JSON-LD

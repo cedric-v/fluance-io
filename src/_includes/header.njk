@@ -74,10 +74,12 @@
           <div class="py-2">
             {% if locale == 'en' %}
             <a href="{{ '/en/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="block px-4 py-2 hover:bg-[#E6B84A]/10 transition">Weekly Classes</a>
+            <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="block px-4 py-2 hover:bg-[#E6B84A]/10 transition">Book a Class</a>
             <a href="{{ '/en/presentiel/prochains-stages/' | relativeUrl }}" class="block px-4 py-2 hover:bg-[#E6B84A]/10 transition">Upcoming Workshops</a>
             <a href="{{ '/en/presentiel/en-entreprise/' | relativeUrl }}" class="block px-4 py-2 hover:bg-[#E6B84A]/10 transition">Corporate</a>
             {% else %}
             <a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="block px-4 py-2 hover:bg-[#E6B84A]/10 transition">Cours hebdomadaires</a>
+            <a href="{{ '/presentiel/reserver/' | relativeUrl }}" class="block px-4 py-2 hover:bg-[#E6B84A]/10 transition">Réserver un cours</a>
             <a href="{{ '/presentiel/prochains-stages/' | relativeUrl }}" class="block px-4 py-2 hover:bg-[#E6B84A]/10 transition">Prochains stages</a>
             <a href="{{ '/presentiel/en-entreprise/' | relativeUrl }}" class="block px-4 py-2 hover:bg-[#E6B84A]/10 transition">En entreprise</a>
             {% endif %}
@@ -199,10 +201,12 @@
       <div class="hidden pl-4 pb-2" data-dropdown-content="presentiel">
         {% if locale == 'en' %}
         <a href="{{ '/en/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="block py-2">Weekly Classes</a>
+        <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="block py-2">Book a Class</a>
         <a href="{{ '/en/presentiel/prochains-stages/' | relativeUrl }}" class="block py-2">Upcoming Workshops</a>
         <a href="{{ '/en/presentiel/en-entreprise/' | relativeUrl }}" class="block py-2">Corporate</a>
         {% else %}
         <a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="block py-2">Cours hebdomadaires</a>
+        <a href="{{ '/presentiel/reserver/' | relativeUrl }}" class="block py-2">Réserver un cours</a>
         <a href="{{ '/presentiel/prochains-stages/' | relativeUrl }}" class="block py-2">Prochains stages</a>
         <a href="{{ '/presentiel/en-entreprise/' | relativeUrl }}" class="block py-2">En entreprise</a>
         {% endif %}
