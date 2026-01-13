@@ -762,7 +762,7 @@
             <label class="block text-sm font-medium text-[#3E3A35] mb-3">Choisissez votre formule</label>
             <div id="pricing-options" class="space-y-3">
               ${options.map((option, index) => `
-                <label class="block p-4 border-2 rounded-lg cursor-pointer hover:border-fluance transition-colors relative ${index === 0 ? 'border-fluance bg-fluance/5' : 'border-gray-200'}">
+                <label class="block p-4 border-2 rounded-lg cursor-pointer hover:border-fluance transition-colors relative ${index === 0 ? 'border-fluance bg-fluance/5' : 'border-gray-200'}" data-pricing-id="${option.id}">
                   ${option.badge ? `<span class="absolute -top-2 -right-2 ${option.badge === 'POPULAIRE' ? 'bg-fluance' : 'bg-[#E6B84A]'} text-white text-xs px-2 py-1 rounded-full">${option.badge}</span>` : ''}
                   <input type="radio" name="pricing" value="${option.id}" class="sr-only" ${index === 0 ? 'checked' : ''}>
                   <div class="flex justify-between items-center">
@@ -770,11 +770,35 @@
                       <span class="font-semibold text-[#3E3A35]">${option.name}</span>
                       <p class="text-sm text-[#3E3A35]/60">${option.description}</p>
                     </div>
-                    <span class="text-lg font-bold text-fluance">${option.price} CHF</span>
+                    <div class="text-right">
+                      <span id="price-display-${option.id}" class="text-lg font-bold text-fluance">${option.price} CHF</span>
+                      ${option.id === 'semester_pass' ? `<div id="discount-display-${option.id}" class="text-sm text-green-600 font-semibold hidden"></div>` : ''}
+                    </div>
                   </div>
                 </label>
               `).join('')}
             </div>
+          </div>
+
+          <!-- Code partenaire (uniquement pour Pass Semestriel) -->
+          <div id="partner-code-section" class="hidden">
+            <label for="partnerCode" class="block text-sm font-medium text-[#3E3A35] mb-1">
+              ${currentLocale === 'en' ? 'Partner Code (optional)' : 'Code partenaire (optionnel)'}
+            </label>
+            <div class="flex gap-2">
+              <input type="text" 
+                     id="partnerCode" 
+                     name="partnerCode" 
+                     placeholder="${currentLocale === 'en' ? 'Enter code' : 'Entrez le code'}"
+                     class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance uppercase"
+                     maxlength="20">
+              <button type="button" 
+                      id="apply-partner-code-btn"
+                      class="px-4 py-2 bg-fluance text-white rounded-lg hover:bg-fluance/90 transition-colors font-semibold">
+                ${currentLocale === 'en' ? 'Apply' : 'Appliquer'}
+              </button>
+            </div>
+            <div id="partner-code-message" class="hidden mt-2"></div>
           </div>
 
           <!-- Infos personnelles -->
@@ -838,16 +862,170 @@
 
     // Gérer la sélection des options tarifaires
     const pricingContainer = document.getElementById('pricing-options');
+    const partnerCodeSection = document.getElementById('partner-code-section');
+    const partnerCodeInput = document.getElementById('partnerCode');
+    const applyCodeBtn = document.getElementById('apply-partner-code-btn');
+    const partnerCodeMessage = document.getElementById('partner-code-message');
+    
+    // Fonction pour afficher/masquer le champ code partenaire
+    function togglePartnerCodeField(show) {
+      if (partnerCodeSection) {
+        if (show) {
+          partnerCodeSection.classList.remove('hidden');
+        } else {
+          partnerCodeSection.classList.add('hidden');
+          // Réinitialiser le code et la remise
+          if (partnerCodeInput) partnerCodeInput.value = '';
+          if (partnerCodeMessage) {
+            partnerCodeMessage.classList.add('hidden');
+            partnerCodeMessage.textContent = '';
+          }
+          // Réinitialiser le prix affiché
+          const semesterPassPrice = document.getElementById('price-display-semester_pass');
+          const discountDisplay = document.getElementById('discount-display-semester_pass');
+          if (semesterPassPrice) semesterPassPrice.textContent = '340 CHF';
+          if (discountDisplay) {
+            discountDisplay.classList.add('hidden');
+            discountDisplay.textContent = '';
+          }
+        }
+      }
+    }
+    
+    // Fonction pour valider et appliquer le code partenaire
+    async function validatePartnerCode(code) {
+      if (!code || !code.trim()) {
+        return { valid: false, message: currentLocale === 'en' ? 'Please enter a code' : 'Veuillez entrer un code' };
+      }
+      
+      try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/validatePartnerCode?code=${encodeURIComponent(code.toUpperCase().trim())}`);
+        const data = await response.json();
+        
+        if (data.valid) {
+          return {
+            valid: true,
+            discount: data.discount || 0,
+            discountPercent: data.discountPercent || 0,
+            message: data.message || (currentLocale === 'en' 
+              ? `Discount of ${data.discountPercent}% applied!` 
+              : `Remise de ${data.discountPercent}% appliquée !`)
+          };
+        } else {
+          return {
+            valid: false,
+            message: data.message || (currentLocale === 'en' 
+              ? 'Invalid code' 
+              : 'Code invalide')
+          };
+        }
+      } catch (error) {
+        console.error('Error validating partner code:', error);
+        return {
+          valid: false,
+          message: currentLocale === 'en' 
+            ? 'Error validating code. Please try again.' 
+            : 'Erreur lors de la validation du code. Veuillez réessayer.'
+        };
+      }
+    }
+    
+    // Fonction pour appliquer la remise au prix affiché
+    function applyDiscount(discountPercent) {
+      const originalPrice = 340; // Prix du Pass Semestriel
+      const discountAmount = (originalPrice * discountPercent) / 100;
+      const finalPrice = originalPrice - discountAmount;
+      
+      const priceDisplay = document.getElementById('price-display-semester_pass');
+      const discountDisplay = document.getElementById('discount-display-semester_pass');
+      
+      if (priceDisplay) {
+        priceDisplay.innerHTML = `
+          <span class="line-through text-gray-400 text-base">${originalPrice} CHF</span>
+          <span class="ml-2">${finalPrice.toFixed(2)} CHF</span>
+        `;
+      }
+      
+      if (discountDisplay) {
+        discountDisplay.textContent = `-${discountPercent}%`;
+        discountDisplay.classList.remove('hidden');
+      }
+    }
+    
     if (pricingContainer) {
-      pricingContainer.querySelectorAll('label').forEach(label => {
-        label.addEventListener('click', () => {
+      pricingContainer.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          // Mettre à jour les styles des labels
           pricingContainer.querySelectorAll('label').forEach(l => {
             l.classList.remove('border-fluance', 'bg-fluance/5');
             l.classList.add('border-gray-200');
           });
-          label.classList.remove('border-gray-200');
-          label.classList.add('border-fluance', 'bg-fluance/5');
+          const selectedLabel = radio.closest('label');
+          selectedLabel.classList.remove('border-gray-200');
+          selectedLabel.classList.add('border-fluance', 'bg-fluance/5');
+          
+          // Afficher/masquer le champ code partenaire
+          togglePartnerCodeField(radio.value === 'semester_pass');
         });
+      });
+      
+      // Gérer aussi les clics sur les labels
+      pricingContainer.querySelectorAll('label').forEach(label => {
+        label.addEventListener('click', () => {
+          const radio = label.querySelector('input[type="radio"]');
+          if (radio) {
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change'));
+          }
+        });
+      });
+      
+      // Vérifier l'option sélectionnée au chargement
+      const selectedRadio = pricingContainer.querySelector('input[type="radio"]:checked');
+      if (selectedRadio && selectedRadio.value === 'semester_pass') {
+        togglePartnerCodeField(true);
+      }
+    }
+    
+    // Gérer l'application du code partenaire
+    if (applyCodeBtn && partnerCodeInput) {
+      applyCodeBtn.addEventListener('click', async () => {
+        const code = partnerCodeInput.value.trim().toUpperCase();
+        if (!code) {
+          partnerCodeMessage.textContent = currentLocale === 'en' 
+            ? 'Please enter a code' 
+            : 'Veuillez entrer un code';
+          partnerCodeMessage.className = 'mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800';
+          partnerCodeMessage.classList.remove('hidden');
+          return;
+        }
+        
+        applyCodeBtn.disabled = true;
+        applyCodeBtn.textContent = currentLocale === 'en' ? 'Checking...' : 'Vérification...';
+        
+        const result = await validatePartnerCode(code);
+        
+        applyCodeBtn.disabled = false;
+        applyCodeBtn.textContent = currentLocale === 'en' ? 'Apply' : 'Appliquer';
+        
+        if (result.valid) {
+          partnerCodeMessage.textContent = result.message;
+          partnerCodeMessage.className = 'mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-800';
+          partnerCodeMessage.classList.remove('hidden');
+          applyDiscount(result.discountPercent);
+        } else {
+          partnerCodeMessage.textContent = result.message;
+          partnerCodeMessage.className = 'mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800';
+          partnerCodeMessage.classList.remove('hidden');
+        }
+      });
+      
+      // Permettre d'appliquer le code avec Enter
+      partnerCodeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          applyCodeBtn.click();
+        }
       });
     }
 
@@ -1042,6 +1220,7 @@
     errorContainer?.classList.add('hidden');
 
     const formData = new FormData(form);
+    const partnerCode = formData.get('partnerCode')?.trim().toUpperCase() || null;
     const data = {
       courseId: currentCourseId,
       email: formData.get('email'),
@@ -1050,6 +1229,7 @@
       phone: formData.get('phone'),
       paymentMethod: formData.get('paymentMethod') || 'card',
       pricingOption: formData.get('pricing') || formData.get('pricingOption') || 'single',
+      partnerCode: partnerCode || undefined, // Inclure seulement si présent
     };
 
     try {
@@ -1168,7 +1348,9 @@
       const {error} = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/presentiel/reservation-confirmee/`,
+          return_url: currentLocale === 'en' 
+            ? `${window.location.origin}/en/presentiel/booking-confirmed/`
+            : `${window.location.origin}/presentiel/reservation-confirmee/`,
         },
       });
 
