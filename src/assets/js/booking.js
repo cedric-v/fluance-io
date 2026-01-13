@@ -149,12 +149,98 @@
   }
 
   /**
+   * Détermine la couleur et le style d'affichage selon la disponibilité
+   * Basé sur les bonnes pratiques UX/marketing pour créer une urgence appropriée
+   * @param {number} spotsRemaining - Nombre de places restantes
+   * @param {number} maxCapacity - Capacité maximale
+   * @param {boolean} isFull - Si le cours est complet
+   * @returns {Object} - { colorClass, bgClass, text, urgency }
+   */
+  function getAvailabilityStyle(spotsRemaining, maxCapacity, isFull) {
+    if (isFull || spotsRemaining <= 0) {
+      return {
+        colorClass: 'text-red-600',
+        bgClass: 'bg-red-50',
+        borderClass: 'border-red-200',
+        text: 'Complet',
+        urgency: 'high',
+        icon: '⚠️'
+      };
+    }
+
+    // Calculer le pourcentage de disponibilité (adaptatif selon la capacité)
+    const availabilityPercent = (spotsRemaining / maxCapacity) * 100;
+    const spotsCount = spotsRemaining;
+
+    // Seuils basés sur le pourcentage ET le nombre absolu (pour petits groupes)
+    // Rouge : < 20% OU < 3 places (urgence maximale)
+    if (availabilityPercent < 20 || spotsCount < 3) {
+      return {
+        colorClass: 'text-red-600',
+        bgClass: 'bg-red-50',
+        borderClass: 'border-red-200',
+        text: spotsCount === 1 
+          ? `Dernière place !` 
+          : `${spotsCount} places restantes`,
+        urgency: 'critical',
+        icon: '🔥'
+      };
+    }
+
+    // Orange : 20-40% OU 3-5 places (attention requise)
+    if (availabilityPercent < 40 || spotsCount <= 5) {
+      return {
+        colorClass: 'text-orange-600',
+        bgClass: 'bg-orange-50',
+        borderClass: 'border-orange-200',
+        text: `${spotsCount} place${spotsCount > 1 ? 's' : ''} restante${spotsCount > 1 ? 's' : ''}`,
+        urgency: 'high',
+        icon: '⚡'
+      };
+    }
+
+    // Jaune/Amber : 40-70% OU 6-10 places (modéré)
+    if (availabilityPercent < 70 || spotsCount <= 10) {
+      return {
+        colorClass: 'text-amber-600',
+        bgClass: 'bg-amber-50',
+        borderClass: 'border-amber-200',
+        text: `${spotsCount} place${spotsCount > 1 ? 's' : ''} disponible${spotsCount > 1 ? 's' : ''}`,
+        urgency: 'medium',
+        icon: '✨'
+      };
+    }
+
+    // Vert : > 70% ET > 10 places (beaucoup de disponibilité)
+    return {
+      colorClass: 'text-green-600',
+      bgClass: 'bg-green-50',
+      borderClass: 'border-green-200',
+      text: `${spotsCount} place${spotsCount > 1 ? 's' : ''} disponible${spotsCount > 1 ? 's' : ''}`,
+      urgency: 'low',
+      icon: '✓'
+    };
+  }
+
+  /**
    * Génère le HTML d'une carte de cours
    */
   function renderCourseCard(course) {
+    const availability = getAvailabilityStyle(
+      course.spotsRemaining, 
+      course.maxCapacity, 
+      course.isFull
+    );
+
     const spotsText = course.isFull 
-      ? '<span class="text-red-500 font-semibold">Complet</span>'
-      : `<span class="text-green-600 font-semibold">${course.spotsRemaining} place${course.spotsRemaining > 1 ? 's' : ''}</span>`;
+      ? `<span class="${availability.colorClass} font-semibold flex items-center gap-1">
+           <span>${availability.icon}</span>
+           <span>${availability.text}</span>
+         </span>`
+      : `<span class="${availability.colorClass} font-semibold flex items-center gap-1">
+           <span>${availability.icon}</span>
+           <span>${availability.text}</span>
+         </span>`;
 
     const buttonText = course.isFull ? 'Liste d\'attente' : 'Réserver';
     const buttonClass = course.isFull 
@@ -193,11 +279,11 @@
             </svg>
             ${course.time}
           </span>
+          <span class="px-3 py-1.5 rounded-full ${availability.bgClass} border ${availability.borderClass} ${availability.urgency === 'critical' ? 'animate-pulse' : ''}">
+            ${spotsText}
+          </span>
         </div>
-        <div class="flex justify-between items-center">
-          <div class="text-sm">
-            ${spotsText} disponible${course.spotsRemaining > 1 ? 's' : ''}
-          </div>
+        <div class="flex justify-end items-center">
           <button class="px-4 py-2 rounded-full font-semibold text-sm ${buttonClass} transition-colors">
             ${buttonText}
           </button>
