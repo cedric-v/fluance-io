@@ -363,7 +363,7 @@ module.exports = function(eleventyConfig) {
         },
         "url": pageUrl,
         "telephone": "+33972133388",
-        "priceRange": "CHF 25 - CHF 220"
+        "priceRange": "CHF 25 - CHF 340"
       };
       schemas.push(localBusinessSchema);
     }

@@ -6721,3 +6721,792 @@ exports.registerPresentielCourse = onRequest(
       }
     },
 );
+
+// =============================================================================
+// SYSTÈME DE RÉSERVATION DE COURS (Alternative MomoYoga)
+// =============================================================================
+
+// Import des services de réservation
+let googleService;
+let bookingService;
+let passService;
+
+try {
+  googleService = require('./services/googleService').googleService;
+  bookingService = require('./services/bookingService');
+  passService = require('./services/passService');
+} catch (e) {
+  console.warn('Booking services not loaded:', e.message);
+}
+
+/**
+ * Synchronise le calendrier Google avec Firestore
+ * Exécuté toutes les 30 minutes
+ */
+exports.syncPlanning = onSchedule(
+    {
+      schedule: 'every 30 minutes',
+      region: 'europe-west1',
+      secrets: ['GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_CALENDAR_ID'],
+    },
+    async (_event) => {
+      if (!googleService) {
+        console.error('GoogleService not available');
+        return;
+      }
+
+      const calendarId = process.env.GOOGLE_CALENDAR_ID;
+      if (!calendarId) {
+        console.error('GOOGLE_CALENDAR_ID not configured');
+        return;
+      }
+
+      try {
+        const result = await googleService.syncCalendarToFirestore(db, calendarId);
+        console.log(`📅 Sync completed: ${result.synced} synced, ${result.errors} errors`);
+      } catch (error) {
+        console.error('Error syncing calendar:', error);
+      }
+    },
+);
+
+/**
+ * Synchronise manuellement le calendrier (pour tests)
+ */
+exports.syncPlanningManual = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_CALENDAR_ID'],
+      cors: true,
+    },
+    async (req, res) => {
+      if (!googleService) {
+        return res.status(500).json({error: 'GoogleService not available'});
+      }
+
+      const calendarId = process.env.GOOGLE_CALENDAR_ID;
+      if (!calendarId) {
+        return res.status(500).json({error: 'GOOGLE_CALENDAR_ID not configured'});
+      }
+
+      try {
+        const result = await googleService.syncCalendarToFirestore(db, calendarId);
+        return res.json({
+          success: true,
+          synced: result.synced,
+          errors: result.errors,
+        });
+      } catch (error) {
+        console.error('Error syncing calendar:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);
+
+/**
+ * Retourne le statut d'un cours (places disponibles)
+ * Utilisé par le frontend pour affichage temps réel
+ */
+exports.getCourseStatus = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      if (!bookingService) {
+        return res.status(500).json({error: 'Booking service not available'});
+      }
+
+      const courseId = req.query.courseId || req.body.courseId;
+
+      if (!courseId) {
+        return res.status(400).json({error: 'courseId is required'});
+      }
+
+      try {
+        const status = await bookingService.getCourseAvailability(db, courseId);
+        return res.json(status);
+      } catch (error) {
+        console.error('Error getting course status:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);
+
+/**
+ * Liste tous les cours disponibles
+ */
+exports.getAvailableCourses = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      try {
+        const now = new Date();
+
+        const coursesSnapshot = await db.collection('courses')
+            .where('startTime', '>=', now)
+            .where('status', '==', 'active')
+            .orderBy('startTime', 'asc')
+            .limit(50)
+            .get();
+
+        const courses = [];
+
+        for (const doc of coursesSnapshot.docs) {
+          const course = doc.data();
+
+          // Compter les participants
+          const bookingsSnapshot = await db.collection('bookings')
+              .where('courseId', '==', doc.id)
+              .where('status', 'in', ['confirmed', 'pending_cash'])
+              .get();
+
+          const participantCount = bookingsSnapshot.size;
+          const spotsRemaining = course.maxCapacity - participantCount;
+
+          courses.push({
+            id: doc.id,
+            title: course.title,
+            date: course.date,
+            time: course.time,
+            location: course.location,
+            maxCapacity: course.maxCapacity,
+            spotsRemaining: spotsRemaining,
+            isFull: spotsRemaining <= 0,
+            price: course.price || 25,
+          });
+        }
+
+        return res.json({
+          success: true,
+          courses: courses,
+        });
+      } catch (error) {
+        console.error('Error getting courses:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);
+
+/**
+ * Vérifie si un utilisateur a un pass actif (Flow Pass ou Semestriel)
+ * Appelé par le frontend pour afficher le statut avant réservation
+ */
+exports.checkUserPass = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      if (!passService) {
+        return res.status(500).json({error: 'Pass service not available'});
+      }
+
+      const email = req.query.email || req.body.email;
+
+      if (!email) {
+        return res.status(400).json({error: 'email is required'});
+      }
+
+      try {
+        const result = await passService.checkUserPass(db, email);
+        return res.json(result);
+      } catch (error) {
+        console.error('Error checking user pass:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);
+
+/**
+ * Traite une réservation de cours
+ * Gère la transaction atomique et la création du paiement
+ * Supporte les pass existants (Flow Pass, Semestriel)
+ */
+exports.bookCourse = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['STRIPE_SECRET_KEY', 'GOOGLE_SHEET_ID', 'GOOGLE_SERVICE_ACCOUNT'],
+      cors: true,
+    },
+    async (req, res) => {
+      if (!bookingService) {
+        return res.status(500).json({error: 'Booking service not available'});
+      }
+
+      if (req.method !== 'POST') {
+        return res.status(405).json({error: 'Method not allowed'});
+      }
+
+      const {
+        courseId,
+        email,
+        firstName,
+        lastName,
+        phone,
+        paymentMethod,
+        pricingOption,
+        usePass, // true si l'utilisateur veut utiliser son pass existant
+        passId, // ID du pass à utiliser (optionnel)
+      } = req.body;
+
+      // Validation
+      if (!courseId || !email) {
+        return res.status(400).json({
+          error: 'Missing required fields',
+          required: ['courseId', 'email'],
+        });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Initialiser Stripe
+      let stripe = null;
+      if (process.env.STRIPE_SECRET_KEY) {
+        stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+      }
+
+      try {
+        const userData = {
+          email: normalizedEmail,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          phone: phone || '',
+          ipAddress: req.ip || req.headers['x-forwarded-for'] || '',
+          userAgent: req.headers['user-agent'] || '',
+        };
+
+        // ============================================================
+        // GESTION DES PASS EXISTANTS
+        // ============================================================
+
+        // Si l'utilisateur veut utiliser son pass
+        if (usePass && passService) {
+          const passStatus = await passService.checkUserPass(db, normalizedEmail);
+
+          if (!passStatus.hasActivePass) {
+            return res.status(400).json({
+              success: false,
+              error: 'NO_ACTIVE_PASS',
+              message: passStatus.message || 'Vous n\'avez pas de pass actif.',
+            });
+          }
+
+          const activePass = passStatus.pass;
+          const targetPassId = passId || activePass.passId;
+
+          // Vérifier la disponibilité du cours
+          const courseDoc = await db.collection('courses').doc(courseId).get();
+          if (!courseDoc.exists) {
+            return res.status(404).json({error: 'Course not found'});
+          }
+          const course = courseDoc.data();
+
+          // Vérifier les places disponibles
+          const bookingsSnapshot = await db.collection('bookings')
+              .where('courseId', '==', courseId)
+              .where('status', 'in', ['confirmed', 'pending_cash'])
+              .get();
+
+          const participantCount = bookingsSnapshot.size;
+          if (participantCount >= course.maxCapacity) {
+            // Ajouter à la liste d'attente
+            const waitlistData = {
+              courseId: courseId,
+              email: normalizedEmail,
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              phone: userData.phone,
+              status: 'waiting',
+              passId: targetPassId,
+              createdAt: new Date(),
+            };
+            const waitlistRef = await db.collection('waitlist').add(waitlistData);
+
+            return res.json({
+              success: true,
+              status: 'waitlisted',
+              waitlistId: waitlistRef.id,
+              message: 'Le cours est complet. Vous avez été ajouté à la liste d\'attente.',
+            });
+          }
+
+          // Vérifier si déjà inscrit
+          const existingBooking = await db.collection('bookings')
+              .where('courseId', '==', courseId)
+              .where('email', '==', normalizedEmail)
+              .where('status', 'in', ['confirmed', 'pending_cash', 'pending'])
+              .limit(1)
+              .get();
+
+          if (!existingBooking.empty) {
+            return res.status(400).json({
+              success: false,
+              error: 'ALREADY_BOOKED',
+              message: 'Vous êtes déjà inscrit à ce cours.',
+            });
+          }
+
+          // Utiliser une séance du pass (sauf si illimité)
+          let sessionResult = null;
+          if (activePass.passType !== 'semester_pass' || activePass.sessionsRemaining !== -1) {
+            sessionResult = await passService.usePassSession(db, targetPassId, courseId);
+          }
+
+          // Créer la réservation (confirmée directement, pas de paiement)
+          const bookingId = db.collection('bookings').doc().id;
+          const bookingData = {
+            bookingId: bookingId,
+            courseId: courseId,
+            courseName: course.title,
+            courseDate: course.date,
+            courseTime: course.time,
+            courseLocation: course.location,
+            email: normalizedEmail,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            phone: userData.phone,
+            paymentMethod: 'pass',
+            pricingOption: activePass.passType,
+            passId: targetPassId,
+            amount: 0, // Pas de paiement
+            currency: 'CHF',
+            status: 'confirmed',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            paidAt: new Date(),
+            notes: activePass.passType === 'semester_pass' ?
+              'Pass Semestriel' :
+              `Flow Pass (séance ${
+                activePass.sessionsTotal - (sessionResult?.sessionsRemaining || 0)
+              }/${activePass.sessionsTotal})`,
+          };
+
+          await db.collection('bookings').doc(bookingId).set(bookingData);
+
+          // Mettre à jour le compteur de participants
+          await db.collection('courses').doc(courseId).update({
+            participantCount: participantCount + 1,
+          });
+
+          // Ajouter au Google Sheet
+          try {
+            const sheetId = process.env.GOOGLE_SHEET_ID;
+            if (sheetId && googleService) {
+              await googleService.appendUserToSheet(
+                  sheetId,
+                  courseId,
+                  userData,
+                  {
+                    courseName: course.title,
+                    courseDate: course.date,
+                    courseTime: course.time,
+                    paymentMethod: activePass.passType === 'semester_pass' ? 'Pass Semestriel' : 'Flow Pass',
+                    paymentStatus: 'Pass utilisé',
+                    amount: '0 CHF',
+                    status: 'Confirmé',
+                    bookingId: bookingId,
+                    notes: bookingData.notes,
+                  },
+              );
+            }
+          } catch (sheetError) {
+            console.error('Error updating sheet:', sheetError);
+          }
+
+          // Envoyer email de confirmation
+          try {
+            await db.collection('mail').add({
+              to: normalizedEmail,
+              template: {
+                name: 'booking-confirmation',
+                data: {
+                  firstName: userData.firstName,
+                  courseName: course.title,
+                  courseDate: course.date,
+                  courseTime: course.time,
+                  location: course.location,
+                  bookingId: bookingId,
+                  passType: activePass.passType,
+                  sessionsRemaining: sessionResult?.sessionsRemaining,
+                },
+              },
+            });
+          } catch (emailError) {
+            console.error('Error sending email:', emailError);
+          }
+
+          return res.json({
+            success: true,
+            status: 'confirmed',
+            bookingId: bookingId,
+            usedPass: true,
+            passType: activePass.passType,
+            sessionsRemaining: sessionResult?.sessionsRemaining ?? -1,
+            message: activePass.passType === 'semester_pass' ?
+              'Réservation confirmée avec votre Pass Semestriel !' :
+              `Réservation confirmée ! Il vous reste ${
+                sessionResult?.sessionsRemaining
+              } séance(s) sur votre Flow Pass.`,
+          });
+        }
+
+        // ============================================================
+        // NOUVELLE RÉSERVATION AVEC PAIEMENT
+        // ============================================================
+
+        const result = await bookingService.processBooking(
+            db,
+            stripe,
+            courseId,
+            userData,
+            paymentMethod || 'card',
+            pricingOption || 'single',
+        );
+
+        // Si paiement espèces, ajouter au Google Sheet immédiatement
+        if (result.success && result.status === 'confirmed_pending_cash') {
+          try {
+            const sheetId = process.env.GOOGLE_SHEET_ID;
+            if (sheetId && googleService) {
+              const courseDoc = await db.collection('courses').doc(courseId).get();
+              const course = courseDoc.data();
+
+              await googleService.appendUserToSheet(
+                  sheetId,
+                  courseId,
+                  userData,
+                  {
+                    courseName: course?.title || '',
+                    courseDate: course?.date || '',
+                    courseTime: course?.time || '',
+                    paymentMethod: 'Espèces',
+                    paymentStatus: 'À régler sur place',
+                    amount: (course?.price || 25) + ' CHF',
+                    status: 'Confirmé (espèces)',
+                    bookingId: result.bookingId,
+                    notes: 'Paiement en espèces à régler sur place',
+                  },
+              );
+            }
+          } catch (sheetError) {
+            console.error('Error updating sheet:', sheetError);
+          }
+        }
+
+        return res.json(result);
+      } catch (error) {
+        console.error('Error processing booking:', error);
+        return res.status(500).json({
+          success: false,
+          error: error.message,
+        });
+      }
+    },
+);
+
+/**
+ * Webhook Stripe pour les réservations de cours
+ * Gère les confirmations de paiement (card, TWINT, SEPA)
+ */
+exports.stripeBookingWebhook = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['STRIPE_SECRET_KEY', 'STRIPE_BOOKING_WEBHOOK_SECRET', 'GOOGLE_SHEET_ID', 'GOOGLE_SERVICE_ACCOUNT'],
+    },
+    async (req, res) => {
+      if (!bookingService) {
+        return res.status(500).send('Booking service not available');
+      }
+
+      const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+      const webhookSecret = process.env.STRIPE_BOOKING_WEBHOOK_SECRET;
+
+      if (!stripeSecretKey || !webhookSecret) {
+        console.error('Stripe secrets not configured');
+        return res.status(500).send('Stripe not configured');
+      }
+
+      const stripe = require('stripe')(stripeSecretKey);
+      const sig = req.headers['stripe-signature'];
+
+      let event;
+      try {
+        event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
+      } catch (err) {
+        console.error('Webhook signature verification failed:', err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+      }
+
+      // Gérer les événements
+      switch (event.type) {
+        case 'payment_intent.succeeded': {
+          const paymentIntent = event.data.object;
+          const bookingId = paymentIntent.metadata?.bookingId;
+          const passType = paymentIntent.metadata?.passType;
+          const customerEmail = paymentIntent.metadata?.email ||
+              paymentIntent.receipt_email;
+
+          // Cas 1: Réservation de cours simple
+          if (bookingId && paymentIntent.metadata?.type === 'course_booking') {
+            console.log(`✅ Payment succeeded for booking ${bookingId}`);
+            const result = await bookingService.confirmBookingPayment(
+                db,
+                bookingId,
+                paymentIntent.id,
+            );
+            console.log('Confirmation result:', result);
+          }
+
+          // Cas 2: Achat d'un Flow Pass
+          if (passType === 'flow_pass' && customerEmail && passService) {
+            console.log(`✅ Flow Pass purchased for ${customerEmail}`);
+            try {
+              const pass = await passService.createUserPass(db, customerEmail, 'flow_pass', {
+                stripePaymentIntentId: paymentIntent.id,
+                firstName: paymentIntent.metadata?.firstName || '',
+                lastName: paymentIntent.metadata?.lastName || '',
+                phone: paymentIntent.metadata?.phone || '',
+              });
+              console.log(`✅ Flow Pass created: ${pass.passId}`);
+
+              // Envoyer email de confirmation
+              await db.collection('mail').add({
+                to: customerEmail,
+                template: {
+                  name: 'pass-purchase-confirmation',
+                  data: {
+                    firstName: paymentIntent.metadata?.firstName || '',
+                    passType: 'Flow Pass',
+                    sessions: 10,
+                    validityMonths: 12,
+                    passId: pass.passId,
+                  },
+                },
+              });
+            } catch (passError) {
+              console.error('Error creating Flow Pass:', passError);
+            }
+          }
+          break;
+        }
+
+        case 'checkout.session.completed': {
+          const session = event.data.object;
+          const passType = session.metadata?.passType;
+          const customerEmail = session.customer_details?.email ||
+              session.customer_email ||
+              session.metadata?.email;
+
+          // Achat d'un Pass via Checkout Session
+          if (passType && customerEmail && passService) {
+            console.log(`✅ ${passType} purchased via Checkout for ${customerEmail}`);
+
+            if (passType === 'flow_pass') {
+              try {
+                const pass = await passService.createUserPass(db, customerEmail, 'flow_pass', {
+                  stripePaymentIntentId: session.payment_intent,
+                  firstName: session.metadata?.firstName || session.customer_details?.name || '',
+                  lastName: session.metadata?.lastName || '',
+                  phone: session.customer_details?.phone || '',
+                });
+                console.log(`✅ Flow Pass created: ${pass.passId}`);
+              } catch (passError) {
+                console.error('Error creating Flow Pass:', passError);
+              }
+            }
+          }
+          break;
+        }
+
+        case 'invoice.paid': {
+          // Gestion des abonnements (Pass Semestriel)
+          const invoice = event.data.object;
+          const subscriptionId = invoice.subscription;
+          const customerEmail = invoice.customer_email;
+
+          if (subscriptionId && passService) {
+            // Vérifier si c'est un nouveau pass ou un renouvellement
+            const existingPass = await db.collection('userPasses')
+                .where('stripeSubscriptionId', '==', subscriptionId)
+                .limit(1)
+                .get();
+
+            if (existingPass.empty) {
+              // Nouveau Pass Semestriel
+              console.log(`✅ New Semester Pass for ${customerEmail}`);
+              try {
+                const pass = await passService.createUserPass(db, customerEmail, 'semester_pass', {
+                  stripeSubscriptionId: subscriptionId,
+                  stripePaymentIntentId: invoice.payment_intent,
+                  firstName: invoice.customer_name || '',
+                });
+                console.log(`✅ Semester Pass created: ${pass.passId}`);
+
+                // Envoyer email de confirmation
+                await db.collection('mail').add({
+                  to: customerEmail,
+                  template: {
+                    name: 'pass-purchase-confirmation',
+                    data: {
+                      firstName: invoice.customer_name || '',
+                      passType: 'Pass Semestriel',
+                      sessions: -1, // Illimité
+                      validityMonths: 6,
+                      isRecurring: true,
+                    },
+                  },
+                });
+              } catch (passError) {
+                console.error('Error creating Semester Pass:', passError);
+              }
+            } else {
+              // Renouvellement du Pass Semestriel
+              console.log(`✅ Semester Pass renewed for ${customerEmail}`);
+              try {
+                await passService.renewSemesterPass(db, subscriptionId);
+              } catch (renewError) {
+                console.error('Error renewing Semester Pass:', renewError);
+              }
+            }
+          }
+          break;
+        }
+
+        case 'customer.subscription.deleted': {
+          // Annulation de l'abonnement (Pass Semestriel)
+          const subscription = event.data.object;
+          console.log(`⚠️ Subscription cancelled: ${subscription.id}`);
+
+          if (passService) {
+            try {
+              await passService.cancelSemesterPass(db, subscription.id);
+            } catch (cancelError) {
+              console.error('Error cancelling Semester Pass:', cancelError);
+            }
+          }
+          break;
+        }
+
+        case 'payment_intent.payment_failed': {
+          const paymentIntent = event.data.object;
+          const bookingId = paymentIntent.metadata?.bookingId;
+
+          if (bookingId) {
+            console.log(`❌ Payment failed for booking ${bookingId}`);
+            // Mettre à jour le statut de la réservation
+            await db.collection('bookings').doc(bookingId).update({
+              status: 'payment_failed',
+              paymentError: paymentIntent.last_payment_error?.message || 'Payment failed',
+              updatedAt: new Date(),
+            });
+          }
+          break;
+        }
+
+        case 'charge.dispute.created': {
+          const dispute = event.data.object;
+          console.log('⚠️ Dispute created:', dispute.id);
+          // Loguer pour traitement manuel
+          break;
+        }
+
+        default:
+          console.log(`Unhandled event type: ${event.type}`);
+      }
+
+      return res.json({received: true});
+    },
+);
+
+/**
+ * Annule une réservation
+ */
+exports.cancelCourseBooking = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['STRIPE_SECRET_KEY'],
+      cors: true,
+    },
+    async (req, res) => {
+      if (!bookingService) {
+        return res.status(500).json({error: 'Booking service not available'});
+      }
+
+      if (req.method !== 'POST') {
+        return res.status(405).json({error: 'Method not allowed'});
+      }
+
+      const {bookingId, email, reason} = req.body;
+
+      if (!bookingId || !email) {
+        return res.status(400).json({error: 'bookingId and email are required'});
+      }
+
+      // Vérifier que l'email correspond à la réservation
+      const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+      if (!bookingDoc.exists) {
+        return res.status(404).json({error: 'Booking not found'});
+      }
+
+      const booking = bookingDoc.data();
+      if (booking.email.toLowerCase() !== email.toLowerCase()) {
+        return res.status(403).json({error: 'Email does not match booking'});
+      }
+
+      let stripe = null;
+      if (process.env.STRIPE_SECRET_KEY) {
+        stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+      }
+
+      try {
+        const result = await bookingService.cancelBooking(db, stripe, bookingId, reason);
+        return res.json(result);
+      } catch (error) {
+        console.error('Error cancelling booking:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);
+
+/**
+ * Récupère les réservations d'un utilisateur
+ */
+exports.getUserBookings = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      const email = req.query.email || req.body.email;
+
+      if (!email) {
+        return res.status(400).json({error: 'email is required'});
+      }
+
+      try {
+        const bookingsSnapshot = await db.collection('bookings')
+            .where('email', '==', email.toLowerCase())
+            .orderBy('createdAt', 'desc')
+            .limit(20)
+            .get();
+
+        const bookings = bookingsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
+          paidAt: doc.data().paidAt?.toDate?.() || doc.data().paidAt,
+        }));
+
+        return res.json({
+          success: true,
+          bookings: bookings,
+        });
+      } catch (error) {
+        console.error('Error getting user bookings:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);

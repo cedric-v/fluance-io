@@ -64,10 +64,20 @@ permalink: /presentiel/cours-hebdomadaires/
             <p class="text-[#3E3A35]">Liberté totale.</p>
           </div>
           <div class="border-l-4 border-fluance pl-4">
-            <h4 class="text-lg font-semibold text-fluance mb-2">Le Flow Pass : 220 CHF</h4>
-            <p class="text-[#3E3A35]">Pour une pratique régulière, profitez de 10 séances + 1 offerte.</p>
+            <h4 class="text-lg font-semibold text-fluance mb-2">Le Flow Pass : 210 CHF</h4>
+            <p class="text-[#3E3A35]">Pour une pratique régulière, profitez de 10 séances.</p>
             <p class="text-[#3E3A35] mt-2">
               Votre carte est valable durant 12 mois pour vous laisser le temps de pratiquer à votre rythme.
+            </p>
+          </div>
+          <div class="border-l-4 border-[#E6B84A] pl-4 bg-[#E6B84A]/5 py-3 -ml-4 pl-8 rounded-r-lg">
+            <div class="flex items-center gap-2 mb-2">
+              <h4 class="text-lg font-semibold text-fluance">Pass Semestriel : 340 CHF / 6 mois</h4>
+              <span class="bg-fluance text-white text-xs px-2 py-0.5 rounded-full">ILLIMITÉ</span>
+            </div>
+            <p class="text-[#3E3A35]">Accès illimité à tous les cours pendant 6 mois.</p>
+            <p class="text-[#3E3A35] mt-2">
+              Renouvellement automatique. Annulable à tout moment avant la fin de la période.
             </p>
           </div>
         </div>

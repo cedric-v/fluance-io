@@ -64,8 +64,8 @@ permalink: /en/presentiel/cours-hebdomadaires/
             <p class="text-[#3E3A35]">Total freedom.</p>
           </div>
           <div class="border-l-4 border-fluance pl-4">
-            <h4 class="text-lg font-semibold text-fluance mb-2">Flow Pass: 220 CHF</h4>
-            <p class="text-[#3E3A35]">For regular practice, enjoy 10 sessions + 1 free.</p>
+            <h4 class="text-lg font-semibold text-fluance mb-2">Flow Pass: 210 CHF</h4>
+            <p class="text-[#3E3A35]">For regular practice, enjoy 10 sessions.</p>
             <p class="text-[#3E3A35] mt-2">
               Your card is valid for 12 months to give you time to practice at your own pace.
             </p>
