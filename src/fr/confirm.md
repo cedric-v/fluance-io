@@ -229,10 +229,9 @@ eleventyExcludeFromCollections: true
 
         // Mettre à jour le contenu selon le type d'opt-in
         if (target === 'presentiel' && successDescription && successSubtext && successCta && successCtaText) {
-          successDescription.textContent = 'Merci d\'avoir confirmé votre inscription aux cours Fluance en présentiel !';
-          successSubtext.textContent = 'Vous recevrez désormais les informations importantes concernant vos prochains cours.';
-          successCta.href = '/presentiel/confirmation/';
-          successCtaText.textContent = 'Voir les informations pratiques';
+          // Rediriger directement vers la page de confirmation présentiel
+          window.location.href = '/presentiel/confirmation/';
+          return;
         } else if (target === 'stages' && successDescription && successSubtext && successCta && successCtaText) {
           successDescription.textContent = 'Merci d\'avoir confirmé votre inscription à la liste d\'attente des prochains stages !';
           successSubtext.textContent = 'Vous serez informé(e) en priorité dès que les prochains stages seront annoncés dans votre région.';

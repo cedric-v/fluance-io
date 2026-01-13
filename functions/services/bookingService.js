@@ -375,16 +375,22 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
               lastName: booking.lastName,
               email: booking.email,
               phone: booking.phone,
+              ipAddress: booking.ipAddress || '',
             },
             {
               courseName: booking.courseName,
               courseDate: booking.courseDate,
               courseTime: booking.courseTime,
+              location: booking.courseLocation || '',
               paymentMethod: booking.paymentMethod,
               paymentStatus: 'Payé',
               amount: booking.amount / 100 + ' CHF',
               status: 'Confirmé',
               bookingId: bookingId,
+              paidAt: booking.paidAt || new Date(),
+              source: 'web',
+              isCancelled: false,
+              isWaitlisted: false,
             },
         );
       }
@@ -693,6 +699,9 @@ async function transferBooking(db, bookingId, newCourseId, email) {
       return {success: false, error: 'ALREADY_BOOKED', message: 'Vous êtes déjà inscrit à ce cours'};
     }
 
+    // Créer l'ID de la nouvelle réservation avant la transaction
+    const newBookingId = db.collection('bookings').doc().id;
+
     // Utiliser une transaction pour garantir la cohérence
     await db.runTransaction(async (transaction) => {
       // Annuler l'ancienne réservation (sans remboursement)
@@ -715,7 +724,6 @@ async function transferBooking(db, bookingId, newCourseId, email) {
       }
 
       // Créer la nouvelle réservation
-      const newBookingId = db.collection('bookings').doc().id;
       const newBookingData = {
         bookingId: newBookingId,
         courseId: newCourseId,

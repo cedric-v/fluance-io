@@ -44,8 +44,9 @@
       continue: 'Continuer',
       checking: 'Vérification...',
       firstName: 'Prénom *',
-      lastName: 'Nom',
-      phone: 'Téléphone',
+      lastName: 'Nom *',
+      phone: 'Téléphone (optionnel)',
+      phoneOptional: 'Téléphone (optionnel - utile en cas de changement de dernière minute)',
       bookingError: 'Erreur de connexion. Veuillez réessayer.',
       sessionsRemaining: 'Séances restantes',
       unlimitedAccess: 'Accès illimité',
@@ -62,8 +63,9 @@
       continue: 'Continue',
       checking: 'Checking...',
       firstName: 'First name *',
-      lastName: 'Last name',
-      phone: 'Phone',
+      lastName: 'Last name *',
+      phone: 'Phone (optional)',
+      phoneOptional: 'Phone (optional - useful in case of last-minute changes)',
       bookingError: 'Connection error. Please try again.',
       sessionsRemaining: 'Sessions remaining',
       unlimitedAccess: 'Unlimited access',
@@ -116,6 +118,7 @@
   let currentCourseData = null;
   let userPassStatus = null;
   let currentStep = 1; // 1: email, 2: pass/pricing, 3: infos, 4: payment
+  let storedFirstName = ''; // Prénom stocké pour pré-remplir les formulaires
 
   /**
    * Formate une date au format DD/MM/YYYY en format lisible français
@@ -341,25 +344,32 @@
            data-course-location="${course.location}"
            data-course-price="${course.price}"
            data-is-full="${course.isFull}">
-        <div class="mb-3">
-          <h3 class="text-lg font-semibold text-[#3E3A35]">${course.title}</h3>
+        <div class="mb-4">
+          <h3 class="text-lg font-semibold text-[#3E3A35] mb-2">${course.title}</h3>
           <p class="text-sm text-[#3E3A35]/60">${course.location}</p>
         </div>
-        <div class="flex items-center gap-4 text-sm text-[#3E3A35]/80 mb-4">
-          <span class="flex items-center gap-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            ${dateStr}
-          </span>
-          <span class="flex items-center gap-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            ${course.time}
-          </span>
+        
+        <!-- Date et heure mises en avant -->
+        <div class="bg-fluance/5 border border-fluance/20 rounded-lg p-4 mb-4">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-fluance flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <span class="text-base font-bold text-[#3E3A35]">${dateStr}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-fluance flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="text-base font-bold text-[#3E3A35]">${course.time}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex items-center justify-between mb-4">
           <span class="px-3 py-1.5 rounded-full ${availability.bgClass} border ${availability.borderClass} ${availability.urgency === 'critical' ? 'animate-pulse' : ''}">
             ${spotsText}
           </span>
@@ -478,6 +488,11 @@
       const data = await response.json();
 
       userPassStatus = data;
+      
+      // Stocker le firstName si disponible pour pré-remplir les formulaires
+      if (data.firstName) {
+        storedFirstName = data.firstName;
+      }
 
       if (data.hasActivePass) {
         // L'utilisateur a un pass actif
@@ -565,19 +580,20 @@
           
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="firstName" class="block text-sm font-medium text-[#3E3A35] mb-1">Prénom *</label>
+              <label for="firstName" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.firstName}</label>
               <input type="text" id="firstName" name="firstName" required
+                     value="${storedFirstName || ''}"
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
             </div>
             <div>
-              <label for="lastName" class="block text-sm font-medium text-[#3E3A35] mb-1">Nom</label>
-              <input type="text" id="lastName" name="lastName"
+              <label for="lastName" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.lastName}</label>
+              <input type="text" id="lastName" name="lastName" required
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
             </div>
           </div>
 
           <div>
-            <label for="phone" class="block text-sm font-medium text-[#3E3A35] mb-1">Téléphone</label>
+            <label for="phone" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.phoneOptional}</label>
             <input type="tel" id="phone" name="phone"
                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
           </div>
@@ -640,19 +656,20 @@
           
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="firstName" class="block text-sm font-medium text-[#3E3A35] mb-1">Prénom *</label>
+              <label for="firstName" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.firstName}</label>
               <input type="text" id="firstName" name="firstName" required
+                     value="${storedFirstName || ''}"
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
             </div>
             <div>
-              <label for="lastName" class="block text-sm font-medium text-[#3E3A35] mb-1">Nom</label>
-              <input type="text" id="lastName" name="lastName"
+              <label for="lastName" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.lastName}</label>
+              <input type="text" id="lastName" name="lastName" required
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
             </div>
           </div>
 
           <div>
-            <label for="phone" class="block text-sm font-medium text-[#3E3A35] mb-1">Téléphone</label>
+            <label for="phone" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.phoneOptional}</label>
             <input type="tel" id="phone" name="phone"
                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
           </div>
@@ -738,19 +755,20 @@
           <!-- Infos personnelles -->
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="firstName" class="block text-sm font-medium text-[#3E3A35] mb-1">Prénom *</label>
+              <label for="firstName" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.firstName}</label>
               <input type="text" id="firstName" name="firstName" required
+                     value="${storedFirstName || ''}"
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
             </div>
             <div>
-              <label for="lastName" class="block text-sm font-medium text-[#3E3A35] mb-1">Nom</label>
-              <input type="text" id="lastName" name="lastName"
+              <label for="lastName" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.lastName}</label>
+              <input type="text" id="lastName" name="lastName" required
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
             </div>
           </div>
 
           <div>
-            <label for="phone" class="block text-sm font-medium text-[#3E3A35] mb-1">Téléphone</label>
+            <label for="phone" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.phoneOptional}</label>
             <input type="tel" id="phone" name="phone"
                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
           </div>
@@ -758,12 +776,12 @@
           <!-- Mode de paiement -->
           <div>
             <label class="block text-sm font-medium text-[#3E3A35] mb-3">Mode de paiement</label>
-            <div class="grid grid-cols-2 gap-3">
+            <div id="payment-methods" class="grid grid-cols-2 gap-3">
               <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:border-fluance transition-colors border-fluance bg-fluance/5">
                 <input type="radio" name="paymentMethod" value="card" checked class="text-fluance focus:ring-fluance">
                 <span class="text-sm">Carte / TWINT</span>
               </label>
-              <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:border-fluance transition-colors">
+              <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:border-fluance transition-colors border-gray-200">
                 <input type="radio" name="paymentMethod" value="cash" class="text-fluance focus:ring-fluance">
                 <span class="text-sm">Espèces sur place</span>
               </label>
@@ -785,12 +803,27 @@
       </div>
     `;
 
-    // Gérer la sélection des options
+    // Gérer la sélection des options tarifaires
     const pricingContainer = document.getElementById('pricing-options');
     if (pricingContainer) {
       pricingContainer.querySelectorAll('label').forEach(label => {
         label.addEventListener('click', () => {
           pricingContainer.querySelectorAll('label').forEach(l => {
+            l.classList.remove('border-fluance', 'bg-fluance/5');
+            l.classList.add('border-gray-200');
+          });
+          label.classList.remove('border-gray-200');
+          label.classList.add('border-fluance', 'bg-fluance/5');
+        });
+      });
+    }
+
+    // Gérer la sélection des méthodes de paiement
+    const paymentMethodsContainer = document.getElementById('payment-methods');
+    if (paymentMethodsContainer) {
+      paymentMethodsContainer.querySelectorAll('label').forEach(label => {
+        label.addEventListener('click', () => {
+          paymentMethodsContainer.querySelectorAll('label').forEach(l => {
             l.classList.remove('border-fluance', 'bg-fluance/5');
             l.classList.add('border-gray-200');
           });

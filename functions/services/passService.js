@@ -40,6 +40,45 @@ async function checkUserPass(db, email) {
   const now = new Date();
 
   try {
+    // Chercher le firstName dans les bookings précédents ou les pass
+    let existingFirstName = '';
+
+    // D'abord chercher dans les bookings (sans orderBy pour éviter besoin d'index)
+    const bookingsSnapshot = await db.collection('bookings')
+        .where('email', '==', normalizedEmail)
+        .limit(10) // Limiter pour performance
+        .get();
+
+    if (!bookingsSnapshot.empty) {
+      // Parcourir pour trouver le premier avec firstName
+      for (const doc of bookingsSnapshot.docs) {
+        const booking = doc.data();
+        if (booking.firstName) {
+          existingFirstName = booking.firstName;
+          break; // Prendre le premier trouvé
+        }
+      }
+    }
+
+    // Si pas trouvé, chercher dans les pass (tous, pas seulement actifs)
+    if (!existingFirstName) {
+      const allPassesSnapshot = await db.collection('userPasses')
+          .where('email', '==', normalizedEmail)
+          .limit(10) // Limiter pour performance
+          .get();
+
+      if (!allPassesSnapshot.empty) {
+        // Parcourir pour trouver le premier avec firstName
+        for (const doc of allPassesSnapshot.docs) {
+          const pass = doc.data();
+          if (pass.firstName) {
+            existingFirstName = pass.firstName;
+            break; // Prendre le premier trouvé
+          }
+        }
+      }
+    }
+
     // Chercher tous les pass actifs pour cet email
     const passesSnapshot = await db.collection('userPasses')
         .where('email', '==', normalizedEmail)
@@ -47,12 +86,6 @@ async function checkUserPass(db, email) {
         .get();
 
     if (passesSnapshot.empty) {
-      // Vérifier si c'est la première visite (cours d'essai gratuit)
-      const bookingsSnapshot = await db.collection('bookings')
-          .where('email', '==', normalizedEmail)
-          .limit(1)
-          .get();
-
       const isFirstVisit = bookingsSnapshot.empty;
 
       return {
@@ -63,6 +96,7 @@ async function checkUserPass(db, email) {
           'Bienvenue ! Votre première séance est offerte.' :
           'Vous n\'avez pas de pass actif. Choisissez une formule pour réserver.',
         availablePasses: [],
+        firstName: existingFirstName, // Retourner le firstName si trouvé
       };
     }
 
@@ -113,6 +147,7 @@ async function checkUserPass(db, email) {
         canUseTrial: false,
         message: 'Votre pass a expiré ou est épuisé. Renouvelez pour continuer.',
         availablePasses: [],
+        firstName: existingFirstName, // Retourner le firstName si trouvé
       };
     }
 
@@ -125,6 +160,17 @@ async function checkUserPass(db, email) {
 
     const primaryPass = validPasses[0];
 
+    // Si pas de firstName trouvé précédemment, chercher dans le pass actif
+    if (!existingFirstName && primaryPass) {
+      const primaryPassDoc = passesSnapshot.docs.find((doc) => doc.id === primaryPass.passId);
+      if (primaryPassDoc) {
+        const passData = primaryPassDoc.data();
+        if (passData.firstName) {
+          existingFirstName = passData.firstName;
+        }
+      }
+    }
+
     return {
       hasActivePass: true,
       isFirstVisit: false,
@@ -134,6 +180,7 @@ async function checkUserPass(db, email) {
       message: primaryPass.passType === 'semester_pass' ?
         `Pass Semestriel actif (${primaryPass.daysRemaining} jours restants)` :
         `Flow Pass : ${primaryPass.sessionsRemaining}/${primaryPass.sessionsTotal} séances restantes`,
+      firstName: existingFirstName, // Retourner le firstName si trouvé
     };
   } catch (error) {
     console.error('Error checking user pass:', error);
