@@ -63,6 +63,7 @@ permalink: /en/presentiel/reserver/
       <img src="{{ '/assets/img/payment-logos/google-pay.svg' | relativeUrl }}" alt="Google Pay" class="h-8 object-contain" loading="lazy">
       <span class="text-[#3E3A35]/60 text-sm">or cash on site</span>
     </div>
+    <p class="text-xs text-[#3E3A35]/50 mt-3">💡 For cash payments, please bring the exact amount</p>
   </div>
 </section>
 
@@ -74,5 +75,6 @@ permalink: /en/presentiel/reserver/
 </div>
 
 <!-- Booking script -->
+{% stripeConfig %}
 <script src="https://js.stripe.com/v3/"></script>
 <script src="{{ '/assets/js/booking.js' | relativeUrl }}"></script>

@@ -12,9 +12,11 @@
   'use strict';
 
   // Configuration
+  // La clé Stripe peut être injectée via window.FLUANCE_STRIPE_CONFIG (configuré par Eleventy)
+  // ou définie directement ici pour le développement
   const CONFIG = {
     API_BASE_URL: 'https://europe-west1-fluance-protected-content.cloudfunctions.net',
-    STRIPE_PUBLISHABLE_KEY: '', // À configurer
+    STRIPE_PUBLISHABLE_KEY: (window.FLUANCE_STRIPE_CONFIG && window.FLUANCE_STRIPE_CONFIG.publishableKey) || '', // Injecté via Eleventy ou configuré manuellement
     REFRESH_INTERVAL: 30000, // Rafraîchir toutes les 30 secondes
   };
 
@@ -121,9 +123,9 @@
   let storedFirstName = ''; // Prénom stocké pour pré-remplir les formulaires
 
   /**
-   * Formate une date au format DD/MM/YYYY en format lisible français
+   * Formate une date au format DD/MM/YYYY en format lisible selon la locale
    * @param {string} dateStr - Date au format DD/MM/YYYY
-   * @returns {string} - Date formatée (ex: "mercredi 22 janvier")
+   * @returns {string} - Date formatée (ex: "mercredi 22 janvier" ou "Wednesday, January 22")
    */
   function formatDateFromDDMMYYYY(dateStr) {
     try {
@@ -131,7 +133,9 @@
       if (day && month && year) {
         const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
         if (!isNaN(dateObj.getTime())) {
-          return dateObj.toLocaleDateString('fr-CH', {
+          // Utiliser la locale appropriée selon la langue de la page
+          const locale = currentLocale === 'en' ? 'en-US' : 'fr-CH';
+          return dateObj.toLocaleDateString(locale, {
             weekday: 'long',
             day: 'numeric',
             month: 'long'
@@ -143,6 +147,19 @@
     }
     // Fallback : retourner la date originale
     return dateStr;
+  }
+
+  /**
+   * Corrige l'adresse selon la locale (remplace "Switzerland" par "Suisse" pour FR)
+   * @param {string} location - Adresse à corriger
+   * @returns {string} - Adresse corrigée
+   */
+  function formatLocation(location) {
+    if (!location) return '';
+    if (currentLocale === 'fr' && location.includes('Switzerland')) {
+      return location.replace(/Switzerland/gi, 'Suisse');
+    }
+    return location;
   }
 
   /**
@@ -333,6 +350,9 @@
 
     // Formater la date (format DD/MM/YYYY depuis l'API)
     const dateStr = formatDateFromDDMMYYYY(course.date);
+    
+    // Corriger l'adresse selon la locale
+    const displayLocation = formatLocation(course.location);
 
     return `
       <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-transparent hover:border-fluance/20"
@@ -341,12 +361,12 @@
            data-course-date="${dateStr}"
            data-course-date-raw="${course.date}"
            data-course-time="${course.time}"
-           data-course-location="${course.location}"
+           data-course-location="${displayLocation}"
            data-course-price="${course.price}"
            data-is-full="${course.isFull}">
         <div class="mb-4">
           <h3 class="text-lg font-semibold text-[#3E3A35] mb-2">${course.title}</h3>
-          <p class="text-sm text-[#3E3A35]/60">${course.location}</p>
+          <p class="text-sm text-[#3E3A35]/60">${displayLocation}</p>
         </div>
         
         <!-- Date et heure mises en avant -->
@@ -394,6 +414,11 @@
     if (courseData.courseDateRaw && 
         (courseData.courseDate === 'Invalid Date' || !courseData.courseDate || courseData.courseDate.includes('Invalid'))) {
       courseData.courseDate = formatDateFromDDMMYYYY(courseData.courseDateRaw);
+    }
+    
+    // Corriger l'adresse selon la locale
+    if (courseData.courseLocation) {
+      courseData.courseLocation = formatLocation(courseData.courseLocation);
     }
     
     currentCourseData = courseData;
@@ -786,6 +811,14 @@
                 <span class="text-sm">Espèces sur place</span>
               </label>
             </div>
+            <!-- Message informatif pour le paiement en espèces -->
+            <div id="cash-payment-info" class="hidden mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p class="text-sm text-blue-800">
+                <strong>💡 Important :</strong> ${currentLocale === 'en' 
+                  ? 'Please bring the exact amount in cash.' 
+                  : 'Merci d\'apporter le montant exact en espèces.'}
+              </p>
+            </div>
           </div>
 
           <div id="booking-error" class="hidden p-3 bg-red-50 text-red-600 rounded-lg text-sm"></div>
@@ -820,15 +853,38 @@
 
     // Gérer la sélection des méthodes de paiement
     const paymentMethodsContainer = document.getElementById('payment-methods');
+    const cashPaymentInfo = document.getElementById('cash-payment-info');
     if (paymentMethodsContainer) {
-      paymentMethodsContainer.querySelectorAll('label').forEach(label => {
-        label.addEventListener('click', () => {
+      paymentMethodsContainer.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          // Mettre à jour les styles des labels
           paymentMethodsContainer.querySelectorAll('label').forEach(l => {
             l.classList.remove('border-fluance', 'bg-fluance/5');
             l.classList.add('border-gray-200');
           });
-          label.classList.remove('border-gray-200');
-          label.classList.add('border-fluance', 'bg-fluance/5');
+          const selectedLabel = radio.closest('label');
+          selectedLabel.classList.remove('border-gray-200');
+          selectedLabel.classList.add('border-fluance', 'bg-fluance/5');
+          
+          // Afficher/masquer le message informatif pour le paiement en espèces
+          if (cashPaymentInfo) {
+            if (radio.value === 'cash') {
+              cashPaymentInfo.classList.remove('hidden');
+            } else {
+              cashPaymentInfo.classList.add('hidden');
+            }
+          }
+        });
+      });
+      
+      // Gérer aussi les clics sur les labels (pour compatibilité)
+      paymentMethodsContainer.querySelectorAll('label').forEach(label => {
+        label.addEventListener('click', () => {
+          const radio = label.querySelector('input[type="radio"]');
+          if (radio) {
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change'));
+          }
         });
       });
     }

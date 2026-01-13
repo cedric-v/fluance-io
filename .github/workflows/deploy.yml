@@ -39,6 +39,7 @@ jobs:
       - name: Build site
         env:
           ELEVENTY_ENV: prod
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
         run: npm run build
 
       - name: Verify CSS is generated
@@ -149,6 +150,7 @@ jobs:
       - name: Build site
         env:
           ELEVENTY_ENV: prod
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
         run: npm run build
 
       - name: Install validation tools

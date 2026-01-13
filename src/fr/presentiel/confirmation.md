@@ -157,8 +157,8 @@ eleventyExcludeFromCollections: true
   <div class="text-center space-y-4">
     <p class="text-lg text-[#3E3A35]/70">À très bientôt en cours !</p>
     <div class="flex flex-col sm:flex-row gap-4 justify-center">
-      <a href="{{ '/presentiel/cours-hebdomadaires/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-full shadow-lg transition-all hover:shadow-xl">
-        <span>Voir les cours hebdomadaires</span>
+      <a href="{{ '/presentiel/reserver/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold rounded-full shadow-lg transition-all hover:shadow-xl">
+        <span>Voir les autres cours</span>
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
         </svg>
