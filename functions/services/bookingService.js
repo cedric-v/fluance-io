@@ -11,6 +11,7 @@
  */
 
 const {googleService} = require('./googleService');
+const crypto = require('crypto');
 
 /**
  * Configuration des prix (en centimes CHF)
@@ -394,6 +395,10 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
 
     // Envoyer l'email de confirmation via l'extension Firebase
     try {
+      // Créer un token de désinscription
+      const cancellationTokenResult = await createCancellationToken(db, bookingId, 30);
+      const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
+
       await db.collection('mail').add({
         to: booking.email,
         template: {
@@ -405,6 +410,7 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
             courseTime: booking.courseTime,
             location: booking.courseLocation,
             bookingId: bookingId,
+            cancellationUrl: cancellationUrl,
           },
         },
       });
@@ -447,20 +453,9 @@ async function cancelBooking(db, stripe, bookingId, reason = '') {
       return {success: false, error: 'ALREADY_CANCELLED'};
     }
 
-    // Rembourser si payé via Stripe
-    if (booking.status === BOOKING_STATUS.CONFIRMED &&
-        booking.stripePaymentIntentId &&
-        stripe) {
-      try {
-        await stripe.refunds.create({
-          payment_intent: booking.stripePaymentIntentId,
-          reason: 'requested_by_customer',
-        });
-      } catch (refundError) {
-        console.error('Error refunding:', refundError);
-        // Continuer malgré l'erreur de remboursement
-      }
-    }
+    // Note: Pas de remboursement automatique
+    // L'utilisateur peut choisir un autre cours à la place
+    // Si un remboursement est nécessaire, il doit être fait manuellement
 
     // Mettre à jour la réservation
     await bookingRef.update({
@@ -517,6 +512,10 @@ async function notifyFirstInWaitlist(db, courseId) {
     const waitlistDoc = waitlistSnapshot.docs[0];
     const waitlistData = waitlistDoc.data();
 
+    // Récupérer les infos du cours
+    const courseDoc = await db.collection('courses').doc(courseId).get();
+    const course = courseDoc.exists ? courseDoc.data() : null;
+
     // Mettre à jour le statut
     await waitlistDoc.ref.update({
       status: 'notified',
@@ -530,7 +529,9 @@ async function notifyFirstInWaitlist(db, courseId) {
         name: 'waitlist-spot-available',
         data: {
           firstName: waitlistData.firstName,
-          courseId: courseId,
+          courseName: course?.title || 'Cours Fluance',
+          courseDate: course?.date || '',
+          courseTime: course?.time || '',
           bookingLink: `https://fluance.io/presentiel/reserver/?course=${courseId}`,
         },
       },
@@ -542,6 +543,345 @@ async function notifyFirstInWaitlist(db, courseId) {
   }
 }
 
+/**
+ * Récupère la position d'un utilisateur dans la liste d'attente
+ * @param {Object} db - Instance Firestore
+ * @param {string} email - Email de l'utilisateur
+ * @param {string} courseId - ID du cours
+ * @returns {Promise<Object>}
+ */
+async function getWaitlistPosition(db, email, courseId) {
+  try {
+    // Récupérer toutes les entrées en liste d'attente pour ce cours
+    const allWaitlist = await db.collection('waitlist')
+        .where('courseId', '==', courseId)
+        .where('status', '==', BOOKING_STATUS.WAITING)
+        .orderBy('createdAt', 'asc')
+        .get();
+
+    if (allWaitlist.empty) {
+      return {success: false, error: 'NO_WAITLIST'};
+    }
+
+    // Trouver la position de l'utilisateur
+    const normalizedEmail = email.toLowerCase();
+    let position = 0;
+    let userDoc = null;
+
+    for (let i = 0; i < allWaitlist.docs.length; i++) {
+      const doc = allWaitlist.docs[i];
+      const data = doc.data();
+      if (data.email.toLowerCase() === normalizedEmail) {
+        position = i + 1;
+        userDoc = doc;
+        break;
+      }
+    }
+
+    if (!userDoc) {
+      return {success: false, error: 'NOT_IN_WAITLIST'};
+    }
+
+    return {
+      success: true,
+      position: position,
+      totalWaiting: allWaitlist.size,
+      waitlistId: userDoc.id,
+    };
+  } catch (error) {
+    console.error('Error getting waitlist position:', error);
+    return {success: false, error: error.message};
+  }
+}
+
+/**
+ * Retire un utilisateur de la liste d'attente
+ * @param {Object} db - Instance Firestore
+ * @param {string} waitlistId - ID de l'entrée dans la liste d'attente
+ * @param {string} email - Email de l'utilisateur (vérification)
+ * @returns {Promise<Object>}
+ */
+async function removeFromWaitlist(db, waitlistId, email) {
+  try {
+    const waitlistDoc = await db.collection('waitlist').doc(waitlistId).get();
+
+    if (!waitlistDoc.exists) {
+      return {success: false, error: 'WAITLIST_NOT_FOUND'};
+    }
+
+    const waitlistData = waitlistDoc.data();
+
+    if (waitlistData.email.toLowerCase() !== email.toLowerCase()) {
+      return {success: false, error: 'EMAIL_MISMATCH'};
+    }
+
+    if (waitlistData.status !== BOOKING_STATUS.WAITING) {
+      return {success: false, error: 'ALREADY_PROCESSED'};
+    }
+
+    await waitlistDoc.ref.update({
+      status: 'removed',
+      removedAt: new Date(),
+    });
+
+    return {
+      success: true,
+      message: 'Vous avez été retiré de la liste d\'attente',
+    };
+  } catch (error) {
+    console.error('Error removing from waitlist:', error);
+    return {success: false, error: error.message};
+  }
+}
+
+/**
+ * Transfère une réservation vers un autre cours (sans remboursement)
+ * @param {Object} db - Instance Firestore
+ * @param {string} bookingId - ID de la réservation à transférer
+ * @param {string} newCourseId - ID du nouveau cours
+ * @param {string} email - Email de l'utilisateur (vérification)
+ * @returns {Promise<Object>}
+ */
+async function transferBooking(db, bookingId, newCourseId, email) {
+  try {
+    const bookingRef = db.collection('bookings').doc(bookingId);
+    const bookingDoc = await bookingRef.get();
+
+    if (!bookingDoc.exists) {
+      return {success: false, error: 'BOOKING_NOT_FOUND'};
+    }
+
+    const booking = bookingDoc.data();
+
+    // Vérifier l'email
+    if (booking.email.toLowerCase() !== email.toLowerCase()) {
+      return {success: false, error: 'EMAIL_MISMATCH'};
+    }
+
+    // Vérifier que la réservation peut être transférée
+    if (booking.status === BOOKING_STATUS.CANCELLED) {
+      return {success: false, error: 'BOOKING_ALREADY_CANCELLED'};
+    }
+
+    // Vérifier le nouveau cours
+    const newCourseDoc = await db.collection('courses').doc(newCourseId).get();
+    if (!newCourseDoc.exists) {
+      return {success: false, error: 'NEW_COURSE_NOT_FOUND'};
+    }
+
+    const newCourse = newCourseDoc.data();
+
+    // Vérifier la disponibilité du nouveau cours
+    const availability = await getCourseAvailability(db, newCourseId);
+    if (!availability.available) {
+      return {
+        success: false,
+        error: 'COURSE_FULL',
+        message: 'Le nouveau cours est complet',
+      };
+    }
+
+    // Vérifier si l'utilisateur n'est pas déjà inscrit au nouveau cours
+    const existingBooking = await db.collection('bookings')
+        .where('courseId', '==', newCourseId)
+        .where('email', '==', email.toLowerCase())
+        .where('status', 'in', [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING_CASH, BOOKING_STATUS.PENDING])
+        .limit(1)
+        .get();
+
+    if (!existingBooking.empty) {
+      return {success: false, error: 'ALREADY_BOOKED', message: 'Vous êtes déjà inscrit à ce cours'};
+    }
+
+    // Utiliser une transaction pour garantir la cohérence
+    await db.runTransaction(async (transaction) => {
+      // Annuler l'ancienne réservation (sans remboursement)
+      transaction.update(bookingRef, {
+        status: BOOKING_STATUS.CANCELLED,
+        transferredTo: newCourseId,
+        cancelledAt: new Date(),
+        cancellationReason: 'Transféré vers un autre cours',
+        updatedAt: new Date(),
+      });
+
+      // Décrémenter le compteur de l'ancien cours
+      const oldCourseRef = db.collection('courses').doc(booking.courseId);
+      const oldCourseDoc = await transaction.get(oldCourseRef);
+      if (oldCourseDoc.exists) {
+        const oldCourse = oldCourseDoc.data();
+        transaction.update(oldCourseRef, {
+          participantCount: Math.max(0, (oldCourse.participantCount || 0) - 1),
+        });
+      }
+
+      // Créer la nouvelle réservation
+      const newBookingId = db.collection('bookings').doc().id;
+      const newBookingData = {
+        bookingId: newBookingId,
+        courseId: newCourseId,
+        courseName: newCourse.title,
+        courseDate: newCourse.date,
+        courseTime: newCourse.time,
+        courseLocation: newCourse.location,
+        email: booking.email,
+        firstName: booking.firstName,
+        lastName: booking.lastName,
+        phone: booking.phone,
+        paymentMethod: booking.paymentMethod,
+        pricingOption: booking.pricingOption,
+        amount: booking.amount,
+        currency: booking.currency,
+        status: booking.status, // Conserver le même statut (confirmé, pending_cash, etc.)
+        stripePaymentIntentId: booking.stripePaymentIntentId,
+        transferredFrom: bookingId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        paidAt: booking.paidAt,
+        notes: `Transféré depuis ${booking.courseName} (${booking.courseDate})`,
+      };
+
+      transaction.set(db.collection('bookings').doc(newBookingId), newBookingData);
+
+      // Incrémenter le compteur du nouveau cours
+      transaction.update(db.collection('courses').doc(newCourseId), {
+        participantCount: (newCourse.participantCount || 0) + 1,
+      });
+    });
+
+    return {
+      success: true,
+      bookingId: bookingId,
+      newBookingId: newBookingId,
+      message: 'Réservation transférée avec succès',
+    };
+  } catch (error) {
+    console.error('Error transferring booking:', error);
+    return {success: false, error: error.message};
+  }
+}
+
+/**
+ * Génère un token unique pour la désinscription
+ * @returns {string}
+ */
+function generateCancellationToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+/**
+ * Crée un token de désinscription pour une réservation
+ * @param {Object} db - Instance Firestore
+ * @param {string} bookingId - ID de la réservation
+ * @param {number} expirationDays - Nombre de jours avant expiration (défaut: 30)
+ * @returns {Promise<Object>}
+ */
+async function createCancellationToken(db, bookingId, expirationDays = 30) {
+  try {
+    const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+    if (!bookingDoc.exists) {
+      return {success: false, error: 'BOOKING_NOT_FOUND'};
+    }
+
+    const booking = bookingDoc.data();
+    if (booking.status === BOOKING_STATUS.CANCELLED) {
+      return {success: false, error: 'ALREADY_CANCELLED'};
+    }
+
+    const token = generateCancellationToken();
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + expirationDays);
+
+    // Stocker le token dans Firestore
+    await db.collection('cancellationTokens').doc(token).set({
+      bookingId: bookingId,
+      email: booking.email,
+      courseId: booking.courseId,
+      createdAt: new Date(),
+      expiresAt: expirationDate,
+      used: false,
+    });
+
+    return {
+      success: true,
+      token: token,
+      cancellationUrl: `https://fluance.io/presentiel/desinscription?token=${token}`,
+      expiresAt: expirationDate,
+    };
+  } catch (error) {
+    console.error('Error creating cancellation token:', error);
+    return {success: false, error: error.message};
+  }
+}
+
+/**
+ * Valide et utilise un token de désinscription
+ * @param {Object} db - Instance Firestore
+ * @param {string} token - Token de désinscription
+ * @returns {Promise<Object>}
+ */
+async function validateCancellationToken(db, token) {
+  try {
+    const tokenDoc = await db.collection('cancellationTokens').doc(token).get();
+
+    if (!tokenDoc.exists) {
+      return {success: false, error: 'TOKEN_NOT_FOUND'};
+    }
+
+    const tokenData = tokenDoc.data();
+
+    // Vérifier si déjà utilisé
+    if (tokenData.used) {
+      return {success: false, error: 'TOKEN_ALREADY_USED'};
+    }
+
+    // Vérifier l'expiration
+    const now = new Date();
+    const expiresAt = tokenData.expiresAt.toDate ? tokenData.expiresAt.toDate() : new Date(tokenData.expiresAt);
+    if (now > expiresAt) {
+      return {success: false, error: 'TOKEN_EXPIRED'};
+    }
+
+    // Récupérer la réservation
+    const bookingDoc = await db.collection('bookings').doc(tokenData.bookingId).get();
+    if (!bookingDoc.exists) {
+      return {success: false, error: 'BOOKING_NOT_FOUND'};
+    }
+
+    const booking = bookingDoc.data();
+
+    // Vérifier que la réservation n'est pas déjà annulée
+    if (booking.status === BOOKING_STATUS.CANCELLED) {
+      // Marquer le token comme utilisé quand même
+      await tokenDoc.ref.update({used: true, usedAt: new Date()});
+      return {success: false, error: 'ALREADY_CANCELLED'};
+    }
+
+    return {
+      success: true,
+      bookingId: tokenData.bookingId,
+      booking: booking,
+      courseId: tokenData.courseId,
+      email: tokenData.email,
+    };
+  } catch (error) {
+    console.error('Error validating cancellation token:', error);
+    return {success: false, error: error.message};
+  }
+}
+
+/**
+ * Marque un token de désinscription comme utilisé
+ * @param {Object} db - Instance Firestore
+ * @param {string} token - Token de désinscription
+ * @returns {Promise<void>}
+ */
+async function markCancellationTokenAsUsed(db, token) {
+  await db.collection('cancellationTokens').doc(token).update({
+    used: true,
+    usedAt: new Date(),
+  });
+}
+
 module.exports = {
   PRICING,
   PAYMENT_METHODS,
@@ -551,4 +891,10 @@ module.exports = {
   confirmBookingPayment,
   cancelBooking,
   notifyFirstInWaitlist,
+  getWaitlistPosition,
+  removeFromWaitlist,
+  transferBooking,
+  createCancellationToken,
+  validateCancellationToken,
+  markCancellationTokenAsUsed,
 };

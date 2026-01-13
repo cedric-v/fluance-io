@@ -1,0 +1,65 @@
+---
+layout: false
+permalink: /emails/waitlist-spot-available.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold">
+          Une place s'est libérée !
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Excellente nouvelle ! Une place s'est libérée pour le cours <strong>{{courseName}}</strong> du <strong>{{courseDate}}</strong> à <strong>{{courseTime}}</strong>.
+        </mj-text>
+        <mj-text>
+          Vous êtes le premier sur la liste d'attente. Si vous souhaitez réserver cette place, veuillez le faire rapidement car elle est disponible pour un temps limité.
+        </mj-text>
+        <mj-button
+          href="{{bookingLink}}"
+          background-color="#E6B84A"
+          color="#0f172a"
+          font-weight="bold"
+          padding="15px 30px"
+          border-radius="5px"
+        >
+          Réserver maintenant
+        </mj-button>
+        <mj-text>
+          Si le bouton ne fonctionne pas, vous pouvez copier et coller ce lien dans votre navigateur :
+        </mj-text>
+        <mj-text>
+          <a href="{{bookingLink}}" style="color: #648ED8; word-break: break-all;">
+            {{bookingLink}}
+          </a>
+        </mj-text>
+        <mj-text font-size="14px" color="#666666" padding-top="20px">
+          Si vous ne souhaitez plus réserver ce cours, vous pouvez ignorer cet email. La place sera proposée à la personne suivante sur la liste d'attente.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" color="#666666">
+          À très bientôt en cours !<br><br>
+          Cédric<br>
+          Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -53,32 +53,30 @@ permalink: /en/presentiel/cours-hebdomadaires/
         </a>
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
-        <h3 class="text-xl font-semibold text-fluance mb-3">Pricing</h3>
-        <p class="text-[#3E3A35] mb-4">
-          Your <strong>first session is free</strong>.<br /><br />
-          To continue the experience, choose the formula that suits you:
-        </p>
-        <div class="space-y-4">
-          <div class="border-l-4 border-fluance pl-4">
-            <h4 class="text-lg font-semibold text-fluance mb-2">À la carte: 25 CHF per session</h4>
-            <p class="text-[#3E3A35]">Total freedom.</p>
+        <h3 class="text-xl font-semibold text-fluance mb-6 text-center">Our Pricing Options</h3>
+        <div class="grid md:grid-cols-4 gap-6">
+          <div class="text-center p-4 rounded-xl border-2 border-green-200 bg-green-50">
+            <span class="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full mb-3">FREE</span>
+            <h4 class="font-semibold text-[#3E3A35] mb-1">Trial Class</h4>
+            <p class="text-2xl font-bold text-green-600 mb-2">Free</p>
+            <p class="text-sm text-[#3E3A35]/60">First session offered</p>
           </div>
-          <div class="border-l-4 border-fluance pl-4">
-            <h4 class="text-lg font-semibold text-fluance mb-2">Flow Pass: 210 CHF</h4>
-            <p class="text-[#3E3A35]">For regular practice, enjoy 10 sessions.</p>
-            <p class="text-[#3E3A35] mt-2">
-              Your card is valid for 12 months to give you time to practice at your own pace.
-            </p>
+          <div class="text-center p-4 rounded-xl border-2 border-gray-200">
+            <h4 class="font-semibold text-[#3E3A35] mb-1">À la carte</h4>
+            <p class="text-2xl font-bold text-fluance mb-2">25 CHF</p>
+            <p class="text-sm text-[#3E3A35]/60">Single session</p>
           </div>
-          <div class="border-l-4 border-[#E6B84A] pl-4 bg-[#E6B84A]/5 py-3 -ml-4 pl-8 rounded-r-lg">
-            <div class="flex items-center gap-2 mb-2">
-              <h4 class="text-lg font-semibold text-fluance">Semester Pass: 340 CHF / 6 months</h4>
-              <span class="bg-fluance text-white text-xs px-2 py-0.5 rounded-full">UNLIMITED</span>
-            </div>
-            <p class="text-[#3E3A35]">Unlimited access to all classes for 6 months.</p>
-            <p class="text-[#3E3A35] mt-2">
-              Automatic renewal. Cancelable at any time before the end of the period.
-            </p>
+          <div class="text-center p-4 rounded-xl border-2 border-fluance bg-fluance/5 relative">
+            <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-fluance text-white text-xs px-3 py-1 rounded-full">POPULAR</span>
+            <h4 class="font-semibold text-[#3E3A35] mb-1">Flow Pass</h4>
+            <p class="text-2xl font-bold text-fluance mb-2">210 CHF</p>
+            <p class="text-sm text-[#3E3A35]/60">10 sessions (valid for 12 months)</p>
+          </div>
+          <div class="text-center p-4 rounded-xl border-2 border-[#E6B84A] bg-[#E6B84A]/5 relative">
+            <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#E6B84A] text-[#7A1F3D] text-xs px-3 py-1 rounded-full font-semibold">UNLIMITED</span>
+            <h4 class="font-semibold text-[#3E3A35] mb-1">Semester Pass</h4>
+            <p class="text-2xl font-bold text-[#E6B84A] mb-2">340 CHF</p>
+            <p class="text-sm text-[#3E3A35]/60">Unlimited for 6 months</p>
           </div>
         </div>
       </div>

@@ -1,0 +1,98 @@
+---
+layout: false
+permalink: /emails/booking-confirmation.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold">
+          Réservation confirmée !
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Votre réservation pour le cours <strong>{{courseName}}</strong> du <strong>{{courseDate}}</strong> à <strong>{{courseTime}}</strong> est confirmée !
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="16px" font-weight="bold" color="#648ED8">
+          📍 Lieu du cours
+        </mj-text>
+        <mj-text>
+          <strong>le duplex danse & bien-être</strong><br>
+          Rte de Chantemerle 58d<br>
+          1763 Granges-Paccot (Suisse)
+        </mj-text>
+        <mj-text>
+          <a href="https://maps.app.goo.gl/2a3AZBFTjirjEfm99" style="color: #648ED8; text-decoration: underline;" target="_blank">
+            📍 Voir sur Google Maps →
+          </a>
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="16px" font-weight="bold" color="#648ED8">
+          🚌 Transports en commun
+        </mj-text>
+        <mj-text>
+          <strong>Bus n°9 et 10</strong> – depuis Fribourg, Plateau-de-Pérolles<br>
+          Fréquence : toutes les ~15min<br>
+          Arrêt : Granges-Paccot, Chantemerle (+1min à pied)<br><br>
+          <strong>Bus n°1</strong> – depuis Marly-Gérine<br>
+          Fréquence : toutes les ~7min<br>
+          Arrêt : Granges-Paccot, Agy (+15min à pied)
+        </mj-text>
+        <mj-text>
+          <a href="https://www.tpf.ch/fr/horaires-et-reseaux/horaire-en-ligne/recherche-ditineraire" style="color: #648ED8; text-decoration: underline;" target="_blank">
+            🔗 Itinéraire TPF →
+          </a>
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="16px" font-weight="bold" color="#648ED8">
+          🚗 Parking
+        </mj-text>
+        <mj-text>
+          <strong style="color: #d4a017;">Zone jaune</strong> : uniquement devant le duplex, 4 places, stationnement autorisé pendant vos cours.<br><br>
+          <strong style="color: #3b82f6;">Zone bleue</strong> : devant le restaurant "À la louche", 20 places, disque nécessaire 08:00-18:30 (max 1h).<br><br>
+          <strong>Zones blanches</strong> : au-dessus de la commune, proches de la place de jeux, + de 90 places, disque nécessaire 08:00-18:30 (max 2h).
+        </mj-text>
+        <mj-text font-size="14px" color="#dc2626" padding-top="10px">
+          ⚠️ <strong>Interdit</strong> : arrêter sa voiture dans la cour devant le duplex ou sur les places des voisins.
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="16px" font-weight="bold" color="#648ED8">
+          👕 Tenue
+        </mj-text>
+        <mj-text>
+          Vêtements confortables permettant le mouvement. Prévoir de quoi vous hydrater.
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="14px" color="#666666">
+          Vous souhaitez vous désinscrire ou changer de cours ?<br>
+          <a href="{{cancellationUrl}}" style="color: #648ED8; text-decoration: underline;">
+            Cliquez ici pour vous désinscrire ou choisir un autre cours →
+          </a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" color="#666666">
+          À très bientôt en cours !<br><br>
+          Cédric<br>
+          Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

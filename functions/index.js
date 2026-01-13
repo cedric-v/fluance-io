@@ -3324,6 +3324,10 @@ exports.confirmNewsletterOptIn = onCall(
                   const courseDoc = await db.collection('courses').doc(booking.courseId).get();
                   const course = courseDoc.exists ? courseDoc.data() : null;
 
+                  // Créer un token de désinscription
+                  const cancellationTokenResult = await bookingService.createCancellationToken(db, tokenData.bookingId, 30);
+                  const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
+
                   // Envoyer l'email de confirmation du cours
                   await db.collection('mail').add({
                     to: email.toLowerCase().trim(),
@@ -3337,6 +3341,7 @@ exports.confirmNewsletterOptIn = onCall(
                         location: course?.location || booking.courseLocation || '',
                         bookingId: tokenData.bookingId,
                         paymentMethod: booking.paymentMethod || 'Non spécifié',
+                        cancellationUrl: cancellationUrl,
                       },
                     },
                   });
@@ -7771,6 +7776,10 @@ exports.bookCourse = onRequest(
 
           // Envoyer email de confirmation
           try {
+            // Créer un token de désinscription
+            const cancellationTokenResult = await bookingService.createCancellationToken(db, bookingId, 30);
+            const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
+
             await db.collection('mail').add({
               to: normalizedEmail,
               template: {
@@ -7784,6 +7793,7 @@ exports.bookCourse = onRequest(
                   bookingId: bookingId,
                   passType: activePass.passType,
                   sessionsRemaining: sessionResult?.sessionsRemaining,
+                  cancellationUrl: cancellationUrl,
                 },
               },
             });
@@ -7861,6 +7871,10 @@ exports.bookCourse = onRequest(
               const course = courseDoc.data();
 
               try {
+                // Créer un token de désinscription
+                const cancellationTokenResult = await bookingService.createCancellationToken(db, result.bookingId, 30);
+                const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
+
                 await db.collection('mail').add({
                   to: normalizedEmail,
                   template: {
@@ -7873,6 +7887,7 @@ exports.bookCourse = onRequest(
                       location: course?.location || '',
                       bookingId: result.bookingId,
                       paymentMethod: 'Espèces',
+                      cancellationUrl: cancellationUrl,
                     },
                   },
                 });
@@ -7961,6 +7976,10 @@ exports.bookCourse = onRequest(
             const course = courseDoc.data();
 
             try {
+              // Créer un token de désinscription
+              const cancellationTokenResult = await bookingService.createCancellationToken(db, result.bookingId, 30);
+              const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
+
               await db.collection('mail').add({
                 to: normalizedEmail,
                 template: {
@@ -7973,6 +7992,7 @@ exports.bookCourse = onRequest(
                     location: course?.location || '',
                     bookingId: result.bookingId,
                     paymentMethod: 'Cours d\'essai gratuit',
+                    cancellationUrl: cancellationUrl,
                   },
                 },
               });
@@ -8303,6 +8323,223 @@ exports.getUserBookings = onRequest(
         });
       } catch (error) {
         console.error('Error getting user bookings:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);
+
+/**
+ * Récupère la position d'un utilisateur dans la liste d'attente
+ */
+exports.getWaitlistPosition = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      if (!bookingService) {
+        return res.status(500).json({error: 'Booking service not available'});
+      }
+
+      const email = req.query.email || req.body.email;
+      const courseId = req.query.courseId || req.body.courseId;
+
+      if (!email || !courseId) {
+        return res.status(400).json({error: 'email and courseId are required'});
+      }
+
+      try {
+        const result = await bookingService.getWaitlistPosition(db, email, courseId);
+        return res.json(result);
+      } catch (error) {
+        console.error('Error getting waitlist position:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);
+
+/**
+ * Retire un utilisateur de la liste d'attente
+ */
+exports.removeFromWaitlist = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      if (!bookingService) {
+        return res.status(500).json({error: 'Booking service not available'});
+      }
+
+      if (req.method !== 'POST') {
+        return res.status(405).json({error: 'Method not allowed'});
+      }
+
+      const {waitlistId, email} = req.body;
+
+      if (!waitlistId || !email) {
+        return res.status(400).json({error: 'waitlistId and email are required'});
+      }
+
+      try {
+        const result = await bookingService.removeFromWaitlist(db, waitlistId, email);
+        return res.json(result);
+      } catch (error) {
+        console.error('Error removing from waitlist:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);
+
+/**
+ * Transfère une réservation vers un autre cours (sans remboursement)
+ */
+exports.transferCourseBooking = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      if (!bookingService) {
+        return res.status(500).json({error: 'Booking service not available'});
+      }
+
+      if (req.method !== 'POST') {
+        return res.status(405).json({error: 'Method not allowed'});
+      }
+
+      const {bookingId, newCourseId, email} = req.body;
+
+      if (!bookingId || !newCourseId || !email) {
+        return res.status(400).json({error: 'bookingId, newCourseId and email are required'});
+      }
+
+      try {
+        const result = await bookingService.transferBooking(db, bookingId, newCourseId, email);
+        return res.json(result);
+      } catch (error) {
+        console.error('Error transferring booking:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);
+
+/**
+ * Désinscription via token (depuis email)
+ * Valide le token et redirige vers la page de choix de nouveau cours
+ */
+exports.cancelBookingByToken = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      if (!bookingService) {
+        return res.status(500).json({error: 'Booking service not available'});
+      }
+
+      const token = req.query.token || req.body.token;
+
+      if (!token) {
+        return res.status(400).json({error: 'Token is required'});
+      }
+
+      try {
+        // Valider le token
+        const tokenValidation = await bookingService.validateCancellationToken(db, token);
+
+        if (!tokenValidation.success) {
+          // Rediriger vers une page d'erreur
+          const errorMessages = {
+            'TOKEN_NOT_FOUND': 'Ce lien de désinscription n\'existe pas ou a déjà été utilisé.',
+            'TOKEN_ALREADY_USED': 'Ce lien de désinscription a déjà été utilisé.',
+            'TOKEN_EXPIRED': 'Ce lien de désinscription a expiré. Veuillez contacter le support.',
+            'BOOKING_NOT_FOUND': 'La réservation associée à ce lien n\'existe plus.',
+            'ALREADY_CANCELLED': 'Cette réservation a déjà été annulée.',
+          };
+
+          const errorMessage = errorMessages[tokenValidation.error] || 'Une erreur est survenue.';
+          return res.redirect(`https://fluance.io/presentiel/desinscription?error=${encodeURIComponent(errorMessage)}`);
+        }
+
+        // Annuler la réservation
+        const cancelResult = await bookingService.cancelBooking(db, null, tokenValidation.bookingId, 'Désinscription via email');
+
+        if (!cancelResult.success) {
+          return res.redirect(`https://fluance.io/presentiel/desinscription?error=${encodeURIComponent('Impossible d\'annuler la réservation.')}`);
+        }
+
+        // Marquer le token comme utilisé
+        await bookingService.markCancellationTokenAsUsed(db, token);
+
+        // Rediriger vers la page de choix de nouveau cours avec le bookingId et l'email
+        return res.redirect(`https://fluance.io/presentiel/choisir-cours?bookingId=${tokenValidation.bookingId}&email=${encodeURIComponent(tokenValidation.email)}&cancelled=true`);
+      } catch (error) {
+        console.error('Error cancelling booking by token:', error);
+        return res.redirect(`https://fluance.io/presentiel/desinscription?error=${encodeURIComponent('Une erreur est survenue lors de la désinscription.')}`);
+      }
+    },
+);
+
+/**
+ * Récupère les cours disponibles pour transfert (après désinscription)
+ */
+exports.getAvailableCoursesForTransfer = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      try {
+        const now = admin.firestore.Timestamp.now();
+        const excludeCourseId = req.query.excludeCourseId || req.body.excludeCourseId;
+
+        let query = db.collection('courses')
+            .where('startTime', '>=', now)
+            .where('status', '==', 'active')
+            .orderBy('startTime', 'asc')
+            .limit(20);
+
+        const coursesSnapshot = await query.get();
+
+        const courses = [];
+
+        for (const doc of coursesSnapshot.docs) {
+          // Exclure le cours d'origine si spécifié
+          if (excludeCourseId && doc.id === excludeCourseId) {
+            continue;
+          }
+
+          const course = doc.data();
+
+          // Compter les participants
+          const bookingsSnapshot = await db.collection('bookings')
+              .where('courseId', '==', doc.id)
+              .where('status', 'in', ['confirmed', 'pending_cash'])
+              .get();
+
+          const participantCount = bookingsSnapshot.size;
+          const spotsRemaining = course.maxCapacity - participantCount;
+
+          courses.push({
+            id: doc.id,
+            title: course.title,
+            date: course.date,
+            time: course.time,
+            location: course.location,
+            maxCapacity: course.maxCapacity,
+            spotsRemaining: spotsRemaining,
+            isFull: spotsRemaining <= 0,
+            price: course.price || 25,
+          });
+        }
+
+        return res.json({
+          success: true,
+          courses: courses,
+        });
+      } catch (error) {
+        console.error('Error getting courses for transfer:', error);
         return res.status(500).json({error: error.message});
       }
     },
