@@ -337,8 +337,294 @@ function loadEmailTemplate(templateName, variables = {}) {
   return html;
 }
 
+// Email admin pour les notifications (configuré via secret Firebase ADMIN_EMAIL)
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'support@fluance.io';
+
 /**
- * Envoie une notification à support@fluance.io pour chaque nouvel opt-in
+ * Envoie une notification admin pour une nouvelle réservation confirmée
+ */
+async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) {
+  try {
+    const dateStr = new Date().toLocaleString('fr-FR', {
+      timeZone: 'Europe/Zurich',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const amountStr = booking.amount ? `${(booking.amount / 100).toFixed(2)} CHF` : 'Gratuit';
+    const paymentMethodLabels = {
+      'card': 'Carte / TWINT',
+      'cash': 'Espèces sur place',
+      'pass': 'Pass (Flow Pass ou Semestriel)',
+    };
+    const paymentMethodLabel = paymentMethodLabels[booking.paymentMethod] || booking.paymentMethod;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #7A1F3D; border-bottom: 2px solid #E6B84A; padding-bottom: 10px;">
+          Nouvelle réservation - Cours hebdomadaire
+        </h2>
+        <div style="background-color: #fdfaf6; padding: 15px; border-radius: 5px; margin-top: 20px;">
+          <p style="margin: 5px 0;"><strong>Nom :</strong> ${booking.firstName} ${booking.lastName}</p>
+          <p style="margin: 5px 0;">
+            <strong>Email :</strong>
+            <a href="mailto:${booking.email}" style="color: #7A1F3D;">${booking.email}</a>
+          </p>
+          ${booking.phone ? `<p style="margin: 5px 0;"><strong>Téléphone :</strong> ${booking.phone}</p>` : ''}
+          <p style="margin: 5px 0;"><strong>Cours :</strong> ${course?.title || booking.courseName}</p>
+          <p style="margin: 5px 0;"><strong>Date :</strong> ${booking.courseDate}</p>
+          <p style="margin: 5px 0;"><strong>Heure :</strong> ${booking.courseTime}</p>
+          <p style="margin: 5px 0;"><strong>Lieu :</strong> ${booking.courseLocation || course?.location || 'N/A'}</p>
+          <p style="margin: 5px 0;"><strong>Formule :</strong> ${booking.pricingOption || 'N/A'}</p>
+          <p style="margin: 5px 0;"><strong>Montant :</strong> ${amountStr}</p>
+          <p style="margin: 5px 0;"><strong>Mode de paiement :</strong> ${paymentMethodLabel}</p>
+          ${booking.partnerCode ?
+      `<p style="margin: 5px 0;"><strong>Code partenaire :</strong> ${
+        booking.partnerCode
+      } (remise: ${booking.discountPercent}%)</p>` :
+      ''}
+          <p style="margin: 5px 0;"><strong>Date de réservation :</strong> ${dateStr}</p>
+          <p style="margin: 5px 0;"><strong>Booking ID :</strong> ${booking.bookingId}</p>
+        </div>
+      </div>
+    `;
+    const textContent = `Nouvelle réservation - Cours hebdomadaire\n\n` +
+      `Nom: ${booking.firstName} ${booking.lastName}\n` +
+      `Email: ${booking.email}\n` +
+      `${booking.phone ? `Téléphone: ${booking.phone}\n` : ''}` +
+      `Cours: ${course?.title || booking.courseName}\n` +
+      `Date: ${booking.courseDate}\n` +
+      `Heure: ${booking.courseTime}\n` +
+      `Lieu: ${booking.courseLocation || course?.location || 'N/A'}\n` +
+      `Formule: ${booking.pricingOption || 'N/A'}\n` +
+      `Montant: ${amountStr}\n` +
+      `Mode de paiement: ${paymentMethodLabel}\n` +
+      `${booking.partnerCode ? `Code partenaire: ${booking.partnerCode} (remise: ${booking.discountPercent}%)\n` : ''}` +
+      `Date de réservation: ${dateStr}\n` +
+      `Booking ID: ${booking.bookingId}`;
+
+    await sendMailjetEmail(
+        ADMIN_EMAIL,
+        `Nouvelle réservation : ${booking.firstName} ${booking.lastName} - ${
+          booking.courseDate
+        }`,
+        htmlContent,
+        textContent,
+        apiKey,
+        apiSecret,
+        'support@actu.fluance.io',
+        'Fluance - Notification Réservation',
+    );
+    console.log(`✅ Booking notification sent to ${ADMIN_EMAIL} for ${booking.email}`);
+  } catch (error) {
+    console.error('Error sending booking notification:', error.message);
+  }
+}
+
+/**
+ * Envoie une notification admin pour une inscription à la liste d'attente
+ */
+async function sendWaitlistNotificationAdmin(waitlistData, course, apiKey, apiSecret) {
+  try {
+    const dateStr = new Date().toLocaleString('fr-FR', {
+      timeZone: 'Europe/Zurich',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #7A1F3D; border-bottom: 2px solid #E6B84A; padding-bottom: 10px;">
+          Nouvelle inscription - Liste d'attente
+        </h2>
+        <div style="background-color: #fdfaf6; padding: 15px; border-radius: 5px; margin-top: 20px;">
+          <p style="margin: 5px 0;"><strong>Nom :</strong> ${waitlistData.firstName} ${waitlistData.lastName}</p>
+          <p style="margin: 5px 0;">
+            <strong>Email :</strong>
+            <a href="mailto:${waitlistData.email}" style="color: #7A1F3D;">${waitlistData.email}</a>
+          </p>
+          ${waitlistData.phone ? `<p style="margin: 5px 0;"><strong>Téléphone :</strong> ${waitlistData.phone}</p>` : ''}
+          <p style="margin: 5px 0;"><strong>Cours :</strong> ${course?.title || 'N/A'}</p>
+          <p style="margin: 5px 0;"><strong>Date :</strong> ${course?.date || 'N/A'}</p>
+          <p style="margin: 5px 0;"><strong>Heure :</strong> ${course?.time || 'N/A'}</p>
+          <p style="margin: 5px 0;"><strong>Position :</strong> ${waitlistData.position || 'N/A'}</p>
+          <p style="margin: 5px 0;"><strong>Date d'inscription :</strong> ${dateStr}</p>
+        </div>
+      </div>
+    `;
+    const textContent = `Nouvelle inscription - Liste d'attente\n\n` +
+      `Nom: ${waitlistData.firstName} ${waitlistData.lastName}\n` +
+      `Email: ${waitlistData.email}\n` +
+      `${waitlistData.phone ? `Téléphone: ${waitlistData.phone}\n` : ''}` +
+      `Cours: ${course?.title || 'N/A'}\n` +
+      `Date: ${course?.date || 'N/A'}\n` +
+      `Heure: ${course?.time || 'N/A'}\n` +
+      `Position: ${waitlistData.position || 'N/A'}\n` +
+      `Date d'inscription: ${dateStr}`;
+
+    await sendMailjetEmail(
+        ADMIN_EMAIL,
+        `Nouvelle inscription liste d'attente : ${waitlistData.firstName} ${waitlistData.lastName}`,
+        htmlContent,
+        textContent,
+        apiKey,
+        apiSecret,
+        'support@actu.fluance.io',
+        'Fluance - Notification Liste d\'attente',
+    );
+    console.log(`✅ Waitlist notification sent to ${ADMIN_EMAIL} for ${waitlistData.email}`);
+  } catch (error) {
+    console.error('Error sending waitlist notification:', error.message);
+  }
+}
+
+/**
+ * Envoie un email d'abandon de panier
+ */
+async function sendCartAbandonmentEmail(
+    email,
+    firstName,
+    courseName,
+    courseDate,
+    courseTime,
+    amount,
+    clientSecret,
+    bookingId,
+    reason,
+    apiKey,
+    apiSecret,
+) {
+  try {
+    const amountStr = amount ? `${(amount / 100).toFixed(2)} CHF` : 'Gratuit';
+    const bookingUrl = clientSecret ?
+      `https://fluance.io/presentiel/reserver/?booking=${bookingId}&retry=true` :
+      `https://fluance.io/presentiel/reserver/`;
+
+    const reasonText = reason === 'payment_failed' ?
+      'Votre paiement n\'a pas pu être traité' :
+      'Vous avez commencé une réservation mais ne l\'avez pas finalisée';
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #7A1F3D; border-bottom: 2px solid #E6B84A; padding-bottom: 10px;">
+          Finalisez votre réservation
+        </h2>
+        <div style="background-color: #fdfaf6; padding: 15px; border-radius: 5px; margin-top: 20px;">
+          <p style="margin: 10px 0;">Bonjour${firstName ? ' ' + firstName : ''},</p>
+          <p style="margin: 10px 0;">
+            ${reasonText}. Nous vous invitons à finaliser votre réservation
+            pour le cours suivant :
+          </p>
+          <div style="background-color: white; padding: 15px; border-radius: 5px;
+                      margin: 15px 0; border-left: 4px solid #E6B84A;">
+            <p style="margin: 5px 0;"><strong>Cours :</strong> ${courseName}</p>
+            <p style="margin: 5px 0;"><strong>Date :</strong> ${courseDate}</p>
+            <p style="margin: 5px 0;"><strong>Heure :</strong> ${courseTime}</p>
+            <p style="margin: 5px 0;"><strong>Montant :</strong> ${amountStr}</p>
+          </div>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${bookingUrl}"
+               style="display: inline-block; background-color: #E6B84A; color: #7A1F3D;
+                      padding: 12px 30px; text-decoration: none; border-radius: 25px;
+                      font-weight: bold; font-size: 16px;">
+              Finaliser ma réservation
+            </a>
+          </div>
+          <p style="margin: 10px 0; font-size: 14px; color: #666;">Ce lien est valable pendant 48 heures.</p>
+        </div>
+      </div>
+    `;
+
+    const textContent = `Finalisez votre réservation\n\n` +
+      `Bonjour${firstName ? ' ' + firstName : ''},\n\n` +
+      `${reasonText}. Nous vous invitons à finaliser votre réservation ` +
+      `pour le cours suivant :\n\n` +
+      `Cours: ${courseName}\n` +
+      `Date: ${courseDate}\n` +
+      `Heure: ${courseTime}\n` +
+      `Montant: ${amountStr}\n\n` +
+      `Finaliser ma réservation : ${bookingUrl}\n\n` +
+      `Ce lien est valable pendant 48 heures.`;
+
+    await sendMailjetEmail(
+        email,
+        reason === 'payment_failed' ?
+          'Votre paiement n\'a pas pu être traité - Finalisez votre réservation' :
+          'Finalisez votre réservation Fluance',
+        htmlContent,
+        textContent,
+        apiKey,
+        apiSecret,
+        'support@actu.fluance.io',
+        'Fluance',
+    );
+    console.log(`✅ Cart abandonment email sent to ${email} (reason: ${reason})`);
+  } catch (error) {
+    console.error('Error sending cart abandonment email:', error.message);
+  }
+}
+
+/**
+ * Envoie une notification admin pour une inscription à la liste d'attente des stages
+ */
+async function sendStagesWaitlistNotificationAdmin(email, name, region, locale, apiKey, apiSecret) {
+  try {
+    const dateStr = new Date().toLocaleString('fr-FR', {
+      timeZone: 'Europe/Zurich',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #7A1F3D; border-bottom: 2px solid #E6B84A; padding-bottom: 10px;">
+          Nouvelle inscription - Liste d'attente Stages
+        </h2>
+        <div style="background-color: #fdfaf6; padding: 15px; border-radius: 5px; margin-top: 20px;">
+          <p style="margin: 5px 0;"><strong>Nom :</strong> ${name || 'N/A'}</p>
+          <p style="margin: 5px 0;">
+            <strong>Email :</strong>
+            <a href="mailto:${email}" style="color: #7A1F3D;">${email}</a>
+          </p>
+          ${region ? `<p style="margin: 5px 0;"><strong>Région :</strong> ${region}</p>` : ''}
+          <p style="margin: 5px 0;"><strong>Langue :</strong> ${locale === 'en' ? 'Anglais' : 'Français'}</p>
+          <p style="margin: 5px 0;"><strong>Date d'inscription :</strong> ${dateStr}</p>
+        </div>
+      </div>
+    `;
+    const textContent = `Nouvelle inscription - Liste d'attente Stages\n\n` +
+      `Nom: ${name || 'N/A'}\n` +
+      `Email: ${email}\n` +
+      `${region ? `Région: ${region}\n` : ''}` +
+      `Langue: ${locale === 'en' ? 'Anglais' : 'Français'}\n` +
+      `Date d'inscription: ${dateStr}`;
+
+    await sendMailjetEmail(
+        ADMIN_EMAIL,
+        `Nouvelle inscription liste d'attente stages : ${name || email}`,
+        htmlContent,
+        textContent,
+        apiKey,
+        apiSecret,
+        'support@actu.fluance.io',
+        'Fluance - Notification Liste d\'attente Stages',
+    );
+    console.log(`✅ Stages waitlist notification sent to ${ADMIN_EMAIL} for ${email}`);
+  } catch (error) {
+    console.error('Error sending stages waitlist notification:', error.message);
+  }
+}
+
+/**
+ * Envoie une notification admin pour chaque nouvel opt-in
  */
 async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret) {
   try {
@@ -369,7 +655,7 @@ async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret
       `Nouvel opt-in Fluance\n\nEmail: ${email}\n${name ? `Nom: ${name}\n` : ''}Source: ${sourceLabel}\nDate: ${dateStr}`;
 
     await sendMailjetEmail(
-        'support@fluance.io',
+        ADMIN_EMAIL,
         subject,
         htmlContent,
         textContent,
@@ -378,7 +664,7 @@ async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret
         'support@actu.fluance.io',
         'Fluance - Notification Opt-in',
     );
-    console.log(`✅ Opt-in notification sent to support@fluance.io for ${email} (${sourceLabel})`);
+    console.log(`✅ Opt-in notification sent to ${ADMIN_EMAIL} for ${email} (${sourceLabel})`);
   } catch (error) {
     // Ne pas faire échouer l'opt-in si la notification échoue
     console.error('Error sending opt-in notification:', error.message);
@@ -809,7 +1095,7 @@ async function handlePaymentFailure(invoice, subscription, customerEmail, apiKey
         failureReason: failureReason,
         stripePaymentLink: stripePaymentLink ||
           'https://fluance.io/cours-en-ligne/approche-fluance-complete/',
-        paypalRequestLink: `mailto:support@fluance.io?subject=Demande%20lien%20PayPal&` +
+        paypalRequestLink: `mailto:${ADMIN_EMAIL}?subject=Demande%20lien%20PayPal&` +
           `body=Bonjour,%20je%20souhaite%20recevoir%20un%20lien%20de%20paiement%20PayPal%20pour%20mon%20abonnement.`,
         amount: `${amount} ${currency}`,
         reference: `FLU-${subscriptionId?.substring(0, 8) || invoiceId.substring(0, 8)}`,
@@ -827,7 +1113,7 @@ async function handlePaymentFailure(invoice, subscription, customerEmail, apiKey
         warningMessage: warningMessage,
         updatePaymentLink: updatePaymentLink ||
           'https://billing.stripe.com/p/login/4gM3coe0tgPp3Qcd608k800',
-        paypalRequestLink: `mailto:support@fluance.io?subject=Demande%20lien%20PayPal&` +
+        paypalRequestLink: `mailto:${ADMIN_EMAIL}?subject=Demande%20lien%20PayPal&` +
           `body=Bonjour,%20je%20souhaite%20recevoir%20un%20lien%20de%20paiement%20PayPal%20pour%20mon%20abonnement.`,
       };
     }
@@ -1038,11 +1324,48 @@ exports.webhookStripe = onRequest(
         if (bookingId && bookingService) {
           console.log(`❌ Payment failed for booking ${bookingId}`);
           try {
-            await db.collection('bookings').doc(bookingId).update({
-              status: 'payment_failed',
-              paymentError: paymentIntent.last_payment_error?.message || 'Payment failed',
-              updatedAt: new Date(),
-            });
+            const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+            if (bookingDoc.exists) {
+              const booking = bookingDoc.data();
+              await db.collection('bookings').doc(bookingId).update({
+                status: 'payment_failed',
+                paymentError: paymentIntent.last_payment_error?.message || 'Payment failed',
+                paymentFailedAt: new Date(),
+                updatedAt: new Date(),
+                // Marquer pour relance abandon de panier (sera envoyé par la fonction scheduled)
+                cartAbandonmentEmailSent: false,
+              });
+
+              // Envoyer immédiatement un email d'abandon de panier pour paiement échoué
+              try {
+                const courseDoc = await db.collection('courses').doc(booking.courseId).get();
+                const course = courseDoc.exists ? courseDoc.data() : null;
+
+                if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                  await sendCartAbandonmentEmail(
+                      booking.email,
+                      booking.firstName || '',
+                      booking.courseName || course?.title || 'Cours Fluance',
+                      booking.courseDate || course?.date || '',
+                      booking.courseTime || course?.time || '',
+                      booking.amount || 0,
+                      booking.stripeClientSecret || null,
+                      booking.bookingId,
+                      'payment_failed',
+                      process.env.MAILJET_API_KEY,
+                      process.env.MAILJET_API_SECRET,
+                  );
+
+                  await db.collection('bookings').doc(bookingId).update({
+                    cartAbandonmentEmailSent: true,
+                    cartAbandonmentEmailSentAt: new Date(),
+                  });
+                }
+              } catch (emailError) {
+                console.error('Error sending cart abandonment email:', emailError);
+                // Ne pas bloquer le processus
+              }
+            }
             return res.status(200).json({received: true, bookingUpdated: true});
           } catch (error) {
             console.error('Error updating booking status:', error);
@@ -1515,7 +1838,7 @@ exports.webhookStripe = onRequest(
 exports.webhookPayPal = onRequest(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
     },
     async (req, res) => {
       const event = req.body;
@@ -2113,7 +2436,7 @@ exports.getStripeCheckoutSession = onCall(
 exports.createUserToken = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
     },
     async (request) => {
       // Vérifier l'authentification admin (vous pouvez utiliser un claim personnalisé)
@@ -2298,7 +2621,7 @@ exports.repairUserDocument = onCall(
     {
       region: 'europe-west1',
       cors: true,
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
     },
     async (request) => {
       const {email, product = null} = request.data;
@@ -2492,7 +2815,7 @@ exports.repairUserDocument = onCall(
 exports.sendNewsletter = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
     },
     async (request) => {
       // Vérifier l'authentification admin
@@ -2576,7 +2899,12 @@ exports.sendNewsletter = onCall(
 exports.subscribeToNewsletter = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'TURNSTILE_SECRET_KEY'],
+      secrets: [
+        'MAILJET_API_KEY',
+        'MAILJET_API_SECRET',
+        'TURNSTILE_SECRET_KEY',
+        'ADMIN_EMAIL',
+      ],
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
@@ -2842,7 +3170,7 @@ exports.subscribeToNewsletter = onCall(
           console.error('Stack trace:', err.stack);
         }
 
-        // Envoyer une notification à support@fluance.io pour le nouvel opt-in
+        // Envoyer une notification admin pour le nouvel opt-in
         await sendOptInNotification(
             contactData.Email,
             name || '',
@@ -2875,7 +3203,12 @@ exports.subscribeToNewsletter = onCall(
 exports.subscribeToStagesWaitingList = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'TURNSTILE_SECRET_KEY'],
+      secrets: [
+        'MAILJET_API_KEY',
+        'MAILJET_API_SECRET',
+        'TURNSTILE_SECRET_KEY',
+        'ADMIN_EMAIL',
+      ],
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
@@ -3164,6 +3497,23 @@ exports.subscribeToStagesWaitingList = onCall(
           console.error('Stack trace:', err.stack);
         }
 
+        // Envoyer notification admin pour inscription liste d'attente stages
+        try {
+          if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+            await sendStagesWaitlistNotificationAdmin(
+                contactData.Email,
+                name || '',
+                region || '',
+                locale,
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+          }
+        } catch (notifError) {
+          console.error('Error sending stages waitlist admin notification:', notifError);
+          // Ne pas bloquer le processus
+        }
+
         return {
           success: true,
           message: emailSent ?
@@ -3188,7 +3538,7 @@ exports.subscribeToStagesWaitingList = onCall(
 exports.confirmNewsletterOptIn = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
@@ -3551,7 +3901,12 @@ exports.confirmNewsletterOptIn = onCall(
 exports.subscribeTo5Days = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'TURNSTILE_SECRET_KEY'],
+      secrets: [
+        'MAILJET_API_KEY',
+        'MAILJET_API_SECRET',
+        'TURNSTILE_SECRET_KEY',
+        'ADMIN_EMAIL',
+      ],
       cors: true,
     },
     async (request) => {
@@ -3878,7 +4233,7 @@ exports.subscribeTo5Days = onCall(
           console.error('Stack trace:', err.stack);
         }
 
-        // Envoyer une notification à support@fluance.io pour le nouvel opt-in
+        // Envoyer une notification admin pour le nouvel opt-in
         await sendOptInNotification(
             contactData.Email,
             name || '',
@@ -3911,7 +4266,7 @@ exports.subscribeTo5Days = onCall(
 exports.sendPasswordResetEmailViaMailjet = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       cors: true,
     },
     async (request) => {
@@ -4028,7 +4383,7 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
               `🎁 5 jours offerts : https://fluance.io/cours-en-ligne/5jours/inscription/\n\n` +
               `Vous êtes déjà client ? Vérifiez que vous utilisez bien l'adresse email ` +
               `associée à votre achat. Si le problème persiste, contactez-nous à ` +
-              `support@fluance.io.\n\n` +
+              `${ADMIN_EMAIL}.\n\n` +
               `Cordialement,\nL'équipe Fluance`;
 
           console.log(`[Password Reset] Sending redirect email to ${normalizedEmail}`);
@@ -4282,7 +4637,7 @@ exports.checkPasswordResetToken = onCall(
 exports.sendSignInLinkViaMailjet = onCall(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       cors: true,
     },
     async (request) => {
@@ -4401,7 +4756,7 @@ exports.sendSignInLinkViaMailjet = onCall(
               `🎁 5 jours offerts : https://fluance.io/cours-en-ligne/5jours/inscription/\n\n` +
               `Vous êtes déjà client ? Vérifiez que vous utilisez bien l'adresse email ` +
               `associée à votre achat. Si le problème persiste, contactez-nous à ` +
-              `support@fluance.io.\n\n` +
+              `${ADMIN_EMAIL}.\n\n` +
               `Cordialement,\nL'équipe Fluance`;
 
           console.log(`[Non-client] Sending redirect email to ${normalizedEmail}`);
@@ -4619,7 +4974,7 @@ exports.sendNewContentEmails = onSchedule(
     {
       schedule: '0 8 * * *', // Tous les jours à 8h
       timeZone: 'Europe/Paris',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       region: 'europe-west1',
     },
     async (_event) => {
@@ -6089,7 +6444,7 @@ exports.processPendingSuspensions = onSchedule(
     {
       schedule: '0 10 * * *', // Tous les jours à 10h
       timeZone: 'Europe/Paris',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       region: 'europe-west1',
     },
     async (_event) => {
@@ -6205,7 +6560,7 @@ exports.sendOptInReminders = onSchedule(
     {
       schedule: '0 9 * * *', // Tous les jours à 9h
       timeZone: 'Europe/Paris',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       region: 'europe-west1',
     },
     async (_event) => {
@@ -7210,7 +7565,7 @@ exports.sendCourseReminders = onSchedule(
     {
       schedule: '0 9 * * *', // Tous les jours à 9h
       timeZone: 'Europe/Zurich',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       region: 'europe-west1',
     },
     async (_event) => {
@@ -7226,7 +7581,7 @@ exports.sendCourseReminders = onSchedule(
 exports.sendCourseRemindersManual = onRequest(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       cors: true,
     },
     async (req, res) => {
@@ -7488,6 +7843,149 @@ async function sendCourseRemindersLogic() {
  * Synchronise le calendrier Google avec Firestore
  * Exécuté toutes les 30 minutes
  */
+/**
+ * Fonction scheduled pour envoyer les emails d'abandon de panier
+ * Vérifie les réservations en attente (pending) et les paiements échoués
+ * et envoie un email de relance après 1 heure
+ */
+exports.sendCartAbandonmentEmails = onSchedule(
+    {
+      schedule: 'every 1 hours', // Toutes les heures
+      timeZone: 'Europe/Zurich',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+      region: 'europe-west1',
+    },
+    async (_event) => {
+      try {
+        console.log('🛒 Starting cart abandonment email check...');
+
+        if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_API_SECRET) {
+          console.warn('⚠️ Mailjet credentials not configured, skipping cart abandonment emails');
+          return;
+        }
+
+        const now = new Date();
+
+        let emailsSent = 0;
+        let errors = 0;
+
+        // 1. Réservations en attente (pending) créées il y a plus d'1 heure mais moins de 48h
+        const pendingBookings = await db.collection('bookings')
+            .where('status', '==', 'pending')
+            .get();
+
+        for (const doc of pendingBookings.docs) {
+          const booking = doc.data();
+          const createdAt = booking.createdAt?.toDate ?
+            booking.createdAt.toDate() :
+            new Date(booking.createdAt);
+
+          // Vérifier que c'est entre 1h et 48h
+          const hoursSinceCreation = (now - createdAt) / (1000 * 60 * 60);
+          if (hoursSinceCreation < 1 || hoursSinceCreation > 48) {
+            continue;
+          }
+
+          // Vérifier qu'on n'a pas déjà envoyé un email
+          if (booking.cartAbandonmentEmailSent) {
+            continue;
+          }
+
+          try {
+            const courseDoc = await db.collection('courses').doc(booking.courseId).get();
+            const course = courseDoc.exists ? courseDoc.data() : null;
+
+            await sendCartAbandonmentEmail(
+                booking.email,
+                booking.firstName || '',
+                booking.courseName || course?.title || 'Cours Fluance',
+                booking.courseDate || course?.date || '',
+                booking.courseTime || course?.time || '',
+                booking.amount || 0,
+                booking.stripeClientSecret || null,
+                booking.bookingId,
+                'incomplete',
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+
+            await doc.ref.update({
+              cartAbandonmentEmailSent: true,
+              cartAbandonmentEmailSentAt: new Date(),
+            });
+
+            emailsSent++;
+            console.log(`✅ Cart abandonment email sent for booking ${booking.bookingId}`);
+          } catch (error) {
+            errors++;
+            console.error(`❌ Error sending cart abandonment email for booking ${booking.bookingId}:`, error);
+          }
+        }
+
+        // 2. Paiements échoués (payment_failed) créés il y a plus d'1 heure mais moins de 48h
+        const failedBookings = await db.collection('bookings')
+            .where('status', '==', 'payment_failed')
+            .get();
+
+        for (const doc of failedBookings.docs) {
+          const booking = doc.data();
+          const paymentFailedAt = booking.paymentFailedAt?.toDate ?
+            booking.paymentFailedAt.toDate() :
+            (booking.updatedAt?.toDate ?
+              booking.updatedAt.toDate() :
+              new Date(booking.updatedAt));
+
+          // Vérifier que c'est entre 1h et 48h
+          const hoursSinceFailure = (now - paymentFailedAt) / (1000 * 60 * 60);
+          if (hoursSinceFailure < 1 || hoursSinceFailure > 48) {
+            continue;
+          }
+
+          // Vérifier qu'on n'a pas déjà envoyé un email
+          if (booking.cartAbandonmentEmailSent) {
+            continue;
+          }
+
+          try {
+            const courseDoc = await db.collection('courses').doc(booking.courseId).get();
+            const course = courseDoc.exists ? courseDoc.data() : null;
+
+            await sendCartAbandonmentEmail(
+                booking.email,
+                booking.firstName || '',
+                booking.courseName || course?.title || 'Cours Fluance',
+                booking.courseDate || course?.date || '',
+                booking.courseTime || course?.time || '',
+                booking.amount || 0,
+                booking.stripeClientSecret || null,
+                booking.bookingId,
+                'payment_failed',
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+
+            await doc.ref.update({
+              cartAbandonmentEmailSent: true,
+              cartAbandonmentEmailSentAt: new Date(),
+            });
+
+            emailsSent++;
+            console.log(`✅ Cart abandonment email sent for failed payment ${booking.bookingId}`);
+          } catch (error) {
+            errors++;
+            console.error(`❌ Error sending cart abandonment email for failed payment ${booking.bookingId}:`, error);
+          }
+        }
+
+        console.log(`✅ Cart abandonment check completed: ${emailsSent} email(s) sent, ${errors} error(s)`);
+        return {success: true, emailsSent, errors};
+      } catch (error) {
+        console.error('❌ Error in sendCartAbandonmentEmails:', error);
+        return {success: false, error: error.message};
+      }
+    },
+);
+
 exports.syncPlanning = onSchedule(
     {
       schedule: 'every 30 minutes',
@@ -7684,7 +8182,14 @@ exports.checkUserPass = onRequest(
 exports.bookCourse = onRequest(
     {
       region: 'europe-west1',
-      secrets: ['STRIPE_SECRET_KEY', 'GOOGLE_SHEET_ID', 'GOOGLE_SERVICE_ACCOUNT', 'MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      secrets: [
+        'STRIPE_SECRET_KEY',
+        'GOOGLE_SHEET_ID',
+        'GOOGLE_SERVICE_ACCOUNT',
+        'MAILJET_API_KEY',
+        'MAILJET_API_SECRET',
+        'ADMIN_EMAIL',
+      ],
       cors: true,
     },
     async (req, res) => {
@@ -7755,7 +8260,7 @@ exports.bookCourse = onRequest(
             return res.status(400).json({
               success: false,
               error: 'NO_ACTIVE_PASS',
-              message: passStatus.message || 'Vous n\'avez pas de pass actif.',
+              message: passStatus.message || 'Vous n\'avez pas de pass actif',
             });
           }
 
@@ -7789,6 +8294,23 @@ exports.bookCourse = onRequest(
               createdAt: new Date(),
             };
             const waitlistRef = await db.collection('waitlist').add(waitlistData);
+
+            // Envoyer notification admin pour liste d'attente
+            try {
+              const courseDoc = await db.collection('courses').doc(courseId).get();
+              const course = courseDoc.exists ? courseDoc.data() : null;
+              if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                await sendWaitlistNotificationAdmin(
+                    waitlistData,
+                    course,
+                    process.env.MAILJET_API_KEY,
+                    process.env.MAILJET_API_SECRET,
+                );
+              }
+            } catch (notifError) {
+              console.error('Error sending waitlist admin notification:', notifError);
+              // Ne pas bloquer le processus
+            }
 
             return res.json({
               success: true,
@@ -7888,7 +8410,9 @@ exports.bookCourse = onRequest(
                     isWaitlisted: false,
                   },
               );
-              console.log(`✅ Successfully added booking to sheet: ${userData.email}`);
+              console.log(
+                  `✅ Successfully added booking to sheet: ${userData.email}`,
+              );
             }
           } catch (sheetError) {
             console.error('❌ Error updating sheet:', sheetError.message);
@@ -7902,8 +8426,11 @@ exports.bookCourse = onRequest(
           // Envoyer email de confirmation
           try {
             // Créer un token de désinscription
-            const cancellationTokenResult = await bookingService.createCancellationToken(db, bookingId, 30);
-            const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
+            const cancellationTokenResult =
+              await bookingService.createCancellationToken(db, bookingId, 30);
+            const cancellationUrl = cancellationTokenResult.success ?
+              cancellationTokenResult.cancellationUrl :
+              null;
 
             await db.collection('mail').add({
               to: normalizedEmail,
@@ -7924,6 +8451,38 @@ exports.bookCourse = onRequest(
             });
           } catch (emailError) {
             console.error('Error sending email:', emailError);
+          }
+
+          // Envoyer notification admin pour réservation avec pass
+          try {
+            const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+            const booking = bookingDoc.exists ? bookingDoc.data() : null;
+            if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+              await sendBookingNotificationAdmin(
+                  booking,
+                  course,
+                  process.env.MAILJET_API_KEY,
+                  process.env.MAILJET_API_SECRET,
+              );
+            }
+          } catch (notifError) {
+            console.error('Error sending admin notification:', notifError);
+            // Ne pas bloquer le processus
+          }
+
+          // Envoyer notification admin
+          try {
+            if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+              await sendBookingNotificationAdmin(
+                  bookingData,
+                  course,
+                  process.env.MAILJET_API_KEY,
+                  process.env.MAILJET_API_SECRET,
+              );
+            }
+          } catch (notifError) {
+            console.error('Error sending admin notification:', notifError);
+            // Ne pas bloquer le processus
           }
 
           return res.json({
@@ -8004,7 +8563,8 @@ exports.bookCourse = onRequest(
 
           // Vérifier le statut de double opt-in et envoyer email de confirmation
           try {
-            const existingConfirmation = await db.collection('newsletterConfirmations')
+            const existingConfirmation = await db
+                .collection('newsletterConfirmations')
                 .where('email', '==', normalizedEmail)
                 .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
                 .limit(1)
@@ -8044,6 +8604,23 @@ exports.bookCourse = onRequest(
                 console.log(`📧 Confirmation email sent to ${normalizedEmail} for cash booking`);
               } catch (emailError) {
                 console.error('Error sending confirmation email:', emailError);
+              }
+
+              // Envoyer notification admin pour réservation espèces
+              try {
+                const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
+                const booking = bookingDoc.exists ? bookingDoc.data() : null;
+                if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                  await sendBookingNotificationAdmin(
+                      booking,
+                      course,
+                      process.env.MAILJET_API_KEY,
+                      process.env.MAILJET_API_SECRET,
+                  );
+                }
+              } catch (notifError) {
+                console.error('Error sending admin notification:', notifError);
+                // Ne pas bloquer le processus
               }
             } else {
               // Nouveau contact : déclencher double opt-in
@@ -8164,6 +8741,23 @@ exports.bookCourse = onRequest(
             } catch (emailError) {
               console.error('Error sending confirmation email:', emailError);
             }
+
+            // Envoyer notification admin pour cours d'essai
+            try {
+              const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
+              const booking = bookingDoc.exists ? bookingDoc.data() : null;
+              if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                await sendBookingNotificationAdmin(
+                    booking,
+                    course,
+                    process.env.MAILJET_API_KEY,
+                    process.env.MAILJET_API_SECRET,
+                );
+              }
+            } catch (notifError) {
+              console.error('Error sending admin notification:', notifError);
+              // Ne pas bloquer le processus
+            }
           } else {
             // Nouveau contact : déclencher double opt-in
             await handleDoubleOptInForBooking(
@@ -8215,7 +8809,11 @@ exports.bookCourse = onRequest(
 
       let event;
       try {
-        event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
+        event = stripe.webhooks.constructEvent(
+            req.rawBody,
+            sig,
+            webhookSecret,
+        );
       } catch (err) {
         console.error('Webhook signature verification failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -8239,6 +8837,50 @@ exports.bookCourse = onRequest(
                 paymentIntent.id,
             );
             console.log('Confirmation result:', result);
+
+            // Envoyer notification admin pour réservation confirmée
+            try {
+              const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+              if (bookingDoc.exists) {
+                const booking = bookingDoc.data();
+                const courseDoc = await db.collection('courses').doc(booking.courseId).get();
+                const course = courseDoc.exists ? courseDoc.data() : null;
+
+                if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                  await sendBookingNotificationAdmin(
+                      booking,
+                      course,
+                      process.env.MAILJET_API_KEY,
+                      process.env.MAILJET_API_SECRET,
+                  );
+                }
+              }
+            } catch (notifError) {
+              console.error('Error sending admin notification:', notifError);
+              // Ne pas bloquer le processus
+            }
+
+                // Envoyer notification admin pour réservation confirmée
+                try {
+                  const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+                  if (bookingDoc.exists) {
+                    const booking = bookingDoc.data();
+                    const courseDoc = await db.collection('courses').doc(booking.courseId).get();
+                    const course = courseDoc.exists ? courseDoc.data() : null;
+
+                    if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                      await sendBookingNotificationAdmin(
+                          booking,
+                          course,
+                          process.env.MAILJET_API_KEY,
+                          process.env.MAILJET_API_SECRET,
+                      );
+                    }
+                  }
+                } catch (notifError) {
+                  console.error('Error sending admin notification:', notifError);
+                  // Ne pas bloquer le processus
+                }
           }
 
           // Cas 2: Achat d'un Flow Pass

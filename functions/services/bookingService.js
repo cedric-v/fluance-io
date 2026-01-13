@@ -496,6 +496,19 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
       console.error('Error sending confirmation email:', emailError);
     }
 
+    // Envoyer notification admin (si fonction disponible)
+    try {
+      // Appeler la fonction de notification admin depuis index.js
+      // Note: Cette fonction sera appelée depuis bookCourse dans index.js pour avoir accès aux secrets
+      // On stocke juste un flag ici pour que index.js puisse envoyer la notification
+      await bookingRef.update({
+        adminNotificationSent: false, // Sera mis à true après envoi
+      });
+    } catch (notifError) {
+      console.error('Error preparing admin notification:', notifError);
+      // Ne pas bloquer le processus
+    }
+
     return {
       success: true,
       bookingId: bookingId,
