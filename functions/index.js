@@ -1839,6 +1839,102 @@ exports.createStripeCheckoutSession = onCall(
     });
 
 /**
+ * Valide un code partenaire et retourne la remise applicable
+ */
+exports.validatePartnerCode = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      const code = req.query.code;
+
+      if (!code) {
+        return res.status(400).json({valid: false, error: 'Code is required'});
+      }
+
+      // Configuration des codes partenaires
+      // Format: { code: { discountPercent: number, description: string, validFor: string[] } }
+      const PARTNER_CODES = {
+        'DUPLEX10': {
+          discountPercent: 10,
+          description: 'Remise Duplex 10%',
+          validFor: ['semester_pass'], // Valide uniquement pour Pass Semestriel
+        },
+        // Ajoutez d'autres codes ici
+        // 'AUTRECODE': {
+        //   discountPercent: 15,
+        //   description: 'Autre remise',
+        //   validFor: ['semester_pass', 'flow_pass'],
+        // },
+      };
+
+      const normalizedCode = code.toUpperCase().trim();
+      const partnerCode = PARTNER_CODES[normalizedCode];
+
+      if (!partnerCode) {
+        return res.json({
+          valid: false,
+          message: 'Code invalide',
+        });
+      }
+
+      // Vérifier pour quel produit le code est valide (optionnel, peut être passé en paramètre)
+      const validFor = req.query.validFor || 'semester_pass';
+      if (partnerCode.validFor && !partnerCode.validFor.includes(validFor)) {
+        return res.json({
+          valid: false,
+          message: 'Ce code n\'est pas valide pour cette formule',
+        });
+      }
+
+      return res.json({
+        valid: true,
+        discountPercent: partnerCode.discountPercent,
+        discount: partnerCode.discountPercent, // Pour compatibilité
+        description: partnerCode.description,
+        message: `Remise de ${partnerCode.discountPercent}% appliquée !`,
+      });
+    },
+);
+
+/**
+ * Vérifie le statut d'un Payment Intent Stripe
+ * Utilisé pour vérifier si un paiement a réussi après redirection
+ */
+exports.checkPaymentStatus = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['STRIPE_SECRET_KEY'],
+      cors: true,
+    },
+    async (req, res) => {
+      const paymentIntentId = req.query.payment_intent;
+
+      if (!paymentIntentId) {
+        return res.status(400).json({error: 'payment_intent is required'});
+      }
+
+      try {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+        // Récupérer le Payment Intent
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        return res.json({
+          paymentIntentId: paymentIntent.id,
+          status: paymentIntent.status,
+          amount: paymentIntent.amount / 100,
+          currency: paymentIntent.currency.toUpperCase(),
+        });
+      } catch (error) {
+        console.error('Error checking payment status:', error);
+        return res.status(500).json({error: error.message});
+      }
+    },
+);
+
+/**
  * Vérifie les métadonnées d'un Payment Intent Stripe pour les remboursements
  * Utilisé pour vérifier que les métadonnées sont présentes avant un remboursement
  */
@@ -7849,6 +7945,9 @@ exports.bookCourse = onRequest(
         // NOUVELLE RÉSERVATION AVEC PAIEMENT
         // ============================================================
 
+        // Récupérer le code partenaire si fourni
+        const partnerCode = req.body.partnerCode || null;
+
         const result = await bookingService.processBooking(
             db,
             stripe,
@@ -7856,6 +7955,7 @@ exports.bookCourse = onRequest(
             userData,
             paymentMethod || 'card',
             pricingOption || 'single',
+            partnerCode, // Code partenaire pour remise
         );
 
         // Si paiement espèces, ajouter au Google Sheet et envoyer email

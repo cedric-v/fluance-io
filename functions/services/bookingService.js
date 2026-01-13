@@ -119,6 +119,70 @@ async function getCourseAvailability(db, courseId) {
 }
 
 /**
+ * Configuration des codes partenaires
+ * Format: { code: { discountPercent: number, description: string, validFor: string[] } }
+ */
+const PARTNER_CODES = {
+  'DUPLEX10': {
+    discountPercent: 10,
+    description: 'Remise Duplex 10%',
+    validFor: ['semester_pass'], // Valide uniquement pour Pass Semestriel
+  },
+  // Ajoutez d'autres codes ici si nécessaire
+};
+
+/**
+ * Calcule le montant avec remise si un code partenaire est fourni
+ * @param {number} originalAmount - Montant original en centimes
+ * @param {string} pricingOption - Option tarifaire
+ * @param {string} partnerCode - Code partenaire (optionnel)
+ * @returns {Object} - { finalAmount, discountAmount, discountPercent, appliedCode }
+ */
+function calculatePriceWithDiscount(originalAmount, pricingOption, partnerCode = null) {
+  if (!partnerCode || !partnerCode.trim()) {
+    return {
+      finalAmount: originalAmount,
+      discountAmount: 0,
+      discountPercent: 0,
+      appliedCode: null,
+    };
+  }
+
+  const normalizedCode = partnerCode.toUpperCase().trim();
+  const codeConfig = PARTNER_CODES[normalizedCode];
+
+  if (!codeConfig) {
+    return {
+      finalAmount: originalAmount,
+      discountAmount: 0,
+      discountPercent: 0,
+      appliedCode: null,
+    };
+  }
+
+  // Vérifier si le code est valide pour cette option tarifaire
+  if (codeConfig.validFor && !codeConfig.validFor.includes(pricingOption)) {
+    return {
+      finalAmount: originalAmount,
+      discountAmount: 0,
+      discountPercent: 0,
+      appliedCode: null,
+    };
+  }
+
+  const discountPercent = codeConfig.discountPercent;
+  const discountAmount = Math.round((originalAmount * discountPercent) / 100);
+  const finalAmount = originalAmount - discountAmount;
+
+  return {
+    finalAmount,
+    discountAmount,
+    discountPercent,
+    appliedCode: normalizedCode,
+  };
+}
+
+/**
  * Traite une réservation de manière transactionnelle
  * @param {Object} db - Instance Firestore
  * @param {Object} stripe - Instance Stripe
@@ -126,9 +190,10 @@ async function getCourseAvailability(db, courseId) {
  * @param {Object} userData - Données utilisateur
  * @param {string} paymentMethod - Méthode de paiement
  * @param {string} pricingOption - Option tarifaire choisie
+ * @param {string} partnerCode - Code partenaire (optionnel)
  * @returns {Promise<Object>} - Résultat de la réservation
  */
-async function processBooking(db, stripe, courseId, userData, paymentMethod, pricingOption = 'single') {
+async function processBooking(db, stripe, courseId, userData, paymentMethod, pricingOption = 'single', partnerCode = null) {
   const bookingId = db.collection('bookings').doc().id;
 
   try {
@@ -173,9 +238,11 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
       const participantCount = bookingsSnapshot.size;
       const spotsRemaining = course.maxCapacity - participantCount;
 
-      // 4. Déterminer le prix
+      // 4. Déterminer le prix et appliquer la remise si code partenaire
       const pricing = PRICING[pricingOption.toUpperCase()] || PRICING.SINGLE;
-      const amount = pricing.amount;
+      const originalAmount = pricing.amount;
+      const priceCalculation = calculatePriceWithDiscount(originalAmount, pricingOption, partnerCode);
+      const amount = priceCalculation.finalAmount;
 
       // 5. Si plein, ajouter à la liste d'attente
       if (spotsRemaining <= 0) {
@@ -219,6 +286,7 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
         paymentMethod: paymentMethod,
         pricingOption: pricingOption,
         amount: amount,
+        originalAmount: originalAmount, // Montant avant remise
         currency: 'CHF',
         status: BOOKING_STATUS.PENDING,
         createdAt: new Date(),
@@ -227,6 +295,10 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
         stripeClientSecret: null,
         paidAt: null,
         notes: '',
+        // Informations de remise si code partenaire appliqué
+        partnerCode: priceCalculation.appliedCode || null,
+        discountAmount: priceCalculation.discountAmount || 0,
+        discountPercent: priceCalculation.discountPercent || 0,
       };
 
       // 7. Gérer selon le mode de paiement
