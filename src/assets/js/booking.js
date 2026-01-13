@@ -828,7 +828,7 @@
             <div id="payment-methods" class="grid grid-cols-2 gap-3">
               <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:border-fluance transition-colors border-fluance bg-fluance/5">
                 <input type="radio" name="paymentMethod" value="card" checked class="text-fluance focus:ring-fluance">
-                <span class="text-sm">Carte / TWINT</span>
+                <span class="text-sm" id="card-payment-label">Carte / TWINT</span>
               </label>
               <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:border-fluance transition-colors border-gray-200">
                 <input type="radio" name="paymentMethod" value="cash" class="text-fluance focus:ring-fluance">
@@ -966,6 +966,9 @@
           
           // Afficher/masquer le champ code partenaire
           togglePartnerCodeField(radio.value === 'semester_pass');
+          
+          // Mettre à jour les options de paiement selon le type de pass
+          updatePaymentMethodsForPricingOption(radio.value);
         });
       });
       
@@ -982,8 +985,29 @@
       
       // Vérifier l'option sélectionnée au chargement
       const selectedRadio = pricingContainer.querySelector('input[type="radio"]:checked');
-      if (selectedRadio && selectedRadio.value === 'semester_pass') {
-        togglePartnerCodeField(true);
+      if (selectedRadio) {
+        if (selectedRadio.value === 'semester_pass') {
+          togglePartnerCodeField(true);
+        }
+        updatePaymentMethodsForPricingOption(selectedRadio.value);
+      }
+    }
+    
+    /**
+     * Met à jour les options de paiement selon le type de pass sélectionné
+     * - Pass Semestriel : Carte uniquement (pas TWINT car pas d'abonnements récurrents)
+     * - Autres : Carte / TWINT
+     */
+    function updatePaymentMethodsForPricingOption(pricingOption) {
+      const cardPaymentLabel = document.getElementById('card-payment-label');
+      if (!cardPaymentLabel) return;
+      
+      if (pricingOption === 'semester_pass') {
+        // Pass Semestriel : Carte uniquement (abonnement récurrent)
+        cardPaymentLabel.textContent = currentLocale === 'en' ? 'Card' : 'Carte bancaire';
+      } else {
+        // Autres options : Carte / TWINT (paiements uniques)
+        cardPaymentLabel.textContent = currentLocale === 'en' ? 'Card / TWINT' : 'Carte / TWINT';
       }
     }
     
