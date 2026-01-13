@@ -48,9 +48,11 @@ permalink: /en/presentiel/cours-hebdomadaires/
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-3">Mandatory registration</h3>
-        <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex">
-          Book a class →
-        </a>
+        <div class="text-center">
+          <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex text-lg px-8 py-4">
+            Book a class →
+          </a>
+        </div>
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-6 text-center">Our Pricing Options</h3>
@@ -142,7 +144,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
     </div>
 
     <div class="text-center pt-6">
-      <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex">Book a class →</a>
+      <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex text-lg px-8 py-4">Book a class →</a>
     </div>
   </article>
 </section>
