@@ -59,6 +59,31 @@
   let currentStep = 1; // 1: email, 2: pass/pricing, 3: infos, 4: payment
 
   /**
+   * Formate une date au format DD/MM/YYYY en format lisible français
+   * @param {string} dateStr - Date au format DD/MM/YYYY
+   * @returns {string} - Date formatée (ex: "mercredi 22 janvier")
+   */
+  function formatDateFromDDMMYYYY(dateStr) {
+    try {
+      const [day, month, year] = dateStr.split('/');
+      if (day && month && year) {
+        const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        if (!isNaN(dateObj.getTime())) {
+          return dateObj.toLocaleDateString('fr-CH', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long'
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error formatting date:', e);
+    }
+    // Fallback : retourner la date originale
+    return dateStr;
+  }
+
+  /**
    * Initialise le système de réservation
    */
   function init() {
@@ -136,19 +161,15 @@
       ? 'bg-gray-400 hover:bg-gray-500'
       : 'bg-[#E6B84A] hover:bg-[#E8C15A] !text-[#7A1F3D]';
 
-    // Formater la date
-    const dateObj = new Date(course.date);
-    const dateStr = dateObj.toLocaleDateString('fr-CH', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long'
-    });
+    // Formater la date (format DD/MM/YYYY depuis l'API)
+    const dateStr = formatDateFromDDMMYYYY(course.date);
 
     return `
       <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-transparent hover:border-fluance/20"
            data-course-id="${course.id}"
            data-course-title="${course.title}"
            data-course-date="${dateStr}"
+           data-course-date-raw="${course.date}"
            data-course-time="${course.time}"
            data-course-location="${course.location}"
            data-course-price="${course.price}"
@@ -190,6 +211,14 @@
    */
   function openBookingModal(courseId, courseData) {
     currentCourseId = courseId;
+    
+    // S'assurer que la date est correctement formatée
+    // Si courseDate est "Invalid Date" ou invalide, reformater depuis la date originale
+    if (courseData.courseDateRaw && 
+        (courseData.courseDate === 'Invalid Date' || !courseData.courseDate || courseData.courseDate.includes('Invalid'))) {
+      courseData.courseDate = formatDateFromDDMMYYYY(courseData.courseDateRaw);
+    }
+    
     currentCourseData = courseData;
     currentStep = 1;
     userPassStatus = null;
