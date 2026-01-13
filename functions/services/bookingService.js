@@ -324,38 +324,106 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
         };
       }
 
-      // 8. Pour les paiements en ligne, créer un PaymentIntent Stripe
+      // 8. Pour les paiements en ligne
       if (amount > 0 && stripe) {
-        const paymentIntentData = {
-          amount: amount,
-          currency: 'chf',
-          payment_method_types: ['card', 'twint'],
-          metadata: {
-            bookingId: bookingId,
-            courseId: courseId,
-            email: userData.email,
-            type: 'course_booking',
-          },
-        };
+        // 8a. Pass Semestriel : Créer une Subscription Stripe (abonnement récurrent)
+        if (pricingOption === 'semester_pass') {
+          // Créer ou récupérer le customer Stripe
+          let customer;
+          const customers = await stripe.customers.list({
+            email: userData.email.toLowerCase(),
+            limit: 1,
+          });
 
-        // Ajouter SEPA si c'est la méthode choisie
-        if (paymentMethod === PAYMENT_METHODS.SEPA) {
-          paymentIntentData.payment_method_types = ['sepa_debit'];
-          paymentIntentData.mandate_data = {
-            customer_acceptance: {
-              type: 'online',
-              online: {
-                ip_address: userData.ipAddress || '0.0.0.0',
-                user_agent: userData.userAgent || 'Unknown',
+          if (customers.data.length > 0) {
+            customer = customers.data[0];
+          } else {
+            customer = await stripe.customers.create({
+              email: userData.email.toLowerCase(),
+              name: `${userData.firstName} ${userData.lastName}`,
+              phone: userData.phone || undefined,
+              metadata: {
+                bookingId: bookingId,
               },
+            });
+          }
+
+          // Récupérer le Price ID du Pass Semestriel (à configurer dans Stripe)
+          const semesterPassPriceId = process.env.STRIPE_PRICE_ID_SEMESTER_PASS;
+
+          if (!semesterPassPriceId) {
+            throw new Error('STRIPE_PRICE_ID_SEMESTER_PASS not configured. Please create a recurring price in Stripe for the Semester Pass.');
+          }
+
+          // Déterminer les méthodes de paiement acceptées
+          // Pour les abonnements : Carte uniquement (TWINT ne supporte pas les abonnements récurrents)
+          // SEPA optionnel si activé (nécessite un Price en EUR)
+          const paymentMethodTypes = ['card'];
+          // Note: Pour activer SEPA, décommenter la ligne suivante et créer un Price en EUR
+          // if (paymentMethod === PAYMENT_METHODS.SEPA) {
+          //   paymentMethodTypes.push('sepa_debit');
+          // }
+
+          // Créer la Subscription Stripe
+          const subscription = await stripe.subscriptions.create({
+            customer: customer.id,
+            items: [{
+              price: semesterPassPriceId,
+            }],
+            payment_behavior: 'default_incomplete',
+            payment_settings: {
+              payment_method_types: paymentMethodTypes,
+            },
+            expand: ['latest_invoice.payment_intent'],
+            metadata: {
+              bookingId: bookingId,
+              courseId: courseId,
+              email: userData.email,
+              type: 'semester_pass',
+              partnerCode: partnerCode || '',
+            },
+          });
+
+          // Stocker les informations de la subscription
+          bookingData.stripeSubscriptionId = subscription.id;
+          bookingData.stripeCustomerId = customer.id;
+          bookingData.stripeClientSecret = subscription.latest_invoice.payment_intent?.client_secret;
+          bookingData.stripePaymentIntentId = subscription.latest_invoice.payment_intent?.id;
+          bookingData.isSubscription = true;
+        } else {
+          // 8b. Autres options (single, flow_pass) : Créer un PaymentIntent (paiement unique)
+          const paymentIntentData = {
+            amount: amount,
+            currency: 'chf',
+            payment_method_types: ['card', 'twint'], // TWINT OK pour paiements uniques
+            metadata: {
+              bookingId: bookingId,
+              courseId: courseId,
+              email: userData.email,
+              type: 'course_booking',
             },
           };
+
+          // Ajouter SEPA si c'est la méthode choisie (pour paiements uniques)
+          if (paymentMethod === PAYMENT_METHODS.SEPA) {
+            paymentIntentData.payment_method_types = ['sepa_debit'];
+            paymentIntentData.mandate_data = {
+              customer_acceptance: {
+                type: 'online',
+                online: {
+                  ip_address: userData.ipAddress || '0.0.0.0',
+                  user_agent: userData.userAgent || 'Unknown',
+                },
+              },
+            };
+          }
+
+          const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
+
+          bookingData.stripePaymentIntentId = paymentIntent.id;
+          bookingData.stripeClientSecret = paymentIntent.client_secret;
+          bookingData.isSubscription = false;
         }
-
-        const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
-
-        bookingData.stripePaymentIntentId = paymentIntent.id;
-        bookingData.stripeClientSecret = paymentIntent.client_secret;
       } else if (amount === 0) {
         // Cours gratuit (essai)
         bookingData.status = BOOKING_STATUS.CONFIRMED;

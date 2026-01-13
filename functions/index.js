@@ -8184,6 +8184,7 @@ exports.bookCourse = onRequest(
       region: 'europe-west1',
       secrets: [
         'STRIPE_SECRET_KEY',
+        'STRIPE_PRICE_ID_SEMESTER_PASS',
         'GOOGLE_SHEET_ID',
         'GOOGLE_SERVICE_ACCOUNT',
         'MAILJET_API_KEY',
