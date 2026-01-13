@@ -311,29 +311,74 @@ class GoogleService {
 
     const sheetName = 'Réservations';
 
-    // Préparer la ligne à ajouter
+    // Calculer "Participant payant" : Oui si ce n'est pas un cours d'essai gratuit
+    const isPayingParticipant = bookingData.paymentMethod !== 'Cours d\'essai gratuit' ? 'Oui' : 'Non';
+
+    // Formater la date de paiement
+    let paidAtFormatted = '';
+    if (bookingData.paidAt) {
+      if (bookingData.paidAt.toDate) {
+        paidAtFormatted = bookingData.paidAt.toDate().toISOString();
+      } else if (bookingData.paidAt instanceof Date) {
+        paidAtFormatted = bookingData.paidAt.toISOString();
+      } else {
+        paidAtFormatted = bookingData.paidAt;
+      }
+    }
+
+    // Formater la date d'annulation
+    let cancelledAtFormatted = '';
+    if (bookingData.cancelledAt) {
+      if (bookingData.cancelledAt.toDate) {
+        cancelledAtFormatted = bookingData.cancelledAt.toDate().toISOString();
+      } else if (bookingData.cancelledAt instanceof Date) {
+        cancelledAtFormatted = bookingData.cancelledAt.toISOString();
+      } else {
+        cancelledAtFormatted = bookingData.cancelledAt;
+      }
+    }
+
+    // Déterminer si annulé
+    const isCancelled = (bookingData.status === 'cancelled' || bookingData.isCancelled) ? 'Oui' : 'Non';
+
+    // Déterminer si en liste d'attente
+    const isWaitlisted = (bookingData.status === 'waitlisted' || bookingData.isWaitlisted) ? 'Oui' : 'Non';
+
+    // Préparer la ligne à ajouter (A à Z)
     const row = [
-      new Date().toISOString(), // Date d'inscription
-      userData.firstName || '',
-      userData.lastName || '',
-      userData.email || '',
-      userData.phone || '',
-      bookingData.courseName || '',
-      bookingData.courseDate || '',
-      bookingData.courseTime || '',
-      bookingData.paymentMethod || '',
-      bookingData.paymentStatus || '',
-      bookingData.amount || '',
-      bookingData.status || '',
-      courseId,
-      bookingData.bookingId || '',
-      bookingData.notes || '',
+      new Date().toISOString(), // A: Date d'inscription
+      userData.firstName || '', // B: Prénom
+      userData.lastName || '', // C: Nom
+      userData.email || '', // D: Email
+      userData.phone || '', // E: Téléphone
+      bookingData.courseName || '', // F: Nom du cours
+      bookingData.courseDate || '', // G: Date du cours
+      bookingData.courseTime || '', // H: Heure
+      bookingData.paymentMethod || '', // I: Méthode de paiement
+      bookingData.paymentStatus || '', // J: Statut de paiement
+      bookingData.amount || '', // K: Montant
+      bookingData.status || '', // L: Statut
+      courseId, // M: CourseId
+      bookingData.bookingId || '', // N: BookingId
+      bookingData.notes || '', // O: Notes
+      bookingData.location || '', // P: Lieu
+      isPayingParticipant, // Q: Participant payant
+      paidAtFormatted, // R: Date de paiement
+      bookingData.passType || '', // S: Pass Type
+      bookingData.sessionsRemaining || '', // T: Séances restantes
+      userData.ipAddress || '', // U: IP Address
+      bookingData.source || 'web', // V: Source
+      isCancelled, // W: Annulé
+      cancelledAtFormatted, // X: Date d'annulation
+      bookingData.cancellationReason || '', // Y: Raison annulation
+      isWaitlisted, // Z: Liste d'attente
     ];
 
     try {
-      await this.sheets.spreadsheets.values.append({
+      console.log(`📊 Attempting to append to sheet: ${sheetId}, sheet: "${sheetName}"`);
+      const response = await this.sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: `${sheetName}!A:O`,
+        range: `${sheetName}!A:Z`,
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         requestBody: {
@@ -341,9 +386,14 @@ class GoogleService {
         },
       });
 
-      console.log(`📊 Added booking to sheet: ${userData.email} for ${bookingData.courseName}`);
+      console.log(`✅ Added booking to sheet: ${userData.email} for ${bookingData.courseName}`);
+      console.log(`📊 Sheet update response: ${response.data.updates?.updatedRows || 0} rows updated`);
     } catch (error) {
       console.error('❌ Error appending to sheet:', error.message);
+      console.error('❌ Sheet ID:', sheetId);
+      console.error('❌ Sheet name:', sheetName);
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error details:', error.errors || error.message);
       throw error;
     }
   }

@@ -225,7 +225,11 @@ eleventyExcludeFromCollections: true
         }
 
         // Mettre à jour le contenu selon le type d'opt-in
-        if (target === 'stages' && successDescription && successSubtext && successCta && successCtaText) {
+        if (target === 'presentiel') {
+          // Redirect directly to presentiel confirmation page
+          window.location.href = '/en/presentiel/confirmation/';
+          return;
+        } else if (target === 'stages' && successDescription && successSubtext && successCta && successCtaText) {
           successDescription.textContent = 'Thank you for confirming your registration to the waiting list for upcoming workshops!';
           successSubtext.textContent = 'You will be notified first as soon as upcoming workshops are announced in your region.';
           successCta.href = '/en/presentiel/prochains-stages/';

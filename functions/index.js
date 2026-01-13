@@ -3325,8 +3325,10 @@ exports.confirmNewsletterOptIn = onCall(
                   const course = courseDoc.exists ? courseDoc.data() : null;
 
                   // Créer un token de désinscription
-                  const cancellationTokenResult = await bookingService.createCancellationToken(db, tokenData.bookingId, 30);
-                  const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
+                  const cancellationTokenResult =
+                    await bookingService.createCancellationToken(db, tokenData.bookingId, 30);
+                  const cancellationUrl = cancellationTokenResult.success ?
+                    cancellationTokenResult.cancellationUrl : null;
 
                   // Envoyer l'email de confirmation du cours
                   await db.collection('mail').add({
@@ -7618,6 +7620,15 @@ exports.bookCourse = onRequest(
         });
       }
 
+      // Validation des champs obligatoires
+      if (!firstName || !lastName) {
+        return res.status(400).json({
+          error: 'Missing required fields',
+          required: ['firstName', 'lastName'],
+          message: 'Le prénom et le nom sont obligatoires',
+        });
+      }
+
       const normalizedEmail = email.toLowerCase().trim();
 
       // Initialiser Stripe
@@ -7752,7 +7763,12 @@ exports.bookCourse = onRequest(
           // Ajouter au Google Sheet
           try {
             const sheetId = process.env.GOOGLE_SHEET_ID;
-            if (sheetId && googleService) {
+            if (!sheetId) {
+              console.warn('⚠️ GOOGLE_SHEET_ID not configured, skipping sheet update');
+            } else if (!googleService) {
+              console.warn('⚠️ GoogleService not available, skipping sheet update');
+            } else {
+              console.log(`📊 Attempting to add booking to sheet: ${userData.email} for ${course.title}`);
               await googleService.appendUserToSheet(
                   sheetId,
                   courseId,
@@ -7761,17 +7777,30 @@ exports.bookCourse = onRequest(
                     courseName: course.title,
                     courseDate: course.date,
                     courseTime: course.time,
+                    location: course.location || '',
                     paymentMethod: activePass.passType === 'semester_pass' ? 'Pass Semestriel' : 'Flow Pass',
                     paymentStatus: 'Pass utilisé',
                     amount: '0 CHF',
                     status: 'Confirmé',
                     bookingId: bookingId,
                     notes: bookingData.notes,
+                    passType: activePass.passType === 'semester_pass' ? 'Pass Semestriel' : 'Flow Pass',
+                    sessionsRemaining: sessionResult?.sessionsRemaining !== undefined ? `${sessionResult.sessionsRemaining}/${activePass.sessionsTotal}` : (activePass.passType === 'semester_pass' ? 'Illimité' : ''),
+                    paidAt: new Date(),
+                    source: 'web',
+                    isCancelled: false,
+                    isWaitlisted: false,
                   },
               );
+              console.log(`✅ Successfully added booking to sheet: ${userData.email}`);
             }
           } catch (sheetError) {
-            console.error('Error updating sheet:', sheetError);
+            console.error('❌ Error updating sheet:', sheetError.message);
+            console.error('❌ Sheet error details:', {
+              message: sheetError.message,
+              code: sheetError.code,
+              stack: sheetError.stack,
+            });
           }
 
           // Envoyer email de confirmation
@@ -7833,10 +7862,15 @@ exports.bookCourse = onRequest(
         if (result.success && result.status === 'confirmed_pending_cash') {
           try {
             const sheetId = process.env.GOOGLE_SHEET_ID;
-            if (sheetId && googleService) {
+            if (!sheetId) {
+              console.warn('⚠️ GOOGLE_SHEET_ID not configured, skipping sheet update');
+            } else if (!googleService) {
+              console.warn('⚠️ GoogleService not available, skipping sheet update');
+            } else {
               const courseDoc = await db.collection('courses').doc(courseId).get();
               const course = courseDoc.data();
 
+              console.log(`📊 Attempting to add cash booking to sheet: ${userData.email}`);
               await googleService.appendUserToSheet(
                   sheetId,
                   courseId,
@@ -7845,17 +7879,31 @@ exports.bookCourse = onRequest(
                     courseName: course?.title || '',
                     courseDate: course?.date || '',
                     courseTime: course?.time || '',
+                    location: course?.location || '',
                     paymentMethod: 'Espèces',
                     paymentStatus: 'À régler sur place',
                     amount: (course?.price || 25) + ' CHF',
                     status: 'Confirmé (espèces)',
                     bookingId: result.bookingId,
                     notes: 'Paiement en espèces à régler sur place',
+                    paidAt: null, // Pas encore payé
+                    source: 'web',
+                    isCancelled: false,
+                    isWaitlisted: false,
                   },
               );
+              console.log(`✅ Successfully added cash booking to sheet: ${userData.email}`);
             }
+          } catch (sheetError) {
+            console.error('❌ Error updating sheet for cash booking:', sheetError.message);
+            console.error('❌ Sheet error details:', {
+              message: sheetError.message,
+              code: sheetError.code,
+            });
+          }
 
-            // Vérifier le statut de double opt-in et envoyer email de confirmation
+          // Vérifier le statut de double opt-in et envoyer email de confirmation
+          try {
             const existingConfirmation = await db.collection('newsletterConfirmations')
                 .where('email', '==', normalizedEmail)
                 .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
@@ -7872,8 +7920,10 @@ exports.bookCourse = onRequest(
 
               try {
                 // Créer un token de désinscription
-                const cancellationTokenResult = await bookingService.createCancellationToken(db, result.bookingId, 30);
-                const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
+                const cancellationTokenResult =
+                  await bookingService.createCancellationToken(db, result.bookingId, 30);
+                const cancellationUrl = cancellationTokenResult.success ?
+                  cancellationTokenResult.cancellationUrl : null;
 
                 await db.collection('mail').add({
                   to: normalizedEmail,
@@ -7905,8 +7955,8 @@ exports.bookCourse = onRequest(
                   result.bookingId,
               );
             }
-          } catch (sheetError) {
-            console.error('Error updating sheet:', sheetError);
+          } catch (optInError) {
+            console.error('Error handling double opt-in:', optInError);
           }
         } else if (result.success && result.status === 'pending_payment') {
           // Pour les paiements en ligne, vérifier le double opt-in
@@ -7934,10 +7984,15 @@ exports.bookCourse = onRequest(
           // Cours gratuit (essai) : ajouter au Google Sheet et gérer les emails
           try {
             const sheetId = process.env.GOOGLE_SHEET_ID;
-            if (sheetId && googleService) {
+            if (!sheetId) {
+              console.warn('⚠️ GOOGLE_SHEET_ID not configured, skipping sheet update');
+            } else if (!googleService) {
+              console.warn('⚠️ GoogleService not available, skipping sheet update');
+            } else {
               const courseDoc = await db.collection('courses').doc(courseId).get();
               const course = courseDoc.data();
 
+              console.log(`📊 Attempting to add free trial booking to sheet: ${normalizedEmail}`);
               await googleService.appendUserToSheet(
                   sheetId,
                   courseId,
@@ -7946,18 +8001,27 @@ exports.bookCourse = onRequest(
                     courseName: course?.title || '',
                     courseDate: course?.date || '',
                     courseTime: course?.time || '',
+                    location: course?.location || '',
                     paymentMethod: 'Cours d\'essai gratuit',
                     paymentStatus: 'Confirmé',
                     amount: '0 CHF',
                     status: 'Confirmé (essai gratuit)',
                     bookingId: result.bookingId,
                     notes: 'Cours d\'essai gratuit - première séance',
+                    paidAt: new Date(), // Confirmé immédiatement
+                    source: 'web',
+                    isCancelled: false,
+                    isWaitlisted: false,
                   },
               );
-              console.log(`📊 Free trial booking added to Google Sheet for ${normalizedEmail}`);
+              console.log(`✅ Successfully added free trial booking to Google Sheet for ${normalizedEmail}`);
             }
           } catch (sheetError) {
-            console.error('Error updating sheet for free trial:', sheetError);
+            console.error('❌ Error updating sheet for free trial:', sheetError.message);
+            console.error('❌ Sheet error details:', {
+              message: sheetError.message,
+              code: sheetError.code,
+            });
           }
 
           // Vérifier le statut de double opt-in et envoyer email de confirmation
@@ -8494,7 +8558,7 @@ exports.getAvailableCoursesForTransfer = onRequest(
         const now = admin.firestore.Timestamp.now();
         const excludeCourseId = req.query.excludeCourseId || req.body.excludeCourseId;
 
-        let query = db.collection('courses')
+        const query = db.collection('courses')
             .where('startTime', '>=', now)
             .where('status', '==', 'active')
             .orderBy('startTime', 'asc')
