@@ -37,3 +37,6 @@ functions/.env.local
 # Configuration avec données sensibles
 scripts/mailjet-contacts-config.json
 functions/emails/*.html
+
+# Documents de travail non versionnés
+COUPON_ABONNEMENT_DUPLEX.md
