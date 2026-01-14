@@ -40,7 +40,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
       <p class="text-lg text-[#3E3A35]">Si vous vous reconnaissez dans ces situations, Fluance peut particulièrement vous aider</p>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-6">
+    <div id="approche-complete-grid" class="grid gap-6">
       <!-- Fatigue et épuisement -->
       <div class="bg-white rounded-lg p-6 shadow-md border-l-4 border-fluance">
         <h3 class="text-xl font-semibold text-fluance mb-4">Quand la fatigue persiste</h3>
