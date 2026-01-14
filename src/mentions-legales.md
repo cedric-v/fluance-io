@@ -24,7 +24,7 @@ Vous trouverez également nos engagements en matière de sous-traitance, de tran
 
 ### Quelles sont les catégories de données personnelles collectées et traitées ?
 
-Dans le cadre de notre activité, sur fluance.io et cedricv.com (ci-après le « Site »), vous nous transmettez les informations suivantes en remplissant le(s) formulaire(s) de renseignement et en communiquant avec nous :
+Dans le cadre de notre activité sur fluance.io (ci-après le « Site »), vous nous transmettez les informations suivantes en remplissant le(s) formulaire(s) de renseignement et en communiquant avec nous :
 
 - Données recueillies grâce aux cookies et technologies similaires (date, heure de connexion et/ou navigation, type de navigateur, langue, adresse IP, données de localisation).
 - Informations d’état civil et de contact (civilité, nom, prénom, adresse mail, adresse postale, numéro de téléphone) permettant de vous identifier et de communiquer avec vous.
@@ -102,7 +102,7 @@ La présente Politique est régie par le droit suisse. Elle est rédigée en fra
 
 ### Mentions légales
 
-1/ **Editeur des sites** cedricv.com, fluance.io.
+1/ **Editeur du site** fluance.io.
 
 Instants Zen, société à responsabilité limitée (Sàrl) enregistrée en Suisse, capital 20 000 CHF.
 
