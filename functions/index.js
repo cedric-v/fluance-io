@@ -2484,7 +2484,7 @@ exports.getBookingDetails = onCall(
         const pricingOption = booking.pricingOption || 'single';
         let productType = 'course_booking';
         let productName = 'Réservation de cours';
-        
+
         if (pricingOption === 'trial') {
           productType = 'trial';
           productName = 'Cours d\'essai';
