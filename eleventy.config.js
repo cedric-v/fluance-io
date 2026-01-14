@@ -280,24 +280,34 @@ module.exports = function(eleventyConfig) {
         "provider": {
           "@type": "Organization",
           "name": "Fluance",
+          "url": baseUrl,
           "sameAs": baseUrl
         },
         "courseMode": "online",
         "inLanguage": pageLocale === 'fr' ? 'fr-FR' : 'en-US',
-        "url": pageUrl
+        "url": pageUrl,
+        "teaches": pageLocale === 'fr' 
+          ? "Bien-être, mouvement, respiration, gestion du stress, mobilité corporelle"
+          : "Wellness, movement, breathing, stress management, body mobility"
       };
 
       // Schéma spécifique pour le cours 21 jours
       if (pagePath.includes('21-jours')) {
         courseSchema.name = pageLocale === 'fr' ? "Défi 21 jours" : "21-Day Challenge";
         courseSchema.description = pageLocale === 'fr'
-          ? "Retrouvez légèreté, mobilité et sérénité en seulement 2 à 5 minutes par jour, durant 21 jours."
-          : "Find lightness, mobility and serenity in just 2 to 5 minutes a day, for 21 days.";
-        courseSchema.timeRequired = "PT5M"; // 5 minutes
+          ? "Retrouvez légèreté, mobilité et sérénité en seulement 2 à 5 minutes par jour, durant 21 jours. Parcours de 21 mini-séries de pratiques simples et libératrices basées sur le mouvement, le souffle et le jeu."
+          : "Find lightness, mobility and serenity in just 2 to 5 minutes a day, for 21 days. A 21-day journey of simple and liberating mini-practices based on movement, breath and play.";
+        courseSchema.timeRequired = "PT5M"; // 5 minutes par jour
+        courseSchema.courseCode = "FLUANCE-21";
+        courseSchema.educationalLevel = "beginner";
+        courseSchema.image = `${baseUrl}/assets/img/bienvenue-21-jour-bandeau.jpg`;
         courseSchema.offers = {
           "@type": "Offer",
           "price": "19.00",
-          "priceCurrency": "CHF"
+          "priceCurrency": "CHF",
+          "availability": "https://schema.org/InStock",
+          "url": pageUrl,
+          "priceValidUntil": "2026-12-31"
         };
         
         // Ajouter un schéma VideoObject pour la vidéo de présentation
@@ -332,14 +342,20 @@ module.exports = function(eleventyConfig) {
       if (pagePath.includes('approche-fluance-complete')) {
         courseSchema.name = pageLocale === 'fr' ? "Approche Fluance Complète" : "Complete Fluance Approach";
         courseSchema.description = pageLocale === 'fr'
-          ? "Accès complet à tous les cours et pratiques. Abonnement mensuel ou trimestriel."
-          : "Full access to all courses and practices. Monthly or quarterly subscription.";
+          ? "Accès complet à tous les cours et pratiques Fluance. Programme complet et régulier pour intégrer l'approche Fluance dans votre vie. Abonnement mensuel ou trimestriel."
+          : "Full access to all Fluance courses and practices. Complete and regular program to integrate the Fluance approach into your life. Monthly or quarterly subscription.";
+        courseSchema.courseCode = "FLUANCE-COMPLETE";
+        courseSchema.educationalLevel = "all";
+        courseSchema.image = `${baseUrl}/assets/img/cedric-bord-mer.jpg`;
         courseSchema.offers = [
           {
             "@type": "Offer",
             "name": pageLocale === 'fr' ? "Abonnement mensuel" : "Monthly subscription",
             "price": "30.00",
             "priceCurrency": "CHF",
+            "availability": "https://schema.org/InStock",
+            "url": pageUrl,
+            "priceValidUntil": "2026-12-31",
             "billingIncrement": "P1M"
           },
           {
@@ -347,6 +363,9 @@ module.exports = function(eleventyConfig) {
             "name": pageLocale === 'fr' ? "Abonnement trimestriel" : "Quarterly subscription",
             "price": "75.00",
             "priceCurrency": "CHF",
+            "availability": "https://schema.org/InStock",
+            "url": pageUrl,
+            "priceValidUntil": "2026-12-31",
             "billingIncrement": "P3M"
           }
         ];
@@ -381,6 +400,152 @@ module.exports = function(eleventyConfig) {
         "priceRange": "CHF 25 - CHF 340"
       };
       schemas.push(localBusinessSchema);
+    }
+
+    // Page de réservation (/presentiel/reserver/)
+    if (pagePath.includes('/presentiel/reserver')) {
+      // Schéma YogaStudio avec ReserveAction
+      const yogaStudioSchema = {
+        "@context": "https://schema.org",
+        "@type": "YogaStudio",
+        "name": pageLocale === 'fr' ? "Fluance - mouvements apaisants" : "Fluance - soothing movements",
+        "description": pageLocale === 'fr'
+          ? "Cours de bien-être en présentiel basés sur le mouvement, le souffle et le jeu à Fribourg"
+          : "In-person wellness classes based on movement, breath and play in Fribourg",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Rte de Chantemerle 58d",
+          "addressLocality": "Granges-Paccot",
+          "addressRegion": "FR",
+          "postalCode": "1763",
+          "addressCountry": "CH"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "46.8065",
+          "longitude": "7.1619"
+        },
+        "url": pageUrl,
+        "telephone": "+33972133388",
+        "priceRange": "CHF 0 - CHF 340",
+        "potentialAction": {
+          "@type": "ReserveAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": pageUrl
+          },
+          "result": {
+            "@type": "Reservation",
+            "name": pageLocale === 'fr' ? "Réserver un cours" : "Book a class"
+          }
+        }
+      };
+      schemas.push(yogaStudioSchema);
+
+      // Schémas Event pour les cours récurrents
+      // Cours du jeudi midi (12h15-13h)
+      const eventMidiSchema = {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        "name": pageLocale === 'fr' ? "Cours Fluance - Jeudi midi" : "Fluance Class - Thursday noon",
+        "description": pageLocale === 'fr'
+          ? "Cours de bien-être Fluance le jeudi de 12h15 à 13h. Mouvements apaisants basés sur le mouvement, le souffle et le jeu."
+          : "Fluance wellness class on Thursdays from 12:15 PM to 1:00 PM. Soothing movements based on movement, breath and play.",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "location": {
+          "@type": "Place",
+          "name": "le duplex danse & bien-être",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Rte de Chantemerle 58d",
+            "addressLocality": "Granges-Paccot",
+            "addressRegion": "FR",
+            "postalCode": "1763",
+            "addressCountry": "CH"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": "46.8065",
+            "longitude": "7.1619"
+          }
+        },
+        "organizer": {
+          "@type": "Organization",
+          "name": "Fluance",
+          "url": baseUrl
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "25",
+          "priceCurrency": "CHF",
+          "availability": "https://schema.org/InStock",
+          "url": pageUrl,
+          "validFrom": "2026-01-22"
+        },
+        "startDate": "2026-01-22T12:15:00+01:00",
+        "endDate": "2026-01-22T13:00:00+01:00",
+        "eventSchedule": {
+          "@type": "Schedule",
+          "repeatFrequency": "P1W",
+          "byDay": "Thursday",
+          "startTime": "12:15:00",
+          "endTime": "13:00:00"
+        }
+      };
+      schemas.push(eventMidiSchema);
+
+      // Cours du jeudi soir (20h15-21h)
+      const eventSoirSchema = {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        "name": pageLocale === 'fr' ? "Cours Fluance - Jeudi soir" : "Fluance Class - Thursday evening",
+        "description": pageLocale === 'fr'
+          ? "Cours de bien-être Fluance le jeudi de 20h15 à 21h. Mouvements apaisants basés sur le mouvement, le souffle et le jeu."
+          : "Fluance wellness class on Thursdays from 8:15 PM to 9:00 PM. Soothing movements based on movement, breath and play.",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "location": {
+          "@type": "Place",
+          "name": "le duplex danse & bien-être",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Rte de Chantemerle 58d",
+            "addressLocality": "Granges-Paccot",
+            "addressRegion": "FR",
+            "postalCode": "1763",
+            "addressCountry": "CH"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": "46.8065",
+            "longitude": "7.1619"
+          }
+        },
+        "organizer": {
+          "@type": "Organization",
+          "name": "Fluance",
+          "url": baseUrl
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "25",
+          "priceCurrency": "CHF",
+          "availability": "https://schema.org/InStock",
+          "url": pageUrl,
+          "validFrom": "2026-01-22"
+        },
+        "startDate": "2026-01-22T20:15:00+01:00",
+        "endDate": "2026-01-22T21:00:00+01:00",
+        "eventSchedule": {
+          "@type": "Schedule",
+          "repeatFrequency": "P1W",
+          "byDay": "https://schema.org/Thursday",
+          "startTime": "20:15:00",
+          "endTime": "21:00:00"
+        }
+      };
+      schemas.push(eventSoirSchema);
     }
 
     // Générer les balises <script> pour chaque schéma
