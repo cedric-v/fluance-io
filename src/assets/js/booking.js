@@ -37,6 +37,37 @@
 
   const currentLocale = getCurrentLocale();
 
+  // Variable pour stocker l'email actuel et le statut de première visite
+  let currentUserEmail = null;
+  let isFirstVisit = false;
+
+  /**
+   * Vérifie si l'utilisateur a déjà accepté les CGV pour cet email
+   * Utilise d'abord le statut isFirstVisit de Firestore, puis localStorage comme cache
+   */
+  function hasAcceptedCGV(email) {
+    if (!email) return false;
+    
+    // Si on a déjà vérifié via Firestore et que ce n'est pas la première visite, pas besoin d'afficher
+    if (currentUserEmail === email.toLowerCase().trim() && !isFirstVisit) {
+      return true;
+    }
+    
+    // Fallback : vérifier localStorage (cache local)
+    const key = `cgv_accepted_${email.toLowerCase().trim()}`;
+    return localStorage.getItem(key) === 'true';
+  }
+
+  /**
+   * Marque l'acceptation des CGV pour cet email
+   * Stocke dans localStorage comme cache local
+   */
+  function markCGVAccepted(email) {
+    if (!email) return;
+    const key = `cgv_accepted_${email.toLowerCase().trim()}`;
+    localStorage.setItem(key, 'true');
+  }
+
   // Traductions
   const translations = {
     fr: {
@@ -57,6 +88,8 @@
       bookWithSemesterPass: 'Réserver avec mon Pass Semestriel',
       useOtherEmail: '← Utiliser une autre adresse email',
       close: 'Fermer',
+      acceptCGV: 'J\'ai pris connaissance et j\'accepte les Conditions générales de vente (CGV), y compris les dispositions relatives à l\'assurance et à la responsabilité, ainsi que le règlement du lieu d\'accueil.',
+      acceptCGVError: 'Vous devez accepter les Conditions générales de vente pour continuer.',
     },
     en: {
       step1Title: 'Enter your email',
@@ -76,6 +109,8 @@
       bookWithSemesterPass: 'Book with my Semester Pass',
       useOtherEmail: '← Use another email address',
       close: 'Close',
+      acceptCGV: 'I have read and accept the Terms and Conditions (T&C), including the provisions relating to insurance and liability, as well as the venue regulations.',
+      acceptCGVError: 'You must accept the Terms and Conditions to continue.',
     },
   };
 
@@ -498,6 +533,32 @@
   }
 
   /**
+   * Génère le HTML de la case à cocher CGV si nécessaire
+   * @param {string} email - Email de l'utilisateur
+   * @param {string} checkboxId - ID unique pour la checkbox
+   * @returns {string} HTML de la case à cocher ou chaîne vide
+   */
+  function renderCGVCheckbox(email, checkboxId) {
+    if (!email || hasAcceptedCGV(email)) {
+      // L'utilisateur a déjà accepté, pas besoin d'afficher la case
+      return '';
+    }
+    
+    return `
+      <!-- Case à cocher CGV -->
+      <div class="flex items-start gap-2">
+        <input type="checkbox" id="${checkboxId}" name="acceptCGV" required
+               class="mt-1 w-4 h-4 text-fluance border-gray-300 rounded focus:ring-fluance">
+        <label for="${checkboxId}" class="text-sm text-[#3E3A35]">
+          ${currentLocale === 'en' 
+            ? `I have read and accept the <a href="/cgv/" target="_blank" rel="noopener noreferrer" class="text-fluance hover:underline">Terms and Conditions (T&C)</a>, including the provisions relating to insurance and liability, as well as the venue regulations.`
+            : `J'ai pris connaissance et j'accepte les <a href="/cgv/" target="_blank" rel="noopener noreferrer" class="text-fluance hover:underline">Conditions générales de vente (CGV)</a>, y compris les dispositions relatives à l'assurance et à la responsabilité, ainsi que le règlement du lieu d'accueil.`}
+        </label>
+      </div>
+    `;
+  }
+
+  /**
    * Vérifie le pass de l'utilisateur par email
    */
   async function checkUserEmail(email) {
@@ -508,11 +569,18 @@
     btn.textContent = t.checking;
     errorContainer.classList.add('hidden');
 
+    // Stocker l'email actuel
+    currentUserEmail = email.toLowerCase().trim();
+
     try {
       const response = await fetch(`${CONFIG.API_BASE_URL}/checkUserPass?email=${encodeURIComponent(email)}`);
       const data = await response.json();
 
       userPassStatus = data;
+      
+      // Stocker l'email actuel et le statut de première visite
+      currentUserEmail = email.toLowerCase().trim();
+      isFirstVisit = data.isFirstVisit === true;
       
       // Stocker le firstName si disponible pour pré-remplir les formulaires
       if (data.firstName) {
@@ -623,6 +691,8 @@
                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
           </div>
 
+          ${renderCGVCheckbox(email, 'accept-cgv-pass')}
+
           <div id="booking-error" class="hidden p-3 bg-red-50 text-red-600 rounded-lg text-sm"></div>
 
           <button type="submit"
@@ -698,6 +768,8 @@
             <input type="tel" id="phone" name="phone"
                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
           </div>
+
+          ${renderCGVCheckbox(email, 'accept-cgv-trial')}
 
           <div id="booking-error" class="hidden p-3 bg-red-50 text-red-600 rounded-lg text-sm"></div>
 
@@ -844,6 +916,8 @@
               </p>
             </div>
           </div>
+
+          ${renderCGVCheckbox(email, 'accept-cgv-pricing')}
 
           <div id="booking-error" class="hidden p-3 bg-red-50 text-red-600 rounded-lg text-sm"></div>
 
@@ -1180,15 +1254,27 @@
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
     const errorContainer = document.getElementById('booking-error');
+    const acceptCGV = form.querySelector('input[name="acceptCGV"]');
+    const formData = new FormData(form);
+    const email = formData.get('email');
+
+    // Vérifier que la case CGV est cochée (si elle existe)
+    // Si la case n'existe pas, c'est que l'utilisateur a déjà accepté
+    if (acceptCGV && !acceptCGV.checked) {
+      if (errorContainer) {
+        errorContainer.textContent = t.acceptCGVError;
+        errorContainer.classList.remove('hidden');
+      }
+      return;
+    }
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Réservation...';
     errorContainer?.classList.add('hidden');
 
-    const formData = new FormData(form);
     const data = {
       courseId: currentCourseId,
-      email: formData.get('email'),
+      email: email,
       firstName: formData.get('firstName'),
       lastName: formData.get('lastName'),
       phone: formData.get('phone'),
@@ -1206,6 +1292,10 @@
       const result = await response.json();
 
       if (result.success) {
+        // Marquer l'acceptation CGV si la case était présente et cochée
+        if (acceptCGV && acceptCGV.checked && email) {
+          markCGVAccepted(email);
+        }
         showSuccessMessage(
           'Réservation confirmée !',
           result.message || 'Vous recevrez un email de confirmation.'
@@ -1238,16 +1328,28 @@
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
     const errorContainer = document.getElementById('booking-error');
+    const acceptCGV = form.querySelector('input[name="acceptCGV"]');
+    const formData = new FormData(form);
+    const email = formData.get('email');
+
+    // Vérifier que la case CGV est cochée (si elle existe)
+    // Si la case n'existe pas, c'est que l'utilisateur a déjà accepté
+    if (acceptCGV && !acceptCGV.checked) {
+      if (errorContainer) {
+        errorContainer.textContent = t.acceptCGVError;
+        errorContainer.classList.remove('hidden');
+      }
+      return;
+    }
 
     submitBtn.disabled = true;
     submitBtn.textContent = currentLocale === 'en' ? 'Processing...' : 'Traitement...';
     errorContainer?.classList.add('hidden');
 
-    const formData = new FormData(form);
     const partnerCode = formData.get('partnerCode')?.trim().toUpperCase() || null;
     const data = {
       courseId: currentCourseId,
-      email: formData.get('email'),
+      email: email,
       firstName: formData.get('firstName'),
       lastName: formData.get('lastName'),
       phone: formData.get('phone'),
@@ -1266,6 +1368,11 @@
       const result = await response.json();
 
       if (result.success) {
+        // Marquer l'acceptation CGV si la case était présente et cochée
+        if (acceptCGV && acceptCGV.checked && email) {
+          markCGVAccepted(email);
+        }
+        
         if (result.status === 'waitlisted') {
           const waitlistTitle = currentLocale === 'en' ? 'Added to waitlist' : 'Ajouté à la liste d\'attente';
           const waitlistMsg = currentLocale === 'en'
@@ -1273,7 +1380,8 @@
             : `Vous êtes en position ${result.position}. Nous vous contacterons si une place se libère.`;
           showSuccessMessage(waitlistTitle, waitlistMsg);
         } else if (result.requiresPayment && result.clientSecret) {
-          await handleStripePayment(result.clientSecret, data);
+          // Passer l'email et l'acceptation CGV pour le marquer après paiement réussi
+          await handleStripePayment(result.clientSecret, data, email, acceptCGV && acceptCGV.checked);
         } else {
           const confirmTitle = currentLocale === 'en' ? 'Booking confirmed!' : 'Réservation confirmée !';
           const confirmMsg = currentLocale === 'en'
@@ -1305,8 +1413,12 @@
 
   /**
    * Gère le paiement Stripe
+   * @param {string} clientSecret - Secret client Stripe
+   * @param {object} bookingData - Données de réservation
+   * @param {string} email - Email de l'utilisateur
+   * @param {boolean} cgvAccepted - Si l'utilisateur a coché la case CGV
    */
-  async function handleStripePayment(clientSecret, bookingData) {
+  async function handleStripePayment(clientSecret, bookingData, email, cgvAccepted) {
     if (!stripe) {
       const errorMsg = currentLocale === 'en'
         ? 'Payment system is not available. Please choose "Cash on site".'
