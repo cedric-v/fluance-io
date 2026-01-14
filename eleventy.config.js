@@ -548,6 +548,67 @@ module.exports = function(eleventyConfig) {
       schemas.push(eventSoirSchema);
     }
 
+    // Pages A propos - Approche Fluance
+    if (pagePath.includes('/a-propos/approche-fluance')) {
+      const articleSchema = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": pageData.title || (pageLocale === 'fr' ? "L'approche Fluance" : "The Fluance Approach"),
+        "description": pageData.description || (pageLocale === 'fr'
+          ? "Découvrez l'approche globale de Fluance pour la fluidité corps et esprit. Le trépied de la vitalité : Mouvement, Souffle, Jeu."
+          : "Discover Fluance's holistic approach for body and mind fluidity. The tripod of vitality: Movement, Breath, Play."),
+        "author": {
+          "@type": "Person",
+          "name": "Cédric Vonlanthen"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Fluance",
+          "logo": {
+            "@type": "ImageObject",
+            "url": `${baseUrl}/assets/img/fond-cedric.jpg`
+          }
+        },
+        "datePublished": "2024-01-01T00:00:00+01:00",
+        "dateModified": "2024-01-01T00:00:00+01:00",
+        "image": `${baseUrl}/assets/img/cedric-dehors-fluance-reduit.jpeg`,
+        "inLanguage": pageLocale === 'fr' ? 'fr-FR' : 'en-US',
+        "url": pageUrl,
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": pageUrl
+        }
+      };
+      schemas.push(articleSchema);
+
+      // Ajouter un schéma VideoObject pour la vidéo
+      const videoSchema = {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": pageLocale === 'fr'
+          ? "L'approche Fluance - Présentation"
+          : "The Fluance Approach - Presentation",
+        "description": pageLocale === 'fr'
+          ? "Présentation de l'approche Fluance basée sur le trépied de la vitalité : Mouvement, Souffle, Jeu. Une approche simple, ludique, naturelle et libératrice pour libérer le corps et l'esprit."
+          : "Presentation of the Fluance approach based on the tripod of vitality: Movement, Breath, Play. A simple, playful, natural and liberating approach to free the body and mind.",
+        "thumbnailUrl": `${baseUrl}/assets/img/cedric-dehors-fluance-reduit.jpeg`,
+        "uploadDate": "2024-01-01T00:00:00+01:00",
+        "contentUrl": "https://player.mediadelivery.net/embed/479894/3c19487a-22a6-4f70-92ef-68a78acb771e",
+        "embedUrl": "https://player.mediadelivery.net/embed/479894/3c19487a-22a6-4f70-92ef-68a78acb771e",
+        "duration": "PT5M",
+        "inLanguage": pageLocale === 'fr' ? 'fr-FR' : 'en-US',
+        "publisher": {
+          "@type": "Organization",
+          "name": "Fluance",
+          "logo": {
+            "@type": "ImageObject",
+            "url": `${baseUrl}/assets/img/fond-cedric.jpg`
+          }
+        }
+      };
+      schemas.push(videoSchema);
+    }
+
     // Générer les balises <script> pour chaque schéma
     return schemas.map(schema => {
       const json = JSON.stringify(schema, null, 2);

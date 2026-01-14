@@ -20,7 +20,9 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
 
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
     <div class="my-8">
-      <div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/3c19487a-22a6-4f70-92ef-68a78acb771e?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+      <div class="aspect-video w-full max-w-3xl mx-auto rounded-lg overflow-hidden">
+        <div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/3c19487a-22a6-4f70-92ef-68a78acb771e?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+      </div>
     </div>
     <div class="space-y-6">
       <h2 class="text-2xl font-semibold text-fluance text-center">Le trépied de la vitalité :</h2>
