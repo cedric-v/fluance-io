@@ -1,0 +1,74 @@
+---
+layout: false
+permalink: /emails/promotion-complet-somatique-relance.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+      <mj-button background-color="#E6B84A" color="#0f172a" font-weight="bold" border-radius="5px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold" padding="10px">
+          Bouger à partir de son ressenti
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Cette fatigue qui persiste même après le repos... Cette sensation d'être "à plat" sans être triste ni en colère...
+        </mj-text>
+        <mj-text>
+          Et si le problème n'était pas ce que vous faites, mais comment vous le faites ?
+        </mj-text>
+        <mj-text>
+          Il y a une différence fondamentale entre :
+        </mj-text>
+        <mj-text>
+          • <strong>Bouger pour ressentir</strong> (entraîner le corps)<br>
+          • <strong>Ressentir puis bouger</strong> (habiter le corps)
+        </mj-text>
+        <mj-text>
+          Fluance vous invite à laisser le corps s'exprimer, à bouger à partir de votre ressenti plutôt que de bouger pour ressentir.
+        </mj-text>
+        <mj-text>
+          Quand on laisse le corps informer plutôt que d'utiliser le corps, on accède aux émotions bloquées et au système d'auto-régénération du corps.
+        </mj-text>
+        <mj-text>
+          <strong>Passer de corps qu'on entraîne à corps qu'on habite.</strong>
+        </mj-text>
+        <mj-text>
+          Comme une mémoire vivante.
+        </mj-text>
+        <mj-text>
+          Chaque semaine, une nouvelle pratique de 2 à 5 minutes, à votre rythme, depuis chez vous.
+        </mj-text>
+        <mj-button href="https://fluance.io/cours-en-ligne/approche-fluance-complete/" align="center" padding="20px">
+          Essayer Fluance (14 jours offerts)
+        </mj-button>
+        <mj-text>
+          À tout bientôt,
+        </mj-text>
+        <mj-text>
+          Cédric
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666" padding="0">
+          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

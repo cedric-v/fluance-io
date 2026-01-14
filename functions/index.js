@@ -7986,6 +7986,419 @@ exports.sendCartAbandonmentEmails = onSchedule(
     },
 );
 
+/**
+ * Fonction scheduled pour envoyer les emails de promotion (sommeil et somatique)
+ * S'exécute quotidiennement à 8h (Europe/Paris)
+ * Envoie :
+ * - Email sommeil : novembre et février (une fois par mois)
+ * - Email somatique : basé sur des triggers (45 jours après téléchargement, etc.)
+ */
+exports.sendPromotionalEmails = onSchedule(
+    {
+      schedule: '0 8 * * *', // Tous les jours à 8h
+      timeZone: 'Europe/Paris',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+      region: 'europe-west1',
+    },
+    async (_event) => {
+      console.log('📧 Starting scheduled promotional emails job');
+      const now = new Date();
+      const mailjetApiKey = process.env.MAILJET_API_KEY;
+      const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+
+      if (!mailjetApiKey || !mailjetApiSecret) {
+        console.error('❌ Mailjet credentials not configured');
+        return;
+      }
+
+      try {
+        const currentMonth = now.getMonth() + 1; // 1-12 (janvier = 1, février = 2, novembre = 11)
+        const currentDay = now.getDate();
+        const isNovember = currentMonth === 11;
+        const isFebruary = currentMonth === 2;
+        const isMarch = currentMonth === 3;
+
+        // Email sommeil : envoyer une fois par mois
+        // Novembre : le 2 (évite la Toussaint le 1er)
+        // Février et mars : le 1er
+        const shouldSendSleepEmail =
+            (isNovember && currentDay === 2) ||
+            ((isFebruary || isMarch) && currentDay === 1);
+
+        let sleepEmailsSent = 0;
+        let somatiqueEmailsSent = 0;
+        let somatiqueRelanceEmailsSent = 0;
+        let somatiqueSeasonalEmailsSent = 0;
+        let errors = 0;
+
+        // Récupérer tous les contacts Mailjet
+        const auth = Buffer.from(`${mailjetApiKey}:${mailjetApiSecret}`).toString('base64');
+        const contactListUrl = 'https://api.mailjet.com/v3/REST/contact';
+        const listResponse = await fetch(contactListUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+          },
+        });
+
+        if (!listResponse.ok) {
+          console.warn('⚠️ Could not fetch Mailjet contacts for promotional emails');
+          return;
+        }
+
+        const listData = await listResponse.json();
+        const contacts = listData.Data || [];
+        console.log(`📊 Found ${contacts.length} contacts to check`);
+
+        for (const contact of contacts) {
+          const email = contact.Email;
+          if (!email) continue;
+
+          try {
+            // Récupérer les propriétés du contact
+            const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
+            const contactDataResponse = await fetch(contactDataUrl, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${auth}`,
+              },
+            });
+
+            if (!contactDataResponse.ok) continue;
+
+            const contactDataResult = await contactDataResponse.json();
+            if (!contactDataResult.Data || contactDataResult.Data.length === 0) continue;
+
+            const contactData = contactDataResult.Data[0];
+            if (!contactData.Data) continue;
+
+            // Parser les propriétés
+            let properties = {};
+            if (Array.isArray(contactData.Data)) {
+              contactData.Data.forEach((item) => {
+                if (item.Name && item.Value !== undefined) {
+                  properties[item.Name] = item.Value;
+                }
+              });
+            } else if (typeof contactData.Data === 'object') {
+              properties = contactData.Data;
+            }
+
+            // Récupérer le prénom
+            const firstName = properties.firstname || contact.Name || '';
+
+            // Vérifier que ce n'est pas un client (ne pas envoyer aux clients)
+            const estClient = properties.est_client === 'True' || properties.est_client === true;
+            const produitsAchetes = properties.produits_achetes || '';
+
+            if (estClient || produitsAchetes.includes('21jours') || produitsAchetes.includes('complet')) {
+              // C'est un client, on skip
+              continue;
+            }
+
+            // 1. EMAIL SOMMEIL (saisonnier : novembre, février, mars)
+            if (shouldSendSleepEmail) {
+              const emailSentDocId =
+                  `promotion_sommeil_${currentMonth}_${now.getFullYear()}_${email.toLowerCase().trim()}`;
+              const emailSentDoc = await db.collection('contentEmailsSent')
+                  .doc(emailSentDocId).get();
+
+              if (!emailSentDoc.exists) {
+                const emailSubject = 'Se réveiller à 2h du matin ne signifie pas que vous êtes cassé·e';
+                const emailHtml = loadEmailTemplate('promotion-complet-sommeil', {
+                  firstName: firstName || '',
+                });
+
+                await sendMailjetEmail(
+                    email,
+                    emailSubject,
+                    emailHtml,
+                    `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/cours-en-ligne/approche-fluance-complete/`,
+                    mailjetApiKey,
+                    mailjetApiSecret,
+                    'fluance@actu.fluance.io',
+                    'Cédric de Fluance',
+                );
+
+                await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                  email: email,
+                  type: 'promotion_sommeil',
+                  month: currentMonth,
+                  year: now.getFullYear(),
+                  sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+
+                console.log(`✅ Sleep promotional email sent to ${email}`);
+                sleepEmailsSent++;
+              }
+            }
+
+            // 2. EMAIL SOMATIQUE (basé sur triggers)
+            const sourceOptin = properties.source_optin || '';
+            const dateOptin = properties.date_optin;
+
+            // Trigger 1 : 45 jours après téléchargement des 2 pratiques (si non converti)
+            if (sourceOptin.includes('2pratiques') && dateOptin) {
+              let optinDate;
+              if (dateOptin.includes('/')) {
+                const [day, month, year] = dateOptin.split('/');
+                optinDate = new Date(year, month - 1, day);
+              } else if (dateOptin.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} (AM|PM)$/i)) {
+                const parts = dateOptin.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}) (AM|PM)$/i);
+                if (parts) {
+                  const [, year, month, day, hour, minute, ampm] = parts;
+                  let hour24 = parseInt(hour, 10);
+                  if (ampm.toUpperCase() === 'PM' && hour24 !== 12) {
+                    hour24 += 12;
+                  } else if (ampm.toUpperCase() === 'AM' && hour24 === 12) {
+                    hour24 = 0;
+                  }
+                  optinDate = new Date(year, parseInt(month, 10) - 1, day, hour24, parseInt(minute, 10));
+                } else {
+                  optinDate = new Date(dateOptin);
+                }
+              } else {
+                optinDate = new Date(dateOptin);
+              }
+
+              if (!isNaN(optinDate.getTime())) {
+                const daysSinceOptin = Math.floor((now - optinDate) / (1000 * 60 * 60 * 24));
+
+                // Envoyer l'email principal entre J+45 et J+50 (fenêtre de 5 jours)
+                if (daysSinceOptin >= 45 && daysSinceOptin <= 50) {
+                  const emailSentDocId = `promotion_somatique_principal_${email.toLowerCase().trim()}`;
+                  const emailSentDoc = await db.collection('contentEmailsSent')
+                      .doc(emailSentDocId).get();
+
+                  if (!emailSentDoc.exists) {
+                    const emailSubject = 'Quand votre corps vous dit qu\'il en a assez';
+                    const emailHtml = loadEmailTemplate('promotion-complet-somatique', {
+                      firstName: firstName || '',
+                    });
+
+                    await sendMailjetEmail(
+                        email,
+                        emailSubject,
+                        emailHtml,
+                        `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/cours-en-ligne/approche-fluance-complete/`,
+                        mailjetApiKey,
+                        mailjetApiSecret,
+                        'fluance@actu.fluance.io',
+                        'Cédric de Fluance',
+                    );
+
+                    await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                      email: email,
+                      type: 'promotion_somatique_principal',
+                      daysSinceOptin: daysSinceOptin,
+                      sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                    });
+
+                    console.log(`✅ Somatique promotional email (principal) sent to ${email}`);
+                    somatiqueEmailsSent++;
+                  }
+                }
+
+                // Envoyer la relance J+8 après l'email principal (donc J+53 à J+58)
+                if (daysSinceOptin >= 53 && daysSinceOptin <= 58) {
+                  // Vérifier que l'email principal a été envoyé
+                  const principalEmailSentDocId = `promotion_somatique_principal_${email.toLowerCase().trim()}`;
+                  const principalEmailSent = await db.collection('contentEmailsSent')
+                      .doc(principalEmailSentDocId).get();
+
+                  if (principalEmailSent.exists) {
+                    const emailSentDocId = `promotion_somatique_relance_${email.toLowerCase().trim()}`;
+                    const emailSentDoc = await db.collection('contentEmailsSent')
+                        .doc(emailSentDocId).get();
+
+                    if (!emailSentDoc.exists) {
+                      const emailSubject = 'Bouger à partir de son ressenti';
+                      const emailHtml = loadEmailTemplate('promotion-complet-somatique-relance', {
+                        firstName: firstName || '',
+                      });
+
+                      await sendMailjetEmail(
+                          email,
+                          emailSubject,
+                          emailHtml,
+                          `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/cours-en-ligne/approche-fluance-complete/`,
+                          mailjetApiKey,
+                          mailjetApiSecret,
+                          'fluance@actu.fluance.io',
+                          'Cédric de Fluance',
+                      );
+
+                      await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                        email: email,
+                        type: 'promotion_somatique_relance',
+                        daysSinceOptin: daysSinceOptin,
+                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                      });
+
+                      console.log(`✅ Somatique promotional email (relance) sent to ${email}`);
+                      somatiqueRelanceEmailsSent++;
+                    }
+                  }
+                }
+              }
+            }
+
+            // 3. EMAIL SOMATIQUE SAISONNIER (relance pour non-convertis)
+            // En novembre et février, 2-3 semaines après l'email sommeil (vers le 15-21)
+            // Priorité : l'email sommeil est envoyé le 1er, l'email somatique suit 2-3 semaines après
+            const isSomatiqueSeasonalWindow =
+                (isNovember || isFebruary) && currentDay >= 15 && currentDay <= 21;
+
+            if (isSomatiqueSeasonalWindow) {
+              // Vérifier si le contact a déjà téléchargé les 2 pratiques
+              if (sourceOptin.includes('2pratiques') && dateOptin) {
+                // Vérifier d'abord si l'email sommeil a été envoyé ce mois-ci
+                const sleepEmailSentDocId =
+                    `promotion_sommeil_${currentMonth}_${now.getFullYear()}_${email.toLowerCase().trim()}`;
+                const sleepEmailSent = await db.collection('contentEmailsSent')
+                    .doc(sleepEmailSentDocId).get();
+
+                // Ne pas envoyer si l'email sommeil n'a pas été envoyé ce mois (priorité à l'email sommeil)
+                if (!sleepEmailSent.exists) {
+                  // L'email sommeil n'a pas été envoyé ce mois, on skip
+                  // (peut arriver si le contact n'était pas dans la liste le 1er du mois)
+                  continue;
+                }
+
+                // Vérifier que le contact n'est toujours pas client (vérification à nouveau au cas où)
+                const estClientNow = properties.est_client === 'True' || properties.est_client === true;
+                const produitsAchetesNow = properties.produits_achetes || '';
+                if (estClientNow || produitsAchetesNow.includes('21jours') || produitsAchetesNow.includes('complet')) {
+                  // Le contact est devenu client entre temps, on skip
+                  continue;
+                }
+
+                let optinDate;
+                if (dateOptin.includes('/')) {
+                  const [day, month, year] = dateOptin.split('/');
+                  optinDate = new Date(year, month - 1, day);
+                } else if (dateOptin.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} (AM|PM)$/i)) {
+                  const parts = dateOptin.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}) (AM|PM)$/i);
+                  if (parts) {
+                    const [, year, month, day, hour, minute, ampm] = parts;
+                    let hour24 = parseInt(hour, 10);
+                    if (ampm.toUpperCase() === 'PM' && hour24 !== 12) {
+                      hour24 += 12;
+                    } else if (ampm.toUpperCase() === 'AM' && hour24 === 12) {
+                      hour24 = 0;
+                    }
+                    optinDate = new Date(year, parseInt(month, 10) - 1, day, hour24, parseInt(minute, 10));
+                  } else {
+                    optinDate = new Date(dateOptin);
+                  }
+                } else {
+                  optinDate = new Date(dateOptin);
+                }
+
+                if (!isNaN(optinDate.getTime())) {
+                  const daysSinceOptin = Math.floor((now - optinDate) / (1000 * 60 * 60 * 24));
+
+                  // Envoyer uniquement si :
+                  // - Plus de 60 jours depuis le téléchargement
+                  //   (pour éviter doublon avec trigger principal)
+                  // - N'a pas reçu l'email somatique principal récemment
+                  //   (ou l'a reçu il y a plus de 30 jours)
+                  if (daysSinceOptin >= 60) {
+                    const principalEmailSentDocId = `promotion_somatique_principal_${email.toLowerCase().trim()}`;
+                    const principalEmailSent = await db.collection('contentEmailsSent')
+                        .doc(principalEmailSentDocId).get();
+
+                    // Si l'email principal a été envoyé, vérifier qu'il date de plus de 30 jours
+                    let shouldSendSeasonal = false;
+                    if (!principalEmailSent.exists) {
+                      // N'a jamais reçu l'email principal, on peut envoyer la version saisonnière
+                      shouldSendSeasonal = true;
+                    } else {
+                      const principalSentAt = principalEmailSent.data().sentAt?.toDate();
+                      if (principalSentAt) {
+                        const daysSincePrincipal = Math.floor(
+                            (now - principalSentAt) / (1000 * 60 * 60 * 24),
+                        );
+                        // Envoyer seulement si l'email principal date de plus de 30 jours
+                        shouldSendSeasonal = daysSincePrincipal >= 30;
+                      }
+                    }
+
+                    if (shouldSendSeasonal) {
+                      const emailSentDocId =
+                          `promotion_somatique_seasonal_${currentMonth}_` +
+                          `${now.getFullYear()}_${email.toLowerCase().trim()}`;
+                      const emailSentDoc = await db.collection('contentEmailsSent')
+                          .doc(emailSentDocId).get();
+
+                      if (!emailSentDoc.exists) {
+                        const emailSubject = 'Quand votre corps vous dit qu\'il en a assez';
+                        const emailHtml = loadEmailTemplate('promotion-complet-somatique', {
+                          firstName: firstName || '',
+                        });
+
+                        await sendMailjetEmail(
+                            email,
+                            emailSubject,
+                            emailHtml,
+                            `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/cours-en-ligne/approche-fluance-complete/`,
+                            mailjetApiKey,
+                            mailjetApiSecret,
+                            'fluance@actu.fluance.io',
+                            'Cédric de Fluance',
+                        );
+
+                        await db.collection('contentEmailsSent')
+                            .doc(emailSentDocId).set({
+                              email: email,
+                              type: 'promotion_somatique_seasonal',
+                              month: currentMonth,
+                              year: now.getFullYear(),
+                              daysSinceOptin: daysSinceOptin,
+                              sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                            });
+
+                        console.log(
+                            `✅ Seasonal somatique promotional email sent to ${email} ` +
+                            `(2-3 weeks after sleep email)`,
+                        );
+                        somatiqueSeasonalEmailsSent++;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`❌ Error processing contact ${email}:`, error.message);
+            errors++;
+          }
+        }
+
+        console.log(
+            `✅ Promotional emails job completed: ` +
+            `${sleepEmailsSent} sleep email(s), ` +
+            `${somatiqueEmailsSent} somatique principal, ` +
+            `${somatiqueRelanceEmailsSent} somatique relance, ` +
+            `${somatiqueSeasonalEmailsSent} somatique seasonal, ` +
+            `${errors} error(s)`,
+        );
+
+        return {
+          success: true,
+          sleepEmailsSent,
+          somatiqueEmailsSent,
+          somatiqueRelanceEmailsSent,
+          somatiqueSeasonalEmailsSent,
+          errors,
+        };
+      } catch (error) {
+        console.error('❌ Error in sendPromotionalEmails:', error);
+        return {success: false, error: error.message};
+      }
+    },
+);
+
 exports.syncPlanning = onSchedule(
     {
       schedule: 'every 30 minutes',
