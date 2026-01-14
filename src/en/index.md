@@ -68,7 +68,7 @@ ogImage: assets/img/accueil-miniature-EN.jpg
     <div class="text-left space-y-4">
       <h3 class="text-2xl md:text-3xl font-semibold text-[#3E3A35]">Direct access to calm for restless minds</h3>
       <p class="text-lg text-[#3E3A35]">
-        It's often the ideal "back door" for those who find seated meditation difficult or frustrating.<br /><br />
+        This somatic approach is often the ideal "back door" for those who find seated meditation difficult or frustrating.<br /><br />
         By going through the body rather than the mind, Fluance short-circuits inner agitation. After just a few practices, surprising results are observed: even without prior experience, it becomes possible to taste a state of deep grounding, absolute presence and calm, where immobility alone had failed.
       </p>
     </div>

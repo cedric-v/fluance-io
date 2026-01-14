@@ -68,7 +68,7 @@ ogImage: assets/img/accueil-miniature-FR.jpg
     <div class="text-left space-y-4">
       <h3 class="text-2xl md:text-3xl font-semibold text-[#3E3A35]">L'accès direct au calme pour les esprits agités</h3>
       <p class="text-lg text-[#3E3A35]">
-        C'est souvent la "porte dérobée" idéale pour ceux qui trouvent la méditation assise difficile ou frustrante.<br /><br />
+        Cette approche somatique est souvent la "porte dérobée" idéale pour ceux qui trouvent la méditation assise difficile ou frustrante.<br /><br />
         En passant par le corps plutôt que par le mental, Fluance court-circuite l'agitation intérieure. Après seulement quelques pratiques, on constate des résultats surprenants : même sans expérience préalable, il devient possible de goûter à un état d'ancrage profond, de présence absolue et de calme, là où l'immobilité seule avait échoué.
       </p>
     </div>
