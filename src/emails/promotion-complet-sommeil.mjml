@@ -1,0 +1,136 @@
+---
+layout: false
+permalink: /emails/promotion-complet-sommeil.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+      <mj-button background-color="#E6B84A" color="#0f172a" font-weight="bold" border-radius="5px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold" padding="10px">
+          Se réveiller à 2h du matin ne signifie pas que vous êtes cassé·e
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Nous avons tous connu ce réveil en sursaut au milieu de la nuit.
+        </mj-text>
+        <mj-text>
+          Parfois c'est un rêve troublant. Parfois c'est une inquiétude qui monte. Parfois on se réveille simplement, alerte et conscient, sans raison apparente.
+        </mj-text>
+        <mj-text>
+          L'attente moderne est que nous "devrions" dormir d'une traite toute la nuit. Que tout autre chose qu'un bloc solide de huit heures est mauvais et problématique. Une preuve que quelque chose est cassé.
+        </mj-text>
+        <mj-text>
+          <strong>Mais l'anthropologie raconte une autre histoire.</strong>
+        </mj-text>
+        <mj-text>
+          Avant l'éclairage artificiel, les cultures du monde entier vivaient le sommeil en deux phases. Vous dormiez quelques heures, vous vous réveilliez pour une période au milieu de la nuit, puis vous vous rendormiez jusqu'au matin.
+        </mj-text>
+        <mj-text>
+          Le temps entre le premier et le second sommeil était appelé "la veille". Les gens se levaient, entretenaient le feu, faisaient des prières. Ils rendaient visite aux voisins. Avaient des conversations qu'ils ne pouvaient pas avoir pendant la journée chargée.
+        </mj-text>
+        <mj-text>
+          C'était normal. C'était attendu. C'était tissé dans le tissu de la vie quotidienne.
+        </mj-text>
+        <mj-text>
+          <strong>Votre tendance à vous réveiller la nuit n'est peut-être pas un trouble.</strong>
+        </mj-text>
+        <mj-text>
+          Elle peut être un héritage ancestral.
+        </mj-text>
+        <mj-text>
+          <strong>Le problème, ce sont nos attentes modernes</strong>
+        </mj-text>
+        <mj-text>
+          Nous nous sentons obligés de rester au lit. De nous retourner. De lutter contre l'éveil plutôt que de travailler avec lui.
+        </mj-text>
+        <mj-text>
+          L'invitation est d'arrêter de lutter et de commencer à explorer. Qu'est-ce qui vous aide à vous apaiser ?
+        </mj-text>
+        <mj-text>
+          <strong>Ce que j'ai remarqué au fil des années</strong>
+        </mj-text>
+        <mj-text>
+          La qualité de mon sommeil est directement liée à ce que je fais pendant la journée.
+        </mj-text>
+        <mj-text>
+          Pas un exercice intense qui fait monter le cortisol. Mais un mouvement doux, orienté vers le système nerveux, qui dit à mon corps : tu es en sécurité. Tu peux te détendre. Tu n'as pas besoin d'être sur le qui-vive.
+        </mj-text>
+        <mj-text>
+          Quand je pratique Fluance pendant la journée, je porte moins de tension dans la nuit.
+        </mj-text>
+        <mj-text>
+          Quand je porte moins de tension dans la nuit, je m'endors plus vite.
+        </mj-text>
+        <mj-text>
+          Quand je m'endors plus vite, je dors plus profondément.
+        </mj-text>
+        <mj-text>
+          Quand je dors plus profondément, je me réveille moins souvent.
+        </mj-text>
+        <mj-text>
+          Et quand je me réveille, je me rendors plus facilement.
+        </mj-text>
+        <mj-text>
+          <strong>Cela s'accumule.</strong>
+        </mj-text>
+        <mj-text>
+          Chaque petite amélioration crée les conditions pour la suivante.
+        </mj-text>
+        <mj-text>
+          Quand votre système nerveux a plus de capacité pour la relaxation, ces réveils au milieu de la nuit deviennent moins fréquents. Moins perturbants. Vous vous rendormez plus facilement.
+        </mj-text>
+        <mj-text>
+          Pas parce que vous forcez quoi que ce soit.
+        </mj-text>
+        <mj-text>
+          Parce que votre corps se souvient de ce que le repos ressent. Et il connaît le chemin du retour.
+        </mj-text>
+        <mj-text>
+          <strong>Si vous vous retrouvez éveillé·e cette nuit</strong>
+        </mj-text>
+        <mj-text>
+          Ne luttez pas. Travaillez avec.
+        </mj-text>
+        <mj-text>
+          <strong>Une pratique douce pour votre journée</strong>
+        </mj-text>
+        <mj-text>
+          Avec Fluance, chaque semaine vous recevez une nouvelle mini-série de 2 à 5 minutes, guidée, pour apaiser votre système nerveux et créer les conditions d'un meilleur repos.
+        </mj-text>
+        <mj-text>
+          Tout cela à votre rythme, depuis chez vous, quand vous le souhaitez.
+        </mj-text>
+        <mj-button href="https://fluance.io/cours-en-ligne/approche-fluance-complete/" align="center" padding="20px">
+          Découvrir les 2 formules (14 jours offerts)
+        </mj-button>
+        <mj-text>
+          À tout bientôt,
+        </mj-text>
+        <mj-text>
+          Cédric
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666" padding="0">
+          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

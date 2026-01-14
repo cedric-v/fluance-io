@@ -1,0 +1,93 @@
+---
+layout: false
+permalink: /emails/promotion-complet-somatique.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+      <mj-button background-color="#E6B84A" color="#0f172a" font-weight="bold" border-radius="5px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold" padding="10px">
+          Quand votre corps vous dit qu'il en a assez
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Vous connaissez peut-être cette sensation : vous faites tout "comme il faut", vous bougez, vous prenez soin de vous, mais quelque chose ne suit pas.
+        </mj-text>
+        <mj-text>
+          Vous n'êtes pas triste. Vous n'êtes pas en colère. Vous êtes simplement... à plat.
+        </mj-text>
+        <mj-text>
+          Cette fatigue latente qui persiste même après une bonne nuit de sommeil. Cette impression que vous fonctionnez sur un rythme qui n'est pas le vôtre, mais celui des contraintes extérieures.
+        </mj-text>
+        <mj-text>
+          <strong>La différence qui change tout</strong>
+        </mj-text>
+        <mj-text>
+          Il y a deux façons d'aborder le mouvement :
+        </mj-text>
+        <mj-text>
+          • <strong>Bouger pour ressentir</strong> → On entraîne le corps, on suit des consignes, on reproduit des formes. Le corps devient un outil qu'on utilise.
+        </mj-text>
+        <mj-text>
+          • <strong>Ressentir puis bouger</strong> → On écoute d'abord ce qui est là. On laisse le corps s'exprimer. Le mouvement naît du ressenti, pas l'inverse. Le corps devient une mémoire vivante qu'on habite.
+        </mj-text>
+        <mj-text>
+          Cette seconde approche, c'est ce que propose Fluance.
+        </mj-text>
+        <mj-text>
+          <strong>Passer de "corps qu'on entraîne" à "corps qu'on habite"</strong>
+        </mj-text>
+        <mj-text>
+          Quand on laisse le corps informer plutôt que d'utiliser le corps, quelque chose d'extraordinaire se produit : on accède aux émotions bloquées et, du coup, au système d'auto-régénération du corps.
+        </mj-text>
+        <mj-text>
+          Ce n'est pas ce que vous faites qui ne va pas. C'est comment vous le faites.
+        </mj-text>
+        <mj-text>
+          <strong>Une pratique qui s'adapte à vous</strong>
+        </mj-text>
+        <mj-text>
+          Avec Fluance, chaque semaine vous recevez une nouvelle mini-série de 2 à 5 minutes, guidée, pour :
+        </mj-text>
+        <mj-text>
+          • Redonner de l'élan à votre corps<br>
+          • Améliorer votre rapport à vos ressentis<br>
+          • Laisser votre corps retrouver son rythme naturel
+        </mj-text>
+        <mj-text>
+          Tout cela à votre rythme, depuis chez vous, quand vous le souhaitez.
+        </mj-text>
+        <mj-button href="https://fluance.io/cours-en-ligne/approche-fluance-complete/" align="center" padding="20px">
+          Découvrir les 2 formules (14 jours offerts)
+        </mj-button>
+        <mj-text>
+          À tout bientôt,
+        </mj-text>
+        <mj-text>
+          Cédric
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666" padding="0">
+          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
