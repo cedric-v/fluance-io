@@ -77,7 +77,7 @@ Lorsque cela est prévu, **un seul cours d'essai gratuit peut être proposé par
 
 ### Abonnements
 
-Selon les offres, les Services peuvent être proposés sous forme d'abonnement, conclu pour une durée déterminée (mensuelle ou annuelle), éventuellement renouvelable par tacite reconduction, sauf résiliation dans les conditions précisées lors de la souscription.
+Selon les offres, les Services peuvent être proposés sous forme d'abonnement, conclu pour une durée déterminée (mensuelle, trimestrielle, semestrielle ou annuelle), éventuellement renouvelable par tacite reconduction, sauf résiliation dans les conditions précisées lors de la souscription.
 
 ---
 
