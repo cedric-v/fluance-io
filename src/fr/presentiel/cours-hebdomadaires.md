@@ -72,7 +72,7 @@ permalink: /presentiel/cours-hebdomadaires/
             <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-fluance text-white text-xs px-3 py-1 rounded-full">POPULAIRE</span>
             <h4 class="font-semibold text-[#3E3A35] mb-1">Flow Pass</h4>
             <p class="text-2xl font-bold text-fluance mb-2">210 CHF</p>
-            <p class="text-sm text-[#3E3A35]/60">10 séances (valide durant 12 mois)</p>
+            <p class="text-sm text-[#3E3A35]/60">10 séances à votre rythme (valide durant 12 mois)</p>
           </a>
           <a href="{{ '/presentiel/reserver/' | relativeUrl }}" class="text-center p-4 rounded-xl border-2 border-[#E6B84A] bg-[#E6B84A]/5 relative hover:shadow-lg hover:scale-105 transition-all cursor-pointer block">
             <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#E6B84A] text-[#7A1F3D] text-xs px-3 py-1 rounded-full font-semibold">ILLIMITÉ</span>

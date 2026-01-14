@@ -136,7 +136,7 @@
       id: 'flow_pass',
       name: 'Flow Pass',
       price: 210,
-      description: '10 séances (valable 12 mois)',
+      description: '10 séances à votre rythme (valable 12 mois)',
       badge: 'POPULAIRE',
     },
     semester_pass: {

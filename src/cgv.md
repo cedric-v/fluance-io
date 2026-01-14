@@ -16,7 +16,7 @@ permalink: /cgv/
 
 ## Article 1 – Désignation du vendeur
 
-Les sites **cedricv.com** et **fluance.io** sont édités par **Instants Zen Sàrl**, société de droit suisse (ci-après « la Société »).
+Le site **fluance.io** est édité par **Instants Zen Sàrl**, société de droit suisse (ci-après « la Société »).
 
 En validant les présentes conditions, le Client demande expressément que l'exécution du Service commence immédiatement, le cas échéant avant l'échéance d'un éventuel délai de rétractation, afin de pouvoir bénéficier du Service sans délai. Lorsque cela est prévu dans l'offre, le Client peut bénéficier d'une garantie complémentaire « Satisfait ou remboursé », selon les conditions précisées sur la page de vente.
 
