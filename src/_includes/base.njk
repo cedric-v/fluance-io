@@ -101,6 +101,10 @@
     {% endif %}
     <link rel="alternate" hreflang="fr" href="https://fluance.io{{ frUrl }}">
     <link rel="alternate" hreflang="en" href="https://fluance.io{{ enUrl }}">
+    {# Ajouter x-default pour la page racine qui redirige vers /fr/ #}
+    {% if canonicalUrl == '/' or page.url == '/' %}
+    <link rel="alternate" hreflang="x-default" href="https://fluance.io/fr/">
+    {% endif %}
     
     <!-- IndieWeb rel="me" links for identity verification -->
     <link rel="me" href="https://cedricv.com">
