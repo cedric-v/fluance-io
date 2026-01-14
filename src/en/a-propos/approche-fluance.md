@@ -42,6 +42,11 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
         <p class="text-lg text-[#3E3A35] leading-relaxed">
           to release tensions and restore energy circulation.
         </p>
+        <div class="bg-fluance/5 rounded-lg p-4 mt-4 border-l-2 border-fluance/30 italic text-sm text-[#3E3A35]/80 leading-relaxed">
+          <p>
+            In the Fluance approach, movement arises from feeling, not the other way around. Instead of moving to feel (training the body), we first feel what's there, then let movement emerge naturally. It's the shift from "body we train" to "body we feel", a transformation that allows access to blocked emotions and the body's self-regeneration system.
+          </p>
+        </div>
       </div>
 
       <div class="space-y-3">
@@ -64,6 +69,36 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
       <p class="text-lg text-[#3E3A35] leading-relaxed">
         No need for complex postures or athletic prerequisites. The practices offered are accessible to everyone and designed to provide immediate relief and a sense of inner freedom. It's an invitation to let go of the mind to return to the body's intelligence.
       </p>
+    </div>
+
+    <div class="space-y-4 pt-6 border-t border-fluance/10">
+      <h2 class="text-2xl font-semibold text-fluance">When the body finds its rhythm</h2>
+      <p class="text-lg text-[#3E3A35] leading-relaxed">
+        This gentle movement approach, oriented toward calming the nervous system, creates effects that accumulate and reinforce each other. When the nervous system regains its capacity to relax, the body can finally inform rather than be used.
+      </p>
+      <div class="space-y-4 mt-6">
+        <div class="bg-fluance/5 rounded-lg p-6 border-l-4 border-fluance">
+          <p class="text-lg text-[#3E3A35] leading-relaxed">
+            <strong class="text-fluance">For persistent fatigue:</strong> Instead of functioning on a rhythm that isn't yours, but that of external constraints, the body finds its natural rhythm. This latent fatigue that persists even after rest can finally transform.
+          </p>
+        </div>
+        <div class="bg-fluance/5 rounded-lg p-6 border-l-4 border-fluance">
+          <p class="text-lg text-[#3E3A35] leading-relaxed">
+            <strong class="text-fluance">For sleep:</strong> Gentle movement during the day, which tells the body "you are safe, you can relax," improves sleep quality. Each small improvement creates the conditions for the next. And if you wake up at night, remember: biphasic sleep (waking in the middle of the night) was the norm before artificial lighting. It may be an ancestral heritage, not a disorder.
+          </p>
+        </div>
+        <div class="bg-fluance/5 rounded-lg p-6 border-l-4 border-fluance">
+          <p class="text-lg text-[#3E3A35] leading-relaxed">
+            <strong class="text-fluance">For physical and emotional tensions:</strong> Rather than fleeing stress and tensions, Fluance uses them as levers. Each tension becomes an opportunity to return to oneself, each friction a signal to readjust one's alignment. Gentle movement releases both physical tensions (back, neck, shoulders) and blocked emotions.
+          </p>
+        </div>
+      </div>
+      <div class="bg-fluance/10 rounded-lg p-6 mt-6 border-2 border-fluance/40 text-center">
+        <p class="text-xl text-[#3E3A35] leading-relaxed font-medium">
+          It's probably not what you do that's wrong.<br />
+          <span class="text-fluance font-semibold">It's perhaps how you do it.</span>
+        </p>
+      </div>
     </div>
 
     <div class="space-y-4 pt-6 border-t border-fluance/10">
