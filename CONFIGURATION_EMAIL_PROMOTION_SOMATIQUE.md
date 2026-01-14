@@ -105,10 +105,9 @@
 - **Moment :** 
   - **Novembre** (le 2 du mois) - avant l'hiver, période où le sommeil peut être perturbé par le changement de saison et la baisse de lumière (évite la Toussaint le 1er)
   - **Février** (le 1er du mois) - milieu d'hiver, fatigue accumulée, période où les troubles du sommeil sont fréquents
-  - **Mars** (le 1er du mois) - changement de saison, transition hiver/printemps, période de fatigue
 - **Email :** Sommeil
-- **Raison :** Ces périodes sont propices aux troubles du sommeil et à la fatigue, le message sur le sommeil biphasique et le lien avec le mouvement doux est particulièrement pertinent
-- **Implémentation :** Fonction scheduled `sendPromotionalEmails` s'exécute quotidiennement à 8h et vérifie si on est le 1er du mois en novembre, février ou mars
+- **Raison :** Ces périodes sont propices aux troubles du sommeil et à la fatigue, le message sur le sommeil biphasique et le lien avec le mouvement doux est particulièrement pertinent. Mars a été retiré pour éviter la sur-sollicitation (l'email somatique saisonnier de février arrive déjà 2-3 semaines avant).
+- **Implémentation :** Fonction scheduled `sendPromotionalEmails` s'exécute quotidiennement à 8h et vérifie si on est le 2 novembre ou le 1er février
 
 ---
 
@@ -127,7 +126,7 @@ Les templates sont compilés automatiquement lors de `npm run build:11ty` et cop
 
 ### Fonction scheduled
 La fonction `sendPromotionalEmails` s'exécute **quotidiennement à 8h (Europe/Paris)** et gère automatiquement :
-- L'envoi de l'email sommeil le 2 novembre (évite la Toussaint) et le 1er février et mars
+- L'envoi de l'email sommeil le 2 novembre (évite la Toussaint) et le 1er février
 - L'envoi de l'email somatique principal 45 jours après le téléchargement des 2 pratiques (trigger temporel)
 - L'envoi de l'email somatique saisonnier entre le 15 et le 21 de chaque mois en novembre et février (2-3 semaines après l'email sommeil, pour non-convertis)
 - L'envoi de l'email somatique relance 8 jours après l'email principal (J+53)
@@ -140,7 +139,7 @@ La fonction `sendPromotionalEmails` s'exécute **quotidiennement à 8h (Europe/P
 - Un contact ne reçoit pas les deux : la relance saisonnière ne s'envoie que si le trigger principal a été envoyé il y a plus de 30 jours ou n'a jamais été envoyé
 
 **Gestion des conflits :**
-- **Priorité à l'email sommeil** : envoyé le 2 novembre (évite la Toussaint) et le 1er février/mars
+- **Priorité à l'email sommeil** : envoyé le 2 novembre (évite la Toussaint) et le 1er février
 - **Email somatique saisonnier décalé** : envoyé 2-3 semaines après (15-21 du mois) pour éviter d'envoyer deux emails le même jour
 - **Vérification du statut client** : l'email somatique saisonnier ne s'envoie que si le contact n'est pas devenu client entre l'email sommeil et maintenant
 - **Condition préalable** : l'email somatique saisonnier ne s'envoie que si l'email sommeil a été envoyé ce mois-ci

@@ -8016,14 +8016,13 @@ exports.sendPromotionalEmails = onSchedule(
         const currentDay = now.getDate();
         const isNovember = currentMonth === 11;
         const isFebruary = currentMonth === 2;
-        const isMarch = currentMonth === 3;
 
         // Email sommeil : envoyer une fois par mois
         // Novembre : le 2 (évite la Toussaint le 1er)
-        // Février et mars : le 1er
+        // Février : le 1er (milieu d'hiver, fatigue accumulée)
         const shouldSendSleepEmail =
             (isNovember && currentDay === 2) ||
-            ((isFebruary || isMarch) && currentDay === 1);
+            (isFebruary && currentDay === 1);
 
         let sleepEmailsSent = 0;
         let somatiqueEmailsSent = 0;
@@ -8096,7 +8095,7 @@ exports.sendPromotionalEmails = onSchedule(
               continue;
             }
 
-            // 1. EMAIL SOMMEIL (saisonnier : novembre, février, mars)
+            // 1. EMAIL SOMMEIL (saisonnier : novembre, février)
             if (shouldSendSleepEmail) {
               const emailSentDocId =
                   `promotion_sommeil_${currentMonth}_${now.getFullYear()}_${email.toLowerCase().trim()}`;
