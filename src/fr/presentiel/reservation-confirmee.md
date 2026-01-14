@@ -124,5 +124,121 @@ eleventyExcludeFromCollections: true
       ? `${window.location.pathname}?${cleanParams.toString()}`
       : window.location.pathname;
     window.history.replaceState({}, document.title, cleanUrl);
+
+    // Suivi de conversion Google Ads
+    if (paymentIntent && redirectStatus === 'succeeded') {
+      // Fonction pour charger Firebase Functions si nécessaire
+      async function loadFirebaseFunctions() {
+        return new Promise((resolve, reject) => {
+          // Si Firebase Functions est déjà disponible
+          if (typeof firebase !== 'undefined' && firebase.functions) {
+            resolve();
+            return;
+          }
+
+          // Configuration Firebase
+          const firebaseConfig = {
+            apiKey: 'AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM',
+            authDomain: 'fluance-protected-content.firebaseapp.com',
+            projectId: 'fluance-protected-content',
+            storageBucket: 'fluance-protected-content.firebasestorage.app',
+            messagingSenderId: '173938686776',
+            appId: '1:173938686776:web:891caf76098a42c3579fcd',
+          };
+
+          // Charger Firebase App
+          const appScriptUrl = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
+          const functionsScriptUrl = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+
+          if (typeof firebase !== 'undefined') {
+            if (!firebase.apps.length) {
+              firebase.initializeApp(firebaseConfig);
+            }
+            loadFunctions();
+          } else {
+            const appScript = document.createElement('script');
+            appScript.src = appScriptUrl;
+            appScript.onload = () => {
+              setTimeout(() => {
+                if (typeof firebase === 'undefined') {
+                  reject(new Error('Firebase App n\'a pas pu être chargé'));
+                  return;
+                }
+                if (!firebase.apps.length) {
+                  firebase.initializeApp(firebaseConfig);
+                }
+                loadFunctions();
+              }, 100);
+            };
+            appScript.onerror = () => reject(new Error('Erreur lors du chargement de Firebase App'));
+            document.head.appendChild(appScript);
+          }
+
+          function loadFunctions() {
+            if (document.querySelector(`script[src="${functionsScriptUrl}"]`)) {
+              resolve();
+            } else {
+              const functionsScript = document.createElement('script');
+              functionsScript.src = functionsScriptUrl;
+              functionsScript.onload = () => resolve();
+              functionsScript.onerror = () => reject(new Error('Erreur lors du chargement de Firebase Functions'));
+              document.head.appendChild(functionsScript);
+            }
+          }
+        });
+      }
+
+      try {
+        // Charger Firebase Functions
+        await loadFirebaseFunctions();
+        
+        const functions = firebase.functions('europe-west1');
+        const getBookingDetails = functions.httpsCallable('getBookingDetails');
+        
+        const result = await getBookingDetails({ paymentIntentId: paymentIntent });
+        
+        if (result.data && result.data.success) {
+          const { product, productName, amount, currency, courseName, courseDate, courseTime } = result.data;
+          
+          // Envoyer les événements de conversion à Google Ads via dataLayer
+          if (window.dataLayer) {
+            // Événement e-commerce standard pour Google Analytics
+            window.dataLayer.push({
+              event: 'purchase',
+              transaction_id: paymentIntent,
+              value: amount,
+              currency: currency,
+              items: [{
+                item_id: product,
+                item_name: productName,
+                item_category: 'course_booking',
+                price: amount,
+                quantity: 1
+              }]
+            });
+            
+            // Événement personnalisé pour les réservations de cours
+            window.dataLayer.push({
+              event: 'course_booking_confirmed',
+              booking_type: product,
+              booking_name: productName,
+              course_name: courseName,
+              course_date: courseDate,
+              course_time: courseTime,
+              value: amount,
+              currency: currency,
+              transaction_id: paymentIntent
+            });
+            
+            console.log('Conversion tracked:', { product, productName, amount, currency });
+          } else {
+            console.warn('dataLayer not available - GTM may not be loaded');
+          }
+        }
+      } catch (error) {
+        console.error('Error tracking conversion:', error);
+        // Ne pas bloquer l'affichage de la page en cas d'erreur
+      }
+    }
   })();
 </script>
