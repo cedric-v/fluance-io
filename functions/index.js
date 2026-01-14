@@ -2428,6 +2428,101 @@ exports.getStripeCheckoutSession = onCall(
     });
 
 /**
+ * Récupère les détails d'une réservation de cours à partir d'un PaymentIntent Stripe
+ * Utilisé pour le suivi de conversion Google Ads
+ */
+exports.getBookingDetails = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['STRIPE_SECRET_KEY'],
+    },
+    async (request) => {
+      const {paymentIntentId} = request.data;
+
+      if (!paymentIntentId) {
+        throw new HttpsError('invalid-argument', 'paymentIntentId is required');
+      }
+
+      try {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        // Vérifier que c'est bien une réservation de cours
+        if (paymentIntent.metadata?.type !== 'course_booking') {
+          throw new HttpsError('invalid-argument', 'This payment intent is not a course booking');
+        }
+
+        const bookingId = paymentIntent.metadata?.bookingId;
+        if (!bookingId) {
+          throw new HttpsError('invalid-argument', 'Booking ID not found in payment intent metadata');
+        }
+
+        // Récupérer les détails de la réservation depuis Firestore
+        const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+        if (!bookingDoc.exists) {
+          throw new HttpsError('not-found', 'Booking not found');
+        }
+
+        const booking = bookingDoc.data();
+
+        // Récupérer les détails du cours
+        let courseName = booking.courseName || 'Cours Fluance';
+        let courseDate = booking.courseDate || '';
+        let courseTime = booking.courseTime || '';
+
+        if (booking.courseId) {
+          const courseDoc = await db.collection('courses').doc(booking.courseId).get();
+          if (courseDoc.exists) {
+            const course = courseDoc.data();
+            courseName = course.title || courseName;
+            courseDate = course.date || courseDate;
+            courseTime = course.time || courseTime;
+          }
+        }
+
+        // Déterminer le type de produit pour le suivi
+        const pricingOption = booking.pricingOption || 'single';
+        let productType = 'course_booking';
+        let productName = 'Réservation de cours';
+        
+        if (pricingOption === 'trial') {
+          productType = 'trial';
+          productName = 'Cours d\'essai';
+        } else if (pricingOption === 'flow_pass') {
+          productType = 'flow_pass';
+          productName = 'Flow Pass';
+        } else if (pricingOption === 'semester_pass') {
+          productType = 'semester_pass';
+          productName = 'Pass Semestriel';
+        }
+
+        const amount = paymentIntent.amount ? paymentIntent.amount / 100 : (booking.amount || 0);
+        const currency = paymentIntent.currency?.toUpperCase() || 'CHF';
+
+        return {
+          success: true,
+          bookingId: bookingId,
+          paymentIntentId: paymentIntentId,
+          product: productType,
+          productName: productName,
+          courseName: courseName,
+          courseDate: courseDate,
+          courseTime: courseTime,
+          amount: amount,
+          currency: currency,
+          pricingOption: pricingOption,
+        };
+      } catch (error) {
+        console.error('Error retrieving booking details:', error);
+        if (error.type === 'StripeInvalidRequestError') {
+          throw new HttpsError('not-found', `Payment Intent "${paymentIntentId}" not found`);
+        }
+        throw new HttpsError('internal', `Error retrieving booking: ${error.message}`);
+      }
+    },
+);
+
+/**
  * Fonction pour créer manuellement un token (paiement virement, cash, etc.)
  * Requiert une authentification admin
  * Région : europe-west1 (Belgique)
