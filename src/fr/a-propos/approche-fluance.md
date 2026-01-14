@@ -42,6 +42,11 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
         <p class="text-lg text-[#3E3A35] leading-relaxed">
           pour délier les tensions et remettre l'énergie en circulation.
         </p>
+        <div class="bg-fluance/5 rounded-lg p-4 mt-4 border-l-2 border-fluance/30 italic text-sm text-[#3E3A35]/80 leading-relaxed">
+          <p>
+            Dans l'approche Fluance, le mouvement naît du ressenti, pas l'inverse. Au lieu de bouger pour ressentir (entraîner le corps), on ressent d'abord ce qui est là, puis on laisse le mouvement émerger naturellement. C'est le passage du "corps qu'on entraîne" au "corps qu'on ressent", une transformation qui permet d'accéder aux émotions bloquées et au système d'auto-régénération du corps.
+          </p>
+        </div>
       </div>
 
       <div class="space-y-3">
@@ -64,6 +69,36 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
       <p class="text-lg text-[#3E3A35] leading-relaxed">
         Pas besoin de postures complexes ou de prérequis athlétiques. Les pratiques proposées sont accessibles à tous et conçues pour procurer un soulagement immédiat et un sentiment de liberté intérieure. C'est une invitation à lâcher le mental pour revenir dans l'intelligence du corps.
       </p>
+    </div>
+
+    <div class="space-y-4 pt-6 border-t border-fluance/10">
+      <h2 class="text-2xl font-semibold text-fluance">Quand le corps retrouve son rythme</h2>
+      <p class="text-lg text-[#3E3A35] leading-relaxed">
+        Cette approche du mouvement doux, orientée vers l'apaisement du système nerveux, crée des effets qui s'accumulent et se renforcent mutuellement. Quand le système nerveux retrouve sa capacité à se détendre, le corps peut enfin informer plutôt que d'être utilisé.
+      </p>
+      <div class="space-y-4 mt-6">
+        <div class="bg-fluance/5 rounded-lg p-6 border-l-4 border-fluance">
+          <p class="text-lg text-[#3E3A35] leading-relaxed">
+            <strong class="text-fluance">Pour la fatigue persistante :</strong> au lieu de fonctionner sur un rythme qui n'est pas le vôtre, mais celui des contraintes extérieures, le corps retrouve son rythme naturel. Cette fatigue latente qui persiste même après le repos peut enfin se transformer.
+          </p>
+        </div>
+        <div class="bg-fluance/5 rounded-lg p-6 border-l-4 border-fluance">
+          <p class="text-lg text-[#3E3A35] leading-relaxed">
+            <strong class="text-fluance">Pour le sommeil :</strong> un mouvement doux pendant la journée, qui dit au corps "tu es en sécurité, tu peux te détendre", améliore la qualité du sommeil. Chaque petite amélioration crée les conditions pour la suivante.
+          </p>
+        </div>
+        <div class="bg-fluance/5 rounded-lg p-6 border-l-4 border-fluance">
+          <p class="text-lg text-[#3E3A35] leading-relaxed">
+            <strong class="text-fluance">Pour les tensions physiques et émotionnelles :</strong> Plutôt que de fuir le stress et les tensions, Fluance les utilise comme leviers. Chaque tension devient une opportunité de revenir à soi, chaque friction un signal pour réajuster son alignement. Le mouvement doux libère à la fois les tensions physiques (dos, nuque, épaules) et les émotions bloquées.
+          </p>
+        </div>
+      </div>
+      <div class="bg-fluance/10 rounded-lg p-6 mt-6 border-2 border-fluance/40 text-center">
+        <p class="text-xl text-[#3E3A35] leading-relaxed font-medium">
+          Ce n'est peut-être pas ce que vous faites qui "ne va pas".<br />
+          <span class="text-fluance font-semibold">C'est probablement comment vous le faites.</span>
+        </p>
+      </div>
     </div>
 
     <div class="space-y-4 pt-6 border-t border-fluance/10">

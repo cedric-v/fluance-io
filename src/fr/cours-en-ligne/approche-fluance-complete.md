@@ -34,6 +34,57 @@ ogImage: assets/img/cedric-bord-mer.jpg
 </section>
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-12">
+  <div class="space-y-8">
+    <div class="text-center space-y-4 mb-8">
+      <h2 class="text-3xl font-semibold text-fluance">Pour qui est cette approche ?</h2>
+      <p class="text-lg text-[#3E3A35]">Si vous vous reconnaissez dans ces situations, Fluance peut particulièrement vous aider</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Fatigue et épuisement -->
+      <div class="bg-white rounded-lg p-6 shadow-md border-l-4 border-fluance">
+        <h3 class="text-xl font-semibold text-fluance mb-4">Quand la fatigue persiste</h3>
+        <p class="text-[#3E3A35] leading-relaxed mb-3">
+          Vous connaissez cette fatigue qui reste même après une bonne nuit ? Cette sensation d'être simplement... à plat, sans peut-être être triste ou en colère ?
+        </p>
+        <p class="text-[#3E3A35] leading-relaxed">
+          <strong>La différence :</strong> au lieu de bouger pour ressentir (entraîner le corps), Fluance vous invite à ressentir puis bouger. Cette approche permet à votre corps de retrouver son rythme naturel et d'accéder à son système d'auto-régénération.
+        </p>
+      </div>
+
+      <!-- Sommeil -->
+      <div class="bg-white rounded-lg p-6 shadow-md border-l-4 border-fluance">
+        <h3 class="text-xl font-semibold text-fluance mb-4">Quand le sommeil se dérobe</h3>
+        <p class="text-[#3E3A35] leading-relaxed mb-3">
+          Vous vous réveillez au milieu de la nuit et vous luttez pour vous rendormir ?
+        </p>
+        <p class="text-[#3E3A35] leading-relaxed">
+          <strong>Une perspective différente :</strong> un mouvement doux pendant la journée, orienté vers l'apaisement du système nerveux, améliore la qualité du sommeil. Chaque petite amélioration crée les conditions pour la suivante.
+        </p>
+      </div>
+
+      <!-- Tensions physiques et émotionnelles -->
+      <div class="bg-white rounded-lg p-6 shadow-md border-l-4 border-fluance">
+        <h3 class="text-xl font-semibold text-fluance mb-4">Quand les tensions s'accumulent</h3>
+        <p class="text-[#3E3A35] leading-relaxed mb-3">
+          Vous ressentez des tensions dans le dos, la nuque ou les épaules ? Des raideurs qui apparaissent sans prévenir ? Des émotions qui restent bloquées ?
+        </p>
+        <p class="text-[#3E3A35] leading-relaxed">
+          <strong>Une approche différente :</strong> plutôt que de fuir le stress et les tensions, Fluance les utilise comme leviers. Chaque tension devient une opportunité de revenir à soi, chaque friction un signal pour réajuster son alignement. Le mouvement doux libère à la fois les tensions physiques et les émotions bloquées.
+        </p>
+      </div>
+    </div>
+
+    <div class="bg-fluance/5 rounded-lg p-8 mt-8 border border-fluance/20">
+      <h3 class="text-xl font-semibold text-fluance mb-4 text-center">Passer du "corps qu'on entraîne" au "corps qu'on ressent"</h3>
+      <p class="text-lg text-[#3E3A35] leading-relaxed text-center max-w-3xl mx-auto">
+        Quand on laisse le corps informer plutôt que juste l'utiliser comme un objet, on <strong>accède aux émotions bloquées et au système d'auto-régénération.</strong><br /><br />Ce n'est probablement pas ce que vous faites qui ne va pas. C'est peut-être comment vous le faites.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-6xl mx-auto px-6 md:px-12 py-12">
   <div class="bg-white rounded-lg p-8 shadow-lg">
     <h2 class="text-2xl font-semibold text-fluance mb-6">Ce que vous recevez en rejoignant :</h2>
     <ul class="space-y-4 text-lg text-[#3E3A35]/90">
