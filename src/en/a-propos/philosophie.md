@@ -52,16 +52,26 @@ permalink: /en/a-propos/philosophie/
   </article>
 
   <div class="pt-8 mt-8 border-t border-fluance/20">
-    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-      <a href="{{ '/en/a-propos/approche-fluance/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
+      <a href="{{ '/en/a-propos/approche-fluance/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center flex items-center justify-center min-h-[3.5rem]">
         Discover the Fluance approach
       </a>
-      <a href="{{ '/en/a-propos/histoire-cedric/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center">
+      <a href="{{ '/en/a-propos/histoire-cedric/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center flex items-center justify-center min-h-[3.5rem]">
         Cédric's story
       </a>
-      <a href="javascript://" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center" data-w-token="9241cb136525ee5e376e">
-        Receive a practice
-      </a>
+    </div>
+    <div class="pt-6 border-t border-fluance/10">
+      <p class="text-center text-lg text-[#3E3A35] mb-4">To experience for yourself:</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a href="javascript://" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center flex flex-col items-center justify-center min-h-[3.5rem]" data-w-token="9241cb136525ee5e376e">
+          <span>Receive a practice</span>
+          <span class="text-sm font-normal opacity-90">online</span>
+        </a>
+        <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center flex flex-col items-center justify-center min-h-[3.5rem]">
+          <span>Book an in-person class</span>
+          <span class="text-sm font-normal opacity-90">Fribourg region (Switzerland)</span>
+        </a>
+      </div>
     </div>
   </div>
 </section>
