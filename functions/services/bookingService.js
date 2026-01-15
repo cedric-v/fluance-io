@@ -475,6 +475,7 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
         // Cours gratuit (essai)
         bookingData.status = BOOKING_STATUS.CONFIRMED;
         bookingData.paidAt = new Date();
+        bookingData.paymentMethod = 'Cours d\'essai gratuit'; // Mettre à jour le mode de paiement pour cohérence
       }
 
       const bookingRef = db.collection('bookings').doc(bookingId);
