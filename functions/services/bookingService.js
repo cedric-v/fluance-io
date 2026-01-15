@@ -128,6 +128,11 @@ const PARTNER_CODES = {
     description: 'Remise Duplex 10%',
     validFor: ['semester_pass'], // Valide uniquement pour Pass Semestriel
   },
+  'RETRAITE50': {
+    discountPercent: 50,
+    description: 'Remise Retraite 50%',
+    validFor: ['flow_pass', 'semester_pass'], // Valide pour Flow Pass et Pass Semestriel
+  },
   // Ajoutez d'autres codes ici si nécessaire
 };
 

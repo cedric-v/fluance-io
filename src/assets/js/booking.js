@@ -852,7 +852,7 @@
             </div>
           </div>
 
-          <!-- Code partenaire (uniquement pour Pass Semestriel) -->
+          <!-- Code partenaire (Flow Pass et Pass Semestriel) -->
           <div id="partner-code-section" class="hidden">
             <label for="partnerCode" class="block text-sm font-medium text-[#3E3A35] mb-1">
               ${currentLocale === 'en' ? 'Partner Code (optional)' : 'Code partenaire (optionnel)'}
@@ -967,13 +967,14 @@
     }
     
     // Fonction pour valider et appliquer le code partenaire
-    async function validatePartnerCode(code) {
+    async function validatePartnerCode(code, pricingOption) {
       if (!code || !code.trim()) {
         return { valid: false, message: currentLocale === 'en' ? 'Please enter a code' : 'Veuillez entrer un code' };
       }
       
       try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/validatePartnerCode?code=${encodeURIComponent(code.toUpperCase().trim())}`);
+        const validFor = pricingOption || 'semester_pass';
+        const response = await fetch(`${CONFIG.API_BASE_URL}/validatePartnerCode?code=${encodeURIComponent(code.toUpperCase().trim())}&validFor=${encodeURIComponent(validFor)}`);
         const data = await response.json();
         
         if (data.valid) {
@@ -1038,8 +1039,8 @@
           selectedLabel.classList.remove('border-gray-200');
           selectedLabel.classList.add('border-fluance', 'bg-fluance/5');
           
-          // Afficher/masquer le champ code partenaire
-          togglePartnerCodeField(radio.value === 'semester_pass');
+          // Afficher/masquer le champ code partenaire (Flow Pass et Pass Semestriel)
+          togglePartnerCodeField(radio.value === 'flow_pass' || radio.value === 'semester_pass');
           
           // Mettre à jour les options de paiement selon le type de pass
           updatePaymentMethodsForPricingOption(radio.value);
@@ -1060,7 +1061,7 @@
       // Vérifier l'option sélectionnée au chargement
       const selectedRadio = pricingContainer.querySelector('input[type="radio"]:checked');
       if (selectedRadio) {
-        if (selectedRadio.value === 'semester_pass') {
+        if (selectedRadio.value === 'flow_pass' || selectedRadio.value === 'semester_pass') {
           togglePartnerCodeField(true);
         }
         updatePaymentMethodsForPricingOption(selectedRadio.value);
@@ -1101,13 +1102,28 @@
         applyCodeBtn.disabled = true;
         applyCodeBtn.textContent = currentLocale === 'en' ? 'Checking...' : 'Vérification...';
         
-        const result = await validatePartnerCode(code);
+        // Récupérer l'option tarifaire sélectionnée
+        const selectedPricingOption = pricingContainer.querySelector('input[type="radio"]:checked')?.value || 'semester_pass';
+        const result = await validatePartnerCode(code, selectedPricingOption);
         
         applyCodeBtn.disabled = false;
         applyCodeBtn.textContent = currentLocale === 'en' ? 'Apply' : 'Appliquer';
         
         if (result.valid) {
-          partnerCodeMessage.textContent = result.message;
+          // Construire le message avec mention spéciale pour RETRAITE50
+          let messageHTML = result.message;
+          if (code === 'RETRAITE50') {
+            messageHTML += '<div class="mt-3 pt-3 border-t border-green-300">';
+            if (currentLocale === 'en') {
+              messageHTML += '<div class="font-semibold mb-1">Retiree rate</div>';
+              messageHTML += '<div class="text-xs">This rate is reserved for people officially retired (OASI or equivalent).<br>It is based on a relationship of trust and mutual respect.</div>';
+            } else {
+              messageHTML += '<div class="font-semibold mb-1">Tarif retraité</div>';
+              messageHTML += '<div class="text-xs">Ce tarif est réservé aux personnes officiellement à la retraite (AVS ou équivalent).<br>Il repose sur une démarche de confiance et de respect mutuel.</div>';
+            }
+            messageHTML += '</div>';
+          }
+          partnerCodeMessage.innerHTML = messageHTML;
           partnerCodeMessage.className = 'mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-800';
           partnerCodeMessage.classList.remove('hidden');
           applyDiscount(result.discountPercent);
