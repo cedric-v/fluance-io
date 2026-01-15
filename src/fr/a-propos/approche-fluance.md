@@ -21,7 +21,7 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
     <div class="my-8">
       <div class="aspect-video w-full max-w-3xl mx-auto rounded-lg overflow-hidden">
-        <div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/3ddf94bf-5b0c-4761-8050-30680e8dcac2?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+        <div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/d09798a7-faf4-4117-9b98-54edad2b7aec?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
       </div>
     </div>
     <div class="space-y-6">
