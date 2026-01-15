@@ -120,13 +120,19 @@ eleventyExcludeFromCollections: true
     const cleanParams = new URLSearchParams();
     if (paymentIntent) cleanParams.set('payment_intent', paymentIntent);
     if (redirectStatus) cleanParams.set('redirect_status', redirectStatus);
+    const bookingIdParam = urlParams.get('booking_id');
+    if (bookingIdParam) cleanParams.set('booking_id', bookingIdParam);
     const cleanUrl = cleanParams.toString() 
       ? `${window.location.pathname}?${cleanParams.toString()}`
       : window.location.pathname;
     window.history.replaceState({}, document.title, cleanUrl);
 
     // Suivi de conversion Google Ads
-    if (paymentIntent && redirectStatus === 'succeeded') {
+    // Cas 1 : Paiement Stripe réussi (avec paymentIntent)
+    // Cas 2 : Réservation sans paiement (cours gratuit ou espèces) avec bookingId
+    const shouldTrackConversion = (paymentIntent && redirectStatus === 'succeeded') || bookingIdParam;
+    
+    if (shouldTrackConversion) {
       // Fonction pour charger Firebase Functions si nécessaire
       async function loadFirebaseFunctions() {
         return new Promise((resolve, reject) => {
@@ -195,17 +201,25 @@ eleventyExcludeFromCollections: true
         const functions = firebase.functions('europe-west1');
         const getBookingDetails = functions.httpsCallable('getBookingDetails');
         
-        const result = await getBookingDetails({ paymentIntentId: paymentIntent });
+        // Appeler la fonction avec paymentIntentId ou bookingId selon ce qui est disponible
+        const requestData = paymentIntent && redirectStatus === 'succeeded'
+          ? { paymentIntentId: paymentIntent }
+          : { bookingId: bookingIdParam };
+        
+        const result = await getBookingDetails(requestData);
         
         if (result.data && result.data.success) {
-          const { product, productName, amount, currency, courseName, courseDate, courseTime } = result.data;
+          const { product, productName, amount, currency, courseName, courseDate, courseTime, bookingId } = result.data;
+          
+          // Utiliser paymentIntent comme transaction_id si disponible, sinon bookingId
+          const transactionId = paymentIntent || bookingId;
           
           // Envoyer les événements de conversion à Google Ads via dataLayer
           if (window.dataLayer) {
             // Événement e-commerce standard pour Google Analytics
             window.dataLayer.push({
               event: 'purchase',
-              transaction_id: paymentIntent,
+              transaction_id: transactionId,
               value: amount,
               currency: currency,
               items: [{
@@ -227,10 +241,10 @@ eleventyExcludeFromCollections: true
               course_time: courseTime,
               value: amount,
               currency: currency,
-              transaction_id: paymentIntent
+              transaction_id: transactionId
             });
             
-            console.log('Conversion tracked:', { product, productName, amount, currency });
+            console.log('Conversion tracked:', { product, productName, amount, currency, transactionId });
           } else {
             console.warn('dataLayer not available - GTM may not be loaded');
           }

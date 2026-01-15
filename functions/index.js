@@ -2440,7 +2440,7 @@ exports.getStripeCheckoutSession = onCall(
     });
 
 /**
- * Récupère les détails d'une réservation de cours à partir d'un PaymentIntent Stripe
+ * Récupère les détails d'une réservation de cours à partir d'un PaymentIntent Stripe ou d'un bookingId
  * Utilisé pour le suivi de conversion Google Ads
  */
 exports.getBookingDetails = onCall(
@@ -2449,28 +2449,43 @@ exports.getBookingDetails = onCall(
       secrets: ['STRIPE_SECRET_KEY'],
     },
     async (request) => {
-      const {paymentIntentId} = request.data;
+      const {paymentIntentId, bookingId} = request.data;
 
-      if (!paymentIntentId) {
-        throw new HttpsError('invalid-argument', 'paymentIntentId is required');
+      let finalBookingId = bookingId;
+      let paymentIntent = null;
+
+      // Si on a un paymentIntentId, récupérer le bookingId depuis Stripe
+      if (paymentIntentId) {
+        try {
+          const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+          paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+          // Vérifier que c'est bien une réservation de cours
+          if (paymentIntent.metadata?.type !== 'course_booking') {
+            throw new HttpsError('invalid-argument', 'This payment intent is not a course booking');
+          }
+
+          finalBookingId = paymentIntent.metadata?.bookingId;
+          if (!finalBookingId) {
+            throw new HttpsError('invalid-argument', 'Booking ID not found in payment intent metadata');
+          }
+        } catch (error) {
+          console.error('Error retrieving payment intent:', error);
+          if (error.type === 'StripeInvalidRequestError') {
+            throw new HttpsError('not-found', `Payment Intent "${paymentIntentId}" not found`);
+          }
+          throw new HttpsError('internal', `Error retrieving payment intent: ${error.message}`);
+        }
+      }
+
+      // Si on n'a ni paymentIntentId ni bookingId, erreur
+      if (!finalBookingId) {
+        throw new HttpsError('invalid-argument', 'Either paymentIntentId or bookingId is required');
       }
 
       try {
-        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-        // Vérifier que c'est bien une réservation de cours
-        if (paymentIntent.metadata?.type !== 'course_booking') {
-          throw new HttpsError('invalid-argument', 'This payment intent is not a course booking');
-        }
-
-        const bookingId = paymentIntent.metadata?.bookingId;
-        if (!bookingId) {
-          throw new HttpsError('invalid-argument', 'Booking ID not found in payment intent metadata');
-        }
-
         // Récupérer les détails de la réservation depuis Firestore
-        const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+        const bookingDoc = await db.collection('bookings').doc(finalBookingId).get();
         if (!bookingDoc.exists) {
           throw new HttpsError('not-found', 'Booking not found');
         }
@@ -2508,13 +2523,18 @@ exports.getBookingDetails = onCall(
           productName = 'Pass Semestriel';
         }
 
-        const amount = paymentIntent.amount ? paymentIntent.amount / 100 : (booking.amount || 0);
-        const currency = paymentIntent.currency?.toUpperCase() || 'CHF';
+        // Déterminer le montant : depuis paymentIntent si disponible, sinon depuis booking
+        const amount = paymentIntent && paymentIntent.amount ?
+          paymentIntent.amount / 100 :
+          (booking.amount ? booking.amount / 100 : 0);
+        const currency = paymentIntent && paymentIntent.currency ?
+          paymentIntent.currency.toUpperCase() :
+          'CHF';
 
         return {
           success: true,
-          bookingId: bookingId,
-          paymentIntentId: paymentIntentId,
+          bookingId: finalBookingId,
+          paymentIntentId: paymentIntentId || null,
           product: productType,
           productName: productName,
           courseName: courseName,
@@ -2526,9 +2546,6 @@ exports.getBookingDetails = onCall(
         };
       } catch (error) {
         console.error('Error retrieving booking details:', error);
-        if (error.type === 'StripeInvalidRequestError') {
-          throw new HttpsError('not-found', `Payment Intent "${paymentIntentId}" not found`);
-        }
         throw new HttpsError('internal', `Error retrieving booking: ${error.message}`);
       }
     },
