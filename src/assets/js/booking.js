@@ -1459,11 +1459,21 @@
           // Passer l'email et l'acceptation CGV pour le marquer après paiement réussi
           await handleStripePayment(result.clientSecret, data, email, acceptCGV && acceptCGV.checked);
         } else {
-          const confirmTitle = currentLocale === 'en' ? 'Booking confirmed!' : 'Réservation confirmée !';
-          const confirmMsg = currentLocale === 'en'
-            ? (result.message || 'You will receive a confirmation email.')
-            : (result.message || 'Vous recevrez un email de confirmation.');
-          showSuccessMessage(confirmTitle, confirmMsg);
+          // Réservation confirmée sans paiement (cours gratuit ou espèces)
+          // Rediriger vers la page de confirmation pour le tracking Google Ads
+          if (result.bookingId) {
+            const confirmationUrl = currentLocale === 'en'
+              ? `/en/presentiel/booking-confirmed/?booking_id=${result.bookingId}`
+              : `/presentiel/reservation-confirmee/?booking_id=${result.bookingId}`;
+            window.location.href = confirmationUrl;
+          } else {
+            // Fallback : afficher le message de succès si pas de bookingId
+            const confirmTitle = currentLocale === 'en' ? 'Booking confirmed!' : 'Réservation confirmée !';
+            const confirmMsg = currentLocale === 'en'
+              ? (result.message || 'You will receive a confirmation email.')
+              : (result.message || 'Vous recevrez un email de confirmation.');
+            showSuccessMessage(confirmTitle, confirmMsg);
+          }
         }
       } else {
         if (errorContainer) {
