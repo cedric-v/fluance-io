@@ -593,8 +593,8 @@ module.exports = function(eleventyConfig) {
           : "Presentation of the Fluance approach based on the tripod of vitality: Movement, Breath, Play. A simple, playful, natural and liberating approach to free the body and mind.",
         "thumbnailUrl": `${baseUrl}/assets/img/cedric-dehors-fluance-reduit.jpeg`,
         "uploadDate": "2024-01-01T00:00:00+01:00",
-        "contentUrl": "https://player.mediadelivery.net/embed/479894/3c19487a-22a6-4f70-92ef-68a78acb771e",
-        "embedUrl": "https://player.mediadelivery.net/embed/479894/3c19487a-22a6-4f70-92ef-68a78acb771e",
+        "contentUrl": "https://player.mediadelivery.net/embed/479894/3ddf94bf-5b0c-4761-8050-30680e8dcac2",
+        "embedUrl": "https://player.mediadelivery.net/embed/479894/3ddf94bf-5b0c-4761-8050-30680e8dcac2",
         "duration": "PT5M",
         "inLanguage": pageLocale === 'fr' ? 'fr-FR' : 'en-US',
         "publisher": {
