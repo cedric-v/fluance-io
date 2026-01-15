@@ -355,7 +355,7 @@ async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) 
     });
 
     const amountStr = booking.amount ? `${(booking.amount / 100).toFixed(2)} CHF` : 'Gratuit';
-    
+
     // Déterminer le label de paiement selon le contexte
     let paymentMethodLabel;
     if (booking.amount === 0 || booking.pricingOption === 'trial' || booking.paymentMethod === 'Cours d\'essai gratuit') {
