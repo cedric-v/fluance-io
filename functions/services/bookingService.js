@@ -369,8 +369,38 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
           //   paymentMethodTypes.push('sepa_debit');
           // }
 
+          // Gérer le coupon Stripe si un code partenaire est appliqué
+          let couponId = null;
+          if (partnerCode && priceCalculation.discountPercent > 0) {
+            // Créer ou récupérer un coupon Stripe avec la remise
+            const couponName = `PARTNER_${partnerCode}_${priceCalculation.discountPercent}`;
+            try {
+              // Essayer de récupérer un coupon existant
+              const existingCoupons = await stripe.coupons.list({
+                limit: 100,
+              });
+              const existingCoupon = existingCoupons.data.find(c => c.id === couponName);
+              
+              if (existingCoupon) {
+                couponId = existingCoupon.id;
+              } else {
+                // Créer un nouveau coupon
+                const coupon = await stripe.coupons.create({
+                  id: couponName,
+                  percent_off: priceCalculation.discountPercent,
+                  duration: 'once', // Remise uniquement sur le premier paiement
+                  name: `Partner Code ${partnerCode} - ${priceCalculation.discountPercent}%`,
+                });
+                couponId = coupon.id;
+              }
+            } catch (error) {
+              console.error('Error creating/retrieving Stripe coupon:', error);
+              // Continuer sans coupon si erreur (le montant sera quand même enregistré avec la remise dans Firestore)
+            }
+          }
+
           // Créer la Subscription Stripe
-          const subscription = await stripe.subscriptions.create({
+          const subscriptionData = {
             customer: customer.id,
             items: [{
               price: semesterPassPriceId,
@@ -387,7 +417,19 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
               type: 'semester_pass',
               partnerCode: partnerCode || '',
             },
-          });
+          };
+
+          // Ajouter le coupon si disponible
+          if (couponId) {
+            subscriptionData.coupon = couponId;
+          }
+
+          const subscription = await stripe.subscriptions.create(subscriptionData);
+
+          // Note : Le montant facturé par Stripe sera le Price (340 CHF) moins le coupon
+          // Le montant calculé (amount) devrait correspondre au montant final de l'invoice
+          // Vérification : amount = originalAmount - (originalAmount * discountPercent / 100)
+          // Exemple : 340 - (340 * 50 / 100) = 170 CHF
 
           // Stocker les informations de la subscription
           bookingData.stripeSubscriptionId = subscription.id;

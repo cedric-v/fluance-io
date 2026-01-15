@@ -844,7 +844,7 @@
                     </div>
                     <div class="text-right">
                       <span id="price-display-${option.id}" class="text-lg font-bold text-fluance">${option.price} CHF</span>
-                      ${option.id === 'semester_pass' ? `<div id="discount-display-${option.id}" class="text-sm text-green-600 font-semibold hidden"></div>` : ''}
+                      ${option.id === 'semester_pass' || option.id === 'flow_pass' ? `<div id="discount-display-${option.id}" class="text-sm text-green-600 font-semibold hidden"></div>` : ''}
                     </div>
                   </div>
                 </label>
@@ -941,6 +941,26 @@
     const applyCodeBtn = document.getElementById('apply-partner-code-btn');
     const partnerCodeMessage = document.getElementById('partner-code-message');
     
+    // Fonction pour réinitialiser les prix affichés
+    function resetPrices() {
+      const flowPassPrice = document.getElementById('price-display-flow_pass');
+      const flowPassDiscount = document.getElementById('discount-display-flow_pass');
+      const semesterPassPrice = document.getElementById('price-display-semester_pass');
+      const semesterPassDiscount = document.getElementById('discount-display-semester_pass');
+      
+      if (flowPassPrice) flowPassPrice.textContent = '210 CHF';
+      if (flowPassDiscount) {
+        flowPassDiscount.classList.add('hidden');
+        flowPassDiscount.textContent = '';
+      }
+      
+      if (semesterPassPrice) semesterPassPrice.textContent = '340 CHF';
+      if (semesterPassDiscount) {
+        semesterPassDiscount.classList.add('hidden');
+        semesterPassDiscount.textContent = '';
+      }
+    }
+    
     // Fonction pour afficher/masquer le champ code partenaire
     function togglePartnerCodeField(show) {
       if (partnerCodeSection) {
@@ -955,13 +975,7 @@
             partnerCodeMessage.textContent = '';
           }
           // Réinitialiser le prix affiché
-          const semesterPassPrice = document.getElementById('price-display-semester_pass');
-          const discountDisplay = document.getElementById('discount-display-semester_pass');
-          if (semesterPassPrice) semesterPassPrice.textContent = '340 CHF';
-          if (discountDisplay) {
-            discountDisplay.classList.add('hidden');
-            discountDisplay.textContent = '';
-          }
+          resetPrices();
         }
       }
     }
@@ -1007,12 +1021,27 @@
     
     // Fonction pour appliquer la remise au prix affiché
     function applyDiscount(discountPercent) {
-      const originalPrice = 340; // Prix du Pass Semestriel
+      // Récupérer l'option tarifaire sélectionnée
+      const selectedRadio = pricingContainer.querySelector('input[type="radio"]:checked');
+      if (!selectedRadio) return;
+      
+      const pricingOption = selectedRadio.value;
+      
+      // Définir le prix original selon l'option
+      let originalPrice;
+      if (pricingOption === 'flow_pass') {
+        originalPrice = 210; // Prix du Flow Pass
+      } else if (pricingOption === 'semester_pass') {
+        originalPrice = 340; // Prix du Pass Semestriel
+      } else {
+        return; // Pas de remise pour les autres options
+      }
+      
       const discountAmount = (originalPrice * discountPercent) / 100;
       const finalPrice = originalPrice - discountAmount;
       
-      const priceDisplay = document.getElementById('price-display-semester_pass');
-      const discountDisplay = document.getElementById('discount-display-semester_pass');
+      const priceDisplay = document.getElementById(`price-display-${pricingOption}`);
+      const discountDisplay = document.getElementById(`discount-display-${pricingOption}`);
       
       if (priceDisplay) {
         priceDisplay.innerHTML = `
@@ -1038,6 +1067,16 @@
           const selectedLabel = radio.closest('label');
           selectedLabel.classList.remove('border-gray-200');
           selectedLabel.classList.add('border-fluance', 'bg-fluance/5');
+          
+          // Réinitialiser les prix affichés lors du changement d'option
+          resetPrices();
+          
+          // Réinitialiser le code partenaire et le message
+          if (partnerCodeInput) partnerCodeInput.value = '';
+          if (partnerCodeMessage) {
+            partnerCodeMessage.classList.add('hidden');
+            partnerCodeMessage.textContent = '';
+          }
           
           // Afficher/masquer le champ code partenaire (Flow Pass et Pass Semestriel)
           togglePartnerCodeField(radio.value === 'flow_pass' || radio.value === 'semester_pass');
@@ -1090,7 +1129,28 @@
     if (applyCodeBtn && partnerCodeInput) {
       applyCodeBtn.addEventListener('click', async () => {
         const code = partnerCodeInput.value.trim().toUpperCase();
+        
+        // Si le champ est vide, retirer le code partenaire si une remise est appliquée
         if (!code) {
+          // Vérifier si une remise est actuellement appliquée
+          const selectedRadio = pricingContainer.querySelector('input[type="radio"]:checked');
+          if (selectedRadio) {
+            const pricingOption = selectedRadio.value;
+            const discountDisplay = document.getElementById(`discount-display-${pricingOption}`);
+            
+            // Si une remise est visible, la retirer
+            if (discountDisplay && !discountDisplay.classList.contains('hidden')) {
+              resetPrices();
+              partnerCodeMessage.textContent = currentLocale === 'en' 
+                ? 'Partner code removed' 
+                : 'Code partenaire retiré';
+              partnerCodeMessage.className = 'mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800';
+              partnerCodeMessage.classList.remove('hidden');
+              return;
+            }
+          }
+          
+          // Si aucune remise n'est appliquée, afficher l'erreur
           partnerCodeMessage.textContent = currentLocale === 'en' 
             ? 'Please enter a code' 
             : 'Veuillez entrer un code';
