@@ -379,8 +379,8 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
               const existingCoupons = await stripe.coupons.list({
                 limit: 100,
               });
-              const existingCoupon = existingCoupons.data.find(c => c.id === couponName);
-              
+              const existingCoupon = existingCoupons.data.find((c) => c.id === couponName);
+
               if (existingCoupon) {
                 couponId = existingCoupon.id;
               } else {
