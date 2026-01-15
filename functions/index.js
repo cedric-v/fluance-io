@@ -355,12 +355,19 @@ async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) 
     });
 
     const amountStr = booking.amount ? `${(booking.amount / 100).toFixed(2)} CHF` : 'Gratuit';
-    const paymentMethodLabels = {
-      'card': 'Carte / TWINT',
-      'cash': 'Espèces sur place',
-      'pass': 'Pass (Flow Pass ou Semestriel)',
-    };
-    const paymentMethodLabel = paymentMethodLabels[booking.paymentMethod] || booking.paymentMethod;
+    
+    // Déterminer le label de paiement selon le contexte
+    let paymentMethodLabel;
+    if (booking.amount === 0 || booking.pricingOption === 'trial' || booking.paymentMethod === 'Cours d\'essai gratuit') {
+      paymentMethodLabel = 'Cours d\'essai gratuit';
+    } else {
+      const paymentMethodLabels = {
+        'card': 'Carte / TWINT',
+        'cash': 'Espèces sur place',
+        'pass': 'Pass (Flow Pass ou Semestriel)',
+      };
+      paymentMethodLabel = paymentMethodLabels[booking.paymentMethod] || booking.paymentMethod;
+    }
 
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
