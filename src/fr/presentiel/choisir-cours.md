@@ -190,10 +190,10 @@ eleventyExcludeFromCollections: true
           bgClass: 'bg-gray-50',
           borderClass: 'border-gray-200',
           text: isEnglish 
-            ? `Event limited to ${maxCapacity} participants`
-            : `Événement limité à ${maxCapacity} participants`,
+            ? `Limited to ${maxCapacity} participants`
+            : `Limité à ${maxCapacity} participants`,
           urgency: 'low',
-          icon: '✓'
+          icon: ''
         };
       }
 
