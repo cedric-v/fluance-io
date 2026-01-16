@@ -280,9 +280,11 @@
    * @param {number} spotsRemaining - Nombre de places restantes
    * @param {number} maxCapacity - Capacité maximale
    * @param {boolean} isFull - Si le cours est complet
+   * @param {string} courseDate - Date du cours au format DD/MM/YYYY (optionnel)
+   * @param {string} courseTime - Heure du cours au format HH:MM (optionnel)
    * @returns {Object} - { colorClass, bgClass, text, urgency }
    */
-  function getAvailabilityStyle(spotsRemaining, maxCapacity, isFull) {
+  function getAvailabilityStyle(spotsRemaining, maxCapacity, isFull, courseDate = null, courseTime = null) {
     const isEnglish = currentLocale === 'en';
 
     if (isFull || spotsRemaining <= 0) {
@@ -293,6 +295,65 @@
         text: isEnglish ? 'Full' : 'Complet',
         urgency: 'high',
         icon: '⚠️'
+      };
+    }
+
+    // Calculer le nombre de participants (0 à 7 réservations = message qualitatif)
+    const participantCount = maxCapacity - spotsRemaining;
+    
+    // Si 0 à 7 réservations : vérifier si on doit afficher la rareté temporelle
+    if (participantCount <= 7) {
+      // Calculer le temps restant jusqu'au cours si date et heure sont fournies
+      let hoursUntilCourse = null;
+      if (courseDate && courseTime) {
+        try {
+          // Parser la date (format DD/MM/YYYY)
+          const [day, month, year] = courseDate.split('/');
+          // Parser l'heure (format HH:MM)
+          const [hours, minutes] = courseTime.split(':');
+          
+          if (day && month && year && hours && minutes) {
+            const courseDateTime = new Date(
+              parseInt(year),
+              parseInt(month) - 1,
+              parseInt(day),
+              parseInt(hours),
+              parseInt(minutes)
+            );
+            
+            const now = new Date();
+            const diffMs = courseDateTime.getTime() - now.getTime();
+            hoursUntilCourse = Math.floor(diffMs / (1000 * 60 * 60));
+          }
+        } catch (error) {
+          console.error('Error calculating time until course:', error);
+        }
+      }
+      
+      // Si moins de 2 jours (48 heures) avant le cours, afficher la rareté temporelle
+      if (hoursUntilCourse !== null && hoursUntilCourse > 0 && hoursUntilCourse < 48) {
+        return {
+          colorClass: 'text-orange-600',
+          bgClass: 'bg-orange-50',
+          borderClass: 'border-orange-200',
+          text: isEnglish 
+            ? `Reservations end in ${hoursUntilCourse} hour${hoursUntilCourse > 1 ? 's' : ''}`
+            : `Fin des réservations dans ${hoursUntilCourse} heure${hoursUntilCourse > 1 ? 's' : ''}`,
+          urgency: 'high',
+          icon: '⏰'
+        };
+      }
+      
+      // Sinon, afficher le message qualitatif standard
+      return {
+        colorClass: 'text-gray-600',
+        bgClass: 'bg-gray-50',
+        borderClass: 'border-gray-200',
+        text: isEnglish 
+          ? `Event limited to ${maxCapacity} participants`
+          : `Événement limité à ${maxCapacity} participants`,
+        urgency: 'low',
+        icon: '✓'
       };
     }
 
@@ -363,7 +424,9 @@
     const availability = getAvailabilityStyle(
       course.spotsRemaining, 
       course.maxCapacity, 
-      course.isFull
+      course.isFull,
+      course.date, // Format DD/MM/YYYY
+      course.time  // Format HH:MM
     );
 
     const spotsText = course.isFull 
