@@ -1698,6 +1698,61 @@ exports.webhookStripe = onRequest(
                         } catch (notifError) {
                           console.error('Error sending booking admin notification:', notifError);
                         }
+
+                        // Ajouter au Google Sheet
+                        try {
+                          const sheetId = process.env.GOOGLE_SHEET_ID;
+                          if (!sheetId) {
+                            console.warn('⚠️ GOOGLE_SHEET_ID not configured, skipping sheet update');
+                          } else if (!googleService) {
+                            console.warn('⚠️ GoogleService not available, skipping sheet update');
+                          } else {
+                            console.log(
+                                `📊 Attempting to add booking to sheet: ${customerEmail} for ${course.title}`,
+                            );
+                            await googleService.appendUserToSheet(
+                                sheetId,
+                                courseId,
+                                {
+                                  firstName: paymentIntent.metadata?.firstName || '',
+                                  lastName: paymentIntent.metadata?.lastName || '',
+                                  email: customerEmail,
+                                  phone: paymentIntent.metadata?.phone || '',
+                                  ipAddress: '',
+                                },
+                                {
+                                  courseName: course.title || '',
+                                  courseDate: course.date || '',
+                                  courseTime: course.time || '',
+                                  location: course.location || '',
+                                  paymentMethod: passType === 'semester_pass' ?
+                                    'Pass Semestriel' :
+                                    'Flow Pass',
+                                  paymentStatus: 'Pass utilisé',
+                                  amount: '0 CHF',
+                                  status: 'Confirmé',
+                                  bookingId: bookingId,
+                                  notes: bookingData.notes,
+                                  passType: passType === 'semester_pass' ?
+                                    'Pass Semestriel' :
+                                    'Flow Pass',
+                                  sessionsRemaining: sessionResult?.sessionsRemaining !== undefined ?
+                                    `${sessionResult.sessionsRemaining}/${pass.sessionsTotal}` :
+                                    (passType === 'semester_pass' ? 'Illimité' : ''),
+                                  paidAt: new Date(),
+                                  source: 'web',
+                                  isCancelled: false,
+                                  isWaitlisted: false,
+                                },
+                            );
+                            console.log(
+                                `✅ Successfully added booking to sheet: ${customerEmail}`,
+                            );
+                          }
+                        } catch (sheetError) {
+                          console.error('❌ Error updating sheet:', sheetError.message);
+                          // Ne pas bloquer le processus si l'ajout au sheet échoue
+                        }
                       }
                     }
                   } catch (bookingError) {
@@ -2063,6 +2118,55 @@ exports.webhookStripe = onRequest(
                         }
                       } catch (notifError) {
                         console.error('Error sending booking admin notification:', notifError);
+                      }
+
+                      // Ajouter au Google Sheet
+                      try {
+                        const sheetId = process.env.GOOGLE_SHEET_ID;
+                        if (!sheetId) {
+                          console.warn('⚠️ GOOGLE_SHEET_ID not configured, skipping sheet update');
+                        } else if (!googleService) {
+                          console.warn('⚠️ GoogleService not available, skipping sheet update');
+                        } else {
+                          console.log(
+                              `📊 Attempting to add booking to sheet: ${customerEmail} for ${course.title}`,
+                          );
+                          await googleService.appendUserToSheet(
+                              sheetId,
+                              courseId,
+                              {
+                                firstName: firstName,
+                                lastName: lastName,
+                                email: customerEmail,
+                                phone: phone,
+                                ipAddress: '',
+                              },
+                              {
+                                courseName: course.title || '',
+                                courseDate: course.date || '',
+                                courseTime: course.time || '',
+                                location: course.location || '',
+                                paymentMethod: 'Pass Semestriel',
+                                paymentStatus: 'Pass utilisé',
+                                amount: '0 CHF',
+                                status: 'Confirmé',
+                                bookingId: bookingId,
+                                notes: bookingData.notes,
+                                passType: 'Pass Semestriel',
+                                sessionsRemaining: 'Illimité',
+                                paidAt: new Date(),
+                                source: 'web',
+                                isCancelled: false,
+                                isWaitlisted: false,
+                              },
+                          );
+                          console.log(
+                              `✅ Successfully added booking to sheet: ${customerEmail}`,
+                          );
+                        }
+                      } catch (sheetError) {
+                        console.error('❌ Error updating sheet:', sheetError.message);
+                        // Ne pas bloquer le processus si l'ajout au sheet échoue
                       }
                     }
                   }
