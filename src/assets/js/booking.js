@@ -344,17 +344,17 @@
         };
       }
       
-      // Sinon, afficher le message qualitatif standard
-      return {
-        colorClass: 'text-gray-600',
-        bgClass: 'bg-gray-50',
-        borderClass: 'border-gray-200',
-        text: isEnglish 
-          ? `Event limited to ${maxCapacity} participants`
-          : `Événement limité à ${maxCapacity} participants`,
-        urgency: 'low',
-        icon: '✓'
-      };
+        // Sinon, afficher le message qualitatif standard
+        return {
+          colorClass: 'text-gray-600',
+          bgClass: 'bg-gray-50',
+          borderClass: 'border-gray-200',
+          text: isEnglish 
+            ? `Limited to ${maxCapacity} participants`
+            : `Limité à ${maxCapacity} participants`,
+          urgency: 'low',
+          icon: ''
+        };
     }
 
     // Calculer le pourcentage de disponibilité (adaptatif selon la capacité)
