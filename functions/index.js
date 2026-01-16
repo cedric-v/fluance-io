@@ -1581,7 +1581,132 @@ exports.webhookStripe = onRequest(
                 });
                 console.log(`✅ Pass created: ${pass.passId}`);
 
-                // Envoyer email de confirmation au client
+                // Si un courseId est présent dans les métadonnées, créer automatiquement la réservation
+                const courseId = paymentIntent.metadata?.courseId || session.metadata?.courseId;
+                if (courseId && bookingService) {
+                  console.log(`📅 Course ID found in metadata: ${courseId} - Creating automatic booking with pass`);
+                  try {
+                    // Récupérer les infos du cours
+                    const courseDoc = await db.collection('courses').doc(courseId).get();
+                    if (!courseDoc.exists) {
+                      console.warn(`⚠️ Course ${courseId} not found, skipping automatic booking`);
+                    } else {
+                      const course = courseDoc.data();
+
+                      // Vérifier si l'utilisateur n'a pas déjà réservé ce cours
+                      const existingBooking = await db.collection('bookings')
+                          .where('courseId', '==', courseId)
+                          .where('email', '==', customerEmail.toLowerCase().trim())
+                          .where('status', 'in', ['confirmed', 'pending', 'pending_cash'])
+                          .limit(1)
+                          .get();
+
+                      if (!existingBooking.empty) {
+                        console.log(`⚠️ User already has a booking for course ${courseId}, skipping automatic booking`);
+                      } else {
+                        // Utiliser une séance du pass (sauf si illimité)
+                        let sessionResult = null;
+                        if (passType !== 'semester_pass' || pass.sessionsRemaining !== -1) {
+                          sessionResult = await passService.usePassSession(db, pass.passId, courseId);
+                        }
+
+                        // Créer la réservation avec le pass
+                        const bookingId = db.collection('bookings').doc().id;
+                        const bookingData = {
+                          bookingId: bookingId,
+                          courseId: courseId,
+                          courseName: course.title || '',
+                          courseDate: course.date || '',
+                          courseTime: course.time || '',
+                          courseLocation: course.location || '',
+                          email: customerEmail.toLowerCase().trim(),
+                          firstName: paymentIntent.metadata?.firstName || '',
+                          lastName: paymentIntent.metadata?.lastName || '',
+                          phone: paymentIntent.metadata?.phone || '',
+                          paymentMethod: 'pass',
+                          pricingOption: passType,
+                          passId: pass.passId,
+                          amount: 0, // Pas de paiement supplémentaire
+                          currency: 'CHF',
+                          status: 'confirmed',
+                          createdAt: new Date(),
+                          updatedAt: new Date(),
+                          paidAt: new Date(),
+                          notes: passType === 'semester_pass' ?
+                            'Pass Semestriel' :
+                            `Flow Pass (séance ${
+                              pass.sessionsTotal - (sessionResult?.sessionsRemaining || 0)
+                            }/${pass.sessionsTotal})`,
+                        };
+
+                        await db.collection('bookings').doc(bookingId).set(bookingData);
+
+                        // Mettre à jour le compteur de participants
+                        const courseRef = db.collection('courses').doc(courseId);
+                        const currentCourse = await courseRef.get();
+                        const currentParticipantCount = currentCourse.data()?.participantCount || 0;
+                        await courseRef.update({
+                          participantCount: currentParticipantCount + 1,
+                        });
+
+                        console.log(
+                            `✅ Automatic booking created: ${bookingId} ` +
+                            `for course ${courseId} using pass ${pass.passId}`,
+                        );
+
+                        // Envoyer email de confirmation de réservation
+                        try {
+                          const cancellationTokenResult = await bookingService.createCancellationToken(
+                              db,
+                              bookingId,
+                              30,
+                          );
+                          const cancellationUrl = cancellationTokenResult.success ?
+                            cancellationTokenResult.cancellationUrl :
+                            null;
+
+                          await db.collection('mail').add({
+                            to: customerEmail,
+                            template: {
+                              name: 'booking-confirmation',
+                              data: {
+                                firstName: paymentIntent.metadata?.firstName || '',
+                                courseName: course.title || '',
+                                courseDate: course.date || '',
+                                courseTime: course.time || '',
+                                location: course.location || '',
+                                bookingId: bookingId,
+                                cancellationUrl: cancellationUrl,
+                              },
+                            },
+                          });
+                          console.log(`📧 Booking confirmation email sent to ${customerEmail}`);
+                        } catch (bookingEmailError) {
+                          console.error('Error sending booking confirmation email:', bookingEmailError);
+                        }
+
+                        // Envoyer notification admin pour la réservation
+                        try {
+                          if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                            await sendBookingNotificationAdmin(
+                                bookingData,
+                                course,
+                                process.env.MAILJET_API_KEY,
+                                process.env.MAILJET_API_SECRET,
+                            );
+                          }
+                        } catch (notifError) {
+                          console.error('Error sending booking admin notification:', notifError);
+                        }
+                      }
+                    }
+                  } catch (bookingError) {
+                    console.error('Error creating automatic booking with pass:', bookingError);
+                    // Ne pas faire échouer le processus si la réservation automatique échoue
+                  }
+                }
+
+                // Envoyer email de confirmation du pass au client
                 try {
                   const passConfig = passService.PASS_CONFIG[passType];
                   if (passConfig) {
@@ -1799,14 +1924,155 @@ exports.webhookStripe = onRequest(
             // Nouveau Pass Semestriel
             console.log(`✅ New Semester Pass for ${customerEmail}`);
             try {
+              // Récupérer la subscription depuis Stripe pour obtenir les métadonnées (courseId, etc.)
+              let subscription = null;
+              let courseId = null;
+              let firstName = invoice.customer_name || '';
+              let lastName = '';
+              let phone = '';
+
+              if (process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
+                try {
+                  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+                  subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+                    expand: ['customer'],
+                  });
+                  courseId = subscription.metadata?.courseId;
+                  firstName = subscription.metadata?.firstName || firstName;
+                  lastName = subscription.metadata?.lastName || '';
+                  phone = subscription.metadata?.phone || '';
+                } catch (stripeError) {
+                  console.warn('Error retrieving subscription from Stripe:', stripeError.message);
+                }
+              }
+
               const pass = await passService.createUserPass(db, customerEmail, 'semester_pass', {
                 stripeSubscriptionId: subscriptionId,
                 stripePaymentIntentId: invoice.payment_intent,
-                firstName: invoice.customer_name || '',
+                firstName: firstName,
+                lastName: lastName,
+                phone: phone,
               });
               console.log(`✅ Semester Pass created: ${pass.passId}`);
 
-              // Envoyer email de confirmation au client
+              // Si un courseId est présent dans les métadonnées, créer automatiquement la réservation
+              if (courseId && bookingService) {
+                console.log(
+                    `📅 Course ID found in subscription metadata: ${courseId} - Creating automatic booking with pass`,
+                );
+                try {
+                  // Récupérer les infos du cours
+                  const courseDoc = await db.collection('courses').doc(courseId).get();
+                  if (!courseDoc.exists) {
+                    console.warn(`⚠️ Course ${courseId} not found, skipping automatic booking`);
+                  } else {
+                    const course = courseDoc.data();
+
+                    // Vérifier si l'utilisateur n'a pas déjà réservé ce cours
+                    const existingBooking = await db.collection('bookings')
+                        .where('courseId', '==', courseId)
+                        .where('email', '==', customerEmail.toLowerCase().trim())
+                        .where('status', 'in', ['confirmed', 'pending', 'pending_cash'])
+                        .limit(1)
+                        .get();
+
+                    if (!existingBooking.empty) {
+                      console.log(`⚠️ User already has a booking for course ${courseId}, skipping automatic booking`);
+                    } else {
+                      // Pass Semestriel est illimité, pas besoin de décompter
+                      // Créer la réservation avec le pass
+                      const bookingId = db.collection('bookings').doc().id;
+                      const bookingData = {
+                        bookingId: bookingId,
+                        courseId: courseId,
+                        courseName: course.title || '',
+                        courseDate: course.date || '',
+                        courseTime: course.time || '',
+                        courseLocation: course.location || '',
+                        email: customerEmail.toLowerCase().trim(),
+                        firstName: firstName,
+                        lastName: lastName,
+                        phone: phone,
+                        paymentMethod: 'pass',
+                        pricingOption: 'semester_pass',
+                        passId: pass.passId,
+                        amount: 0, // Pas de paiement supplémentaire
+                        currency: 'CHF',
+                        status: 'confirmed',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        paidAt: new Date(),
+                        notes: 'Pass Semestriel',
+                      };
+
+                      await db.collection('bookings').doc(bookingId).set(bookingData);
+
+                      // Mettre à jour le compteur de participants
+                      const courseRef = db.collection('courses').doc(courseId);
+                      const currentCourse = await courseRef.get();
+                      const currentParticipantCount = currentCourse.data()?.participantCount || 0;
+                      await courseRef.update({
+                        participantCount: currentParticipantCount + 1,
+                      });
+
+                      console.log(
+                          `✅ Automatic booking created: ${bookingId} ` +
+                          `for course ${courseId} using Semester Pass ${pass.passId}`,
+                      );
+
+                      // Envoyer email de confirmation de réservation
+                      try {
+                        const cancellationTokenResult = await bookingService.createCancellationToken(
+                            db,
+                            bookingId,
+                            30,
+                        );
+                        const cancellationUrl = cancellationTokenResult.success ?
+                          cancellationTokenResult.cancellationUrl :
+                          null;
+
+                        await db.collection('mail').add({
+                          to: customerEmail,
+                          template: {
+                            name: 'booking-confirmation',
+                            data: {
+                              firstName: firstName,
+                              courseName: course.title || '',
+                              courseDate: course.date || '',
+                              courseTime: course.time || '',
+                              location: course.location || '',
+                              bookingId: bookingId,
+                              cancellationUrl: cancellationUrl,
+                            },
+                          },
+                        });
+                        console.log(`📧 Booking confirmation email sent to ${customerEmail}`);
+                      } catch (bookingEmailError) {
+                        console.error('Error sending booking confirmation email:', bookingEmailError);
+                      }
+
+                      // Envoyer notification admin pour la réservation
+                      try {
+                        if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                          await sendBookingNotificationAdmin(
+                              bookingData,
+                              course,
+                              process.env.MAILJET_API_KEY,
+                              process.env.MAILJET_API_SECRET,
+                          );
+                        }
+                      } catch (notifError) {
+                        console.error('Error sending booking admin notification:', notifError);
+                      }
+                    }
+                  }
+                } catch (bookingError) {
+                  console.error('Error creating automatic booking with Semester Pass:', bookingError);
+                  // Ne pas faire échouer le processus si la réservation automatique échoue
+                }
+              }
+
+              // Envoyer email de confirmation du pass au client
               try {
                 const passConfig = passService.PASS_CONFIG.semester_pass;
                 if (passConfig) {
@@ -1815,7 +2081,7 @@ exports.webhookStripe = onRequest(
                     template: {
                       name: 'pass-purchase-confirmation',
                       data: {
-                        firstName: invoice.customer_name || '',
+                        firstName: firstName,
                         passType: 'Pass Semestriel',
                         sessions: passConfig.sessions,
                         validityMonths: Math.floor(passConfig.validityDays / 30),

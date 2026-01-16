@@ -448,6 +448,14 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
               courseId: courseId,
               email: userData.email,
               type: 'course_booking',
+              // Ajouter passType si c'est un achat de Flow Pass avec cours
+              ...(pricingOption === 'flow_pass' ? {passType: 'flow_pass'} : {}),
+              // Ajouter les infos utilisateur pour la création du pass
+              ...(pricingOption === 'flow_pass' ? {
+                firstName: userData.firstName || '',
+                lastName: userData.lastName || '',
+                phone: userData.phone || '',
+              } : {}),
             },
           };
 
