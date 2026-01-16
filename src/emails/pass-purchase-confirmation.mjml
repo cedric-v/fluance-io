@@ -1,0 +1,80 @@
+---
+layout: false
+permalink: /emails/pass-purchase-confirmation.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold">
+          {{passType}} acheté !
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Merci pour votre achat du <strong>{{passType}}</strong> !
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="16px" font-weight="bold" color="#648ED8">
+          📋 Détails de votre pass
+        </mj-text>
+        <mj-text>
+          <strong>Type :</strong> {{passType}}<br>
+          {{#if isUnlimited}}
+            <strong>Séances :</strong> Accès illimité<br>
+          {{else}}
+            <strong>Séances :</strong> {{sessions}} séances<br>
+          {{/if}}
+          <strong>Validité :</strong> {{validityMonths}} mois<br>
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="16px" font-weight="bold" color="#648ED8">
+          🎯 Comment utiliser votre pass
+        </mj-text>
+        <mj-text>
+          Vous pouvez maintenant réserver vos cours en présentiel directement sur le site.<br>
+          Lors de la réservation, sélectionnez l'option "Utiliser mon pass" et votre pass sera automatiquement décompté.
+        </mj-text>
+        <mj-text>
+          <a href="https://fluance.io/presentiel/reserver/" style="color: #648ED8; text-decoration: underline;" target="_blank">
+            Réserver un cours maintenant →
+          </a>
+        </mj-text>
+        {{#if isRecurring}}
+          <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+          <mj-text font-size="14px" color="#666666">
+            <strong>Note :</strong> Votre Pass Semestriel se renouvellera automatiquement tous les 6 mois. 
+            Vous pouvez annuler à tout moment depuis votre espace membre.
+          </mj-text>
+        {{else}}
+          <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+          <mj-text font-size="14px" color="#666666">
+            <strong>Note :</strong> Votre Flow Pass est valable pendant {{validityMonths}} mois. 
+            Les séances non utilisées expirent à la fin de la période de validité.
+          </mj-text>
+        {{/if}}
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" color="#666666">
+          À très bientôt en cours !<br><br>
+          Cédric<br>
+          Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

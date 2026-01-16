@@ -345,6 +345,17 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'support@fluance.io';
  */
 async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) {
   try {
+    // Vérifier que les paramètres nécessaires sont disponibles
+    if (!apiKey || !apiSecret) {
+      console.warn('⚠️ Mailjet API keys not available, skipping booking admin notification');
+      return;
+    }
+
+    if (!ADMIN_EMAIL) {
+      console.warn('⚠️ ADMIN_EMAIL not configured, skipping booking admin notification');
+      return;
+    }
+
     const dateStr = new Date().toLocaleString('fr-FR', {
       timeZone: 'Europe/Zurich',
       day: '2-digit',
@@ -428,6 +439,85 @@ async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) 
     console.log(`✅ Booking notification sent to ${ADMIN_EMAIL} for ${booking.email}`);
   } catch (error) {
     console.error('Error sending booking notification:', error.message);
+    console.error('Error stack:', error.stack);
+  }
+}
+
+/**
+ * Envoie une notification admin pour un achat de pass (Flow Pass ou Pass Semestriel)
+ */
+async function sendPassPurchaseNotificationAdmin(passData, apiKey, apiSecret) {
+  try {
+    // Vérifier que les paramètres nécessaires sont disponibles
+    if (!apiKey || !apiSecret) {
+      console.warn('⚠️ Mailjet API keys not available, skipping pass purchase admin notification');
+      return;
+    }
+
+    if (!ADMIN_EMAIL) {
+      console.warn('⚠️ ADMIN_EMAIL not configured, skipping pass purchase admin notification');
+      return;
+    }
+
+    const dateStr = new Date().toLocaleString('fr-FR', {
+      timeZone: 'Europe/Zurich',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const passTypeLabel = passData.passType === 'flow_pass' ? 'Flow Pass' : 'Pass Semestriel';
+    const sessionsLabel = passData.sessionsTotal === -1 ? 'Illimité' : `${passData.sessionsTotal} séances`;
+    const amountStr = passData.price ? `${(passData.price / 100).toFixed(2)} CHF` : 'N/A';
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #7A1F3D; border-bottom: 2px solid #E6B84A; padding-bottom: 10px;">
+          Nouvel achat de pass
+        </h2>
+        <div style="background-color: #fdfaf6; padding: 15px; border-radius: 5px; margin-top: 20px;">
+          <p style="margin: 5px 0;"><strong>Nom :</strong> ${passData.firstName || ''} ${passData.lastName || ''}</p>
+          <p style="margin: 5px 0;">
+            <strong>Email :</strong>
+            <a href="mailto:${passData.email}" style="color: #7A1F3D;">${passData.email}</a>
+          </p>
+          ${passData.phone ? `<p style="margin: 5px 0;"><strong>Téléphone :</strong> ${passData.phone}</p>` : ''}
+          <p style="margin: 5px 0;"><strong>Type de pass :</strong> ${passTypeLabel}</p>
+          <p style="margin: 5px 0;"><strong>Séances :</strong> ${sessionsLabel}</p>
+          <p style="margin: 5px 0;"><strong>Montant :</strong> ${amountStr}</p>
+          <p style="margin: 5px 0;"><strong>Date d'achat :</strong> ${dateStr}</p>
+          <p style="margin: 5px 0;"><strong>Pass ID :</strong> ${passData.passId || 'N/A'}</p>
+          ${passData.stripePaymentIntentId ? `<p style="margin: 5px 0;"><strong>Stripe Payment Intent :</strong> ${passData.stripePaymentIntentId}</p>` : ''}
+          ${passData.stripeSubscriptionId ? `<p style="margin: 5px 0;"><strong>Stripe Subscription :</strong> ${passData.stripeSubscriptionId}</p>` : ''}
+        </div>
+      </div>
+    `;
+    const textContent = `Nouvel achat de pass\n\n` +
+      `Nom: ${passData.firstName || ''} ${passData.lastName || ''}\n` +
+      `Email: ${passData.email}\n` +
+      `${passData.phone ? `Téléphone: ${passData.phone}\n` : ''}` +
+      `Type de pass: ${passTypeLabel}\n` +
+      `Séances: ${sessionsLabel}\n` +
+      `Montant: ${amountStr}\n` +
+      `Date d'achat: ${dateStr}\n` +
+      `Pass ID: ${passData.passId || 'N/A'}`;
+
+    await sendMailjetEmail(
+        ADMIN_EMAIL,
+        `Nouvel achat de pass : ${passTypeLabel} - ${passData.email}`,
+        htmlContent,
+        textContent,
+        apiKey,
+        apiSecret,
+        'support@actu.fluance.io',
+        'Fluance - Notification Achat Pass',
+    );
+    console.log(`✅ Pass purchase notification sent to ${ADMIN_EMAIL} for ${passData.email}`);
+  } catch (error) {
+    console.error('Error sending pass purchase notification:', error.message);
+    console.error('Error stack:', error.stack);
   }
 }
 
@@ -436,6 +526,17 @@ async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) 
  */
 async function sendWaitlistNotificationAdmin(waitlistData, course, apiKey, apiSecret) {
   try {
+    // Vérifier que les paramètres nécessaires sont disponibles
+    if (!apiKey || !apiSecret) {
+      console.warn('⚠️ Mailjet API keys not available, skipping waitlist admin notification');
+      return;
+    }
+
+    if (!ADMIN_EMAIL) {
+      console.warn('⚠️ ADMIN_EMAIL not configured, skipping waitlist admin notification');
+      return;
+    }
+
     const dateStr = new Date().toLocaleString('fr-FR', {
       timeZone: 'Europe/Zurich',
       day: '2-digit',
@@ -488,6 +589,7 @@ async function sendWaitlistNotificationAdmin(waitlistData, course, apiKey, apiSe
     console.log(`✅ Waitlist notification sent to ${ADMIN_EMAIL} for ${waitlistData.email}`);
   } catch (error) {
     console.error('Error sending waitlist notification:', error.message);
+    console.error('Error stack:', error.stack);
   }
 }
 
@@ -581,6 +683,17 @@ async function sendCartAbandonmentEmail(
  */
 async function sendStagesWaitlistNotificationAdmin(email, name, region, locale, apiKey, apiSecret) {
   try {
+    // Vérifier que les paramètres nécessaires sont disponibles
+    if (!apiKey || !apiSecret) {
+      console.warn('⚠️ Mailjet API keys not available, skipping stages waitlist admin notification');
+      return;
+    }
+
+    if (!ADMIN_EMAIL) {
+      console.warn('⚠️ ADMIN_EMAIL not configured, skipping stages waitlist admin notification');
+      return;
+    }
+
     const dateStr = new Date().toLocaleString('fr-FR', {
       timeZone: 'Europe/Zurich',
       day: '2-digit',
@@ -627,6 +740,7 @@ async function sendStagesWaitlistNotificationAdmin(email, name, region, locale, 
     console.log(`✅ Stages waitlist notification sent to ${ADMIN_EMAIL} for ${email}`);
   } catch (error) {
     console.error('Error sending stages waitlist notification:', error.message);
+    console.error('Error stack:', error.stack);
   }
 }
 
@@ -635,7 +749,25 @@ async function sendStagesWaitlistNotificationAdmin(email, name, region, locale, 
  */
 async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret) {
   try {
-    const sourceLabel = sourceOptin === '2pratiques' ? '2 pratiques offertes' : '5 jours offerts';
+    // Vérifier que les paramètres nécessaires sont disponibles
+    if (!apiKey || !apiSecret) {
+      console.warn('⚠️ Mailjet API keys not available, skipping opt-in admin notification');
+      return;
+    }
+
+    if (!ADMIN_EMAIL) {
+      console.warn('⚠️ ADMIN_EMAIL not configured, skipping opt-in admin notification');
+      return;
+    }
+
+    let sourceLabel;
+    if (sourceOptin === '2pratiques') {
+      sourceLabel = '2 pratiques offertes';
+    } else if (sourceOptin === '5joursofferts') {
+      sourceLabel = '5 jours offerts';
+    } else {
+      sourceLabel = sourceOptin || 'Opt-in';
+    }
     const subject = `Nouvel opt-in : ${sourceLabel}`;
     const dateStr = new Date().toLocaleString('fr-FR', {
       timeZone: 'Europe/Zurich',
@@ -675,6 +807,7 @@ async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret
   } catch (error) {
     // Ne pas faire échouer l'opt-in si la notification échoue
     console.error('Error sending opt-in notification:', error.message);
+    console.error('Error stack:', error.stack);
   }
 }
 
@@ -1397,7 +1530,7 @@ exports.webhookStripe = onRequest(
                 paymentIntent.receipt_email ||
                 session.customer_details?.email;
 
-            // Cas 1: Réservation de cours simple
+            // Cas 1: Réservation de cours simple (à l'unité)
             if (bookingId && paymentIntent.metadata?.type === 'course_booking' && bookingService) {
               console.log(`✅ Payment succeeded for booking ${bookingId}`);
               try {
@@ -1407,6 +1540,29 @@ exports.webhookStripe = onRequest(
                     paymentIntent.id || session.id,
                 );
                 console.log('Confirmation result:', result);
+
+                // Envoyer notification admin pour réservation à l'unité
+                try {
+                  const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+                  if (bookingDoc.exists) {
+                    const booking = bookingDoc.data();
+                    const courseDoc = await db.collection('courses').doc(booking.courseId).get();
+                    const course = courseDoc.exists ? courseDoc.data() : null;
+
+                    if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                      await sendBookingNotificationAdmin(
+                          booking,
+                          course,
+                          process.env.MAILJET_API_KEY,
+                          process.env.MAILJET_API_SECRET,
+                      );
+                    }
+                  }
+                } catch (notifError) {
+                  console.error('Error sending admin notification for single course booking:', notifError);
+                  // Ne pas bloquer le processus
+                }
+
                 return res.status(200).json({received: true, bookingConfirmed: true});
               } catch (error) {
                 console.error('Error confirming booking:', error);
@@ -1424,6 +1580,50 @@ exports.webhookStripe = onRequest(
                   phone: paymentIntent.metadata?.phone || '',
                 });
                 console.log(`✅ Pass created: ${pass.passId}`);
+
+                // Envoyer email de confirmation au client
+                try {
+                  const passConfig = passService.PASS_CONFIG[passType];
+                  if (passConfig) {
+                    await db.collection('mail').add({
+                      to: customerEmail,
+                      template: {
+                        name: 'pass-purchase-confirmation',
+                        data: {
+                          firstName: paymentIntent.metadata?.firstName || '',
+                          passType: passType === 'flow_pass' ? 'Flow Pass' : 'Pass Semestriel',
+                          sessions: passConfig.sessions,
+                          validityMonths: Math.floor(passConfig.validityDays / 30),
+                          isUnlimited: passConfig.sessions === -1,
+                          isRecurring: passConfig.isRecurring || false,
+                          passId: pass.passId,
+                        },
+                      },
+                    });
+                    console.log(`📧 Pass purchase confirmation email sent to ${customerEmail}`);
+                  } else {
+                    console.warn(`⚠️ PASS_CONFIG not found for ${passType}`);
+                  }
+                } catch (emailError) {
+                  console.error('Error sending pass purchase confirmation email:', emailError);
+                }
+
+                // Envoyer notification admin
+                try {
+                  if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                    await sendPassPurchaseNotificationAdmin(
+                        {
+                          ...pass,
+                          passId: pass.passId,
+                        },
+                        process.env.MAILJET_API_KEY,
+                        process.env.MAILJET_API_SECRET,
+                    );
+                  }
+                } catch (notifError) {
+                  console.error('Error sending pass purchase admin notification:', notifError);
+                }
+
                 return res.status(200).json({received: true, passCreated: true});
               } catch (error) {
                 console.error('Error creating pass:', error);
@@ -1605,6 +1805,49 @@ exports.webhookStripe = onRequest(
                 firstName: invoice.customer_name || '',
               });
               console.log(`✅ Semester Pass created: ${pass.passId}`);
+
+              // Envoyer email de confirmation au client
+              try {
+                const passConfig = passService.PASS_CONFIG.semester_pass;
+                if (passConfig) {
+                  await db.collection('mail').add({
+                    to: customerEmail,
+                    template: {
+                      name: 'pass-purchase-confirmation',
+                      data: {
+                        firstName: invoice.customer_name || '',
+                        passType: 'Pass Semestriel',
+                        sessions: passConfig.sessions,
+                        validityMonths: Math.floor(passConfig.validityDays / 30),
+                        isUnlimited: true,
+                        isRecurring: true,
+                        passId: pass.passId,
+                      },
+                    },
+                  });
+                  console.log(`📧 Semester Pass purchase confirmation email sent to ${customerEmail}`);
+                } else {
+                  console.warn('⚠️ PASS_CONFIG.semester_pass not found');
+                }
+              } catch (emailError) {
+                console.error('Error sending Semester Pass purchase confirmation email:', emailError);
+              }
+
+              // Envoyer notification admin
+              try {
+                if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                  await sendPassPurchaseNotificationAdmin(
+                      {
+                        ...pass,
+                        passId: pass.passId,
+                      },
+                      process.env.MAILJET_API_KEY,
+                      process.env.MAILJET_API_SECRET,
+                  );
+                }
+              } catch (notifError) {
+                console.error('Error sending Semester Pass purchase admin notification:', notifError);
+              }
             } catch (passError) {
               console.error('Error creating Semester Pass:', passError);
             }
@@ -3295,13 +3538,18 @@ exports.subscribeToNewsletter = onCall(
         }
 
         // Envoyer une notification admin pour le nouvel opt-in
-        await sendOptInNotification(
-            contactData.Email,
-            name || '',
-            '2pratiques',
-            process.env.MAILJET_API_KEY,
-            process.env.MAILJET_API_SECRET,
-        );
+        try {
+          await sendOptInNotification(
+              contactData.Email,
+              name || '',
+              '2pratiques',
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+          );
+        } catch (notifError) {
+          console.error('Error sending opt-in admin notification (2pratiques):', notifError);
+          // Ne pas faire échouer l'opt-in si la notification échoue
+        }
 
         return {
           success: true,
@@ -4358,13 +4606,18 @@ exports.subscribeTo5Days = onCall(
         }
 
         // Envoyer une notification admin pour le nouvel opt-in
-        await sendOptInNotification(
-            contactData.Email,
-            name || '',
-            '5joursofferts',
-            process.env.MAILJET_API_KEY,
-            process.env.MAILJET_API_SECRET,
-        );
+        try {
+          await sendOptInNotification(
+              contactData.Email,
+              name || '',
+              '5joursofferts',
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+          );
+        } catch (notifError) {
+          console.error('Error sending opt-in admin notification (5joursofferts):', notifError);
+          // Ne pas faire échouer l'opt-in si la notification échoue
+        }
 
         return {
           success: true,
