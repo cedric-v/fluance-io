@@ -344,16 +344,39 @@ class GoogleService {
     // Déterminer si en liste d'attente
     const isWaitlisted = (bookingData.status === 'waitlisted' || bookingData.isWaitlisted) ? 'Oui' : 'Non';
 
+    // Formater la date du cours pour Google Sheets (format DD/MM/YYYY)
+    // Si la date est déjà au format DD/MM/YYYY, on la garde telle quelle avec une apostrophe pour forcer le texte
+    let courseDateFormatted = bookingData.courseDate || '';
+    if (courseDateFormatted && !courseDateFormatted.startsWith('\'')) {
+      // Ajouter une apostrophe pour forcer le format texte et éviter l'interprétation comme nombre
+      courseDateFormatted = `'${courseDateFormatted}`;
+    }
+
+    // Formater l'heure pour Google Sheets (format HH:MM)
+    // Si l'heure est déjà au format HH:MM, on la garde telle quelle avec une apostrophe pour forcer le texte
+    let courseTimeFormatted = bookingData.courseTime || '';
+    if (courseTimeFormatted && !courseTimeFormatted.startsWith('\'')) {
+      // Ajouter une apostrophe pour forcer le format texte et éviter l'interprétation comme nombre
+      courseTimeFormatted = `'${courseTimeFormatted}`;
+    }
+
+    // Formater le numéro de téléphone pour forcer le format texte (éviter la suppression du 0 initial)
+    let phoneFormatted = userData.phone || '';
+    if (phoneFormatted && !phoneFormatted.startsWith('\'')) {
+      // Ajouter une apostrophe pour forcer le format texte
+      phoneFormatted = `'${phoneFormatted}`;
+    }
+
     // Préparer la ligne à ajouter (A à Z)
     const row = [
       new Date().toISOString(), // A: Date d'inscription
       userData.firstName || '', // B: Prénom
       userData.lastName || '', // C: Nom
       userData.email || '', // D: Email
-      userData.phone || '', // E: Téléphone
+      phoneFormatted, // E: Téléphone (format texte avec apostrophe)
       bookingData.courseName || '', // F: Nom du cours
-      bookingData.courseDate || '', // G: Date du cours
-      bookingData.courseTime || '', // H: Heure
+      courseDateFormatted, // G: Date du cours (format texte avec apostrophe)
+      courseTimeFormatted, // H: Heure (format texte avec apostrophe)
       bookingData.paymentMethod || '', // I: Méthode de paiement
       bookingData.paymentStatus || '', // J: Statut de paiement
       bookingData.amount || '', // K: Montant
