@@ -198,7 +198,9 @@ eleventyExcludeFromCollections: true
         // Charger Firebase Functions
         await loadFirebaseFunctions();
         
-        const functions = firebase.functions('europe-west1');
+        // Utiliser firebase.app().functions() pour la version compat
+        const app = firebase.app();
+        const functions = app.functions('europe-west1');
         const getBookingDetails = functions.httpsCallable('getBookingDetails');
         
         // Appeler la fonction avec paymentIntentId ou bookingId selon ce qui est disponible
