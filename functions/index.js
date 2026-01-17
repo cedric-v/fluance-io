@@ -1906,34 +1906,80 @@ exports.webhookStripe = onRequest(
 
           // Vérifier si le produit cross-sell "SOS dos & cervicales" a été acheté
           try {
+            console.log(`🔍 Vérification du cross-sell pour ${customerEmail}`);
             // Récupérer les line_items de la session Stripe pour détecter les cross-sells
             let hasCrossSell = false;
-            if (process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
+            let checkoutSessionId = null;
+
+            // Déterminer l'ID de la session checkout selon le type d'événement
+            if (event.type === 'checkout.session.completed') {
+              // Pour checkout.session.completed, session est déjà une CheckoutSession
+              checkoutSessionId = session.id;
+              console.log(`📋 Événement: checkout.session.completed, Session ID: ${checkoutSessionId}`);
+            } else if (event.type === 'payment_intent.succeeded') {
+              // Pour payment_intent.succeeded, session est un PaymentIntent
+              // Il faut récupérer la CheckoutSession depuis le PaymentIntent
+              checkoutSessionId = session.metadata?.checkout_session_id;
+              if (!checkoutSessionId) {
+                // Essayer de trouver la session via l'API Stripe
+                try {
+                  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+                  const sessions = await stripe.checkout.sessions.list({
+                    payment_intent: session.id,
+                    limit: 1,
+                  });
+                  if (sessions.data.length > 0) {
+                    checkoutSessionId = sessions.data[0].id;
+                    console.log(`📋 Session checkout trouvée via API: ${checkoutSessionId}`);
+                  }
+                } catch (listError) {
+                  console.warn('⚠️  Impossible de trouver la session checkout:', listError.message);
+                }
+              } else {
+                console.log(`📋 Session checkout depuis métadonnées: ${checkoutSessionId}`);
+              }
+            }
+
+            if (process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined' && checkoutSessionId) {
               try {
                 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
                 // Récupérer la session complète avec line_items
-                const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+                const fullSession = await stripe.checkout.sessions.retrieve(checkoutSessionId, {
                   expand: ['line_items'],
                 });
 
+                console.log(`📋 Session récupérée, line_items disponibles: ${fullSession.line_items ? 'Oui' : 'Non'}`);
+
                 // Vérifier si le price_id du cross-sell est présent dans les line_items
                 if (fullSession.line_items && fullSession.line_items.data) {
+                  console.log(`📦 Nombre de line_items: ${fullSession.line_items.data.length}`);
                   for (const lineItem of fullSession.line_items.data) {
+                    console.log(`   - Price ID: ${lineItem.price?.id || 'N/A'}, Description: ${lineItem.description || 'N/A'}`);
                     if (lineItem.price && lineItem.price.id === STRIPE_PRICE_ID_SOS_DOS_CERVICALES) {
                       hasCrossSell = true;
-                      console.log(`Cross-sell "SOS dos & cervicales" détecté pour ${customerEmail}`);
+                      console.log(`✅ Cross-sell "SOS dos & cervicales" détecté pour ${customerEmail}`);
                       break;
                     }
                   }
+                } else {
+                  console.warn(`⚠️  Aucun line_item trouvé dans la session ${checkoutSessionId}`);
                 }
               } catch (stripeError) {
-                console.warn('Error retrieving Stripe session line_items:', stripeError.message);
+                console.error('❌ Error retrieving Stripe session line_items:', stripeError.message);
+                console.error('Error stack:', stripeError.stack);
                 // Si on ne peut pas récupérer les line_items, on continue sans le cross-sell
+              }
+            } else {
+              if (!checkoutSessionId) {
+                console.warn('⚠️  Impossible de déterminer l\'ID de la session checkout');
+              } else {
+                console.warn('⚠️  STRIPE_SECRET_KEY non disponible, impossible de vérifier le cross-sell');
               }
             }
 
             // Si le cross-sell a été détecté, créer un token pour ce produit (réutiliser les mêmes coordonnées)
             if (hasCrossSell) {
+              console.log(`🔄 Création du token pour le cross-sell "sos-dos-cervicales" pour ${customerEmail}`);
               await createTokenAndSendEmail(
                   customerEmail,
                   'sos-dos-cervicales',
@@ -1947,12 +1993,15 @@ exports.webhookStripe = onRequest(
                   langue,
               );
               console.log(
-                  `Token created and email sent to ${customerEmail} for cross-sell product sos-dos-cervicales`,
+                  `✅ Token created and email sent to ${customerEmail} for cross-sell product sos-dos-cervicales`,
               );
+            } else {
+              console.log(`ℹ️  Aucun cross-sell détecté pour ${customerEmail}`);
             }
           } catch (crossSellError) {
             // Ne pas faire échouer le webhook si le traitement du cross-sell échoue
-            console.error('Error processing cross-sell:', crossSellError);
+            console.error('❌ Error processing cross-sell:', crossSellError.message);
+            console.error('Error stack:', crossSellError.stack);
           }
 
           return res.status(200).json({received: true});
