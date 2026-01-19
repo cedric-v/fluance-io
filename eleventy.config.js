@@ -1,7 +1,6 @@
 // eleventy.config.js
 const i18n = require("eleventy-plugin-i18n");
-const Image = require("@11ty/eleventy-img");
-const Image = require("@11ty/eleventy-img");
+const EleventyImage = require("@11ty/eleventy-img");
 const htmlmin = require("html-minifier-next"); // Le paquet sécurisé
 const fs = require("fs");
 const path = require("path");
@@ -20,7 +19,7 @@ module.exports = function(eleventyConfig) {
       throw new Error(`Missing \`alt\` on responsive image from: ${src}`);
     }
 
-    let metadata = await Image(src, {
+    let metadata = await EleventyImage(src, {
       widths: [300, 600, 900, 1200, 1600],
       formats: ["webp", "jpeg"],
       outputDir: "./_site/assets/img/",
@@ -38,7 +37,7 @@ module.exports = function(eleventyConfig) {
       imageAttributes.class = cls;
     }
 
-    return Image.generateHTML(metadata, imageAttributes);
+    return EleventyImage.generateHTML(metadata, imageAttributes);
   });
 
   // 2. Gestion des Images classiques (local, servies depuis GitHub Pages ou tout autre hébergeur statique)
