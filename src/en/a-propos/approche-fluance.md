@@ -10,7 +10,7 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] -mt-28 mb-8 overflow-hidden" style="height: 300px;">
     <div class="absolute inset-0 z-0">
-      <img src="{{ '/assets/img/cedric-dehors-fluance-reduit.jpeg' | url }}" alt="Cédric in the mountains" class="w-full h-full object-cover object-position-mobile" loading="lazy">
+      {% responsiveImage "/assets/img/cedric-dehors-fluance-reduit.jpeg", "Cédric in the mountains", "100vw", "w-full h-full object-cover object-position-mobile" %}
       <div class="absolute inset-0" style="background: linear-gradient(to right, transparent, rgba(100, 142, 216, 0.7), rgba(100, 142, 216, 0.9));"></div>
     </div>
     <div class="relative z-10 h-full flex flex-col items-center justify-center px-6 md:px-12 text-center">

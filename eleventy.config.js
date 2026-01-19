@@ -1,5 +1,7 @@
 // eleventy.config.js
 const i18n = require("eleventy-plugin-i18n");
+const Image = require("@11ty/eleventy-img");
+const Image = require("@11ty/eleventy-img");
 const htmlmin = require("html-minifier-next"); // Le paquet sécurisé
 const fs = require("fs");
 const path = require("path");
@@ -11,8 +13,35 @@ require('dotenv').config();
 const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "" : "";
 
 module.exports = function(eleventyConfig) {
-  
-  // 1. Gestion des Images (local, servies depuis GitHub Pages ou tout autre hébergeur statique)
+
+  // 1. Images responsives optimisées avec eleventy-img
+  eleventyConfig.addShortcode("responsiveImage", async function(src, alt, sizes = "100vw", cls = "", loading = "lazy") {
+    if(alt === undefined) {
+      throw new Error(`Missing \`alt\` on responsive image from: ${src}`);
+    }
+
+    let metadata = await Image(src, {
+      widths: [300, 600, 900, 1200, 1600],
+      formats: ["webp", "jpeg"],
+      outputDir: "./_site/assets/img/",
+      urlPath: "/assets/img/"
+    });
+
+    let imageAttributes = {
+      alt,
+      sizes,
+      loading,
+      decoding: "async",
+    };
+
+    if (cls) {
+      imageAttributes.class = cls;
+    }
+
+    return Image.generateHTML(metadata, imageAttributes);
+  });
+
+  // 2. Gestion des Images classiques (local, servies depuis GitHub Pages ou tout autre hébergeur statique)
   // Support WebP avec fallback automatique pour jpg/jpeg/png
   eleventyConfig.addShortcode("image", function(src, alt, cls = "", loading = "lazy", fetchpriority = "", width = "", height = "") {
     const cleanSrc = src.startsWith('/') ? src : `/${src}`;

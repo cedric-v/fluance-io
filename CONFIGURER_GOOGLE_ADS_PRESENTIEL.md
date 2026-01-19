@@ -272,11 +272,13 @@ Si vous souhaitez aussi suivre l'événement `purchase` standard :
 ⚠️ **C'est normal** : Après avoir créé une conversion dans Google Ads, elle apparaît souvent avec le statut **"Inactive"** (Inactive).
 
 **Pourquoi "Inactive" ?**
-- Google Ads doit d'abord détecter que le tag fonctionne correctement
-- Il faut qu'au moins une conversion soit enregistrée pour que le statut passe à "Active"
-- Cela peut prendre quelques heures à quelques jours
+- Google Ads doit d'abord **vérifier que le tag fonctionne correctement**
+- Le message indique : "We haven't verified your tag yet, which usually takes up to three hours after someone visits your page containing the tag"
+- Google Ads attend de voir une conversion réelle avant de marquer la conversion comme "Active"
+- Cela peut prendre **jusqu'à 3 heures** (selon Google Ads) ou parfois jusqu'à 24-48 heures
 
 **Comment activer la conversion ?**
+
 1. **Vérifiez que votre tag GTM est publié** :
    - Allez dans GTM → Vérifiez que votre tag "Google Ads - Conversion Présentiel" est bien enregistré
    - **Publiez le conteneur** si ce n'est pas déjà fait (Bouton "Submit" en haut à droite)
@@ -284,17 +286,29 @@ Si vous souhaitez aussi suivre l'événement `purchase` standard :
 2. **Effectuez une réservation test** :
    - Faites une réservation test sur votre site
    - Vérifiez que l'événement `course_booking_confirmed` est bien envoyé (voir tests ci-dessous)
+   - ✅ **Vous avez déjà fait cela et la conversion est trackée** (visible dans la console)
 
-3. **Attendez 24-48 heures** :
-   - Google Ads peut prendre jusqu'à 48 heures pour détecter la première conversion
+3. **Visitez la page de confirmation pour accélérer la vérification** :
+   - Google Ads suggère : "To help speed this up, you can visit the page to trigger the tag"
+   - Visitez la page de confirmation : `https://fluance.io/presentiel/reservation-confirmee/?booking_id=XXX`
+   - Cela déclenchera le tag et accélérera la vérification
+
+4. **Attendez 3-24 heures** :
+   - Google Ads peut prendre **jusqu'à 3 heures** pour vérifier le tag (selon le message)
+   - Parfois cela peut prendre jusqu'à 24-48 heures
    - Une fois la première conversion détectée, le statut passera automatiquement à "Active"
 
-4. **Si après 48h c'est toujours "Inactive"** :
-   - Cliquez sur "Troubleshooting" dans Google Ads pour voir les erreurs éventuelles
+5. **Si après 48h c'est toujours "Inactive"** :
+   - Cliquez sur **"Troubleshooting"** dans Google Ads pour voir les erreurs éventuelles
    - Vérifiez que le tag GTM est bien publié
    - Vérifiez que l'événement est bien envoyé (voir section "Tester la configuration")
+   - Vérifiez que les erreurs CSP sont résolues (elles ne devraient plus apparaître)
 
-**Note** : Le statut "Inactive" n'empêche pas le suivi des conversions. Les conversions sont quand même enregistrées, mais Google Ads attend de voir une conversion réelle avant de marquer la conversion comme "Active".
+**Note importante** : 
+- ⚠️ **Le statut "Inactive" n'empêche PAS le suivi des conversions**
+- Les conversions sont **quand même enregistrées** même si le statut est "Inactive"
+- Google Ads attend simplement de **vérifier que le tag fonctionne** avant de marquer la conversion comme "Active"
+- Vous pouvez voir les conversions dans les rapports même si le statut est "Inactive"
 
 ### Étape 7 : Tester la configuration
 
