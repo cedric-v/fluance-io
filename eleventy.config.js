@@ -19,7 +19,15 @@ module.exports = function(eleventyConfig) {
       throw new Error(`Missing \`alt\` on responsive image from: ${src}`);
     }
 
-    let metadata = await EleventyImage(src, {
+    // Convertir le chemin relatif du site vers le chemin relatif au fichier source
+    let inputPath = src;
+    if (src.startsWith('/assets/')) {
+      inputPath = './src' + src;
+    } else if (src.startsWith('assets/')) {
+      inputPath = './src/' + src;
+    }
+
+    let metadata = await EleventyImage(inputPath, {
       widths: [300, 600, 900, 1200, 1600],
       formats: ["webp", "jpeg"],
       outputDir: "./_site/assets/img/",
