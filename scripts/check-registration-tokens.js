@@ -61,7 +61,6 @@ async function checkTokens(email, db) {
     // Récupérer tous les tokens pour cet email
     const tokensSnapshot = await db.collection('registrationTokens')
       .where('email', '==', normalizedEmail)
-      .orderBy('createdAt', 'desc')
       .get();
     
     if (tokensSnapshot.empty) {
