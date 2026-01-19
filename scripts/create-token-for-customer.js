@@ -5,13 +5,40 @@
 
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 // Configuration Firebase
 try {
   if (!admin.apps.length) {
-    admin.initializeApp({
-      projectId: 'fluance-protected-content',
-    });
+    // Chercher le service account dans plusieurs emplacements possibles
+    const possiblePaths = [
+      process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      path.join(__dirname, 'fluance-protected-content-service-account.json'),
+      path.join(__dirname, '..', 'functions', 'serviceAccountKey.json'),
+    ].filter(Boolean);
+
+    let serviceAccountPath = null;
+    for (const possiblePath of possiblePaths) {
+      if (possiblePath && fs.existsSync(possiblePath)) {
+        serviceAccountPath = possiblePath;
+        break;
+      }
+    }
+
+    if (serviceAccountPath) {
+      console.log(`✅ Utilisation du service account: ${serviceAccountPath}`);
+      const serviceAccount = require(serviceAccountPath);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: 'fluance-protected-content',
+      });
+    } else {
+      console.log('✅ Utilisation des credentials par défaut (Firebase CLI)');
+      admin.initializeApp({
+        projectId: 'fluance-protected-content',
+      });
+    }
     console.log('✅ Firebase Admin initialisé');
   } else {
     console.log('✅ Firebase Admin déjà initialisé');
