@@ -3345,16 +3345,24 @@ exports.verifyToken = onCall(
           }];
         }
 
-        // Vérifier si le produit existe déjà dans le tableau
-        const productExists = products.some((p) => p.name === tokenData.product);
-        if (!productExists) {
-          // Ajouter le nouveau produit avec sa date de démarrage
-          const now = admin.firestore.FieldValue.serverTimestamp();
-          products.push({
-            name: tokenData.product,
-            startDate: now, // Date de démarrage pour le drip
-            purchasedAt: now,
-          });
+        // Support both 'product' (singular) and 'products' (array) in token data
+        const tokenProducts = tokenData.products || (tokenData.product ? [tokenData.product] : []);
+
+        if (tokenProducts.length === 0) {
+          throw new Error('Token has no product information');
+        }
+
+        // Ajouter tous les produits du token qui n'existent pas déjà
+        const now = admin.firestore.FieldValue.serverTimestamp();
+        for (const productName of tokenProducts) {
+          const productExists = products.some((p) => p.name === productName);
+          if (!productExists) {
+            products.push({
+              name: productName,
+              startDate: now,
+              purchasedAt: now,
+            });
+          }
         }
 
         // Créer ou mettre à jour le document utilisateur dans Firestore
@@ -3363,13 +3371,13 @@ exports.verifyToken = onCall(
         const userData = {
           email: email,
           products: products,
-          product: tokenData.product, // Garder pour compatibilité rétroactive
+          product: tokenProducts[0], // Garder pour compatibilité rétroactive (premier produit)
           createdAt: existingUserData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
 
         // Pour le produit "21jours", ajouter aussi registrationDate pour compatibilité
-        if (tokenData.product === '21jours' && !existingUserData.registrationDate) {
+        if (tokenProducts.includes('21jours') && !existingUserData.registrationDate) {
           userData.registrationDate = admin.firestore.FieldValue.serverTimestamp();
         }
 
