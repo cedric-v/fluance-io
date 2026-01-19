@@ -20,7 +20,11 @@
     {% endif %}
     <meta name="description" content="{{ description or 'Accompagnement professionnel et développement personnel.' }}">
     <meta name="generator" content="Eleventy">
-    
+
+    {% if robots %}
+    <meta name="robots" content="{{ robots }}">
+    {% endif %}
+
     {% if redirectTo %}
     <meta http-equiv="refresh" content="0; url={{ redirectTo | relativeUrl }}">
     {% endif %}
