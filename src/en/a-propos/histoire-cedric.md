@@ -47,7 +47,7 @@ permalink: /en/a-propos/histoire-cedric/
     <div class="flex flex-col md:flex-row gap-8 items-start">
       <div class="w-full md:w-1/2 md:order-1">
         <div class="aspect-4/3 rounded-lg overflow-hidden">
-          <img src="{{ '/assets/img/cedric-enfant-2012.jpg' | url }}" alt="Cédric with his children" class="w-full h-full object-cover" style="object-position: center 33%;" loading="lazy">
+          {% responsiveImage "/assets/img/cedric-enfant-2012.jpg", "Cédric with his children", "100vw", "w-full h-full object-cover", "lazy" %}
         </div>
       </div>
       <div class="w-full md:w-1/2 md:order-2 space-y-4">
@@ -77,7 +77,7 @@ permalink: /en/a-propos/histoire-cedric/
     <div class="flex flex-col md:flex-row gap-8 items-start">
       <div class="w-full md:w-1/2 md:order-1">
         <div class="aspect-3/4 rounded-lg overflow-hidden">
-          <img src="{{ '/assets/img/cedric-fluance-particuliers.jpg' | url }}" alt="Cédric - Return to simplicity" class="w-full h-full object-cover object-center" style="object-position: center top;" loading="lazy">
+          {% responsiveImage "/assets/img/cedric-fluance-particuliers.jpg", "Cédric - Return to simplicity", "100vw", "w-full h-full object-cover object-center", "lazy" %}
         </div>
       </div>
       <div class="w-full md:w-1/2 md:order-2 space-y-4">
