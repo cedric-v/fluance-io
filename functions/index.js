@@ -1074,6 +1074,193 @@ async function createTokenAndSendEmail(
 }
 
 /**
+ * Crée un token pour plusieurs produits dans Firestore et envoie UN SEUL email
+ * Optimisation pour les achats avec cross-sell: un seul token, un seul email, tous les produits accessibles
+ * @param {string} email - Email du client
+ * @param {Array<string>} products - Tableau des noms de produits
+ * @param {number} expirationDays - Nombre de jours avant expiration (défaut: 30)
+ * @param {string} mailjetApiKey - Clé API Mailjet (depuis les secrets)
+ * @param {string} mailjetApiSecret - Secret API Mailjet (depuis les secrets)
+ * @param {number} totalAmount - Montant total de l'achat en CHF
+ * @param {string} customerName - Nom du client (optionnel)
+ * @param {string} customerPhone - Téléphone du client (optionnel)
+ * @param {string} customerAddress - Adresse du client (optionnel)
+ * @param {string} langue - Langue de l'email ('fr' ou 'en')
+ */
+async function createTokenForMultipleProductsAndSendEmail(
+    email,
+    products,
+    expirationDays = 30,
+    mailjetApiKey,
+    mailjetApiSecret,
+    totalAmount = null,
+    customerName = null,
+    customerPhone = null,
+    customerAddress = null,
+    langue = 'fr',
+) {
+  const token = generateUniqueToken();
+  const expirationDate = new Date();
+  expirationDate.setDate(expirationDate.getDate() + expirationDays);
+
+  // Stocker le token dans Firestore avec le format 'products' (array)
+  await db.collection('registrationTokens').doc(token).set({
+    email: email.toLowerCase().trim(),
+    products: products, // Tableau de produits
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    expiresAt: expirationDate,
+    used: false,
+  });
+
+  // Générer le lien de création de compte
+  const baseUrl = 'https://fluance.io';
+  const registrationUrl = `${baseUrl}/creer-compte?token=${token}`;
+
+  // Créer une liste formatée des produits pour l'email
+  const productNames = {
+    '21jours': '21 jours pour un Dos en Forme',
+    'sos-dos-cervicales': 'SOS Dos & Cervicales',
+    'complet': 'Programme Complet',
+  };
+
+  const productList = products.map((p) => productNames[p] || p).join(' + ');
+
+  // Contenu de l'email
+  const emailSubject = 'Créez votre compte Fluance';
+  const emailHtml = loadEmailTemplate('creation-compte-multiple', {
+    productList: productList,
+    registrationUrl: registrationUrl,
+    expirationDays: expirationDays.toString(),
+  });
+
+  // Envoyer l'email
+  await sendMailjetEmail(email, emailSubject, emailHtml, null, mailjetApiKey, mailjetApiSecret);
+
+  // Mettre à jour les contact properties MailJet pour les achats
+  if (totalAmount !== null && totalAmount !== undefined) {
+    try {
+      // Récupérer les properties actuelles pour calculer les totaux
+      const auth = Buffer.from(`${mailjetApiKey}:${mailjetApiSecret}`).toString('base64');
+      const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
+
+      let currentProperties = {};
+      try {
+        const getResponse = await fetch(contactDataUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+          },
+        });
+        if (getResponse.ok) {
+          const getData = await getResponse.json();
+          if (getData.Data && getData.Data.length > 0) {
+            const contactData = getData.Data[0];
+            if (contactData.Data) {
+              // Si Data est un tableau (format standard Mailjet)
+              if (Array.isArray(contactData.Data)) {
+                // Convertir le tableau [{Name, Value}] en objet {name: value}
+                contactData.Data.forEach((item) => {
+                  if (item.Name && item.Value !== undefined) {
+                    currentProperties[item.Name] = item.Value;
+                  }
+                });
+              } else if (typeof contactData.Data === 'object') {
+                // Si Data est déjà un objet (format alternatif)
+                currentProperties = contactData.Data;
+              }
+            }
+          }
+        }
+      } catch {
+        console.log('Contact properties not found, will create new ones');
+      }
+
+      // Calculer les nouvelles valeurs
+      const now = new Date();
+      const dateStr = now.toISOString();
+
+      const currentProducts = currentProperties.produits_achetes || '';
+      const productsList = currentProducts ? currentProducts.split(',').map((p) => p.trim()).filter((p) => p) : [];
+
+      // Ajouter tous les nouveaux produits qui ne sont pas déjà dans la liste
+      products.forEach((product) => {
+        if (!productsList.includes(product)) {
+          productsList.push(product);
+        }
+      });
+
+      const currentValeur = parseFloat(currentProperties.valeur_client || '0') || 0;
+      const currentNombreAchats = parseInt(currentProperties.nombre_achats || '0') || 0;
+
+      const isFirstPurchase = !currentProperties.date_premier_achat;
+
+      // Valider et normaliser la langue
+      const langueNormalisee = (langue === 'en' || langue === 'EN') ? 'en' : 'fr';
+
+      const updatedProperties = {
+        statut: 'client',
+        produits_achetes: productsList.join(','),
+        date_dernier_achat: dateStr,
+        valeur_client: (currentValeur + totalAmount).toFixed(2),
+        nombre_achats: currentNombreAchats + 1,
+        est_client: 'True',
+        langue: langueNormalisee,
+      };
+
+      // Ajouter les coordonnées complémentaires si disponibles
+      if (customerName) {
+        const firstName = customerName.split(' ')[0];
+        const lastName = customerName.split(' ').slice(1).join(' ');
+        updatedProperties.firstname = capitalizeName(firstName);
+        if (lastName) {
+          updatedProperties.lastname = capitalizeName(lastName);
+        }
+      }
+      if (customerPhone) {
+        updatedProperties.phone = customerPhone;
+      }
+      if (customerAddress) {
+        updatedProperties.address = customerAddress;
+      }
+
+      // Si c'est le premier achat, définir date_premier_achat
+      if (isFirstPurchase) {
+        updatedProperties.date_premier_achat = dateStr;
+      }
+
+      // Mettre à jour les properties
+      await updateMailjetContactProperties(email, updatedProperties, mailjetApiKey, mailjetApiSecret);
+
+      // Ajouter le contact à la liste principale si pas déjà dedans
+      const listId = '10524140';
+      const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
+      try {
+        await fetch(addToListUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${auth}`,
+          },
+          body: JSON.stringify({
+            IsUnsubscribed: false,
+            ContactAlt: email.toLowerCase().trim(),
+            ListID: parseInt(listId, 10),
+          }),
+        });
+      } catch {
+        // Ignorer si déjà dans la liste
+        console.log('Contact may already be in list or error adding to list');
+      }
+    } catch (error) {
+      console.error('Error updating MailJet contact properties after purchase:', error.message);
+      // Ne pas bloquer le processus si la mise à jour des properties échoue
+    }
+  }
+
+  return token;
+}
+
+/**
  * Gère les échecs de paiement avec relances progressives et désactivation après plusieurs tentatives
  * Conforme aux bonnes pratiques européennes (délai de grâce, plusieurs tentatives, options alternatives)
  * @param {object} invoice - Objet invoice Stripe
@@ -1888,27 +2075,13 @@ exports.webhookStripe = onRequest(
             amountCHF = amountTotal / 100; // Par défaut, considérer comme CHF
           }
 
-          await createTokenAndSendEmail(
-              customerEmail,
-              product,
-              30,
-              process.env.MAILJET_API_KEY,
-              process.env.MAILJET_API_SECRET,
-              amountCHF,
-              customerName,
-              customerPhone,
-              fullAddress,
-              langue,
-          );
-          console.log(
-              `Token created and email sent to ${customerEmail} for product ${product}, amount: ${amountCHF} CHF`,
-          );
-
           // Vérifier si le produit cross-sell "SOS dos & cervicales" a été acheté
+          // Cela doit être fait AVANT de créer le token pour envoyer un seul email
+          const productsToCreate = [product]; // Commence avec le produit principal
+
           try {
             console.log(`🔍 Vérification du cross-sell pour ${customerEmail}`);
             // Récupérer les line_items de la session Stripe pour détecter les cross-sells
-            let hasCrossSell = false;
             let checkoutSessionId = null;
 
             // Déterminer l'ID de la session checkout selon le type d'événement
@@ -1956,7 +2129,7 @@ exports.webhookStripe = onRequest(
                   for (const lineItem of fullSession.line_items.data) {
                     console.log(`   - Price ID: ${lineItem.price?.id || 'N/A'}, Description: ${lineItem.description || 'N/A'}`);
                     if (lineItem.price && lineItem.price.id === STRIPE_PRICE_ID_SOS_DOS_CERVICALES) {
-                      hasCrossSell = true;
+                      productsToCreate.push('sos-dos-cervicales');
                       console.log(`✅ Cross-sell "SOS dos & cervicales" détecté pour ${customerEmail}`);
                       break;
                     }
@@ -1976,32 +2149,48 @@ exports.webhookStripe = onRequest(
                 console.warn('⚠️  STRIPE_SECRET_KEY non disponible, impossible de vérifier le cross-sell');
               }
             }
-
-            // Si le cross-sell a été détecté, créer un token pour ce produit (réutiliser les mêmes coordonnées)
-            if (hasCrossSell) {
-              console.log(`🔄 Création du token pour le cross-sell "sos-dos-cervicales" pour ${customerEmail}`);
-              await createTokenAndSendEmail(
-                  customerEmail,
-                  'sos-dos-cervicales',
-                  30,
-                  process.env.MAILJET_API_KEY,
-                  process.env.MAILJET_API_SECRET,
-                  17, // Montant du cross-sell en CHF
-                  customerName,
-                  customerPhone,
-                  fullAddress,
-                  langue,
-              );
-              console.log(
-                  `✅ Token created and email sent to ${customerEmail} for cross-sell product sos-dos-cervicales`,
-              );
-            } else {
-              console.log(`ℹ️  Aucun cross-sell détecté pour ${customerEmail}`);
-            }
           } catch (crossSellError) {
             // Ne pas faire échouer le webhook si le traitement du cross-sell échoue
             console.error('❌ Error processing cross-sell:', crossSellError.message);
             console.error('Error stack:', crossSellError.stack);
+          }
+
+          // Créer un token unique avec tous les produits et envoyer UN SEUL email
+          if (productsToCreate.length > 1) {
+            console.log(`📧 Envoi d'un seul email pour ${productsToCreate.length} produits: ${productsToCreate.join(', ')}`);
+            await createTokenForMultipleProductsAndSendEmail(
+                customerEmail,
+                productsToCreate,
+                30,
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+                amountCHF,
+                customerName,
+                customerPhone,
+                fullAddress,
+                langue,
+            );
+            console.log(
+                `✅ Token created and single email sent to ${customerEmail} for products: ${productsToCreate.join(', ')}, total amount: ${amountCHF} CHF`,
+            );
+          } else {
+            // Un seul produit: utiliser l'ancienne fonction
+            console.log(`📧 Envoi d'un email pour le produit unique: ${product}`);
+            await createTokenAndSendEmail(
+                customerEmail,
+                product,
+                30,
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+                amountCHF,
+                customerName,
+                customerPhone,
+                fullAddress,
+                langue,
+            );
+            console.log(
+                `✅ Token created and email sent to ${customerEmail} for product ${product}, amount: ${amountCHF} CHF`,
+            );
           }
 
           return res.status(200).json({received: true});
