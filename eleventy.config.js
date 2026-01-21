@@ -12,7 +12,7 @@ require('dotenv').config();
 const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "" : "";
 
 module.exports = function(eleventyConfig) {
-
+  
   // 1. Images responsives optimisées avec eleventy-img
   eleventyConfig.addShortcode("responsiveImage", async function(src, alt, sizes = "100vw", cls = "", loading = "lazy") {
     if(alt === undefined) {
