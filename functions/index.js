@@ -11,7 +11,7 @@
  */
 
 const {onRequest, onCall} = require('firebase-functions/v2/https');
-const {onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onDocumentCreated, onDocumentUpdated} = require('firebase-functions/v2/firestore');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {setGlobalOptions} = require('firebase-functions/v2');
 const {HttpsError} = require('firebase-functions/v2/https');
@@ -375,7 +375,7 @@ async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) 
       const paymentMethodLabels = {
         'card': 'Carte / TWINT',
         'cash': 'Espèces sur place',
-        'pass': 'Pass (Flow Pass ou Semestriel)',
+        'pass': booking.pricingOption === 'semester_pass' ? 'Pass Semestriel' : 'Flow Pass',
       };
       paymentMethodLabel = paymentMethodLabels[booking.paymentMethod] || booking.paymentMethod;
     }
@@ -3400,6 +3400,75 @@ exports.getBookingDetails = onCall(
         throw new HttpsError('internal', `Error retrieving booking: ${error.message}`);
       }
     },
+);
+
+/**
+ * Trigger Firestore pour envoyer des notifications admin lors de nouvelles réservations
+ * Se déclenche sur toute nouvelle réservation confirmée (y compris les cours d'essai gratuits)
+ */
+exports.onBookingCreated = onDocumentCreated(
+  {
+    document: 'bookings/{bookingId}',
+    region: 'europe-west1',
+  },
+  async (event) => {
+    const bookingId = event.params.bookingId;
+    const booking = event.data.data();
+
+    console.log(`🆕 Nouvelle réservation détectée: ${bookingId}`, {
+      email: booking.email,
+      pricingOption: booking.pricingOption,
+      status: booking.status,
+      amount: booking.amount
+    });
+
+    // Ne traiter que les réservations confirmées
+    if (booking.status !== 'confirmed') {
+      console.log(`⚠️ Réservation ${bookingId} non confirmée (${booking.status}), notification ignorée`);
+      return;
+    }
+
+    // Vérifier que ce n'est pas une notification déjà traitée (éviter les doublons)
+    if (booking.adminNotificationSent) {
+      console.log(`✅ Notification admin déjà envoyée pour ${bookingId}`);
+      return;
+    }
+
+    try {
+      // Récupérer les détails du cours si disponible
+      let course = null;
+      if (booking.courseId) {
+        const courseDoc = await db.collection('courses').doc(booking.courseId).get();
+        if (courseDoc.exists) {
+          course = courseDoc.data();
+        }
+      }
+
+      // Envoyer la notification admin
+      if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+        await sendBookingNotificationAdmin(
+          booking,
+          course,
+          process.env.MAILJET_API_KEY,
+          process.env.MAILJET_API_SECRET,
+        );
+
+        // Marquer que la notification a été envoyée pour éviter les doublons
+        await db.collection('bookings').doc(bookingId).update({
+          adminNotificationSent: true,
+          adminNotificationSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(`✅ Notification admin envoyée pour la réservation ${bookingId}`);
+      } else {
+        console.warn('⚠️ MAILJET_API_KEY ou MAILJET_API_SECRET non configurés, notification admin ignorée');
+      }
+
+    } catch (error) {
+      console.error(`❌ Erreur lors de l'envoi de la notification admin pour ${bookingId}:`, error);
+      // Ne pas lever d'exception pour ne pas bloquer la création de la réservation
+    }
+  }
 );
 
 /**
@@ -9876,21 +9945,6 @@ exports.bookCourse = onRequest(
             // Ne pas bloquer le processus
           }
 
-          // Envoyer notification admin
-          try {
-            if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
-              await sendBookingNotificationAdmin(
-                  bookingData,
-                  course,
-                  process.env.MAILJET_API_KEY,
-                  process.env.MAILJET_API_SECRET,
-              );
-            }
-          } catch (notifError) {
-            console.error('Error sending admin notification:', notifError);
-            // Ne pas bloquer le processus
-          }
-
           return res.json({
             success: true,
             status: 'confirmed',
@@ -10012,32 +10066,50 @@ exports.bookCourse = onRequest(
                 console.error('Error sending confirmation email:', emailError);
               }
 
-              // Envoyer notification admin pour réservation espèces
-              try {
-                const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
-                const booking = bookingDoc.exists ? bookingDoc.data() : null;
-                if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
-                  await sendBookingNotificationAdmin(
-                      booking,
-                      course,
-                      process.env.MAILJET_API_KEY,
-                      process.env.MAILJET_API_SECRET,
-                  );
+                // Envoyer notification admin pour réservation espèces
+                try {
+                  const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
+                  const booking = bookingDoc.exists ? bookingDoc.data() : null;
+                  if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                    await sendBookingNotificationAdmin(
+                        booking,
+                        course,
+                        process.env.MAILJET_API_KEY,
+                        process.env.MAILJET_API_SECRET,
+                    );
+                  }
+                } catch (notifError) {
+                  console.error('Error sending admin notification:', notifError);
+                  // Ne pas bloquer le processus
                 }
-              } catch (notifError) {
-                console.error('Error sending admin notification:', notifError);
-                // Ne pas bloquer le processus
+              } else {
+                // Nouveau contact : déclencher double opt-in
+                await handleDoubleOptInForBooking(
+                    db,
+                    normalizedEmail,
+                    userData.firstName || '',
+                    courseId,
+                    result.bookingId,
+                );
+
+                // Envoyer notification admin même pour DOI (inscription espèces)
+                try {
+                  const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
+                  const booking = bookingDoc.exists ? bookingDoc.data() : null;
+                  const courseDoc = await db.collection('courses').doc(courseId).get();
+                  const course = courseDoc.exists ? courseDoc.data() : null;
+                  if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                    await sendBookingNotificationAdmin(
+                        booking,
+                        course,
+                        process.env.MAILJET_API_KEY,
+                        process.env.MAILJET_API_SECRET,
+                    );
+                  }
+                } catch (notifError) {
+                  console.error('Error sending admin notification for DOI booking:', notifError);
+                }
               }
-            } else {
-              // Nouveau contact : déclencher double opt-in
-              await handleDoubleOptInForBooking(
-                  db,
-                  normalizedEmail,
-                  userData.firstName || '',
-                  courseId,
-                  result.bookingId,
-              );
-            }
           } catch (optInError) {
             console.error('Error handling double opt-in:', optInError);
           }
@@ -10173,6 +10245,24 @@ exports.bookCourse = onRequest(
                 courseId,
                 result.bookingId,
             );
+
+            // Envoyer notification admin même pour DOI (cours d'essai)
+            try {
+              const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
+              const booking = bookingDoc.exists ? bookingDoc.data() : null;
+              const courseDoc = await db.collection('courses').doc(courseId).get();
+              const course = courseDoc.exists ? courseDoc.data() : null;
+              if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                await sendBookingNotificationAdmin(
+                    booking,
+                    course,
+                    process.env.MAILJET_API_KEY,
+                    process.env.MAILJET_API_SECRET,
+                );
+              }
+            } catch (notifError) {
+              console.error('Error sending admin notification for DOI booking:', notifError);
+            }
           }
         }
 
