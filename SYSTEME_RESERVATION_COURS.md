@@ -128,6 +128,8 @@ Alternative à MomoYoga - Système intégré de réservation avec synchronisatio
 | `webhookStripe` | HTTP POST | Webhook Stripe unifié (produits en ligne + réservations + pass) |
 | `cancelCourseBooking` | HTTP POST | Annule une réservation |
 | `getUserBookings` | HTTP | Liste les réservations d'un utilisateur |
+| `sendTrialFollowUps` | Scheduled (10h) | Email de suivi le lendemain d'un cours d'essai |
+| `sendTrialFollowUpsManual` | HTTP | Déclenchement manuel du suivi cours d'essai |
 
 ## Flux de réservation
 

@@ -11,7 +11,7 @@
  */
 
 const {onRequest, onCall} = require('firebase-functions/v2/https');
-const {onDocumentCreated, onDocumentUpdated} = require('firebase-functions/v2/firestore');
+const {onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {setGlobalOptions} = require('firebase-functions/v2');
 const {HttpsError} = require('firebase-functions/v2/https');
@@ -112,13 +112,13 @@ function capitalizeName(name) {
       .toLowerCase()
       .split(hasHyphen ? '-' : /\s+/)
       .map((word) => {
-        // Vérifier si le mot commence par un préfixe connu (sans espace)
+      // Vérifier si le mot commence par un préfixe connu (sans espace)
         for (const prefix of prefixes) {
           if (word.startsWith(prefix) && word.length > prefix.length) {
-            // Capitaliser le préfixe et la lettre suivante
+          // Capitaliser le préfixe et la lettre suivante
             const afterPrefix = word.slice(prefix.length);
             return prefix.charAt(0).toUpperCase() + prefix.slice(1) +
-                   afterPrefix.charAt(0).toUpperCase() + afterPrefix.slice(1);
+            afterPrefix.charAt(0).toUpperCase() + afterPrefix.slice(1);
           }
         }
         // Capitalisation normale : première lettre en majuscule
@@ -400,10 +400,9 @@ async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) 
           <p style="margin: 5px 0;"><strong>Montant :</strong> ${amountStr}</p>
           <p style="margin: 5px 0;"><strong>Mode de paiement :</strong> ${paymentMethodLabel}</p>
           ${booking.partnerCode ?
-      `<p style="margin: 5px 0;"><strong>Code partenaire :</strong> ${
-        booking.partnerCode
-      } (remise: ${booking.discountPercent}%)</p>` :
-      ''}
+        `<p style="margin: 5px 0;"><strong>Code partenaire :</strong> ${booking.partnerCode
+        } (remise: ${booking.discountPercent}%)</p>` :
+        ''}
           <p style="margin: 5px 0;"><strong>Date de réservation :</strong> ${dateStr}</p>
           <p style="margin: 5px 0;"><strong>Booking ID :</strong> ${booking.bookingId}</p>
         </div>
@@ -426,8 +425,7 @@ async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) 
 
     await sendMailjetEmail(
         ADMIN_EMAIL,
-        `Nouvelle réservation : ${booking.firstName} ${booking.lastName} - ${
-          booking.courseDate
+        `Nouvelle réservation : ${booking.firstName} ${booking.lastName} - ${booking.courseDate
         }`,
         htmlContent,
         textContent,
@@ -662,15 +660,15 @@ async function sendCartAbandonmentEmail(
 
     await sendMailjetEmail(
         email,
-        reason === 'payment_failed' ?
-          'Votre paiement n\'a pas pu être traité - Finalisez votre réservation' :
-          'Finalisez votre réservation Fluance',
-        htmlContent,
-        textContent,
-        apiKey,
-        apiSecret,
-        'support@actu.fluance.io',
-        'Fluance',
+      reason === 'payment_failed' ?
+        'Votre paiement n\'a pas pu être traité - Finalisez votre réservation' :
+        'Finalisez votre réservation Fluance',
+      htmlContent,
+      textContent,
+      apiKey,
+      apiSecret,
+      'support@actu.fluance.io',
+      'Fluance',
     );
     console.log(`✅ Cart abandonment email sent to ${email} (reason: ${reason})`);
   } catch (error) {
@@ -783,7 +781,7 @@ async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret
         <h2 style="color: #7A1F3D; border-bottom: 2px solid #E6B84A; padding-bottom: 10px;">Nouvel opt-in Fluance</h2>
         <div style="background-color: #fdfaf6; padding: 15px; border-radius: 5px; margin-top: 20px;">
           <p style="margin: 5px 0;"><strong>Email :</strong> ` +
-            `<a href="mailto:${email}" style="color: #7A1F3D;">${email}</a></p>
+      `<a href="mailto:${email}" style="color: #7A1F3D;">${email}</a></p>
           ${name ? `<p style="margin: 5px 0;"><strong>Nom :</strong> ${name}</p>` : ''}
           <p style="margin: 5px 0;"><strong>Source :</strong> ${sourceLabel}</p>
           <p style="margin: 5px 0;"><strong>Date :</strong> ${dateStr}</p>
@@ -1472,7 +1470,7 @@ async function handlePaymentFailure(invoice, subscription, customerEmail, apiKey
 
       console.log(
           `✅ Payment failure email sent to ${emailLower} ` +
-          `(attempt ${failureData.attemptCount}/${MAX_ATTEMPTS})`,
+        `(attempt ${failureData.attemptCount}/${MAX_ATTEMPTS})`,
       );
     } catch (emailError) {
       console.error(`❌ Error sending payment failure email to ${emailLower}:`, emailError.message);
@@ -1609,7 +1607,7 @@ exports.webhookStripe = onRequest(
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'STRIPE_WEBHOOK_SECRET'],
     },
     async (req, res) => {
-      // Vérifier la signature Stripe
+    // Vérifier la signature Stripe
       const sig = req.headers['stripe-signature'];
 
       // Note: Pour utiliser Stripe, installer le package: npm install stripe
@@ -1618,7 +1616,7 @@ exports.webhookStripe = onRequest(
       let event;
 
       try {
-        // Si le package Stripe est installé et le secret configuré, vérifier la signature
+      // Si le package Stripe est installé et le secret configuré, vérifier la signature
         if (process.env.STRIPE_WEBHOOK_SECRET && typeof require !== 'undefined') {
           try {
             const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || '');
@@ -1628,13 +1626,13 @@ exports.webhookStripe = onRequest(
                 process.env.STRIPE_WEBHOOK_SECRET,
             );
           } catch {
-            // Si le package Stripe n'est pas installé, accepter l'événement tel quel (développement)
+          // Si le package Stripe n'est pas installé, accepter l'événement tel quel (développement)
             console.warn('Stripe package not installed or webhook secret not configured, ' +
-                'accepting event without verification');
+            'accepting event without verification');
             event = req.body;
           }
         } else {
-          // Pour l'instant, on accepte l'événement tel quel (à sécuriser en production)
+        // Pour l'instant, on accepte l'événement tel quel (à sécuriser en production)
           console.warn('STRIPE_WEBHOOK_SECRET not configured, accepting event without verification');
           event = req.body;
         }
@@ -1690,7 +1688,7 @@ exports.webhookStripe = onRequest(
                 }
               } catch (emailError) {
                 console.error('Error sending cart abandonment email:', emailError);
-                // Ne pas bloquer le processus
+              // Ne pas bloquer le processus
               }
             }
             return res.status(200).json({received: true, bookingUpdated: true});
@@ -1714,8 +1712,8 @@ exports.webhookStripe = onRequest(
             const bookingId = paymentIntent.metadata?.bookingId;
             const passType = paymentIntent.metadata?.passType;
             const customerEmail = paymentIntent.metadata?.email ||
-                paymentIntent.receipt_email ||
-                session.customer_details?.email;
+            paymentIntent.receipt_email ||
+            session.customer_details?.email;
 
             // Cas 1: Réservation de cours simple (à l'unité)
             if (bookingId && paymentIntent.metadata?.type === 'course_booking' && bookingService) {
@@ -1747,7 +1745,7 @@ exports.webhookStripe = onRequest(
                   }
                 } catch (notifError) {
                   console.error('Error sending admin notification for single course booking:', notifError);
-                  // Ne pas bloquer le processus
+                // Ne pas bloquer le processus
                 }
 
                 return res.status(200).json({received: true, bookingConfirmed: true});
@@ -1773,7 +1771,7 @@ exports.webhookStripe = onRequest(
                 if (courseId && bookingService) {
                   console.log(`📅 Course ID found in metadata: ${courseId} - Creating automatic booking with pass`);
                   try {
-                    // Récupérer les infos du cours
+                  // Récupérer les infos du cours
                     const courseDoc = await db.collection('courses').doc(courseId).get();
                     if (!courseDoc.exists) {
                       console.warn(`⚠️ Course ${courseId} not found, skipping automatic booking`);
@@ -1791,7 +1789,7 @@ exports.webhookStripe = onRequest(
                       if (!existingBooking.empty) {
                         console.log(`⚠️ User already has a booking for course ${courseId}, skipping automatic booking`);
                       } else {
-                        // Utiliser une séance du pass (sauf si illimité)
+                      // Utiliser une séance du pass (sauf si illimité)
                         let sessionResult = null;
                         if (passType !== 'semester_pass' || pass.sessionsRemaining !== -1) {
                           sessionResult = await passService.usePassSession(db, pass.passId, courseId);
@@ -1820,10 +1818,9 @@ exports.webhookStripe = onRequest(
                           updatedAt: new Date(),
                           paidAt: new Date(),
                           notes: passType === 'semester_pass' ?
-                            'Pass Semestriel' :
-                            `Flow Pass (séance ${
-                              pass.sessionsTotal - (sessionResult?.sessionsRemaining || 0)
-                            }/${pass.sessionsTotal})`,
+                          'Pass Semestriel' :
+                          `Flow Pass (séance ${pass.sessionsTotal - (sessionResult?.sessionsRemaining || 0)
+                          }/${pass.sessionsTotal})`,
                         };
 
                         await db.collection('bookings').doc(bookingId).set(bookingData);
@@ -1838,7 +1835,7 @@ exports.webhookStripe = onRequest(
 
                         console.log(
                             `✅ Automatic booking created: ${bookingId} ` +
-                            `for course ${courseId} using pass ${pass.passId}`,
+                        `for course ${courseId} using pass ${pass.passId}`,
                         );
 
                         // Envoyer email de confirmation de réservation
@@ -1849,8 +1846,8 @@ exports.webhookStripe = onRequest(
                               30,
                           );
                           const cancellationUrl = cancellationTokenResult.success ?
-                            cancellationTokenResult.cancellationUrl :
-                            null;
+                          cancellationTokenResult.cancellationUrl :
+                          null;
 
                           await db.collection('mail').add({
                             to: customerEmail,
@@ -1913,19 +1910,19 @@ exports.webhookStripe = onRequest(
                                   courseTime: course.time || '',
                                   location: course.location || '',
                                   paymentMethod: passType === 'semester_pass' ?
-                                    'Pass Semestriel' :
-                                    'Flow Pass',
+                                'Pass Semestriel' :
+                                'Flow Pass',
                                   paymentStatus: 'Pass utilisé',
                                   amount: '0 CHF',
                                   status: 'Confirmé',
                                   bookingId: bookingId,
                                   notes: bookingData.notes,
                                   passType: passType === 'semester_pass' ?
-                                    'Pass Semestriel' :
-                                    'Flow Pass',
+                                'Pass Semestriel' :
+                                'Flow Pass',
                                   sessionsRemaining: sessionResult?.sessionsRemaining !== undefined ?
-                                    `${sessionResult.sessionsRemaining}/${pass.sessionsTotal}` :
-                                    (passType === 'semester_pass' ? 'Illimité' : ''),
+                                `${sessionResult.sessionsRemaining}/${pass.sessionsTotal}` :
+                                (passType === 'semester_pass' ? 'Illimité' : ''),
                                   paidAt: new Date(),
                                   source: 'web',
                                   isCancelled: false,
@@ -1938,13 +1935,13 @@ exports.webhookStripe = onRequest(
                           }
                         } catch (sheetError) {
                           console.error('❌ Error updating sheet:', sheetError.message);
-                          // Ne pas bloquer le processus si l'ajout au sheet échoue
+                        // Ne pas bloquer le processus si l'ajout au sheet échoue
                         }
                       }
                     }
                   } catch (bookingError) {
                     console.error('Error creating automatic booking with pass:', bookingError);
-                    // Ne pas faire échouer le processus si la réservation automatique échoue
+                  // Ne pas faire échouer le processus si la réservation automatique échoue
                   }
                 }
 
@@ -2059,7 +2056,7 @@ exports.webhookStripe = onRequest(
         }
 
         try {
-          // Récupérer le montant en CHF
+        // Récupérer le montant en CHF
           const amountTotal = session.amount_total || 0;
           const currency = (session.currency || 'chf').toUpperCase();
           let amountCHF = 0;
@@ -2086,15 +2083,15 @@ exports.webhookStripe = onRequest(
 
             // Déterminer l'ID de la session checkout selon le type d'événement
             if (event.type === 'checkout.session.completed') {
-              // Pour checkout.session.completed, session est déjà une CheckoutSession
+            // Pour checkout.session.completed, session est déjà une CheckoutSession
               checkoutSessionId = session.id;
               console.log(`📋 Événement: checkout.session.completed, Session ID: ${checkoutSessionId}`);
             } else if (event.type === 'payment_intent.succeeded') {
-              // Pour payment_intent.succeeded, session est un PaymentIntent
-              // Il faut récupérer la CheckoutSession depuis le PaymentIntent
+            // Pour payment_intent.succeeded, session est un PaymentIntent
+            // Il faut récupérer la CheckoutSession depuis le PaymentIntent
               checkoutSessionId = session.metadata?.checkout_session_id;
               if (!checkoutSessionId) {
-                // Essayer de trouver la session via l'API Stripe
+              // Essayer de trouver la session via l'API Stripe
                 try {
                   const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
                   const sessions = await stripe.checkout.sessions.list({
@@ -2140,7 +2137,7 @@ exports.webhookStripe = onRequest(
               } catch (stripeError) {
                 console.error('❌ Error retrieving Stripe session line_items:', stripeError.message);
                 console.error('Error stack:', stripeError.stack);
-                // Si on ne peut pas récupérer les line_items, on continue sans le cross-sell
+              // Si on ne peut pas récupérer les line_items, on continue sans le cross-sell
               }
             } else {
               if (!checkoutSessionId) {
@@ -2150,7 +2147,7 @@ exports.webhookStripe = onRequest(
               }
             }
           } catch (crossSellError) {
-            // Ne pas faire échouer le webhook si le traitement du cross-sell échoue
+          // Ne pas faire échouer le webhook si le traitement du cross-sell échoue
             console.error('❌ Error processing cross-sell:', crossSellError.message);
             console.error('Error stack:', crossSellError.stack);
           }
@@ -2174,7 +2171,7 @@ exports.webhookStripe = onRequest(
                 `✅ Token created and single email sent to ${customerEmail} for products: ${productsToCreate.join(', ')}, total amount: ${amountCHF} CHF`,
             );
           } else {
-            // Un seul produit: utiliser l'ancienne fonction
+          // Un seul produit: utiliser l'ancienne fonction
             console.log(`📧 Envoi d'un email pour le produit unique: ${product}`);
             await createTokenAndSendEmail(
                 customerEmail,
@@ -2207,17 +2204,17 @@ exports.webhookStripe = onRequest(
         const customerEmail = invoice.customer_email;
 
         if (subscriptionId && customerEmail) {
-          // Vérifier si c'est un nouveau pass ou un renouvellement
+        // Vérifier si c'est un nouveau pass ou un renouvellement
           const existingPass = await db.collection('userPasses')
               .where('stripeSubscriptionId', '==', subscriptionId)
               .limit(1)
               .get();
 
           if (existingPass.empty) {
-            // Nouveau Pass Semestriel
+          // Nouveau Pass Semestriel
             console.log(`✅ New Semester Pass for ${customerEmail}`);
             try {
-              // Récupérer la subscription depuis Stripe pour obtenir les métadonnées (courseId, etc.)
+            // Récupérer la subscription depuis Stripe pour obtenir les métadonnées (courseId, etc.)
               let subscription = null;
               let courseId = null;
               let firstName = invoice.customer_name || '';
@@ -2254,7 +2251,7 @@ exports.webhookStripe = onRequest(
                     `📅 Course ID found in subscription metadata: ${courseId} - Creating automatic booking with pass`,
                 );
                 try {
-                  // Récupérer les infos du cours
+                // Récupérer les infos du cours
                   const courseDoc = await db.collection('courses').doc(courseId).get();
                   if (!courseDoc.exists) {
                     console.warn(`⚠️ Course ${courseId} not found, skipping automatic booking`);
@@ -2272,8 +2269,8 @@ exports.webhookStripe = onRequest(
                     if (!existingBooking.empty) {
                       console.log(`⚠️ User already has a booking for course ${courseId}, skipping automatic booking`);
                     } else {
-                      // Pass Semestriel est illimité, pas besoin de décompter
-                      // Créer la réservation avec le pass
+                    // Pass Semestriel est illimité, pas besoin de décompter
+                    // Créer la réservation avec le pass
                       const bookingId = db.collection('bookings').doc().id;
                       const bookingData = {
                         bookingId: bookingId,
@@ -2310,7 +2307,7 @@ exports.webhookStripe = onRequest(
 
                       console.log(
                           `✅ Automatic booking created: ${bookingId} ` +
-                          `for course ${courseId} using Semester Pass ${pass.passId}`,
+                      `for course ${courseId} using Semester Pass ${pass.passId}`,
                       );
 
                       // Envoyer email de confirmation de réservation
@@ -2321,8 +2318,8 @@ exports.webhookStripe = onRequest(
                             30,
                         );
                         const cancellationUrl = cancellationTokenResult.success ?
-                          cancellationTokenResult.cancellationUrl :
-                          null;
+                        cancellationTokenResult.cancellationUrl :
+                        null;
 
                         await db.collection('mail').add({
                           to: customerEmail,
@@ -2404,13 +2401,13 @@ exports.webhookStripe = onRequest(
                         }
                       } catch (sheetError) {
                         console.error('❌ Error updating sheet:', sheetError.message);
-                        // Ne pas bloquer le processus si l'ajout au sheet échoue
+                      // Ne pas bloquer le processus si l'ajout au sheet échoue
                       }
                     }
                   }
                 } catch (bookingError) {
                   console.error('Error creating automatic booking with Semester Pass:', bookingError);
-                  // Ne pas faire échouer le processus si la réservation automatique échoue
+                // Ne pas faire échouer le processus si la réservation automatique échoue
                 }
               }
 
@@ -2460,7 +2457,7 @@ exports.webhookStripe = onRequest(
               console.error('Error creating Semester Pass:', passError);
             }
           } else {
-            // Renouvellement du Pass Semestriel
+          // Renouvellement du Pass Semestriel
             console.log(`✅ Semester Pass renewed for ${customerEmail}`);
             try {
               await passService.renewSemesterPass(db, subscriptionId);
@@ -2516,14 +2513,14 @@ exports.webhookStripe = onRequest(
         if (product !== 'complet' && product !== 'rdv-clarte') {
           console.log(
               `Subscription cancellation ignored - produit: ${product} ` +
-              `(seul 'complet' ou 'rdv-clarte' peuvent être annulés)`,
+          `(seul 'complet' ou 'rdv-clarte' peuvent être annulés)`,
           );
           return res.status(200).json({received: true, ignored: true});
         }
 
         try {
           if (product === 'rdv-clarte') {
-            // Pour le RDV Clarté, pas d'espace membre, juste logger l'annulation
+          // Pour le RDV Clarté, pas d'espace membre, juste logger l'annulation
             console.log(`Abonnement RDV Clarté annulé - Email: ${customerEmail}, Subscription: ${subscription.id}`);
             // TODO: Si vous avez besoin de notifier le client ou de faire d'autres actions, ajoutez-les ici
             return res.status(200).json({
@@ -2532,7 +2529,7 @@ exports.webhookStripe = onRequest(
               message: 'Subscription cancelled successfully',
             });
           } else {
-            // Pour 'complet', retirer le produit de l'utilisateur
+          // Pour 'complet', retirer le produit de l'utilisateur
             await removeProductFromUser(customerEmail, 'complet');
             console.log(`Subscription cancelled and product 'complet' removed for ${customerEmail}`);
             return res.status(200).json({received: true});
@@ -2557,7 +2554,7 @@ exports.webhookStripe = onRequest(
         const subscriptionId = invoice.subscription;
         if (subscriptionId) {
           try {
-            // Récupérer la subscription depuis Stripe pour avoir les métadonnées
+          // Récupérer la subscription depuis Stripe pour avoir les métadonnées
             let subscription = null;
             if (process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
               try {
@@ -2669,13 +2666,13 @@ exports.webhookStripe = onRequest(
         if (!product || (product !== '21jours' && product !== 'sos-dos-cervicales')) {
           console.log(
               `Refund ignored - produit: ${product} ` +
-              `(seuls '21jours' et 'sos-dos-cervicales' peuvent être remboursés)`,
+          `(seuls '21jours' et 'sos-dos-cervicales' peuvent être remboursés)`,
           );
           return res.status(200).json({received: true, ignored: true});
         }
 
         try {
-          // Retirer le produit de l'utilisateur
+        // Retirer le produit de l'utilisateur
           await removeProductFromUser(customerEmail, product);
           console.log(`Refund processed and product '${product}' removed for ${customerEmail}`);
           return res.status(200).json({received: true});
@@ -2706,7 +2703,7 @@ exports.webhookPayPal = onRequest(
       event.event_type === 'CHECKOUT.ORDER.APPROVED') {
         const resource = event.resource;
         const customerEmail = resource.payer?.email_address ||
-            resource.purchase_units?.[0]?.payee?.email_address;
+        resource.purchase_units?.[0]?.payee?.email_address;
         // amount et currency ne sont plus utilisés car on utilise uniquement les métadonnées
         // const amount = resource.amount?.value || resource.purchase_units?.[0]?.amount?.value;
         // const currency = resource.amount?.currency_code ||
@@ -2734,13 +2731,13 @@ exports.webhookPayPal = onRequest(
         }
 
         try {
-          // Récupérer les coordonnées complémentaires depuis PayPal
+        // Récupérer les coordonnées complémentaires depuis PayPal
           const payer = resource.payer || {};
           const purchaseUnits = resource.purchase_units || [];
           const shipping = purchaseUnits[0]?.shipping || {};
           const payerName = payer.name || {};
           const customerName = payerName.given_name && payerName.surname ?
-            `${payerName.given_name} ${payerName.surname}` : null;
+          `${payerName.given_name} ${payerName.surname}` : null;
           const customerPhone = payer.phone?.phone_number?.national_number || null;
           // Formater l'adresse PayPal si disponible
           let fullAddress = null;
@@ -2800,10 +2797,10 @@ exports.webhookPayPal = onRequest(
 
       // Gérer les événements d'annulation d'abonnement PayPal
       if (event.event_type === 'BILLING.SUBSCRIPTION.CANCELLED' ||
-          event.event_type === 'BILLING.SUBSCRIPTION.SUSPENDED') {
+      event.event_type === 'BILLING.SUBSCRIPTION.SUSPENDED') {
         const resource = event.resource;
         const customerEmail = resource.subscriber?.email_address ||
-            resource.payer?.email_address;
+        resource.payer?.email_address;
 
         if (!customerEmail) {
           console.error('No email found in PayPal subscription cancellation event');
@@ -2821,12 +2818,12 @@ exports.webhookPayPal = onRequest(
         const product = customId.replace('firebase_', '');
         if (product !== 'complet') {
           console.log(`PayPal subscription cancellation ignored - produit: ${product} ` +
-              `(seul 'complet' peut être annulé)`);
+          `(seul 'complet' peut être annulé)`);
           return res.status(200).json({received: true, ignored: true});
         }
 
         try {
-          // Retirer le produit "complet" de l'utilisateur
+        // Retirer le produit "complet" de l'utilisateur
           await removeProductFromUser(customerEmail, 'complet');
           console.log(`PayPal subscription ${event.event_type} and product 'complet' removed for ${customerEmail}`);
           return res.status(200).json({received: true});
@@ -2838,10 +2835,10 @@ exports.webhookPayPal = onRequest(
 
       // Gérer les événements d'échec de paiement PayPal
       if (event.event_type === 'BILLING.SUBSCRIPTION.PAYMENT.FAILED' ||
-          event.event_type === 'PAYMENT.SALE.DENIED') {
+      event.event_type === 'PAYMENT.SALE.DENIED') {
         const resource = event.resource;
         const customerEmail = resource.subscriber?.email_address ||
-            resource.payer?.email_address;
+        resource.payer?.email_address;
 
         if (!customerEmail) {
           console.error('No email found in PayPal payment failed event');
@@ -2898,7 +2895,7 @@ exports.createStripeCheckoutSession = onCall(
           'trimestriel': 'price_1SdZ6E2Esx6PN6y11qme0Rde',
         },
         'rdv-clarte': {
-          // ⚠️ IMPORTANT : Remplacez 'price_XXXXX' par les vrais Price IDs Stripe
+        // ⚠️ IMPORTANT : Remplacez 'price_XXXXX' par les vrais Price IDs Stripe
           'unique': process.env.STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE || 'price_XXXXX', // 100 CHF, paiement unique
           'abonnement': process.env.STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT || 'price_YYYYY', // 69 CHF/mois, abonnement
         },
@@ -2913,11 +2910,11 @@ exports.createStripeCheckoutSession = onCall(
         priceId = priceIds['rdv-clarte'][rdvVariant];
         if (priceId === 'price_XXXXX' || priceId === 'price_YYYYY') {
           const secretName =
-              `STRIPE_PRICE_ID_RDV_CLARTE_${rdvVariant.toUpperCase()}`;
+          `STRIPE_PRICE_ID_RDV_CLARTE_${rdvVariant.toUpperCase()}`;
           throw new HttpsError(
               'failed-precondition',
               `Stripe Price ID for RDV Clarté (${rdvVariant}) not configured. ` +
-              `Set ${secretName} secret.`,
+          `Set ${secretName} secret.`,
           );
         }
       } else {
@@ -2926,33 +2923,33 @@ exports.createStripeCheckoutSession = onCall(
 
       // Déterminer le mode (payment pour one-time, subscription pour abonnements)
       const mode = (product === '21jours' || (product === 'rdv-clarte' && (!variant || variant === 'unique'))) ?
-        'payment' :
-        'subscription';
+      'payment' :
+      'subscription';
 
       // URLs de redirection selon le produit et la locale
       let baseUrl; let successUrl; let cancelUrl;
       if (product === 'rdv-clarte') {
-        // Pour le RDV Clarté, rediriger vers cedricv.com
+      // Pour le RDV Clarté, rediriger vers cedricv.com
         baseUrl = 'https://cedricv.com';
         successUrl = locale === 'en' ?
-          `${baseUrl}/en/confirmation?session_id={CHECKOUT_SESSION_ID}` :
-          `${baseUrl}/confirmation?session_id={CHECKOUT_SESSION_ID}`;
+        `${baseUrl}/en/confirmation?session_id={CHECKOUT_SESSION_ID}` :
+        `${baseUrl}/confirmation?session_id={CHECKOUT_SESSION_ID}`;
         cancelUrl = locale === 'en' ?
-          `${baseUrl}/en/rdv/clarte` :
-          `${baseUrl}/rdv/clarte`;
+        `${baseUrl}/en/rdv/clarte` :
+        `${baseUrl}/rdv/clarte`;
       } else {
-        // Pour les autres produits, rediriger vers fluance.io
+      // Pour les autres produits, rediriger vers fluance.io
         baseUrl = 'https://fluance.io';
         successUrl = locale === 'en' ?
-          `${baseUrl}/en/success?session_id={CHECKOUT_SESSION_ID}` :
-          `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
+        `${baseUrl}/en/success?session_id={CHECKOUT_SESSION_ID}` :
+        `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
         cancelUrl = locale === 'en' ?
-          `${baseUrl}/en/cancel` :
-          `${baseUrl}/cancel`;
+        `${baseUrl}/en/cancel` :
+        `${baseUrl}/cancel`;
       }
 
       try {
-        // Vérifier si le package Stripe est installé
+      // Vérifier si le package Stripe est installé
         let stripe;
         try {
           stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -3047,12 +3044,12 @@ exports.validatePartnerCode = onRequest(
           description: 'Remise Retraite 50%',
           validFor: ['flow_pass', 'semester_pass'], // Valide pour Flow Pass et Pass Semestriel
         },
-        // Ajoutez d'autres codes ici
-        // 'AUTRECODE': {
-        //   discountPercent: 15,
-        //   description: 'Autre remise',
-        //   validFor: ['semester_pass', 'flow_pass'],
-        // },
+      // Ajoutez d'autres codes ici
+      // 'AUTRECODE': {
+      //   discountPercent: 15,
+      //   description: 'Autre remise',
+      //   validFor: ['semester_pass', 'flow_pass'],
+      // },
       };
 
       const normalizedCode = code.toUpperCase().trim();
@@ -3185,7 +3182,7 @@ exports.checkStripePaymentMetadata = onCall(
               product: charge.metadata?.product || null,
               systemValid: charge.metadata?.system === 'firebase',
               productValid: charge.metadata?.product === '21jours' ||
-                           charge.metadata?.product === 'sos-dos-cervicales',
+              charge.metadata?.product === 'sos-dos-cervicales',
             };
 
             result.charges.push(chargeData);
@@ -3210,11 +3207,11 @@ exports.checkStripePaymentMetadata = onCall(
 
         // Déterminer si le remboursement automatique fonctionnera
         const hasSystem = result.metadataCheck.systemValid ||
-                         (result.charges[0]?.metadataCheck?.systemValid || false);
+        (result.charges[0]?.metadataCheck?.systemValid || false);
         const hasProduct = result.metadataCheck.productValid ||
-                          (result.charges[0]?.metadataCheck?.productValid || false);
+        (result.charges[0]?.metadataCheck?.productValid || false);
         const hasEmail = result.charges[0]?.billingEmail ||
-                        result.customer?.email;
+        result.customer?.email;
 
         result.refundReady = hasSystem && hasProduct && hasEmail;
 
@@ -3335,7 +3332,7 @@ exports.getBookingDetails = onCall(
       }
 
       try {
-        // Récupérer les détails de la réservation depuis Firestore
+      // Récupérer les détails de la réservation depuis Firestore
         const bookingDoc = await db.collection('bookings').doc(finalBookingId).get();
         if (!bookingDoc.exists) {
           throw new HttpsError('not-found', 'Booking not found');
@@ -3376,11 +3373,11 @@ exports.getBookingDetails = onCall(
 
         // Déterminer le montant : depuis paymentIntent si disponible, sinon depuis booking
         const amount = paymentIntent && paymentIntent.amount ?
-          paymentIntent.amount / 100 :
-          (booking.amount ? booking.amount / 100 : 0);
+        paymentIntent.amount / 100 :
+        (booking.amount ? booking.amount / 100 : 0);
         const currency = paymentIntent && paymentIntent.currency ?
-          paymentIntent.currency.toUpperCase() :
-          'CHF';
+        paymentIntent.currency.toUpperCase() :
+        'CHF';
 
         return {
           success: true,
@@ -3482,7 +3479,7 @@ exports.createUserToken = onCall(
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
     },
     async (request) => {
-      // Vérifier l'authentification admin (vous pouvez utiliser un claim personnalisé)
+    // Vérifier l'authentification admin (vous pouvez utiliser un claim personnalisé)
       if (!request.auth || !request.auth.token.admin) {
         throw new HttpsError('permission-denied', 'Admin access required');
       }
@@ -3552,13 +3549,13 @@ exports.verifyToken = onCall(
       const email = tokenData.email;
 
       try {
-        // Vérifier si l'utilisateur existe déjà
+      // Vérifier si l'utilisateur existe déjà
         let userRecord;
         try {
           userRecord = await auth.getUserByEmail(email);
         } catch (error) {
           if (error.code === 'auth/user-not-found') {
-            // Créer un nouvel utilisateur
+          // Créer un nouvel utilisateur
             userRecord = await auth.createUser({
               email: email,
               password: password,
@@ -3577,9 +3574,9 @@ exports.verifyToken = onCall(
           console.log(`[verifyToken] Password updated for user ${email}`);
         } catch (updateError) {
           console.error(`[verifyToken] Error updating password for ${email}:`, updateError);
-          // Si la mise à jour échoue, cela peut indiquer un problème
-          // Mais on continue quand même car l'utilisateur peut utiliser "mot de passe oublié"
-          // Ne pas faire échouer la fonction complètement
+        // Si la mise à jour échoue, cela peut indiquer un problème
+        // Mais on continue quand même car l'utilisateur peut utiliser "mot de passe oublié"
+        // Ne pas faire échouer la fonction complètement
         }
 
         // Récupérer le document utilisateur existant pour gérer les produits multiples
@@ -3595,10 +3592,10 @@ exports.verifyToken = onCall(
           products = [{
             name: existingUserData.product,
             startDate: existingUserData.registrationDate ||
-              existingUserData.createdAt ||
-              admin.firestore.FieldValue.serverTimestamp(),
+            existingUserData.createdAt ||
+            admin.firestore.FieldValue.serverTimestamp(),
             purchasedAt: existingUserData.createdAt ||
-              admin.firestore.FieldValue.serverTimestamp(),
+            admin.firestore.FieldValue.serverTimestamp(),
           }];
         }
 
@@ -3702,7 +3699,7 @@ exports.repairUserDocument = onCall(
         const userDoc = await db.collection('users').doc(userId).get();
 
         if (userDoc.exists) {
-          // Le document existe déjà, retourner les informations
+        // Le document existe déjà, retourner les informations
           const existingData = userDoc.data();
           console.log(`Document Firestore existe déjà pour ${normalizedEmail}`);
           const products = existingData.products || [];
@@ -3719,10 +3716,10 @@ exports.repairUserDocument = onCall(
         // Essayer de détecter les produits depuis Mailjet si disponible
         let detectedProducts = [];
         if (product) {
-          // Si un produit est spécifié, l'utiliser
+        // Si un produit est spécifié, l'utiliser
           detectedProducts = [product];
         } else {
-          // Sinon, essayer de détecter depuis Mailjet
+        // Sinon, essayer de détecter depuis Mailjet
           try {
             const mailjetAuth = Buffer.from(
                 `${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`,
@@ -3765,7 +3762,7 @@ exports.repairUserDocument = onCall(
                 `[repairUserDocument] Impossible de récupérer les produits depuis Mailjet:`,
                 mailjetError.message,
             );
-            // Continuer avec le produit par défaut
+          // Continuer avec le produit par défaut
           }
         }
 
@@ -3869,7 +3866,7 @@ exports.sendNewsletter = onCall(
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
     },
     async (request) => {
-      // Vérifier l'authentification admin
+    // Vérifier l'authentification admin
       if (!request.auth || !request.auth.token.admin) {
         throw new HttpsError('permission-denied', 'Admin access required');
       }
@@ -3982,17 +3979,17 @@ exports.subscribeToNewsletter = onCall(
       if (turnstileSkipped) {
         console.warn(
             `[subscribeToNewsletter] Turnstile skipped for ${email} (fallback mode). ` +
-            'Double opt-in will still protect against bots.',
+        'Double opt-in will still protect against bots.',
         );
       }
 
       // Valider Turnstile seulement si pas en localhost, pas en fallback, et si le secret est configuré
       if (!isLocalhost && !turnstileSkipped && turnstileSecret && turnstileToken) {
         try {
-          // Obtenir l'IP du client depuis les headers
+        // Obtenir l'IP du client depuis les headers
           const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-                          request.rawRequest?.headers?.['x-real-ip'] ||
-                          '';
+          request.rawRequest?.headers?.['x-real-ip'] ||
+          '';
 
           // Valider le token avec Cloudflare Turnstile
           const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -4027,7 +4024,7 @@ exports.subscribeToNewsletter = onCall(
       }
 
       try {
-        // Générer un token de confirmation unique pour le double opt-in
+      // Générer un token de confirmation unique pour le double opt-in
         const confirmationToken = generateUniqueToken();
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + 7); // Token valide 7 jours
@@ -4051,7 +4048,7 @@ exports.subscribeToNewsletter = onCall(
         const contactData = {
           Email: email.toLowerCase().trim(),
           IsExcludedFromCampaigns: false,
-          // IsOptInPending ne peut pas être défini ici - MailJet le gère automatiquement
+        // IsOptInPending ne peut pas être défini ici - MailJet le gère automatiquement
         };
 
         if (name) {
@@ -4095,7 +4092,7 @@ exports.subscribeToNewsletter = onCall(
             }
           }
         } catch {
-          // Contact n'existe pas, on va le créer
+        // Contact n'existe pas, on va le créer
           console.log('Contact does not exist, will create it');
         }
 
@@ -4196,11 +4193,11 @@ exports.subscribeToNewsletter = onCall(
             confirmationUrl: confirmationUrl,
           });
           const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
-            `Merci pour votre inscription ! Pour recevoir vos 2 pratiques Fluance offertes, ` +
-            `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
-            `${confirmationUrl}\n\n` +
-            `Ce lien est valide pendant 7 jours.\n\n` +
-            `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email.`;
+          `Merci pour votre inscription ! Pour recevoir vos 2 pratiques Fluance offertes, ` +
+          `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
+          `${confirmationUrl}\n\n` +
+          `Ce lien est valide pendant 7 jours.\n\n` +
+          `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email.`;
 
           await sendMailjetEmail(
               contactData.Email,
@@ -4232,14 +4229,14 @@ exports.subscribeToNewsletter = onCall(
           );
         } catch (notifError) {
           console.error('Error sending opt-in admin notification (2pratiques):', notifError);
-          // Ne pas faire échouer l'opt-in si la notification échoue
+        // Ne pas faire échouer l'opt-in si la notification échoue
         }
 
         return {
           success: true,
           message: emailSent ?
-            'Confirmation email sent. Please check your inbox.' :
-            'Contact created but confirmation email may not have been sent. Please check logs.',
+          'Confirmation email sent. Please check your inbox.' :
+          'Contact created but confirmation email may not have been sent. Please check logs.',
           email: contactData.Email,
           emailSent: emailSent,
           emailError: emailError || null,
@@ -4321,10 +4318,10 @@ exports.subscribeToStagesWaitingList = onCall(
       // Valider Turnstile seulement si pas en localhost, pas en fallback, et si le secret est configuré
       if (!isLocalhost && !turnstileSkipped && turnstileSecret && turnstileToken) {
         try {
-          // Obtenir l'IP du client depuis les headers
+        // Obtenir l'IP du client depuis les headers
           const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-                          request.rawRequest?.headers?.['x-real-ip'] ||
-                          '';
+          request.rawRequest?.headers?.['x-real-ip'] ||
+          '';
 
           // Valider le token avec Cloudflare Turnstile
           const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -4359,7 +4356,7 @@ exports.subscribeToStagesWaitingList = onCall(
       }
 
       try {
-        // Ajouter le contact à MailJet
+      // Ajouter le contact à MailJet
         const url = 'https://api.mailjet.com/v3/REST/contact';
 
         const contactData = {
@@ -4405,7 +4402,7 @@ exports.subscribeToStagesWaitingList = onCall(
             }
           }
         } catch {
-          // Contact n'existe pas, on va le créer
+        // Contact n'existe pas, on va le créer
           console.log('Contact does not exist, will create it');
         }
 
@@ -4484,13 +4481,13 @@ exports.subscribeToStagesWaitingList = onCall(
         // Déterminer les URLs selon la langue
         const baseUrl = 'https://fluance.io';
         const url21jours = langue === 'en' ?
-          `${baseUrl}/en/cours-en-ligne/21-jours-mouvement/` :
-          `${baseUrl}/cours-en-ligne/21-jours-mouvement/`;
+        `${baseUrl}/en/cours-en-ligne/21-jours-mouvement/` :
+        `${baseUrl}/cours-en-ligne/21-jours-mouvement/`;
 
         // Envoyer l'email de confirmation avec le template spécifique aux stages
         console.log('📧 Starting email confirmation process for stages waiting list:', contactData.Email);
         const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(contactData.Email)}` +
-            `&token=${confirmationToken}&redirect=stages`;
+        `&token=${confirmationToken}&redirect=stages`;
 
         let emailSent = false;
         let emailError = null;
@@ -4498,8 +4495,8 @@ exports.subscribeToStagesWaitingList = onCall(
         console.log('📧 About to send confirmation email, token:', confirmationToken);
         try {
           const emailSubject = langue === 'en' ?
-            `Last step${name ? ' ' + name : ''}` :
-            `Dernière étape indispensable${name ? ' ' + name : ''}`;
+          `Last step${name ? ' ' + name : ''}` :
+          `Dernière étape indispensable${name ? ' ' + name : ''}`;
 
           // Préparer le texte de région pour le template
           const regionText = region ? ` dans votre région (${region})` : '';
@@ -4512,27 +4509,27 @@ exports.subscribeToStagesWaitingList = onCall(
           });
 
           const emailText = langue === 'en' ?
-            `Hello${name ? ' ' + name : ''},\n\n` +
-            `Thank you for signing up for the waiting list for upcoming Fluance workshops${region ? ' in your region (' + region + ')' : ''}!\n\n` +
-            `To finalize your registration and be notified first when upcoming workshops are announced, ` +
-            `please confirm your email address by clicking on this link:\n\n` +
-            `${confirmationUrl}\n\n` +
-            `This link is valid for 7 days.\n\n` +
-            `In the meantime, you can:\n` +
-            `• Follow the 21-day online course: ${url21jours}\n` +
-            `• Subscribe to the YouTube channel: https://www.youtube.com/@fluanceio\n\n` +
-            `If you did not request this registration, you can ignore this email.` :
-            `Bonjour${name ? ' ' + name : ''},\n\n` +
-            `Merci pour votre inscription à la liste d'attente des prochains stages Fluance${region ? ' dans votre région (' + region + ')' : ''} !\n\n` +
-            `Pour finaliser votre inscription et être informé(e) en priorité dès que les prochains ` +
-            `stages seront annoncés, il vous suffit de confirmer votre adresse email en cliquant ` +
-            `sur ce lien :\n\n` +
-            `${confirmationUrl}\n\n` +
-            `Ce lien est valide pendant 7 jours.\n\n` +
-            `En attendant, vous pouvez :\n` +
-            `• Suivre le cours en ligne de 21 jours : ${url21jours}\n` +
-            `• S'abonner à la chaîne YouTube : https://www.youtube.com/@fluanceio\n\n` +
-            `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email.`;
+          `Hello${name ? ' ' + name : ''},\n\n` +
+          `Thank you for signing up for the waiting list for upcoming Fluance workshops${region ? ' in your region (' + region + ')' : ''}!\n\n` +
+          `To finalize your registration and be notified first when upcoming workshops are announced, ` +
+          `please confirm your email address by clicking on this link:\n\n` +
+          `${confirmationUrl}\n\n` +
+          `This link is valid for 7 days.\n\n` +
+          `In the meantime, you can:\n` +
+          `• Follow the 21-day online course: ${url21jours}\n` +
+          `• Subscribe to the YouTube channel: https://www.youtube.com/@fluanceio\n\n` +
+          `If you did not request this registration, you can ignore this email.` :
+          `Bonjour${name ? ' ' + name : ''},\n\n` +
+          `Merci pour votre inscription à la liste d'attente des prochains stages Fluance${region ? ' dans votre région (' + region + ')' : ''} !\n\n` +
+          `Pour finaliser votre inscription et être informé(e) en priorité dès que les prochains ` +
+          `stages seront annoncés, il vous suffit de confirmer votre adresse email en cliquant ` +
+          `sur ce lien :\n\n` +
+          `${confirmationUrl}\n\n` +
+          `Ce lien est valide pendant 7 jours.\n\n` +
+          `En attendant, vous pouvez :\n` +
+          `• Suivre le cours en ligne de 21 jours : ${url21jours}\n` +
+          `• S'abonner à la chaîne YouTube : https://www.youtube.com/@fluanceio\n\n` +
+          `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email.`;
 
           await sendMailjetEmail(
               contactData.Email,
@@ -4567,14 +4564,14 @@ exports.subscribeToStagesWaitingList = onCall(
           }
         } catch (notifError) {
           console.error('Error sending stages waitlist admin notification:', notifError);
-          // Ne pas bloquer le processus
+        // Ne pas bloquer le processus
         }
 
         return {
           success: true,
           message: emailSent ?
-            'Confirmation email sent. Please check your inbox.' :
-            'Contact created but confirmation email may not have been sent. Please check logs.',
+          'Confirmation email sent. Please check your inbox.' :
+          'Contact created but confirmation email may not have been sent. Please check logs.',
           email: contactData.Email,
           emailSent: emailSent,
           emailError: emailError || null,
@@ -4611,7 +4608,7 @@ exports.confirmNewsletterOptIn = onCall(
       }
 
       try {
-        // Vérifier le token dans Firestore
+      // Vérifier le token dans Firestore
         const tokenDoc = await db.collection('newsletterConfirmations').doc(token).get();
 
         if (!tokenDoc.exists) {
@@ -4746,14 +4743,14 @@ exports.confirmNewsletterOptIn = onCall(
             console.log(`Updated serie_5jours_status to 'started' for ${email}`);
           } catch (error) {
             console.error('Error updating 5jours series status:', error);
-            // Ne pas faire échouer la confirmation si la mise à jour du statut échoue
+          // Ne pas faire échouer la confirmation si la mise à jour du statut échoue
           }
         }
 
         // Si c'est une confirmation pour les stages, mettre à jour les propriétés
         if (tokenData.sourceOptin === 'stages') {
           try {
-            // Valider et normaliser la langue
+          // Valider et normaliser la langue
             const locale = tokenData.locale || 'fr';
             const langue = (locale === 'en' || locale === 'EN') ? 'en' : 'fr';
 
@@ -4772,8 +4769,8 @@ exports.confirmNewsletterOptIn = onCall(
             const currentSourceOptin = currentProperties.source_optin || '';
             const sourceOptinListBase = currentSourceOptin ? currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
             const sourceOptinList = sourceOptinListBase.includes('stages') ?
-              sourceOptinListBase :
-              [...sourceOptinListBase, 'stages'];
+            sourceOptinListBase :
+            [...sourceOptinListBase, 'stages'];
 
             if (sourceOptinList.length > 0) {
               properties.source_optin = sourceOptinList.join(',');
@@ -4807,14 +4804,14 @@ exports.confirmNewsletterOptIn = onCall(
             console.log('📋 MailJet contact properties update completed for confirmed stages:', email);
           } catch (error) {
             console.error('Error updating stages waiting list properties:', error);
-            // Ne pas faire échouer la confirmation si la mise à jour des propriétés échoue
+          // Ne pas faire échouer la confirmation si la mise à jour des propriétés échoue
           }
         }
 
         // Gérer la confirmation pour les inscriptions aux cours en présentiel
         if (tokenData.sourceOptin === 'presentiel') {
           try {
-            // Valider et normaliser la langue
+          // Valider et normaliser la langue
             const langue = 'fr'; // Présentiel uniquement en français pour l'instant
 
             // Vérifier s'il y a une réservation en attente liée à cette confirmation
@@ -4828,9 +4825,9 @@ exports.confirmNewsletterOptIn = onCall(
 
                   // Créer un token de désinscription
                   const cancellationTokenResult =
-                    await bookingService.createCancellationToken(db, tokenData.bookingId, 30);
+                  await bookingService.createCancellationToken(db, tokenData.bookingId, 30);
                   const cancellationUrl = cancellationTokenResult.success ?
-                    cancellationTokenResult.cancellationUrl : null;
+                  cancellationTokenResult.cancellationUrl : null;
 
                   // Envoyer l'email de confirmation du cours
                   await db.collection('mail').add({
@@ -4853,7 +4850,7 @@ exports.confirmNewsletterOptIn = onCall(
                 }
               } catch (bookingError) {
                 console.error('Error sending course confirmation email:', bookingError);
-                // Ne pas bloquer la confirmation si l'email échoue
+              // Ne pas bloquer la confirmation si l'email échoue
               }
             }
 
@@ -4897,10 +4894,10 @@ exports.confirmNewsletterOptIn = onCall(
             // Ajouter 'presentiel' à source_optin
             const currentSourceOptin = currentProperties.source_optin || '';
             const sourceOptinListBase = currentSourceOptin ?
-              currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
+            currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
             const sourceOptinList = sourceOptinListBase.includes('presentiel') ?
-              sourceOptinListBase :
-              [...sourceOptinListBase, 'presentiel'];
+            sourceOptinListBase :
+            [...sourceOptinListBase, 'presentiel'];
 
             properties.source_optin = sourceOptinList.join(',');
 
@@ -4928,7 +4925,7 @@ exports.confirmNewsletterOptIn = onCall(
             console.log('📋 MailJet contact properties update completed for confirmed presentiel:', email);
           } catch (error) {
             console.error('Error updating presentiel properties:', error);
-            // Ne pas faire échouer la confirmation si la mise à jour des propriétés échoue
+          // Ne pas faire échouer la confirmation si la mise à jour des propriétés échoue
           }
         }
 
@@ -4988,8 +4985,8 @@ exports.subscribeTo5Days = onCall(
       if (!isLocalhost && turnstileSecret && turnstileToken) {
         try {
           const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-                          request.rawRequest?.headers?.['x-real-ip'] ||
-                          '';
+          request.rawRequest?.headers?.['x-real-ip'] ||
+          '';
 
           const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
             method: 'POST',
@@ -5023,7 +5020,7 @@ exports.subscribeTo5Days = onCall(
       }
 
       try {
-        // Générer un token de confirmation unique pour le double opt-in
+      // Générer un token de confirmation unique pour le double opt-in
         const confirmationToken = generateUniqueToken();
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + 7); // Token valide 7 jours
@@ -5164,16 +5161,16 @@ exports.subscribeTo5Days = onCall(
             if (getData.Data && getData.Data.length > 0) {
               const contactData = getData.Data[0];
               if (contactData.Data) {
-                // Si Data est un tableau (format standard Mailjet)
+              // Si Data est un tableau (format standard Mailjet)
                 if (Array.isArray(contactData.Data)) {
-                  // Convertir le tableau [{Name, Value}] en objet {name: value}
+                // Convertir le tableau [{Name, Value}] en objet {name: value}
                   contactData.Data.forEach((item) => {
                     if (item.Name && item.Value !== undefined) {
                       currentProperties[item.Name] = item.Value;
                     }
                   });
                 } else if (typeof contactData.Data === 'object') {
-                  // Si Data est déjà un objet (format alternatif)
+                // Si Data est déjà un objet (format alternatif)
                   currentProperties = contactData.Data;
                 }
               }
@@ -5192,8 +5189,8 @@ exports.subscribeTo5Days = onCall(
         const currentSourceOptin = currentProperties.source_optin || '';
         const sourceOptinListBase = currentSourceOptin ? currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
         const sourceOptinList = sourceOptinListBase.includes('5joursofferts') ?
-          sourceOptinListBase :
-          [...sourceOptinListBase, '5joursofferts'];
+        sourceOptinListBase :
+        [...sourceOptinListBase, '5joursofferts'];
 
         // Valider et normaliser la langue
         const langue = (locale === 'en' || locale === 'EN') ? 'en' : 'fr';
@@ -5233,8 +5230,8 @@ exports.subscribeTo5Days = onCall(
           properties['serie_5jours_debut'] = dateStr;
           properties['serie_5jours_status'] = 'started'; // Statut initial : série démarrée (redirection immédiate vers jour 1)
         } else {
-          // Si la série a déjà commencé, ne pas réinitialiser
-          // Mais mettre à jour le statut si nécessaire
+        // Si la série a déjà commencé, ne pas réinitialiser
+        // Mais mettre à jour le statut si nécessaire
           if (!currentProperties['serie_5jours_status'] || currentProperties['serie_5jours_status'] === 'cancelled') {
             properties['serie_5jours_status'] = 'started';
           }
@@ -5264,11 +5261,11 @@ exports.subscribeTo5Days = onCall(
             confirmationUrl: confirmationUrl,
           });
           const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
-            `Merci pour votre inscription ! Pour recevoir vos 5 pratiques Fluance offertes, ` +
-            `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
-            `${confirmationUrl}\n\n` +
-            `Ce lien est valide pendant 7 jours.\n\n` +
-            `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email.`;
+          `Merci pour votre inscription ! Pour recevoir vos 5 pratiques Fluance offertes, ` +
+          `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
+          `${confirmationUrl}\n\n` +
+          `Ce lien est valide pendant 7 jours.\n\n` +
+          `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email.`;
 
           await sendMailjetEmail(
               contactData.Email,
@@ -5300,14 +5297,14 @@ exports.subscribeTo5Days = onCall(
           );
         } catch (notifError) {
           console.error('Error sending opt-in admin notification (5joursofferts):', notifError);
-          // Ne pas faire échouer l'opt-in si la notification échoue
+        // Ne pas faire échouer l'opt-in si la notification échoue
         }
 
         return {
           success: true,
           message: emailSent ?
-            'Confirmation email sent. Please check your inbox.' :
-            'Contact created but confirmation email may not have been sent. Please check logs.',
+          'Confirmation email sent. Please check your inbox.' :
+          'Contact created but confirmation email may not have been sent. Please check logs.',
           email: contactData.Email,
           emailSent: emailSent,
           emailError: emailError || null,
@@ -5346,7 +5343,7 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
         let userRecord = null;
 
         try {
-          // Chercher l'utilisateur dans Firebase Auth
+        // Chercher l'utilisateur dans Firebase Auth
           userRecord = await adminAuth.getUserByEmail(normalizedEmail);
           const userId = userRecord.uid;
           console.log(`[Password Reset] User found in Firebase Auth: ${userId}`);
@@ -5375,11 +5372,11 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
           }
         } catch (authError) {
           if (authError.code === 'auth/user-not-found') {
-            // L'utilisateur n'existe pas dans Firebase Auth, donc pas client
+          // L'utilisateur n'existe pas dans Firebase Auth, donc pas client
             isClient = false;
             console.log(`[Password Reset] User ${normalizedEmail} not found in Firebase Auth - not a client`);
           } else {
-            // Autre erreur, on continue quand même mais on log
+          // Autre erreur, on continue quand même mais on log
             console.warn(`[Password Reset] Error checking user status for ${normalizedEmail}:`, authError);
             // Par défaut, on considère que ce n'est pas un client si on ne peut pas vérifier
             isClient = false;
@@ -5435,17 +5432,17 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
           const emailSubject = 'Bienvenue sur Fluance : découvrez nos offres gratuites';
           const emailHtml = loadEmailTemplate('non-client-connexion', {});
           const emailText = `Bienvenue sur Fluance\n\n` +
-              `Bonjour,\n\n` +
-              `Vous avez demandé à réinitialiser votre mot de passe, ` +
-              `mais nous n'avons pas trouvé de compte client associé à cette adresse email.\n\n` +
-              `Pas de souci ! Si vous souhaitez découvrir Fluance, ` +
-              `nous vous invitons à rejoindre l'une de nos offres gratuites :\n\n` +
-              `🎁 2 pratiques offertes : https://fluance.io/2-pratiques-offertes/\n` +
-              `🎁 5 jours offerts : https://fluance.io/cours-en-ligne/5jours/inscription/\n\n` +
-              `Vous êtes déjà client ? Vérifiez que vous utilisez bien l'adresse email ` +
-              `associée à votre achat. Si le problème persiste, contactez-nous à ` +
-              `${ADMIN_EMAIL}.\n\n` +
-              `Cordialement,\nL'équipe Fluance`;
+          `Bonjour,\n\n` +
+          `Vous avez demandé à réinitialiser votre mot de passe, ` +
+          `mais nous n'avons pas trouvé de compte client associé à cette adresse email.\n\n` +
+          `Pas de souci ! Si vous souhaitez découvrir Fluance, ` +
+          `nous vous invitons à rejoindre l'une de nos offres gratuites :\n\n` +
+          `🎁 2 pratiques offertes : https://fluance.io/2-pratiques-offertes/\n` +
+          `🎁 5 jours offerts : https://fluance.io/cours-en-ligne/5jours/inscription/\n\n` +
+          `Vous êtes déjà client ? Vérifiez que vous utilisez bien l'adresse email ` +
+          `associée à votre achat. Si le problème persiste, contactez-nous à ` +
+          `${ADMIN_EMAIL}.\n\n` +
+          `Cordialement,\nL'équipe Fluance`;
 
           console.log(`[Password Reset] Sending redirect email to ${normalizedEmail}`);
 
@@ -5490,7 +5487,7 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
         const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
 
         try {
-          // Vérifier si le contact existe
+        // Vérifier si le contact existe
           const checkResponse = await fetch(contactUrl, {
             method: 'GET',
             headers: {
@@ -5499,7 +5496,7 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
           });
 
           if (!checkResponse.ok) {
-            // Créer le contact s'il n'existe pas
+          // Créer le contact s'il n'existe pas
             const createUrl = 'https://api.mailjet.com/v3/REST/contact';
             const contactData = {
               Email: normalizedEmail,
@@ -5526,7 +5523,7 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
           }
         } catch (contactError) {
           console.warn(`Error managing contact in MailJet (continuing anyway):`, contactError);
-          // Continuer même si la création du contact échoue
+        // Continuer même si la création du contact échoue
         }
 
         // Envoyer l'email via Mailjet
@@ -5535,12 +5532,12 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
           resetLink: resetLink,
         });
         const emailText = `Réinitialisation de votre mot de passe Fluance\n\n` +
-            `Bonjour,\n\n` +
-            `Vous avez demandé à réinitialiser votre mot de passe pour votre compte Fluance.\n\n` +
-            `Cliquez sur ce lien pour réinitialiser votre mot de passe :\n${resetLink}\n\n` +
-            `Ce lien est valide pendant 1 heure.\n\n` +
-            `Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email en toute sécurité.\n\n` +
-            `Cordialement,\nL'équipe Fluance`;
+        `Bonjour,\n\n` +
+        `Vous avez demandé à réinitialiser votre mot de passe pour votre compte Fluance.\n\n` +
+        `Cliquez sur ce lien pour réinitialiser votre mot de passe :\n${resetLink}\n\n` +
+        `Ce lien est valide pendant 1 heure.\n\n` +
+        `Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email en toute sécurité.\n\n` +
+        `Cordialement,\nL'équipe Fluance`;
 
         console.log(`[Password Reset] About to call sendMailjetEmail for ${normalizedEmail}`);
         console.log(`[Password Reset] Email will be sent from: support@actu.fluance.io`);
@@ -5556,7 +5553,7 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
           console.log(`[Password Reset] Mailjet result:`, JSON.stringify(mailjetResult).substring(0, 200));
           console.log(`[Password Reset] Password reset email sent via Mailjet to ${normalizedEmail}`);
         } catch (emailError) {
-          // Logger seulement le message d'erreur, pas la stack trace complète
+        // Logger seulement le message d'erreur, pas la stack trace complète
           console.error(`❌ Error calling sendMailjetEmail: ${emailError.message}`);
           throw emailError;
         }
@@ -5592,7 +5589,7 @@ exports.verifyPasswordResetToken = onCall(
       }
 
       try {
-        // Vérifier le token dans Firestore
+      // Vérifier le token dans Firestore
         const tokenDoc = await db.collection('passwordResetTokens').doc(token).get();
 
         if (!tokenDoc.exists) {
@@ -5658,7 +5655,7 @@ exports.checkPasswordResetToken = onCall(
       }
 
       try {
-        // Vérifier le token dans Firestore
+      // Vérifier le token dans Firestore
         const tokenDoc = await db.collection('passwordResetTokens').doc(token).get();
 
         if (!tokenDoc.exists) {
@@ -5711,7 +5708,7 @@ exports.sendSignInLinkViaMailjet = onCall(
       const normalizedEmail = email.toLowerCase().trim();
 
       try {
-        // Utiliser admin.auth() directement pour éviter les problèmes d'initialisation
+      // Utiliser admin.auth() directement pour éviter les problèmes d'initialisation
         const adminAuth = admin.auth();
 
         // Vérifier si l'utilisateur est client (a des produits dans Firestore)
@@ -5719,7 +5716,7 @@ exports.sendSignInLinkViaMailjet = onCall(
         let userRecord = null;
 
         try {
-          // Chercher l'utilisateur dans Firebase Auth
+        // Chercher l'utilisateur dans Firebase Auth
           userRecord = await adminAuth.getUserByEmail(normalizedEmail);
           const userId = userRecord.uid;
           console.log(`[Non-client check] User found in Firebase Auth: ${userId}`);
@@ -5748,11 +5745,11 @@ exports.sendSignInLinkViaMailjet = onCall(
           }
         } catch (authError) {
           if (authError.code === 'auth/user-not-found') {
-            // L'utilisateur n'existe pas dans Firebase Auth, donc pas client
+          // L'utilisateur n'existe pas dans Firebase Auth, donc pas client
             isClient = false;
             console.log(`[Non-client check] User ${normalizedEmail} not found in Firebase Auth - not a client`);
           } else {
-            // Autre erreur, on continue quand même mais on log
+          // Autre erreur, on continue quand même mais on log
             console.warn(`[Non-client check] Error checking user status for ${normalizedEmail}:`, authError);
             // Par défaut, on considère que ce n'est pas un client si on ne peut pas vérifier
             isClient = false;
@@ -5808,17 +5805,17 @@ exports.sendSignInLinkViaMailjet = onCall(
           const emailSubject = 'Bienvenue sur Fluance : découvrez nos offres gratuites';
           const emailHtml = loadEmailTemplate('non-client-connexion', {});
           const emailText = `Bienvenue sur Fluance\n\n` +
-              `Bonjour,\n\n` +
-              `Vous avez demandé à vous connecter à votre compte Fluance, ` +
-              `mais nous n'avons pas trouvé de compte client associé à cette adresse email.\n\n` +
-              `Pas de souci ! Si vous souhaitez découvrir Fluance, ` +
-              `nous vous invitons à rejoindre l'une de nos offres gratuites :\n\n` +
-              `🎁 2 pratiques offertes : https://fluance.io/2-pratiques-offertes/\n` +
-              `🎁 5 jours offerts : https://fluance.io/cours-en-ligne/5jours/inscription/\n\n` +
-              `Vous êtes déjà client ? Vérifiez que vous utilisez bien l'adresse email ` +
-              `associée à votre achat. Si le problème persiste, contactez-nous à ` +
-              `${ADMIN_EMAIL}.\n\n` +
-              `Cordialement,\nL'équipe Fluance`;
+          `Bonjour,\n\n` +
+          `Vous avez demandé à vous connecter à votre compte Fluance, ` +
+          `mais nous n'avons pas trouvé de compte client associé à cette adresse email.\n\n` +
+          `Pas de souci ! Si vous souhaitez découvrir Fluance, ` +
+          `nous vous invitons à rejoindre l'une de nos offres gratuites :\n\n` +
+          `🎁 2 pratiques offertes : https://fluance.io/2-pratiques-offertes/\n` +
+          `🎁 5 jours offerts : https://fluance.io/cours-en-ligne/5jours/inscription/\n\n` +
+          `Vous êtes déjà client ? Vérifiez que vous utilisez bien l'adresse email ` +
+          `associée à votre achat. Si le problème persiste, contactez-nous à ` +
+          `${ADMIN_EMAIL}.\n\n` +
+          `Cordialement,\nL'équipe Fluance`;
 
           console.log(`[Non-client] Sending redirect email to ${normalizedEmail}`);
 
@@ -5857,7 +5854,7 @@ exports.sendSignInLinkViaMailjet = onCall(
         const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
 
         try {
-          // Vérifier si le contact existe
+        // Vérifier si le contact existe
           const checkResponse = await fetch(contactUrl, {
             method: 'GET',
             headers: {
@@ -5866,7 +5863,7 @@ exports.sendSignInLinkViaMailjet = onCall(
           });
 
           if (!checkResponse.ok) {
-            // Créer le contact s'il n'existe pas
+          // Créer le contact s'il n'existe pas
             const createUrl = 'https://api.mailjet.com/v3/REST/contact';
             const contactData = {
               Email: normalizedEmail,
@@ -5893,7 +5890,7 @@ exports.sendSignInLinkViaMailjet = onCall(
           }
         } catch (contactError) {
           console.warn(`Error managing contact in MailJet (continuing anyway):`, contactError);
-          // Continuer même si la création du contact échoue
+        // Continuer même si la création du contact échoue
         }
 
         // Envoyer l'email via Mailjet
@@ -5902,11 +5899,11 @@ exports.sendSignInLinkViaMailjet = onCall(
           signInLink: signInLink,
         });
         const emailText = `Connexion à votre compte Fluance\n\n` +
-            `Bonjour,\n\n` +
-            `Cliquez sur ce lien pour vous connecter à votre compte Fluance :\n${signInLink}\n\n` +
-            `Ce lien est valide pendant 1 heure et ne peut être utilisé qu'une seule fois.\n\n` +
-            `Si vous n'avez pas demandé cette connexion, vous pouvez ignorer cet email.\n\n` +
-            `Cordialement,\nL'équipe Fluance`;
+        `Bonjour,\n\n` +
+        `Cliquez sur ce lien pour vous connecter à votre compte Fluance :\n${signInLink}\n\n` +
+        `Ce lien est valide pendant 1 heure et ne peut être utilisé qu'une seule fois.\n\n` +
+        `Si vous n'avez pas demandé cette connexion, vous pouvez ignorer cet email.\n\n` +
+        `Cordialement,\nL'équipe Fluance`;
 
         await sendMailjetEmail(
             normalizedEmail,
@@ -5967,12 +5964,12 @@ exports.notifyNewComment = onDocumentCreated(
       // Construire l'URL complète
       let fullUrl = pageUrl;
       if (!pageUrl.startsWith('http')) {
-        // Si c'est juste un chemin, ajouter le domaine
+      // Si c'est juste un chemin, ajouter le domaine
         fullUrl = `https://fluance.io${pageUrl.startsWith('/') ? '' : '/'}${pageUrl}`;
       }
 
       try {
-        // Email de notification (configuré via Firebase Secrets: NOTIFICATION_EMAIL)
+      // Email de notification (configuré via Firebase Secrets: NOTIFICATION_EMAIL)
         const notificationEmail = process.env.NOTIFICATION_EMAIL;
 
         if (!notificationEmail) {
@@ -5988,10 +5985,10 @@ exports.notifyNewComment = onDocumentCreated(
           fullUrl: fullUrl, // URL non échappée pour le lien
         });
         const emailText = `Nouveau commentaire\n\n` +
-            `Prénom: ${name}\n\n` +
-            `Commentaire:\n${text}\n\n` +
-            `Page: ${fullUrl}\n\n` +
-            `Voir la page: ${fullUrl}`;
+        `Prénom: ${name}\n\n` +
+        `Commentaire:\n${text}\n\n` +
+        `Page: ${fullUrl}\n\n` +
+        `Voir la page: ${fullUrl}`;
 
         await sendMailjetEmail(
             notificationEmail,
@@ -6005,8 +6002,8 @@ exports.notifyNewComment = onDocumentCreated(
         console.log(`Notification email sent for new comment from ${name} on ${fullUrl}`);
       } catch (error) {
         console.error('Error sending notification email for new comment:', error);
-        // Ne pas faire échouer la fonction si l'email échoue
-        // Le commentaire a déjà été créé
+      // Ne pas faire échouer la fonction si l'email échoue
+      // Le commentaire a déjà été créé
       }
     });
 
@@ -6050,7 +6047,7 @@ exports.sendNewContentEmails = onSchedule(
       }
 
       try {
-        // Récupérer tous les utilisateurs avec des produits actifs
+      // Récupérer tous les utilisateurs avec des produits actifs
         const usersSnapshot = await db.collection('users').get();
         console.log(`📊 Found ${usersSnapshot.size} users to check`);
 
@@ -6071,23 +6068,23 @@ exports.sendNewContentEmails = onSchedule(
           const products = userData.products || [];
           const hasComplet = products.some((p) => p && p.name === 'complet');
           const firstName =
-            userData.firstName ||
-            userData.firstname ||
-            userData.prenom ||
-            (typeof userData.name === 'string' ? userData.name.split(' ')[0] : '') ||
-            '';
+          userData.firstName ||
+          userData.firstname ||
+          userData.prenom ||
+          (typeof userData.name === 'string' ? userData.name.split(' ')[0] : '') ||
+          '';
 
           // Si products est vide mais product existe (ancien format), migrer
           if (products.length === 0 && userData.product) {
             console.log(`🔄 Migrating user ${userId} from old format`);
             const startDate = userData.registrationDate ||
-                userData.createdAt?.toDate() ||
-                new Date();
+            userData.createdAt?.toDate() ||
+            new Date();
             products.push({
               name: userData.product,
               startDate: admin.firestore.Timestamp.fromDate(startDate),
               purchasedAt: userData.createdAt ||
-                  admin.firestore.Timestamp.fromDate(new Date()),
+              admin.firestore.Timestamp.fromDate(new Date()),
             });
           }
 
@@ -6105,11 +6102,11 @@ exports.sendNewContentEmails = onSchedule(
 
             try {
               if (productName === '21jours') {
-                // Produit 21jours : email par jour (jours 1-21) + bonus jour 22
+              // Produit 21jours : email par jour (jours 1-21) + bonus jour 22
                 const currentDay = daysSinceStart + 1; // Jour 1 = premier jour après achat
 
                 if (currentDay >= 1 && currentDay <= 22) {
-                  // Vérifier si l'email a déjà été envoyé pour ce jour
+                // Vérifier si l'email a déjà été envoyé pour ce jour
                   const emailSentDocId = `${userId}_21jours_day_${currentDay}`;
                   const emailSentDoc = await db.collection('contentEmailsSent')
                       .doc(emailSentDocId).get();
@@ -6139,7 +6136,7 @@ exports.sendNewContentEmails = onSchedule(
                   // Vérifier que le contenu est accessible (jour correspond)
                   if (contentData.day !== undefined && contentData.day !== currentDay) {
                     console.warn(`⚠️ Content ${contentDocId} day mismatch: ` +
-                        `expected ${currentDay}, got ${contentData.day}`);
+                    `expected ${currentDay}, got ${contentData.day}`);
                     continue;
                   }
 
@@ -6152,7 +6149,7 @@ exports.sendNewContentEmails = onSchedule(
 
                   if (!isBonusDay) {
                     emailSubject = `Jour ${currentDay} de votre defi 21 jours - ` +
-                      `${contentData.title || 'Nouveau contenu disponible'}`;
+                    `${contentData.title || 'Nouveau contenu disponible'}`;
 
                     emailHtml = loadEmailTemplate('nouveau-contenu-21jours', {
                       day: currentDay,
@@ -6160,33 +6157,33 @@ exports.sendNewContentEmails = onSchedule(
                     });
 
                     textIntro =
-                      `Jour ${currentDay} de votre defi 21 jours - ` +
-                      `${contentData.title || 'Nouveau contenu disponible'}`;
+                    `Jour ${currentDay} de votre defi 21 jours - ` +
+                    `${contentData.title || 'Nouveau contenu disponible'}`;
                   } else {
-                    // Jour 22 : bonus final + teasing pour l'approche complète
+                  // Jour 22 : bonus final + teasing pour l'approche complète
                     const bonusTitle =
-                      contentData.title || '3 minutes pour soulager votre dos';
+                    contentData.title || '3 minutes pour soulager votre dos';
 
                     emailSubject =
-                      `Bonus de votre defi 21 jours - ${bonusTitle}`;
+                    `Bonus de votre defi 21 jours - ${bonusTitle}`;
 
                     const bonusNamePart = firstName ? ` ${firstName}` : '';
                     emailHtml =
-                      '<p>Bonjour' + bonusNamePart + ',</p>' +
-                      '<p>Voici le <strong>bonus</strong> de votre defi ' +
-                      '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
-                      '<p>Offrez-vous encore quelques minutes aujourd\'hui pour ' +
-                      'integrer ce que vous avez explore ces dernieres semaines.</p>' +
-                      '<p>Demain, je vous enverrai un email pour vous montrer ' +
-                      'comment <strong>continuer sur votre lancee</strong> avec ' +
-                      'l\'<strong>approche Fluance complete</strong>, qui vous ' +
-                      'propose une nouvelle mini-serie de pratiques chaque semaine.</p>' +
-                      '<p>Pour l\'instant, profitez pleinement de ce bonus :</p>' +
-                      '<p><a href="https://fluance.io/membre/">' +
-                      'Acceder a votre bonus dans votre espace membre</a></p>';
+                    '<p>Bonjour' + bonusNamePart + ',</p>' +
+                    '<p>Voici le <strong>bonus</strong> de votre defi ' +
+                    '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                    '<p>Offrez-vous encore quelques minutes aujourd\'hui pour ' +
+                    'integrer ce que vous avez explore ces dernieres semaines.</p>' +
+                    '<p>Demain, je vous enverrai un email pour vous montrer ' +
+                    'comment <strong>continuer sur votre lancee</strong> avec ' +
+                    'l\'<strong>approche Fluance complete</strong>, qui vous ' +
+                    'propose une nouvelle mini-serie de pratiques chaque semaine.</p>' +
+                    '<p>Pour l\'instant, profitez pleinement de ce bonus :</p>' +
+                    '<p><a href="https://fluance.io/membre/">' +
+                    'Acceder a votre bonus dans votre espace membre</a></p>';
 
                     textIntro =
-                      `Bonus de votre defi 21 jours - ${bonusTitle}`;
+                    `Bonus de votre defi 21 jours - ${bonusTitle}`;
                   }
 
                   await sendMailjetEmail(
@@ -6234,192 +6231,192 @@ exports.sendNewContentEmails = onSchedule(
 
                       if (daysAfterEnd === 1) {
                         emailSubject =
-                          'Et maintenant, comment continuer sur votre lancee ?';
+                        'Et maintenant, comment continuer sur votre lancee ?';
 
                         emailHtml =
-                          '<p>Bonjour' + namePart + ',</p>' +
-                          '<p>Felicitations pour avoir termine le defi ' +
-                          '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
-                          '<p>Vous avez deja pose des bases importantes pour ' +
-                          'votre corps : plus de mobilite, plus de conscience, ' +
-                          'plus de respiration.</p>' +
-                          '<p><strong>Saviez-vous que l\'activite physique reguliere ' +
-                          'reduit le risque d\'Alzheimer de 30 a 40% ?</strong> ' +
-                          'La cle, c\'est la continuite.</p>' +
-                          '<p>La question maintenant : <strong>comment garder ' +
-                          'cet elan</strong> dans la duree ?</p>' +
-                          '<p>L\'<strong>approche Fluance complete</strong> ' +
-                          'vous propose une nouvelle mini-serie de pratiques ' +
-                          'chaque semaine, toujours courtes, pour continuer a ' +
-                          'entretenir votre dos, vos epaules et votre energie.</p>' +
-                          '<p>Avec l\'approche complete, vous continuez a honorer ' +
-                          'votre corps, sans forcer. Une nouvelle pratique chaque ' +
-                          'semaine, toujours dans cette approche respectueuse.</p>' +
-                          '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
-                          'vous pouvez tester sans engagement et decider ensuite ' +
-                          'si vous souhaitez continuer.</p>' +
-                          '<p>Decouvrez la suite naturelle de votre parcours :</p>' +
-                          '<p><a href="' + completUrl + '">' +
-                          'Decouvrir l\'approche Fluance complete</a></p>';
+                        '<p>Bonjour' + namePart + ',</p>' +
+                        '<p>Felicitations pour avoir termine le defi ' +
+                        '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                        '<p>Vous avez deja pose des bases importantes pour ' +
+                        'votre corps : plus de mobilite, plus de conscience, ' +
+                        'plus de respiration.</p>' +
+                        '<p><strong>Saviez-vous que l\'activite physique reguliere ' +
+                        'reduit le risque d\'Alzheimer de 30 a 40% ?</strong> ' +
+                        'La cle, c\'est la continuite.</p>' +
+                        '<p>La question maintenant : <strong>comment garder ' +
+                        'cet elan</strong> dans la duree ?</p>' +
+                        '<p>L\'<strong>approche Fluance complete</strong> ' +
+                        'vous propose une nouvelle mini-serie de pratiques ' +
+                        'chaque semaine, toujours courtes, pour continuer a ' +
+                        'entretenir votre dos, vos epaules et votre energie.</p>' +
+                        '<p>Avec l\'approche complete, vous continuez a honorer ' +
+                        'votre corps, sans forcer. Une nouvelle pratique chaque ' +
+                        'semaine, toujours dans cette approche respectueuse.</p>' +
+                        '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                        'vous pouvez tester sans engagement et decider ensuite ' +
+                        'si vous souhaitez continuer.</p>' +
+                        '<p>Decouvrez la suite naturelle de votre parcours :</p>' +
+                        '<p><a href="' + completUrl + '">' +
+                        'Decouvrir l\'approche Fluance complete</a></p>';
 
                         emailText = [
                           `Bonjour${namePart},`,
                           '',
                           'Felicitations pour avoir termine le defi ' +
-                            '"21 jours pour remettre du mouvement".',
+                        '"21 jours pour remettre du mouvement".',
                           '',
                           'Vous avez pose des bases importantes pour votre ' +
-                            'corps : plus de mobilite, plus de conscience, ' +
-                            'plus de respiration.',
+                        'corps : plus de mobilite, plus de conscience, ' +
+                        'plus de respiration.',
                           '',
                           'Saviez-vous que l\'activite physique reguliere ' +
-                            'reduit le risque d\'Alzheimer de 30 a 40% ? ' +
-                            'La cle, c\'est la continuite.',
+                        'reduit le risque d\'Alzheimer de 30 a 40% ? ' +
+                        'La cle, c\'est la continuite.',
                           '',
                           'La question maintenant : comment garder cet elan ' +
-                            'dans la duree ?',
+                        'dans la duree ?',
                           '',
                           'L\'approche Fluance complete vous propose une ' +
-                            'nouvelle mini-serie de pratiques chaque semaine, ' +
-                            'toujours courtes, pour continuer a entretenir ' +
-                            'votre dos, vos epaules et votre energie.',
+                        'nouvelle mini-serie de pratiques chaque semaine, ' +
+                        'toujours courtes, pour continuer a entretenir ' +
+                        'votre dos, vos epaules et votre energie.',
                           '',
                           'Avec l\'approche complete, vous continuez a honorer ' +
-                            'votre corps, sans forcer. Une nouvelle pratique ' +
-                            'chaque semaine, toujours dans cette approche respectueuse.',
+                        'votre corps, sans forcer. Une nouvelle pratique ' +
+                        'chaque semaine, toujours dans cette approche respectueuse.',
                           '',
                           'Les 14 premiers jours sont offerts : vous pouvez ' +
-                            'tester sans engagement et decider ensuite si vous ' +
-                            'souhaitez continuer.',
+                        'tester sans engagement et decider ensuite si vous ' +
+                        'souhaitez continuer.',
                           '',
                           'Decouvrez la suite naturelle de votre parcours :',
                           completUrl,
                         ].join('\n');
                       } else if (daysAfterEnd === 4) {
                         emailSubject =
-                          'Vous aimeriez continuer... mais vous hesitez ?';
+                        'Vous aimeriez continuer... mais vous hesitez ?';
 
                         emailHtml =
-                          '<p>Bonjour' + namePart + ',</p>' +
-                          '<p>Vous avez deja montre que vous pouviez vous ' +
-                          'offrir quelques minutes par jour pour votre corps.</p>' +
-                          '<p><strong>Apres 21 jours, vous avez cree une habitude. ' +
-                          'Mais saviez-vous qu\'avec 10h par jour assis, vous avez ' +
-                          '40% de risque de symptomes depressifs ?</strong> ' +
-                          'Continuer, c\'est proteger votre sante mentale.</p>' +
-                          '<p>Peut-etre que vous hesitez a continuer : manque ' +
-                          'de temps, peur de ne pas tenir, doute sur ' +
-                          'l\'utilite sur le long terme...</p>' +
-                          '<p>Avec l\'<strong>approche Fluance complete</strong>, ' +
-                          'vous recevez chaque semaine une nouvelle mini-serie. ' +
-                          'Les seances restent simples, courtes, et pensees ' +
-                          'pour s\'integrer a un quotidien charge.</p>' +
-                          '<p>L\'approche complete ne vous demande pas d\'etre ' +
-                          'plus discipline(e). Elle vous invite a continuer a ' +
-                          'honorer votre corps, a votre rythme, sans forcer.</p>' +
-                          '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
-                          'testez sans engagement et decidez ensuite si vous ' +
-                          'souhaitez continuer.</p>' +
-                          '<p>Pour voir comment cela peut soutenir votre corps ' +
-                          'dans les prochaines semaines :</p>' +
-                          '<p><a href="' + completUrl + '">' +
-                          'Voir l\'approche Fluance complete</a></p>';
+                        '<p>Bonjour' + namePart + ',</p>' +
+                        '<p>Vous avez deja montre que vous pouviez vous ' +
+                        'offrir quelques minutes par jour pour votre corps.</p>' +
+                        '<p><strong>Apres 21 jours, vous avez cree une habitude. ' +
+                        'Mais saviez-vous qu\'avec 10h par jour assis, vous avez ' +
+                        '40% de risque de symptomes depressifs ?</strong> ' +
+                        'Continuer, c\'est proteger votre sante mentale.</p>' +
+                        '<p>Peut-etre que vous hesitez a continuer : manque ' +
+                        'de temps, peur de ne pas tenir, doute sur ' +
+                        'l\'utilite sur le long terme...</p>' +
+                        '<p>Avec l\'<strong>approche Fluance complete</strong>, ' +
+                        'vous recevez chaque semaine une nouvelle mini-serie. ' +
+                        'Les seances restent simples, courtes, et pensees ' +
+                        'pour s\'integrer a un quotidien charge.</p>' +
+                        '<p>L\'approche complete ne vous demande pas d\'etre ' +
+                        'plus discipline(e). Elle vous invite a continuer a ' +
+                        'honorer votre corps, a votre rythme, sans forcer.</p>' +
+                        '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                        'testez sans engagement et decidez ensuite si vous ' +
+                        'souhaitez continuer.</p>' +
+                        '<p>Pour voir comment cela peut soutenir votre corps ' +
+                        'dans les prochaines semaines :</p>' +
+                        '<p><a href="' + completUrl + '">' +
+                        'Voir l\'approche Fluance complete</a></p>';
 
                         emailText = [
                           `Bonjour${namePart},`,
                           '',
                           'Vous avez deja montre que vous pouviez vous offrir ' +
-                            'quelques minutes par jour pour votre corps.',
+                        'quelques minutes par jour pour votre corps.',
                           '',
                           'Vous hesitez peut-etre a continuer : manque de ' +
-                            'temps, peur de ne pas tenir, doute sur ' +
-                            'l\'utilite sur le long terme.',
+                        'temps, peur de ne pas tenir, doute sur ' +
+                        'l\'utilite sur le long terme.',
                           '',
                           'Avec l\'approche Fluance complete, vous recevez ' +
-                            'chaque semaine une nouvelle mini-serie. Les ' +
-                            'seances restent simples, courtes, et pensees ' +
-                            'pour s\'integrer a un quotidien charge.',
+                        'chaque semaine une nouvelle mini-serie. Les ' +
+                        'seances restent simples, courtes, et pensees ' +
+                        'pour s\'integrer a un quotidien charge.',
                           '',
                           'Les 14 premiers jours sont offerts : testez sans ' +
-                            'engagement et decidez ensuite si vous souhaitez ' +
-                            'continuer.',
+                        'engagement et decidez ensuite si vous souhaitez ' +
+                        'continuer.',
                           '',
                           'L\'approche complete ne vous demande pas d\'etre ' +
-                            'plus discipline(e). Elle vous invite a continuer ' +
-                            'a honorer votre corps, a votre rythme, sans forcer.',
+                        'plus discipline(e). Elle vous invite a continuer ' +
+                        'a honorer votre corps, a votre rythme, sans forcer.',
                           '',
                           'Les 14 premiers jours sont offerts : testez sans ' +
-                            'engagement et decidez ensuite si vous souhaitez ' +
-                            'continuer.',
+                        'engagement et decidez ensuite si vous souhaitez ' +
+                        'continuer.',
                           '',
                           'Pour voir comment cela peut soutenir votre corps ' +
-                            'dans les prochaines semaines :',
+                        'dans les prochaines semaines :',
                           completUrl,
                         ].join('\n');
                       } else {
                         emailSubject =
-                          'Dernier rappel pour continuer avec ' +
-                          'l\'approche Fluance complete';
+                        'Dernier rappel pour continuer avec ' +
+                        'l\'approche Fluance complete';
 
                         emailHtml =
-                          '<p>Bonjour' + namePart + ',</p>' +
-                          '<p>Il y a quelques jours, vous avez termine le ' +
-                          'defi <strong>21 jours pour remettre du mouvement' +
-                          '</strong>.</p>' +
-                          '<p><strong>Votre liberte de mouvement est un pilier ' +
-                          'de votre sante. Prenez-en soin.</strong></p>' +
-                          '<p>Comment se sent votre corps aujourd\'hui ? Et ' +
-                          'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
-                          '6 mois ?</p>' +
-                          '<p>Si vous souhaitez garder cet elan, ' +
-                          'l\'<strong>approche Fluance complete</strong> peut ' +
-                          'devenir votre rituel hebdomadaire : une nouvelle ' +
-                          'mini-serie de pratiques chaque semaine, pour ' +
-                          'continuer a delier, renforcer et apaiser.</p>' +
-                          '<p>Fluance n\'est pas une methode qui vous force a ' +
-                          'changer. C\'est un espace ou votre corps peut enfin ' +
-                          'se sentir en securite pour lacher prise, semaine ' +
-                          'apres semaine.</p>' +
-                          '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
-                          'testez sans engagement et decidez ensuite si vous ' +
-                          'souhaitez continuer.</p>' +
-                          '<p>Ceci est un dernier rappel doux : si c\'est le ' +
-                          'bon moment pour vous, vous pouvez rejoindre ' +
-                          'l\'approche complete ici :</p>' +
-                          '<p><a href="' + completUrl + '">' +
-                          'Rejoindre l\'approche Fluance complete</a></p>';
+                        '<p>Bonjour' + namePart + ',</p>' +
+                        '<p>Il y a quelques jours, vous avez termine le ' +
+                        'defi <strong>21 jours pour remettre du mouvement' +
+                        '</strong>.</p>' +
+                        '<p><strong>Votre liberte de mouvement est un pilier ' +
+                        'de votre sante. Prenez-en soin.</strong></p>' +
+                        '<p>Comment se sent votre corps aujourd\'hui ? Et ' +
+                        'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
+                        '6 mois ?</p>' +
+                        '<p>Si vous souhaitez garder cet elan, ' +
+                        'l\'<strong>approche Fluance complete</strong> peut ' +
+                        'devenir votre rituel hebdomadaire : une nouvelle ' +
+                        'mini-serie de pratiques chaque semaine, pour ' +
+                        'continuer a delier, renforcer et apaiser.</p>' +
+                        '<p>Fluance n\'est pas une methode qui vous force a ' +
+                        'changer. C\'est un espace ou votre corps peut enfin ' +
+                        'se sentir en securite pour lacher prise, semaine ' +
+                        'apres semaine.</p>' +
+                        '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                        'testez sans engagement et decidez ensuite si vous ' +
+                        'souhaitez continuer.</p>' +
+                        '<p>Ceci est un dernier rappel doux : si c\'est le ' +
+                        'bon moment pour vous, vous pouvez rejoindre ' +
+                        'l\'approche complete ici :</p>' +
+                        '<p><a href="' + completUrl + '">' +
+                        'Rejoindre l\'approche Fluance complete</a></p>';
 
                         emailText = [
                           `Bonjour${namePart},`,
                           '',
                           'Il y a quelques jours, vous avez termine le defi ' +
-                            '"21 jours pour remettre du mouvement".',
+                        '"21 jours pour remettre du mouvement".',
                           '',
                           'Votre liberte de mouvement est un pilier de votre ' +
-                            'sante. Prenez-en soin.',
+                        'sante. Prenez-en soin.',
                           '',
                           'Comment se sent votre corps aujourd\'hui ? Et ' +
-                            'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
-                            '6 mois ?',
+                        'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
+                        '6 mois ?',
                           '',
                           'Si vous souhaitez garder cet elan, l\'approche ' +
-                            'Fluance complete peut devenir votre rituel ' +
-                            'hebdomadaire : une nouvelle mini-serie de ' +
-                            'pratiques chaque semaine, pour continuer a ' +
-                            'delier, renforcer et apaiser.',
+                        'Fluance complete peut devenir votre rituel ' +
+                        'hebdomadaire : une nouvelle mini-serie de ' +
+                        'pratiques chaque semaine, pour continuer a ' +
+                        'delier, renforcer et apaiser.',
                           '',
                           'Fluance n\'est pas une methode qui vous force a ' +
-                            'changer. C\'est un espace ou votre corps peut ' +
-                            'enfin se sentir en securite pour lacher prise, ' +
-                            'semaine apres semaine.',
+                        'changer. C\'est un espace ou votre corps peut ' +
+                        'enfin se sentir en securite pour lacher prise, ' +
+                        'semaine apres semaine.',
                           '',
                           'Les 14 premiers jours sont offerts : testez sans ' +
-                            'engagement et decidez ensuite si vous souhaitez ' +
-                            'continuer.',
+                        'engagement et decidez ensuite si vous souhaitez ' +
+                        'continuer.',
                           '',
                           'Ceci est un dernier rappel doux : si c\'est le ' +
-                            'bon moment pour vous, vous pouvez rejoindre ' +
-                            'l\'approche complete ici :',
+                        'bon moment pour vous, vous pouvez rejoindre ' +
+                        'l\'approche complete ici :',
                           completUrl,
                         ].join('\n');
                       }
@@ -6449,11 +6446,11 @@ exports.sendNewContentEmails = onSchedule(
                   }
                 }
               } else if (productName === 'complet') {
-                // Produit complet : email par semaine (semaines 1-14)
+              // Produit complet : email par semaine (semaines 1-14)
                 const currentWeek = weeksSinceStart + 1; // Semaine 1 = première semaine après achat
 
                 if (currentWeek >= 1 && currentWeek <= 14) {
-                  // Vérifier si l'email a déjà été envoyé pour cette semaine
+                // Vérifier si l'email a déjà été envoyé pour cette semaine
                   const emailSentDocId = `${userId}_complet_week_${currentWeek}`;
                   const emailSentDoc = await db.collection('contentEmailsSent')
                       .doc(emailSentDocId).get();
@@ -6483,7 +6480,7 @@ exports.sendNewContentEmails = onSchedule(
                   // Vérifier que le contenu est accessible (semaine correspond)
                   if (contentData.week !== undefined && contentData.week !== currentWeek) {
                     console.warn(`⚠️ Content ${contentDocId} week mismatch: ` +
-                        `expected ${currentWeek}, got ${contentData.week}`);
+                    `expected ${currentWeek}, got ${contentData.week}`);
                     continue;
                   }
 
@@ -6529,7 +6526,7 @@ exports.sendNewContentEmails = onSchedule(
         const marketingEmailsSkipped = 0;
 
         try {
-          // Récupérer tous les contacts Mailjet
+        // Récupérer tous les contacts Mailjet
           const auth = Buffer.from(`${mailjetApiKey}:${mailjetApiSecret}`).toString('base64');
           const contactListUrl = 'https://api.mailjet.com/v3/REST/contact';
           const listResponse = await fetch(contactListUrl, {
@@ -6548,7 +6545,7 @@ exports.sendNewContentEmails = onSchedule(
               if (!email) continue;
 
               try {
-                // Récupérer les propriétés du contact
+              // Récupérer les propriétés du contact
                 const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
                 const contactDataResponse = await fetch(contactDataUrl, {
                   method: 'GET',
@@ -6586,7 +6583,7 @@ exports.sendNewContentEmails = onSchedule(
                 const produitsAchetes = properties.produits_achetes || '';
 
                 if (estClient || produitsAchetes.includes('21jours') || produitsAchetes.includes('complet')) {
-                  // C'est un client, on skip (déjà traité plus haut)
+                // C'est un client, on skip (déjà traité plus haut)
                   continue;
                 }
 
@@ -6595,11 +6592,11 @@ exports.sendNewContentEmails = onSchedule(
                 if (properties.date_optin) {
                   const dateStr = properties.date_optin;
                   if (dateStr.includes('/')) {
-                    // Format DD/MM/YYYY
+                  // Format DD/MM/YYYY
                     const [day, month, year] = dateStr.split('/');
                     optinDate = new Date(year, month - 1, day);
                   } else if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} (AM|PM)$/i)) {
-                    // Format Mailjet: YYYY-MM-DD HH:MM AM/PM (ex: "2025-12-13 08:54 PM")
+                  // Format Mailjet: YYYY-MM-DD HH:MM AM/PM (ex: "2025-12-13 08:54 PM")
                     const parts = dateStr.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}) (AM|PM)$/i);
                     if (parts) {
                       const [, year, month, day, hour, minute, ampm] = parts;
@@ -6614,7 +6611,7 @@ exports.sendNewContentEmails = onSchedule(
                       optinDate = new Date(dateStr);
                     }
                   } else {
-                    // Format ISO (YYYY-MM-DDTHH:MM:SS.sssZ) ou autre format
+                  // Format ISO (YYYY-MM-DDTHH:MM:SS.sssZ) ou autre format
                     optinDate = new Date(dateStr);
                   }
 
@@ -6624,7 +6621,7 @@ exports.sendNewContentEmails = onSchedule(
                     continue;
                   }
                 } else {
-                  // Pas de date d'opt-in, on skip
+                // Pas de date d'opt-in, on skip
                   console.log(`⏭️ Pas de date_optin pour ${email}, skip`);
                   continue;
                 }
@@ -6634,7 +6631,7 @@ exports.sendNewContentEmails = onSchedule(
 
                 console.log(
                     `📊 Contact ${email}: source_optin="${sourceOptin}", ` +
-                    `date_optin="${properties.date_optin}", currentDay=${currentDay}`,
+                `date_optin="${properties.date_optin}", currentDay=${currentDay}`,
                 );
 
                 // Vérifier si inscrit aux 5 jours
@@ -6644,15 +6641,15 @@ exports.sendNewContentEmails = onSchedule(
                 // SCÉNARIO 1 : Opt-in "2 pratiques" → J+1 à J+7 : Proposer "5 jours offerts"
                 // On envoie même si on a raté le jour exact (jusqu'à J+7 pour rattraper)
                 if (sourceOptin.includes('2pratiques') && !has5jours && currentDay >= 2 && currentDay <= 7) {
-                  // Vérifier si la date d'envoi prévue est exclue (jours fériés)
-                  // Normaliser optinDate à minuit pour un calcul précis
+                // Vérifier si la date d'envoi prévue est exclue (jours fériés)
+                // Normaliser optinDate à minuit pour un calcul précis
                   const normalizedOptinDate = new Date(optinDate);
                   normalizedOptinDate.setHours(0, 0, 0, 0);
                   const scheduledDate = getScheduledEmailDate(normalizedOptinDate, currentDay);
                   if (isExcludedDate(scheduledDate)) {
                     console.log(
                         `⏸️ Email marketing 2pratiques→5jours reporté pour ${email} ` +
-                        `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue)`,
+                    `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue)`,
                     );
                     continue; // Passer au contact suivant, l'email sera envoyé le jour suivant
                   }
@@ -6699,22 +6696,22 @@ exports.sendNewContentEmails = onSchedule(
                   // Emails aux jours 6, 10, 17 après le début des 5 jours
                   const joursPromo21jours = [6, 10, 17];
                   if (joursPromo21jours.includes(joursApres5jours)) {
-                    // Vérifier si la date d'envoi prévue est exclue (jours fériés)
-                    // Normaliser cinqJoursStart à minuit pour un calcul précis
+                  // Vérifier si la date d'envoi prévue est exclue (jours fériés)
+                  // Normaliser cinqJoursStart à minuit pour un calcul précis
                     const normalizedCinqJoursStart = new Date(cinqJoursStart);
                     normalizedCinqJoursStart.setHours(0, 0, 0, 0);
                     const scheduledDate = getScheduledEmailDate(normalizedCinqJoursStart, joursApres5jours);
                     if (isExcludedDate(scheduledDate)) {
                       console.log(
                           `⏸️ Email marketing 5jours→21jours reporté pour ${email} ` +
-                          `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue, ` +
-                          `jour ${joursApres5jours})`,
+                      `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue, ` +
+                      `jour ${joursApres5jours})`,
                       );
                       continue; // Passer au contact suivant, l'email sera envoyé le jour suivant
                     }
 
                     const emailSentDocId = `marketing_5jours_to_21jours_` +
-                        `${email.toLowerCase().trim()}_day_${joursApres5jours}`;
+                    `${email.toLowerCase().trim()}_day_${joursApres5jours}`;
                     const emailSentDoc = await db.collection('contentEmailsSent')
                         .doc(emailSentDocId).get();
 
@@ -6762,20 +6759,20 @@ exports.sendNewContentEmails = onSchedule(
 
                 // SCÉNARIO 3 : PAS inscrit aux "5 jours" → Relance + série promotion 21 jours
                 if (sourceOptin.includes('2pratiques') && !has5jours) {
-                  // J+3 : 1 relance pour les 5 jours
+                // J+3 : 1 relance pour les 5 jours
                   if (currentDay === 4) {
-                    // Vérifier si la date d'envoi prévue est exclue (jours fériés)
-                    // Normaliser optinDate à minuit pour un calcul précis
+                  // Vérifier si la date d'envoi prévue est exclue (jours fériés)
+                  // Normaliser optinDate à minuit pour un calcul précis
                     const normalizedOptinDate = new Date(optinDate);
                     normalizedOptinDate.setHours(0, 0, 0, 0);
                     const scheduledDate = getScheduledEmailDate(normalizedOptinDate, currentDay);
                     if (isExcludedDate(scheduledDate)) {
                       console.log(
                           `⏸️ Email relance 5jours reporté pour ${email} ` +
-                          `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue)`,
+                      `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue)`,
                       );
-                      // Ne pas envoyer ce jour, sera envoyé le jour suivant grâce au système de rattrapage
-                      // Note: currentDay === 4 correspond à J+4, donc sera rattrapé le J+5 si pas exclu
+                    // Ne pas envoyer ce jour, sera envoyé le jour suivant grâce au système de rattrapage
+                    // Note: currentDay === 4 correspond à J+4, donc sera rattrapé le J+5 si pas exclu
                     } else {
                       const emailSentDocId = `marketing_relance_5jours_${email.toLowerCase().trim()}`;
                       const emailSentDoc = await db.collection('contentEmailsSent')
@@ -6815,22 +6812,22 @@ exports.sendNewContentEmails = onSchedule(
                   // Jours 8, 15, 22 après l'opt-in initial (après la relance J+3)
                   const joursPromo21joursSans5jours = [8, 15, 22];
                   if (joursPromo21joursSans5jours.includes(currentDay)) {
-                    // Vérifier si la date d'envoi prévue est exclue (jours fériés)
-                    // Normaliser optinDate à minuit pour un calcul précis
+                  // Vérifier si la date d'envoi prévue est exclue (jours fériés)
+                  // Normaliser optinDate à minuit pour un calcul précis
                     const normalizedOptinDate = new Date(optinDate);
                     normalizedOptinDate.setHours(0, 0, 0, 0);
                     const scheduledDate = getScheduledEmailDate(normalizedOptinDate, currentDay);
                     if (isExcludedDate(scheduledDate)) {
                       console.log(
                           `⏸️ Email marketing 2pratiques→21jours reporté pour ${email} ` +
-                          `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue, ` +
-                          `jour ${currentDay})`,
+                      `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue, ` +
+                      `jour ${currentDay})`,
                       );
                       continue; // Passer au contact suivant, l'email sera envoyé le jour suivant
                     }
 
                     const emailSentDocId = `marketing_2pratiques_to_21jours_` +
-                        `${email.toLowerCase().trim()}_day_${currentDay}`;
+                    `${email.toLowerCase().trim()}_day_${currentDay}`;
                     const emailSentDoc = await db.collection('contentEmailsSent')
                         .doc(emailSentDocId).get();
 
@@ -6880,7 +6877,7 @@ exports.sendNewContentEmails = onSchedule(
                 const has21jours = produitsAchetes.includes('21jours');
                 const hasComplet = produitsAchetes.includes('complet');
                 if (!has21jours && !hasComplet) {
-                  // Vérifier aussi dans Firestore si l'utilisateur a acheté le 21 jours
+                // Vérifier aussi dans Firestore si l'utilisateur a acheté le 21 jours
                   let has21joursInFirestore = false;
                   try {
                     const emailLower = email.toLowerCase().trim();
@@ -6910,7 +6907,7 @@ exports.sendNewContentEmails = onSchedule(
                       const joursPromoComplet = [25, 30, 37];
                       shouldProposeComplet = joursPromoComplet.includes(currentDay);
                     } else if (has5jours && serie5joursDebut) {
-                      // Pour "5jours" : après J+17, proposer l'approche complète
+                    // Pour "5jours" : après J+17, proposer l'approche complète
                       const cinqJoursStart = new Date(serie5joursDebut);
                       const daysSince5jours = Math.floor(
                           (now - cinqJoursStart) / (1000 * 60 * 60 * 24));
@@ -6926,7 +6923,7 @@ exports.sendNewContentEmails = onSchedule(
                     }
 
                     if (shouldProposeComplet) {
-                      // Utiliser le bon jour selon le type de prospect pour l'ID
+                    // Utiliser le bon jour selon le type de prospect pour l'ID
                       let dayForId = currentDay;
                       let scheduledDate;
                       if (has5jours && serie5joursDebut) {
@@ -6938,7 +6935,7 @@ exports.sendNewContentEmails = onSchedule(
                         normalizedCinqJoursStart.setHours(0, 0, 0, 0);
                         scheduledDate = getScheduledEmailDate(normalizedCinqJoursStart, dayForId);
                       } else {
-                        // Normaliser optinDate à minuit pour un calcul précis
+                      // Normaliser optinDate à minuit pour un calcul précis
                         const normalizedOptinDate = new Date(optinDate);
                         normalizedOptinDate.setHours(0, 0, 0, 0);
                         scheduledDate = getScheduledEmailDate(normalizedOptinDate, currentDay);
@@ -6948,14 +6945,14 @@ exports.sendNewContentEmails = onSchedule(
                       if (isExcludedDate(scheduledDate)) {
                         console.log(
                             `⏸️ Email marketing prospect→complet reporté pour ${email} ` +
-                            `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue, ` +
-                            `jour ${dayForId})`,
+                        `(date prévue: ${scheduledDate.toISOString().split('T')[0]} est exclue, ` +
+                        `jour ${dayForId})`,
                         );
                         continue; // Passer au contact suivant, l'email sera envoyé le jour suivant
                       }
 
                       const emailSentDocId = `marketing_prospect_to_complet_` +
-                          `${email.toLowerCase().trim()}_day_${dayForId}`;
+                      `${email.toLowerCase().trim()}_day_${dayForId}`;
                       const emailSentDoc = await db.collection('contentEmailsSent')
                           .doc(emailSentDocId).get();
 
@@ -6972,184 +6969,184 @@ exports.sendNewContentEmails = onSchedule(
                         if (daysAfterLast21joursPromo === 3) {
                           emailSubject = 'Et si vous continuiez avec Fluance ?';
                           emailHtml =
-                            '<p>Bonjour' + namePart + ',</p>' +
-                            '<p>Vous avez peut-être hesite a vous lancer dans le defi ' +
-                            '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
-                            '<p><strong>Saviez-vous que la sedentarite tue +5 millions ' +
-                            'de personnes par an ?</strong> Rester assis 8h par jour ' +
-                            'augmente de 147% le risque de maladie cardiovasculaire.</p>' +
-                            '<p>Je comprends : il peut etre difficile de s\'engager sur ' +
-                            '21 jours d\'un coup.</p>' +
-                            '<p>Mais peut-etre seriez-vous interesse(e) par ' +
-                            'l\'<strong>approche Fluance complete</strong> ?</p>' +
-                            '<p>C\'est une approche plus <strong>douce et progressive</strong> : ' +
-                            'une nouvelle mini-serie de pratiques chaque semaine, toujours ' +
-                            'courtes (2 a 5 minutes), pour continuer a entretenir votre dos, ' +
-                            'vos epaules et votre energie.</p>' +
-                            '<p><strong>Fluance ne vous demande pas de forcer votre corps.</strong> ' +
-                            'Nous honorons vos tensions, vos resistances. C\'est en donnant ' +
-                            'a votre corps la permission de rester tel qu\'il est que le ' +
-                            'changement devient possible.</p>' +
-                            '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
-                            'vous pouvez tester sans engagement et decider ensuite ' +
-                            'si vous souhaitez continuer.</p>' +
-                            '<p>Decouvrez cette approche :</p>' +
-                            '<p><a href="' + completUrl + '">' +
-                            'Decouvrir l\'approche Fluance complete</a></p>';
+                          '<p>Bonjour' + namePart + ',</p>' +
+                          '<p>Vous avez peut-être hesite a vous lancer dans le defi ' +
+                          '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                          '<p><strong>Saviez-vous que la sedentarite tue +5 millions ' +
+                          'de personnes par an ?</strong> Rester assis 8h par jour ' +
+                          'augmente de 147% le risque de maladie cardiovasculaire.</p>' +
+                          '<p>Je comprends : il peut etre difficile de s\'engager sur ' +
+                          '21 jours d\'un coup.</p>' +
+                          '<p>Mais peut-etre seriez-vous interesse(e) par ' +
+                          'l\'<strong>approche Fluance complete</strong> ?</p>' +
+                          '<p>C\'est une approche plus <strong>douce et progressive</strong> : ' +
+                          'une nouvelle mini-serie de pratiques chaque semaine, toujours ' +
+                          'courtes (2 a 5 minutes), pour continuer a entretenir votre dos, ' +
+                          'vos epaules et votre energie.</p>' +
+                          '<p><strong>Fluance ne vous demande pas de forcer votre corps.</strong> ' +
+                          'Nous honorons vos tensions, vos resistances. C\'est en donnant ' +
+                          'a votre corps la permission de rester tel qu\'il est que le ' +
+                          'changement devient possible.</p>' +
+                          '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                          'vous pouvez tester sans engagement et decider ensuite ' +
+                          'si vous souhaitez continuer.</p>' +
+                          '<p>Decouvrez cette approche :</p>' +
+                          '<p><a href="' + completUrl + '">' +
+                          'Decouvrir l\'approche Fluance complete</a></p>';
 
                           emailText = [
                             `Bonjour${namePart},`,
                             '',
                             'Vous avez peut-etre hesite a vous lancer dans le defi ' +
-                              '"21 jours pour remettre du mouvement".',
+                          '"21 jours pour remettre du mouvement".',
                             '',
                             'Saviez-vous que la sedentarite tue +5 millions de personnes ' +
-                              'par an ? Rester assis 8h par jour augmente de 147% le risque ' +
-                              'de maladie cardiovasculaire.',
+                          'par an ? Rester assis 8h par jour augmente de 147% le risque ' +
+                          'de maladie cardiovasculaire.',
                             '',
                             'Je comprends : il peut etre difficile de s\'engager sur ' +
-                              '21 jours d\'un coup.',
+                          '21 jours d\'un coup.',
                             '',
                             'Mais peut-etre seriez-vous interesse(e) par ' +
-                              'l\'approche Fluance complete ?',
+                          'l\'approche Fluance complete ?',
                             '',
                             'C\'est une approche plus douce et progressive : ' +
-                              'une nouvelle mini-serie de pratiques chaque semaine, toujours ' +
-                              'courtes (2 a 5 minutes), pour continuer a entretenir votre dos, ' +
-                              'vos epaules et votre energie.',
+                          'une nouvelle mini-serie de pratiques chaque semaine, toujours ' +
+                          'courtes (2 a 5 minutes), pour continuer a entretenir votre dos, ' +
+                          'vos epaules et votre energie.',
                             '',
                             'Fluance ne vous demande pas de forcer votre corps. Nous honorons ' +
-                              'vos tensions, vos resistances. C\'est en donnant a votre corps ' +
-                              'la permission de rester tel qu\'il est que le changement devient possible.',
+                          'vos tensions, vos resistances. C\'est en donnant a votre corps ' +
+                          'la permission de rester tel qu\'il est que le changement devient possible.',
                             '',
                             'Les 14 premiers jours sont offerts : vous pouvez tester sans ' +
-                              'engagement et decider ensuite si vous souhaitez continuer.',
+                          'engagement et decider ensuite si vous souhaitez continuer.',
                             '',
                             'Decouvrez cette approche :',
                             completUrl,
                           ].join('\n');
                         } else if (daysAfterLast21joursPromo === 8) {
-                          // Deuxième email : relance
+                        // Deuxième email : relance
                           emailSubject = 'Vous aimeriez continuer... mais vous hesitez ?';
                           emailHtml =
-                            '<p>Bonjour' + namePart + ',</p>' +
-                            '<p>Vous avez peut-etre hesite a vous lancer dans le defi ' +
-                            '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
-                            '<p><strong>L\'activite physique reguliere reduit le risque ' +
-                            'd\'Alzheimer de 30 a 40%.</strong> Chez les femmes traitees ' +
-                            'd\'un cancer du sein, 3h par semaine diminuent le risque de ' +
-                            'recidive de 20 a 50%.</p>' +
-                            '<p>Peut-etre que vous hesitez : manque de temps, peur de ne pas tenir, ' +
-                            'doute sur l\'utilite sur le long terme...</p>' +
-                            '<p>Avec l\'<strong>approche Fluance complete</strong>, ' +
-                            'vous recevez chaque semaine une nouvelle mini-serie. ' +
-                            'Les seances restent simples, courtes, et pensees ' +
-                            'pour s\'integrer a un quotidien charge.</p>' +
-                            '<p><strong>L\'approche complete ne vous demande pas d\'etre ' +
-                            'plus discipline(e).</strong> Elle vous invite a honorer votre ' +
-                            'corps, a votre rythme, sans forcer. C\'est la que la vraie ' +
-                            'transformation commence.</p>' +
-                            '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
-                            'testez sans engagement et decidez ensuite si vous ' +
-                            'souhaitez continuer.</p>' +
-                            '<p>Pour voir comment cela peut soutenir votre corps ' +
-                            'dans les prochaines semaines :</p>' +
-                            '<p><a href="' + completUrl + '">' +
-                            'Voir l\'approche Fluance complete</a></p>';
+                          '<p>Bonjour' + namePart + ',</p>' +
+                          '<p>Vous avez peut-etre hesite a vous lancer dans le defi ' +
+                          '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                          '<p><strong>L\'activite physique reguliere reduit le risque ' +
+                          'd\'Alzheimer de 30 a 40%.</strong> Chez les femmes traitees ' +
+                          'd\'un cancer du sein, 3h par semaine diminuent le risque de ' +
+                          'recidive de 20 a 50%.</p>' +
+                          '<p>Peut-etre que vous hesitez : manque de temps, peur de ne pas tenir, ' +
+                          'doute sur l\'utilite sur le long terme...</p>' +
+                          '<p>Avec l\'<strong>approche Fluance complete</strong>, ' +
+                          'vous recevez chaque semaine une nouvelle mini-serie. ' +
+                          'Les seances restent simples, courtes, et pensees ' +
+                          'pour s\'integrer a un quotidien charge.</p>' +
+                          '<p><strong>L\'approche complete ne vous demande pas d\'etre ' +
+                          'plus discipline(e).</strong> Elle vous invite a honorer votre ' +
+                          'corps, a votre rythme, sans forcer. C\'est la que la vraie ' +
+                          'transformation commence.</p>' +
+                          '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                          'testez sans engagement et decidez ensuite si vous ' +
+                          'souhaitez continuer.</p>' +
+                          '<p>Pour voir comment cela peut soutenir votre corps ' +
+                          'dans les prochaines semaines :</p>' +
+                          '<p><a href="' + completUrl + '">' +
+                          'Voir l\'approche Fluance complete</a></p>';
 
                           emailText = [
                             `Bonjour${namePart},`,
                             '',
                             'Vous avez peut-etre hesite a vous lancer dans le defi ' +
-                              '"21 jours pour remettre du mouvement".',
+                          '"21 jours pour remettre du mouvement".',
                             '',
                             'L\'activite physique reguliere reduit le risque ' +
-                              'd\'Alzheimer de 30 a 40%. Chez les femmes traitees ' +
-                              'd\'un cancer du sein, 3h par semaine diminuent le risque ' +
-                              'de recidive de 20 a 50%.',
+                          'd\'Alzheimer de 30 a 40%. Chez les femmes traitees ' +
+                          'd\'un cancer du sein, 3h par semaine diminuent le risque ' +
+                          'de recidive de 20 a 50%.',
                             '',
                             'Vous hesitez peut-etre : manque de temps, peur de ne pas tenir, ' +
-                              'doute sur l\'utilite sur le long terme.',
+                          'doute sur l\'utilite sur le long terme.',
                             '',
                             'Avec l\'approche Fluance complete, vous recevez ' +
-                              'chaque semaine une nouvelle mini-serie. Les ' +
-                              'seances restent simples, courtes, et pensees ' +
-                              'pour s\'integrer a un quotidien charge.',
+                          'chaque semaine une nouvelle mini-serie. Les ' +
+                          'seances restent simples, courtes, et pensees ' +
+                          'pour s\'integrer a un quotidien charge.',
                             '',
                             'L\'approche complete ne vous demande pas d\'etre ' +
-                              'plus discipline(e). Elle vous invite a honorer votre ' +
-                              'corps, a votre rythme, sans forcer. C\'est la que la vraie ' +
-                              'transformation commence.',
+                          'plus discipline(e). Elle vous invite a honorer votre ' +
+                          'corps, a votre rythme, sans forcer. C\'est la que la vraie ' +
+                          'transformation commence.',
                             '',
                             'Les 14 premiers jours sont offerts : testez sans ' +
-                              'engagement et decidez ensuite si vous souhaitez ' +
-                              'continuer.',
+                          'engagement et decidez ensuite si vous souhaitez ' +
+                          'continuer.',
                             '',
                             'Pour voir comment cela peut soutenir votre corps ' +
-                              'dans les prochaines semaines :',
+                          'dans les prochaines semaines :',
                             completUrl,
                           ].join('\n');
                         } else {
-                          // Troisième email : dernier rappel
+                        // Troisième email : dernier rappel
                           emailSubject = 'Dernier rappel pour continuer avec l\'approche Fluance complete';
                           emailHtml =
-                            '<p>Bonjour' + namePart + ',</p>' +
-                            '<p>Il y a quelques jours, je vous ai parle du defi ' +
-                            '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
-                            '<p><strong>Votre liberte de mouvement est un pilier ' +
-                            'de votre sante. Prenez-en soin.</strong></p>' +
-                            '<p>Comment se sent votre corps aujourd\'hui ? Et ' +
-                            'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
-                            '6 mois ?</p>' +
-                            '<p>Si vous souhaitez garder un elan, ' +
-                            'l\'<strong>approche Fluance complete</strong> peut ' +
-                            'devenir votre rituel hebdomadaire : une nouvelle ' +
-                            'mini-serie de pratiques chaque semaine, pour ' +
-                            'continuer a delier, renforcer et apaiser.</p>' +
-                            '<p>Fluance n\'est pas une methode qui vous force a ' +
-                            'changer. C\'est un espace ou votre corps peut enfin ' +
-                            'se sentir en securite pour lacher prise, semaine ' +
-                            'apres semaine.</p>' +
-                            '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
-                            'testez sans engagement et decidez ensuite si vous ' +
-                            'souhaitez continuer.</p>' +
-                            '<p>Ceci est un dernier rappel doux : si c\'est le ' +
-                            'bon moment pour vous, vous pouvez rejoindre ' +
-                            'l\'approche complete ici :</p>' +
-                            '<p><a href="' + completUrl + '">' +
-                            'Rejoindre l\'approche Fluance complete</a></p>';
+                          '<p>Bonjour' + namePart + ',</p>' +
+                          '<p>Il y a quelques jours, je vous ai parle du defi ' +
+                          '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
+                          '<p><strong>Votre liberte de mouvement est un pilier ' +
+                          'de votre sante. Prenez-en soin.</strong></p>' +
+                          '<p>Comment se sent votre corps aujourd\'hui ? Et ' +
+                          'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
+                          '6 mois ?</p>' +
+                          '<p>Si vous souhaitez garder un elan, ' +
+                          'l\'<strong>approche Fluance complete</strong> peut ' +
+                          'devenir votre rituel hebdomadaire : une nouvelle ' +
+                          'mini-serie de pratiques chaque semaine, pour ' +
+                          'continuer a delier, renforcer et apaiser.</p>' +
+                          '<p>Fluance n\'est pas une methode qui vous force a ' +
+                          'changer. C\'est un espace ou votre corps peut enfin ' +
+                          'se sentir en securite pour lacher prise, semaine ' +
+                          'apres semaine.</p>' +
+                          '<p><strong>Les 14 premiers jours sont offerts</strong> : ' +
+                          'testez sans engagement et decidez ensuite si vous ' +
+                          'souhaitez continuer.</p>' +
+                          '<p>Ceci est un dernier rappel doux : si c\'est le ' +
+                          'bon moment pour vous, vous pouvez rejoindre ' +
+                          'l\'approche complete ici :</p>' +
+                          '<p><a href="' + completUrl + '">' +
+                          'Rejoindre l\'approche Fluance complete</a></p>';
 
                           emailText = [
                             `Bonjour${namePart},`,
                             '',
                             'Il y a quelques jours, je vous ai parle du defi ' +
-                              '"21 jours pour remettre du mouvement".',
+                          '"21 jours pour remettre du mouvement".',
                             '',
                             'Votre liberte de mouvement est un pilier de votre ' +
-                              'sante. Prenez-en soin.',
+                          'sante. Prenez-en soin.',
                             '',
                             'Comment se sent votre corps aujourd\'hui ? Et ' +
-                              'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
-                              '6 mois ?',
+                          'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
+                          '6 mois ?',
                             '',
                             'Si vous souhaitez garder un elan, l\'approche ' +
-                              'Fluance complete peut devenir votre rituel ' +
-                              'hebdomadaire : une nouvelle mini-serie de ' +
-                              'pratiques chaque semaine, pour continuer a ' +
-                              'delier, renforcer et apaiser.',
+                          'Fluance complete peut devenir votre rituel ' +
+                          'hebdomadaire : une nouvelle mini-serie de ' +
+                          'pratiques chaque semaine, pour continuer a ' +
+                          'delier, renforcer et apaiser.',
                             '',
                             'Fluance n\'est pas une methode qui vous force a ' +
-                              'changer. C\'est un espace ou votre corps peut ' +
-                              'enfin se sentir en securite pour lacher prise, ' +
-                              'semaine apres semaine.',
+                          'changer. C\'est un espace ou votre corps peut ' +
+                          'enfin se sentir en securite pour lacher prise, ' +
+                          'semaine apres semaine.',
                             '',
                             'Les 14 premiers jours sont offerts : testez sans ' +
-                              'engagement et decidez ensuite si vous souhaitez ' +
-                              'continuer.',
+                          'engagement et decidez ensuite si vous souhaitez ' +
+                          'continuer.',
                             '',
                             'Ceci est un dernier rappel doux : si c\'est le ' +
-                              'bon moment pour vous, vous pouvez rejoindre ' +
-                              'l\'approche complete ici :',
+                          'bon moment pour vous, vous pouvez rejoindre ' +
+                          'l\'approche complete ici :',
                             completUrl,
                           ].join('\n');
                         }
@@ -7188,7 +7185,7 @@ exports.sendNewContentEmails = onSchedule(
           }
         } catch (marketingError) {
           console.error('❌ Error in marketing emails section:', marketingError);
-          // Ne pas faire échouer toute la fonction si la partie marketing échoue
+        // Ne pas faire échouer toute la fonction si la partie marketing échoue
         }
 
         // Email "réseaux sociaux" : 10 jours après le dernier email programmé
@@ -7196,7 +7193,7 @@ exports.sendNewContentEmails = onSchedule(
         let socialEmailsSent = 0;
 
         try {
-          // Traiter les clients (Firestore users)
+        // Traiter les clients (Firestore users)
           const usersSnapshotForSocial = await db.collection('users').get();
           for (const userDoc of usersSnapshotForSocial.docs) {
             const userId = userDoc.id;
@@ -7246,25 +7243,25 @@ exports.sendNewContentEmails = onSchedule(
                   const namePart = firstName ? ` ${firstName}` : '';
                   const emailSubject = 'Fluance : on se retrouve sur les reseaux sociaux ?';
                   const emailHtml =
-                      '<p>Bonjour' + namePart + ',</p>' +
-                      '<p>En complement des e-mails de Fluance, je vous invite aussi a ' +
-                      'rejoindre le <a href="https://t.me/+TsD5YCuHvLB7Bdft">groupe Telegram</a> ' +
-                      'ou le <a href="https://www.facebook.com/groups/fluanceio/">groupe Facebook</a> ' +
-                      'pour vous aider a prendre le reflexe de bouger en conscience ' +
-                      'regulierement et vous donner de l\'inspiration.</p>' +
-                      '<p>Fluance est aussi <a href="https://www.youtube.com/@fluanceio">YouTube</a> ' +
-                      'et <a href="https://www.instagram.com/fluanceio/">Instagram</a>.</p>' +
-                      '<p>Les liens des autres reseaux sont au pied de ' +
-                      '<a href="https://fluance.io/">cette page</a>.</p>' +
-                      '<p>Une bonne pratique et a bientot,<br>Cedric</p>';
+                  '<p>Bonjour' + namePart + ',</p>' +
+                  '<p>En complement des e-mails de Fluance, je vous invite aussi a ' +
+                  'rejoindre le <a href="https://t.me/+TsD5YCuHvLB7Bdft">groupe Telegram</a> ' +
+                  'ou le <a href="https://www.facebook.com/groups/fluanceio/">groupe Facebook</a> ' +
+                  'pour vous aider a prendre le reflexe de bouger en conscience ' +
+                  'regulierement et vous donner de l\'inspiration.</p>' +
+                  '<p>Fluance est aussi <a href="https://www.youtube.com/@fluanceio">YouTube</a> ' +
+                  'et <a href="https://www.instagram.com/fluanceio/">Instagram</a>.</p>' +
+                  '<p>Les liens des autres reseaux sont au pied de ' +
+                  '<a href="https://fluance.io/">cette page</a>.</p>' +
+                  '<p>Une bonne pratique et a bientot,<br>Cedric</p>';
 
                   const emailText = [
                     `Bonjour${namePart},`,
                     '',
                     'En complement des e-mails de Fluance, je vous invite aussi a ' +
-                      'rejoindre le groupe Telegram ou le groupe Facebook pour vous aider ' +
-                      'a prendre le reflexe de bouger en conscience regulierement et vous ' +
-                      'donner de l\'inspiration.',
+                  'rejoindre le groupe Telegram ou le groupe Facebook pour vous aider ' +
+                  'a prendre le reflexe de bouger en conscience regulierement et vous ' +
+                  'donner de l\'inspiration.',
                     '',
                     'Fluance est aussi YouTube et Instagram.',
                     'Les liens des autres reseaux sont au pied de cette page.',
@@ -7300,7 +7297,7 @@ exports.sendNewContentEmails = onSchedule(
 
                   console.log(
                       `✅ Social networks email sent to ${email} ` +
-                      `(${daysSinceLastEmail} days after last email)`,
+                  `(${daysSinceLastEmail} days after last email)`,
                   );
                   socialEmailsSent++;
                 }
@@ -7330,9 +7327,9 @@ exports.sendNewContentEmails = onSchedule(
                 if (!email) continue;
 
                 try {
-                  // Récupérer les propriétés du contact
+                // Récupérer les propriétés du contact
                   const contactDataUrl =
-                    `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
+                  `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
                   const contactDataResponse = await fetch(contactDataUrl, {
                     method: 'GET',
                     headers: {
@@ -7405,25 +7402,25 @@ exports.sendNewContentEmails = onSchedule(
                       const namePart = firstName ? ` ${firstName}` : '';
                       const emailSubject = 'Fluance : on se retrouve sur les reseaux sociaux ?';
                       const emailHtml =
-                          '<p>Bonjour' + namePart + ',</p>' +
-                          '<p>En complement des e-mails de Fluance, je vous invite aussi a ' +
-                          'rejoindre le <a href="https://t.me/+TsD5YCuHvLB7Bdft">groupe Telegram</a> ' +
-                          'ou le <a href="https://www.facebook.com/groups/fluanceio/">groupe Facebook</a> ' +
-                          'pour vous aider a prendre le reflexe de bouger en conscience ' +
-                          'regulierement et vous donner de l\'inspiration.</p>' +
-                          '<p>Fluance est aussi <a href="https://www.youtube.com/@fluanceio">YouTube</a> ' +
-                          'et <a href="https://www.instagram.com/fluanceio/">Instagram</a>.</p>' +
-                          '<p>Les liens des autres reseaux sont au pied de ' +
-                          '<a href="https://fluance.io/">cette page</a>.</p>' +
-                          '<p>Une bonne pratique et a bientot,<br>Cedric</p>';
+                      '<p>Bonjour' + namePart + ',</p>' +
+                      '<p>En complement des e-mails de Fluance, je vous invite aussi a ' +
+                      'rejoindre le <a href="https://t.me/+TsD5YCuHvLB7Bdft">groupe Telegram</a> ' +
+                      'ou le <a href="https://www.facebook.com/groups/fluanceio/">groupe Facebook</a> ' +
+                      'pour vous aider a prendre le reflexe de bouger en conscience ' +
+                      'regulierement et vous donner de l\'inspiration.</p>' +
+                      '<p>Fluance est aussi <a href="https://www.youtube.com/@fluanceio">YouTube</a> ' +
+                      'et <a href="https://www.instagram.com/fluanceio/">Instagram</a>.</p>' +
+                      '<p>Les liens des autres reseaux sont au pied de ' +
+                      '<a href="https://fluance.io/">cette page</a>.</p>' +
+                      '<p>Une bonne pratique et a bientot,<br>Cedric</p>';
 
                       const emailText = [
                         `Bonjour${namePart},`,
                         '',
                         'En complement des e-mails de Fluance, je vous invite aussi a ' +
-                          'rejoindre le groupe Telegram ou le groupe Facebook pour vous aider ' +
-                          'a prendre le reflexe de bouger en conscience regulierement et vous ' +
-                          'donner de l\'inspiration.',
+                      'rejoindre le groupe Telegram ou le groupe Facebook pour vous aider ' +
+                      'a prendre le reflexe de bouger en conscience regulierement et vous ' +
+                      'donner de l\'inspiration.',
                         '',
                         'Fluance est aussi YouTube et Instagram.',
                         'Les liens des autres reseaux sont au pied de cette page.',
@@ -7459,7 +7456,7 @@ exports.sendNewContentEmails = onSchedule(
 
                       console.log(
                           `✅ Social networks email sent to ${email} ` +
-                          `(${daysSinceLastEmail} days after last email)`,
+                      `(${daysSinceLastEmail} days after last email)`,
                       );
                       socialEmailsSent++;
                     }
@@ -7474,13 +7471,13 @@ exports.sendNewContentEmails = onSchedule(
           }
         } catch (socialError) {
           console.error('❌ Error in social networks email section:', socialError);
-          // Ne pas faire échouer toute la fonction si cette partie échoue
+        // Ne pas faire échouer toute la fonction si cette partie échoue
         }
 
         console.log(`📧 Email job completed: ${emailsSent} sent (clients), ` +
-            `${marketingEmailsSent} sent (marketing), ` +
-            `${socialEmailsSent} sent (social networks), ` +
-            `${emailsSkipped + marketingEmailsSkipped} skipped, ${errors} errors`);
+        `${marketingEmailsSent} sent (marketing), ` +
+        `${socialEmailsSent} sent (social networks), ` +
+        `${emailsSkipped + marketingEmailsSkipped} skipped, ${errors} errors`);
         return {
           success: true,
           emailsSent,
@@ -7520,7 +7517,7 @@ exports.processPendingSuspensions = onSchedule(
       }
 
       try {
-        // Récupérer tous les échecs de paiement en attente de suspension
+      // Récupérer tous les échecs de paiement en attente de suspension
         const pendingSuspensions = await db.collection('paymentFailures')
             .where('status', '==', 'pending_suspension')
             .where('suspendAt', '<=', now)
@@ -7535,7 +7532,7 @@ exports.processPendingSuspensions = onSchedule(
           const subscriptionId = failureData.subscriptionId;
 
           try {
-            // Retirer l'accès au produit
+          // Retirer l'accès au produit
             await removeProductFromUser(email, product);
             console.log(`✅ Access removed for ${email} (product: ${product})`);
 
@@ -7586,7 +7583,7 @@ exports.processPendingSuspensions = onSchedule(
               reactivateLink: reactivateLink,
             });
             const suspendEmailText =
-          `Votre abonnement ${productName} a été suspendu après plusieurs tentatives de paiement échouées.`;
+            `Votre abonnement ${productName} a été suspendu après plusieurs tentatives de paiement échouées.`;
 
             await sendMailjetEmail(
                 email,
@@ -7636,7 +7633,7 @@ exports.sendOptInReminders = onSchedule(
       }
 
       try {
-        // Récupérer tous les opt-ins non confirmés qui n'ont pas encore reçu de relance
+      // Récupérer tous les opt-ins non confirmés qui n'ont pas encore reçu de relance
         const unconfirmedQuery = await db.collection('newsletterConfirmations')
             .where('confirmed', '==', false)
             .where('reminderSent', '==', false)
@@ -7684,7 +7681,7 @@ exports.sendOptInReminders = onSchedule(
 
             // Envoyer la relance entre 3 et 4 jours après l'inscription
             if (daysSinceCreation < 3 || daysSinceCreation > 4) {
-              // Trop tôt ou trop tard, on attendra le prochain jour
+            // Trop tôt ou trop tard, on attendra le prochain jour
               continue;
             }
 
@@ -7704,8 +7701,8 @@ exports.sendOptInReminders = onSchedule(
 
             // Construire l'URL de confirmation
             const confirmationUrl =
-              `https://fluance.io/confirm?email=${encodeURIComponent(email)}` +
-              `&token=${tokenId}&redirect=${redirectParam}`;
+            `https://fluance.io/confirm?email=${encodeURIComponent(email)}` +
+            `&token=${tokenId}&redirect=${redirectParam}`;
 
             // Formater la date d'expiration pour l'email
             const expirationDateStr = expiresAt.toLocaleDateString('fr-FR', {
@@ -7719,7 +7716,7 @@ exports.sendOptInReminders = onSchedule(
 
             // Charger et envoyer l'email de relance
             const emailSubject =
-              `Un dernier clic pour recevoir vos contenus${name ? ' ' + name : ''}`;
+            `Un dernier clic pour recevoir vos contenus${name ? ' ' + name : ''}`;
             const emailHtml = loadEmailTemplate('relance-confirmation-optin', {
               firstName: name || '',
               inscriptionText: inscriptionText,
@@ -7728,14 +7725,14 @@ exports.sendOptInReminders = onSchedule(
               expirationDate: expirationDateStr,
             });
             const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
-              `Il y a quelques jours, vous vous êtes ${inscriptionText} ` +
-              `pour recevoir ${optinContent} de Fluance.\n\n` +
-              `Pour finaliser votre inscription et recevoir vos contenus, ` +
-              `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
-              `${confirmationUrl}\n\n` +
-              `Ce lien est valide jusqu'au ${expirationDateStr}.\n\n` +
-              `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email. ` +
-              `Vous ne recevrez plus de relances.`;
+            `Il y a quelques jours, vous vous êtes ${inscriptionText} ` +
+            `pour recevoir ${optinContent} de Fluance.\n\n` +
+            `Pour finaliser votre inscription et recevoir vos contenus, ` +
+            `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
+            `${confirmationUrl}\n\n` +
+            `Ce lien est valide jusqu'au ${expirationDateStr}.\n\n` +
+            `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email. ` +
+            `Vous ne recevrez plus de relances.`;
 
             await sendMailjetEmail(
                 email,
@@ -7790,7 +7787,7 @@ exports.registerMomoyogaAccount = onRequest(
       cors: true,
     },
     async (req, res) => {
-      // Vérifier la méthode HTTP
+    // Vérifier la méthode HTTP
       if (req.method !== 'POST') {
         return res.status(405).send('Method Not Allowed');
       }
@@ -7838,7 +7835,7 @@ exports.registerMomoyogaAccount = onRequest(
         if (!existingConfirmation.empty) {
           const existingData = existingConfirmation.docs[0].data();
           if (existingData.confirmed) {
-            // Contact déjà confirmé - juste mettre à jour la date du compte si pas déjà définie
+          // Contact déjà confirmé - juste mettre à jour la date du compte si pas déjà définie
             console.log(`📝 Contact ${normalizedEmail} already confirmed for presentiel`);
 
             await updateMailjetContactProperties(
@@ -7857,7 +7854,7 @@ exports.registerMomoyogaAccount = onRequest(
               email: normalizedEmail,
             });
           } else {
-            // Confirmation en attente - ne pas renvoyer d'email
+          // Confirmation en attente - ne pas renvoyer d'email
             console.log(`📝 Contact ${normalizedEmail} has pending confirmation`);
             return res.json({
               success: true,
@@ -7957,7 +7954,7 @@ exports.registerMomoyogaAccount = onRequest(
         // Envoyer l'email de bienvenue
         const baseUrl = 'https://fluance.io';
         const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(normalizedEmail)}` +
-          `&token=${confirmationToken}&redirect=presentiel`;
+        `&token=${confirmationToken}&redirect=presentiel`;
 
         const emailSubject = `Dernière étape${name ? ' ' + name : ''} : confirmez votre inscription`;
 
@@ -7967,13 +7964,13 @@ exports.registerMomoyogaAccount = onRequest(
         });
 
         const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
-          `Bienvenue et merci pour votre inscription sur Momoyoga !\n\n` +
-          `Pour recevoir les informations sur les prochains cours Fluance en présentiel ` +
-          `(horaires, nouveaux créneaux, événements spéciaux), veuillez confirmer votre adresse email :\n\n` +
-          `${confirmationUrl}\n\n` +
-          `Ce lien est valide pendant 7 jours.\n\n` +
-          `À très bientôt !\n\n` +
-          `Cédric de Fluance`;
+        `Bienvenue et merci pour votre inscription sur Momoyoga !\n\n` +
+        `Pour recevoir les informations sur les prochains cours Fluance en présentiel ` +
+        `(horaires, nouveaux créneaux, événements spéciaux), veuillez confirmer votre adresse email :\n\n` +
+        `${confirmationUrl}\n\n` +
+        `Ce lien est valide pendant 7 jours.\n\n` +
+        `À très bientôt !\n\n` +
+        `Cédric de Fluance`;
 
         await sendMailjetEmail(
             normalizedEmail,
@@ -8038,7 +8035,7 @@ exports.registerPresentielCourse = onRequest(
       cors: true,
     },
     async (req, res) => {
-      // Vérifier la méthode HTTP
+    // Vérifier la méthode HTTP
       if (req.method !== 'POST') {
         return res.status(405).send('Method Not Allowed');
       }
@@ -8139,12 +8136,12 @@ exports.registerPresentielCourse = onRequest(
 
         if (nombreCours === 1) {
           properties.premier_cours_presentiel = premierCours ||
-            new Date().toISOString().split('T')[0];
+          new Date().toISOString().split('T')[0];
         }
 
         // Si le contact est nouveau (pas de confirmation en attente ni confirmée), préparer le double opt-in
         if (!isAlreadyConfirmed && !hasPendingConfirmation) {
-          // Vérifier si le contact existe dans MailJet
+        // Vérifier si le contact existe dans MailJet
           let contactExists = false;
           try {
             const checkUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
@@ -8222,13 +8219,13 @@ exports.registerPresentielCourse = onRequest(
           // Envoyer l'email de confirmation
           const baseUrl = 'https://fluance.io';
           const confirmationUrl = `${baseUrl}/confirm?email=${encodeURIComponent(normalizedEmail)}` +
-            `&token=${confirmationToken}&redirect=presentiel`;
+          `&token=${confirmationToken}&redirect=presentiel`;
 
           // Générer l'URL Google Calendar
           let calendarUrl = '';
           if (courseDate && courseTime) {
             try {
-              // Parser la date DD/MM/YYYY et l'heure HH:MM
+            // Parser la date DD/MM/YYYY et l'heure HH:MM
               const [day, month, year] = courseDate.split('/');
               const [hours, minutes] = courseTime.split(':');
 
@@ -8253,10 +8250,10 @@ exports.registerPresentielCourse = onRequest(
               const calendarDetails = encodeURIComponent('Cours Fluance - le mouvement qui éveille et apaise\n\nTenue : vêtements confortables\nPlus d\'infos : https://fluance.io/presentiel/cours-hebdomadaires/');
 
               calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
-                `&text=${calendarTitle}` +
-                `&dates=${startDate}/${endDate}` +
-                `&details=${calendarDetails}` +
-                `&location=${calendarLocation}`;
+              `&text=${calendarTitle}` +
+              `&dates=${startDate}/${endDate}` +
+              `&details=${calendarDetails}` +
+              `&location=${calendarLocation}`;
             } catch (e) {
               console.error('Error generating calendar URL:', e);
             }
@@ -8274,14 +8271,14 @@ exports.registerPresentielCourse = onRequest(
           });
 
           const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
-            `Merci pour votre inscription au cours "${courseName || 'Cours Fluance'}"` +
-            `${courseDate ? ' du ' + courseDate : ''}${courseTime ? ' à ' + courseTime : ''} !\n\n` +
-            `Pour finaliser votre inscription et recevoir les informations importantes ` +
-            `concernant vos prochains cours, veuillez confirmer votre adresse email :\n\n` +
-            `${confirmationUrl}\n\n` +
-            `Ce lien est valide pendant 7 jours.\n\n` +
-            `À très bientôt en cours !\n\n` +
-            `Cédric de Fluance`;
+          `Merci pour votre inscription au cours "${courseName || 'Cours Fluance'}"` +
+          `${courseDate ? ' du ' + courseDate : ''}${courseTime ? ' à ' + courseTime : ''} !\n\n` +
+          `Pour finaliser votre inscription et recevoir les informations importantes ` +
+          `concernant vos prochains cours, veuillez confirmer votre adresse email :\n\n` +
+          `${confirmationUrl}\n\n` +
+          `Ce lien est valide pendant 7 jours.\n\n` +
+          `À très bientôt en cours !\n\n` +
+          `Cédric de Fluance`;
 
           await sendMailjetEmail(
               normalizedEmail,
@@ -8318,7 +8315,7 @@ exports.registerPresentielCourse = onRequest(
             nombreCours: nombreCours,
           });
         } else if (hasPendingConfirmation) {
-          // Confirmation en attente - mettre à jour les propriétés mais pas d'email
+        // Confirmation en attente - mettre à jour les propriétés mais pas d'email
           console.log(`📝 Contact ${normalizedEmail} has pending confirmation - updating properties only`);
 
           await updateMailjetContactProperties(
@@ -8338,14 +8335,14 @@ exports.registerPresentielCourse = onRequest(
             nombreCours: nombreCours,
           });
         } else {
-          // Contact déjà confirmé - mettre à jour uniquement les propriétés
+        // Contact déjà confirmé - mettre à jour uniquement les propriétés
           console.log(`📝 Existing confirmed contact ${normalizedEmail} - updating properties only`);
 
           // Récupérer les propriétés actuelles pour ne pas écraser source_optin
           const currentProperties = {};
           try {
             const contactDataUrl =
-              `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(normalizedEmail)}`;
+            `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(normalizedEmail)}`;
             const getResponse = await fetch(contactDataUrl, {
               method: 'GET',
               headers: {'Authorization': `Basic ${auth}`},
@@ -8371,7 +8368,7 @@ exports.registerPresentielCourse = onRequest(
           // Ajouter 'presentiel' à source_optin si pas déjà présent
           const currentSourceOptin = currentProperties.source_optin || '';
           const sourceOptinList = currentSourceOptin ?
-            currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
+          currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) : [];
           if (!sourceOptinList.includes('presentiel')) {
             sourceOptinList.push('presentiel');
             properties.source_optin = sourceOptinList.join(',');
@@ -8635,6 +8632,59 @@ exports.sendCourseReminders = onSchedule(
 );
 
 /**
+ * Envoie un email de suivi le lendemain d'un cours d'essai offert
+ * S'exécute quotidiennement à 10h (Europe/Zurich)
+ */
+exports.sendTrialFollowUps = onSchedule(
+    {
+      schedule: '0 10 * * *', // Tous les jours à 10h
+      timeZone: 'Europe/Zurich',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+      region: 'europe-west1',
+    },
+    async (_event) => {
+      return await sendTrialFollowUpsLogic();
+    },
+);
+
+/**
+ * Version HTTP manuelle de sendTrialFollowUps
+ */
+exports.sendTrialFollowUpsManual = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+      cors: true,
+    },
+    async (req, res) => {
+    // Vérification basique de sécurité
+      const apiKey = req.query.apiKey || req.headers['x-api-key'];
+      const expectedKey = process.env.COURSE_REMINDERS_API_KEY;
+
+      if (expectedKey && apiKey !== expectedKey) {
+        return res.status(403).json({
+          error: 'Unauthorized',
+          message: 'Invalid API key',
+        });
+      }
+
+      try {
+        const result = await sendTrialFollowUpsLogic();
+        return res.json({
+          success: true,
+          ...result,
+        });
+      } catch (error) {
+        console.error('Error in sendTrialFollowUpsManual:', error);
+        return res.status(500).json({
+          success: false,
+          error: error.message,
+        });
+      }
+    },
+);
+
+/**
  * Version HTTP manuelle de sendCourseReminders
  * Utilisez cette fonction si sendCourseReminders échoue à cause d'Eventarc
  * Peut être appelée manuellement ou via un cron externe (ex: cron-job.org)
@@ -8646,7 +8696,7 @@ exports.sendCourseRemindersManual = onRequest(
       cors: true,
     },
     async (req, res) => {
-      // Vérification basique de sécurité (optionnel : ajouter une clé API)
+    // Vérification basique de sécurité (optionnel : ajouter une clé API)
       const apiKey = req.query.apiKey || req.headers['x-api-key'];
       const expectedKey = process.env.COURSE_REMINDERS_API_KEY;
 
@@ -8791,10 +8841,10 @@ async function sendCourseRemindersLogic() {
               const calendarDetails = encodeURIComponent('Cours Fluance - le mouvement qui éveille et apaise\n\nTenue : vêtements confortables\nPlus d\'infos : https://fluance.io/presentiel/cours-hebdomadaires/');
 
               calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
-                    `&text=${calendarTitle}` +
-                    `&dates=${startDate}/${endDate}` +
-                    `&details=${calendarDetails}` +
-                    `&location=${calendarLocation}`;
+                `&text=${calendarTitle}` +
+                `&dates=${startDate}/${endDate}` +
+                `&details=${calendarDetails}` +
+                `&location=${calendarLocation}`;
             } catch (e) {
               console.error('Error generating calendar URL:', e);
             }
@@ -8811,7 +8861,7 @@ async function sendCourseRemindersLogic() {
                   <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 </head>
                 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; ` +
-                `max-width: 600px; margin: 0 auto; padding: 20px;">
+            `max-width: 600px; margin: 0 auto; padding: 20px;">
                   <div style="background-color: #648ED8; padding: 20px; text-align: center;">
                     <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Rappel : Votre cours Fluance demain</h1>
                   </div>
@@ -8827,9 +8877,9 @@ async function sendCourseRemindersLogic() {
                     ${calendarUrl ? `
                     <p style="text-align: center; margin: 20px 0;">
                       <a href="${calendarUrl}" ` +
-                    `style="background-color: #E6B84A; color: #0f172a; ` +
-                    `padding: 15px 30px; text-decoration: none; border-radius: 5px; ` +
-                    `font-weight: bold; display: inline-block;">
+              `style="background-color: #E6B84A; color: #0f172a; ` +
+              `padding: 15px 30px; text-decoration: none; border-radius: 5px; ` +
+              `font-weight: bold; display: inline-block;">
                         Ajouter à mon calendrier
                       </a>
                     </p>
@@ -8838,7 +8888,7 @@ async function sendCourseRemindersLogic() {
                     <ul>
                       <li><strong>Tenue :</strong> Vêtements confortables permettant le mouvement</li>
                       <li><strong>Transport :</strong> Bus n°9 et 10, ` +
-                    `arrêt Granges-Paccot, Chantemerle (+1min à pied)</li>
+            `arrêt Granges-Paccot, Chantemerle (+1min à pied)</li>
                       <li><strong>Parking :</strong> Zones bleues et blanches disponibles (disque nécessaire)</li>
                     </ul>
                     <p>Nous avons hâte de vous voir demain !</p>
@@ -8849,17 +8899,17 @@ async function sendCourseRemindersLogic() {
               `;
 
           const emailText = `Bonjour${booking.firstName ? ' ' + booking.firstName : ''},\n\n` +
-                `Ceci est un rappel amical : vous avez un cours Fluance demain !\n\n` +
-                `📅 Cours : ${course.title || 'Cours Fluance'}\n` +
-                `📆 Date : ${course.date || ''}\n` +
-                `🕐 Heure : ${course.time || ''}\n` +
-                `📍 Lieu : ${course.location || 'le duplex danse & bien-être, Rte de Chantemerle 58d, 1763 Granges-Paccot'}\n\n` +
-                `Informations pratiques :\n` +
-                `- Tenue : Vêtements confortables permettant le mouvement\n` +
-                `- Transport : Bus n°9 et 10, arrêt Granges-Paccot, Chantemerle (+1min à pied)\n` +
-                `- Parking : Zones bleues et blanches disponibles (disque nécessaire)\n\n` +
-                `Nous avons hâte de vous voir demain !\n\n` +
-                `À très bientôt,\nCédric de Fluance`;
+            `Ceci est un rappel amical : vous avez un cours Fluance demain !\n\n` +
+            `📅 Cours : ${course.title || 'Cours Fluance'}\n` +
+            `📆 Date : ${course.date || ''}\n` +
+            `🕐 Heure : ${course.time || ''}\n` +
+            `📍 Lieu : ${course.location || 'le duplex danse & bien-être, Rte de Chantemerle 58d, 1763 Granges-Paccot'}\n\n` +
+            `Informations pratiques :\n` +
+            `- Tenue : Vêtements confortables permettant le mouvement\n` +
+            `- Transport : Bus n°9 et 10, arrêt Granges-Paccot, Chantemerle (+1min à pied)\n` +
+            `- Parking : Zones bleues et blanches disponibles (disque nécessaire)\n\n` +
+            `Nous avons hâte de vous voir demain !\n\n` +
+            `À très bientôt,\nCédric de Fluance`;
 
           // Envoyer l'email via Mailjet
           await sendMailjetEmail(
@@ -8896,6 +8946,98 @@ async function sendCourseRemindersLogic() {
     };
   } catch (error) {
     console.error('❌ Error in sendCourseRemindersLogic:', error);
+    throw error;
+  }
+}
+
+/**
+ * Logique pour envoyer les emails de suivi après un cours d'essai
+ */
+async function sendTrialFollowUpsLogic() {
+  console.log('📧 Starting trial follow-up emails logic');
+
+  try {
+    // Calculer la date d'hier
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Formater en DD/MM/YYYY (format utilisé dans Firestore pour courseDate)
+    const day = String(yesterday.getDate()).padStart(2, '0');
+    const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+    const year = yesterday.getFullYear();
+    const yesterdayStr = `${day}/${month}/${year}`;
+
+    console.log(`🔍 Looking for trial bookings on ${yesterdayStr}`);
+
+    // Récupérer les réservations d'essai d'hier qui sont confirmées
+    const bookingsSnapshot = await db.collection('bookings')
+        .where('courseDate', '==', yesterdayStr)
+        .where('pricingOption', '==', 'trial')
+        .where('status', 'in', ['confirmed', 'pending_cash'])
+        .get();
+
+    if (bookingsSnapshot.empty) {
+      console.log('✅ No trial bookings yesterday');
+      return {sent: 0};
+    }
+
+    console.log(`📋 Found ${bookingsSnapshot.size} trial booking(s) to check`);
+
+    let sentCount = 0;
+
+    for (const bookingDoc of bookingsSnapshot.docs) {
+      const booking = bookingDoc.data();
+      const email = booking.email.toLowerCase().trim();
+
+      // Éviter les doublons
+      if (booking.trialFollowUpSent) {
+        console.log(`⏭️  Follow-up already sent for booking ${bookingDoc.id}, skipping`);
+        continue;
+      }
+
+      // Vérifier que l'utilisateur a confirmé son opt-in (GDPR)
+      const confirmationSnapshot = await db.collection('newsletterConfirmations')
+          .where('email', '==', email)
+          .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
+          .where('confirmed', '==', true)
+          .limit(1)
+          .get();
+
+      if (confirmationSnapshot.empty) {
+        console.log(`⏭️  User ${email} has not confirmed opt-in, skipping follow-up`);
+        continue;
+      }
+
+      try {
+        // Envoyer l'email via la collection 'mail' (extension Trigger Email)
+        await db.collection('mail').add({
+          to: booking.email,
+          template: {
+            name: 'trial-follow-up',
+            data: {
+              firstName: booking.firstName || '',
+            },
+          },
+        });
+
+        // Marquer comme envoyé
+        await bookingDoc.ref.update({
+          trialFollowUpSent: true,
+          trialFollowUpSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        sentCount++;
+        console.log(`✅ Trial follow-up sent to ${booking.email}`);
+      } catch (error) {
+        console.error(`❌ Error sending follow-up to ${booking.email}:`, error);
+      }
+    }
+
+    console.log(`✅ Trial follow-up job completed: ${sentCount} sent`);
+    return {sent: sentCount};
+  } catch (error) {
+    console.error('❌ Error in sendTrialFollowUpsLogic:', error);
     throw error;
   }
 }
@@ -8938,8 +9080,8 @@ exports.sendCartAbandonmentEmails = onSchedule(
         for (const doc of pendingBookings.docs) {
           const booking = doc.data();
           const createdAt = booking.createdAt?.toDate ?
-            booking.createdAt.toDate() :
-            new Date(booking.createdAt);
+          booking.createdAt.toDate() :
+          new Date(booking.createdAt);
 
           // Vérifier que c'est entre 1h et 48h
           const hoursSinceCreation = (now - createdAt) / (1000 * 60 * 60);
@@ -8991,10 +9133,10 @@ exports.sendCartAbandonmentEmails = onSchedule(
         for (const doc of failedBookings.docs) {
           const booking = doc.data();
           const paymentFailedAt = booking.paymentFailedAt?.toDate ?
-            booking.paymentFailedAt.toDate() :
-            (booking.updatedAt?.toDate ?
-              booking.updatedAt.toDate() :
-              new Date(booking.updatedAt));
+          booking.paymentFailedAt.toDate() :
+          (booking.updatedAt?.toDate ?
+            booking.updatedAt.toDate() :
+            new Date(booking.updatedAt));
 
           // Vérifier que c'est entre 1h et 48h
           const hoursSinceFailure = (now - paymentFailedAt) / (1000 * 60 * 60);
@@ -9082,8 +9224,8 @@ exports.sendPromotionalEmails = onSchedule(
         // Novembre : le 2 (évite la Toussaint le 1er)
         // Février : le 1er (milieu d'hiver, fatigue accumulée)
         const shouldSendSleepEmail =
-            (isNovember && currentDay === 2) ||
-            (isFebruary && currentDay === 1);
+        (isNovember && currentDay === 2) ||
+        (isFebruary && currentDay === 1);
 
         let sleepEmailsSent = 0;
         let somatiqueEmailsSent = 0;
@@ -9115,7 +9257,7 @@ exports.sendPromotionalEmails = onSchedule(
           if (!email) continue;
 
           try {
-            // Récupérer les propriétés du contact
+          // Récupérer les propriétés du contact
             const contactDataUrl = `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email.toLowerCase().trim())}`;
             const contactDataResponse = await fetch(contactDataUrl, {
               method: 'GET',
@@ -9152,14 +9294,14 @@ exports.sendPromotionalEmails = onSchedule(
             const produitsAchetes = properties.produits_achetes || '';
 
             if (estClient || produitsAchetes.includes('21jours') || produitsAchetes.includes('complet')) {
-              // C'est un client, on skip
+            // C'est un client, on skip
               continue;
             }
 
             // 1. EMAIL SOMMEIL (saisonnier : novembre, février)
             if (shouldSendSleepEmail) {
               const emailSentDocId =
-                  `promotion_sommeil_${currentMonth}_${now.getFullYear()}_${email.toLowerCase().trim()}`;
+              `promotion_sommeil_${currentMonth}_${now.getFullYear()}_${email.toLowerCase().trim()}`;
               const emailSentDoc = await db.collection('contentEmailsSent')
                   .doc(emailSentDocId).get();
 
@@ -9261,7 +9403,7 @@ exports.sendPromotionalEmails = onSchedule(
 
                 // Envoyer la relance J+8 après l'email principal (donc J+53 à J+58)
                 if (daysSinceOptin >= 53 && daysSinceOptin <= 58) {
-                  // Vérifier que l'email principal a été envoyé
+                // Vérifier que l'email principal a été envoyé
                   const principalEmailSentDocId = `promotion_somatique_principal_${email.toLowerCase().trim()}`;
                   const principalEmailSent = await db.collection('contentEmailsSent')
                       .doc(principalEmailSentDocId).get();
@@ -9307,21 +9449,21 @@ exports.sendPromotionalEmails = onSchedule(
             // En novembre et février, 2-3 semaines après l'email sommeil (vers le 15-21)
             // Priorité : l'email sommeil est envoyé le 1er, l'email somatique suit 2-3 semaines après
             const isSomatiqueSeasonalWindow =
-                (isNovember || isFebruary) && currentDay >= 15 && currentDay <= 21;
+            (isNovember || isFebruary) && currentDay >= 15 && currentDay <= 21;
 
             if (isSomatiqueSeasonalWindow) {
-              // Vérifier si le contact a déjà téléchargé les 2 pratiques
+            // Vérifier si le contact a déjà téléchargé les 2 pratiques
               if (sourceOptin.includes('2pratiques') && dateOptin) {
-                // Vérifier d'abord si l'email sommeil a été envoyé ce mois-ci
+              // Vérifier d'abord si l'email sommeil a été envoyé ce mois-ci
                 const sleepEmailSentDocId =
-                    `promotion_sommeil_${currentMonth}_${now.getFullYear()}_${email.toLowerCase().trim()}`;
+                `promotion_sommeil_${currentMonth}_${now.getFullYear()}_${email.toLowerCase().trim()}`;
                 const sleepEmailSent = await db.collection('contentEmailsSent')
                     .doc(sleepEmailSentDocId).get();
 
                 // Ne pas envoyer si l'email sommeil n'a pas été envoyé ce mois (priorité à l'email sommeil)
                 if (!sleepEmailSent.exists) {
-                  // L'email sommeil n'a pas été envoyé ce mois, on skip
-                  // (peut arriver si le contact n'était pas dans la liste le 1er du mois)
+                // L'email sommeil n'a pas été envoyé ce mois, on skip
+                // (peut arriver si le contact n'était pas dans la liste le 1er du mois)
                   continue;
                 }
 
@@ -9329,7 +9471,7 @@ exports.sendPromotionalEmails = onSchedule(
                 const estClientNow = properties.est_client === 'True' || properties.est_client === true;
                 const produitsAchetesNow = properties.produits_achetes || '';
                 if (estClientNow || produitsAchetesNow.includes('21jours') || produitsAchetesNow.includes('complet')) {
-                  // Le contact est devenu client entre temps, on skip
+                // Le contact est devenu client entre temps, on skip
                   continue;
                 }
 
@@ -9371,7 +9513,7 @@ exports.sendPromotionalEmails = onSchedule(
                     // Si l'email principal a été envoyé, vérifier qu'il date de plus de 30 jours
                     let shouldSendSeasonal = false;
                     if (!principalEmailSent.exists) {
-                      // N'a jamais reçu l'email principal, on peut envoyer la version saisonnière
+                    // N'a jamais reçu l'email principal, on peut envoyer la version saisonnière
                       shouldSendSeasonal = true;
                     } else {
                       const principalSentAt = principalEmailSent.data().sentAt?.toDate();
@@ -9386,8 +9528,8 @@ exports.sendPromotionalEmails = onSchedule(
 
                     if (shouldSendSeasonal) {
                       const emailSentDocId =
-                          `promotion_somatique_seasonal_${currentMonth}_` +
-                          `${now.getFullYear()}_${email.toLowerCase().trim()}`;
+                      `promotion_somatique_seasonal_${currentMonth}_` +
+                      `${now.getFullYear()}_${email.toLowerCase().trim()}`;
                       const emailSentDoc = await db.collection('contentEmailsSent')
                           .doc(emailSentDocId).get();
 
@@ -9420,7 +9562,7 @@ exports.sendPromotionalEmails = onSchedule(
 
                         console.log(
                             `✅ Seasonal somatique promotional email sent to ${email} ` +
-                            `(2-3 weeks after sleep email)`,
+                        `(2-3 weeks after sleep email)`,
                         );
                         somatiqueSeasonalEmailsSent++;
                       }
@@ -9437,11 +9579,11 @@ exports.sendPromotionalEmails = onSchedule(
 
         console.log(
             `✅ Promotional emails job completed: ` +
-            `${sleepEmailsSent} sleep email(s), ` +
-            `${somatiqueEmailsSent} somatique principal, ` +
-            `${somatiqueRelanceEmailsSent} somatique relance, ` +
-            `${somatiqueSeasonalEmailsSent} somatique seasonal, ` +
-            `${errors} error(s)`,
+        `${sleepEmailsSent} sleep email(s), ` +
+        `${somatiqueEmailsSent} somatique principal, ` +
+        `${somatiqueRelanceEmailsSent} somatique relance, ` +
+        `${somatiqueSeasonalEmailsSent} somatique seasonal, ` +
+        `${errors} error(s)`,
         );
 
         return {
@@ -9756,7 +9898,7 @@ exports.bookCourse = onRequest(
 
           const participantCount = bookingsSnapshot.size;
           if (participantCount >= course.maxCapacity) {
-            // Ajouter à la liste d'attente
+          // Ajouter à la liste d'attente
             const waitlistData = {
               courseId: courseId,
               email: normalizedEmail,
@@ -9783,7 +9925,7 @@ exports.bookCourse = onRequest(
               }
             } catch (notifError) {
               console.error('Error sending waitlist admin notification:', notifError);
-              // Ne pas bloquer le processus
+            // Ne pas bloquer le processus
             }
 
             return res.json({
@@ -9839,10 +9981,9 @@ exports.bookCourse = onRequest(
             updatedAt: new Date(),
             paidAt: new Date(),
             notes: activePass.passType === 'semester_pass' ?
-              'Pass Semestriel' :
-              `Flow Pass (séance ${
-                activePass.sessionsTotal - (sessionResult?.sessionsRemaining || 0)
-              }/${activePass.sessionsTotal})`,
+            'Pass Semestriel' :
+            `Flow Pass (séance ${activePass.sessionsTotal - (sessionResult?.sessionsRemaining || 0)
+            }/${activePass.sessionsTotal})`,
           };
 
           await db.collection('bookings').doc(bookingId).set(bookingData);
@@ -9899,12 +10040,12 @@ exports.bookCourse = onRequest(
 
           // Envoyer email de confirmation
           try {
-            // Créer un token de désinscription
+          // Créer un token de désinscription
             const cancellationTokenResult =
-              await bookingService.createCancellationToken(db, bookingId, 30);
+            await bookingService.createCancellationToken(db, bookingId, 30);
             const cancellationUrl = cancellationTokenResult.success ?
-              cancellationTokenResult.cancellationUrl :
-              null;
+            cancellationTokenResult.cancellationUrl :
+            null;
 
             await db.collection('mail').add({
               to: normalizedEmail,
@@ -9941,7 +10082,7 @@ exports.bookCourse = onRequest(
             }
           } catch (notifError) {
             console.error('Error sending admin notification:', notifError);
-            // Ne pas bloquer le processus
+          // Ne pas bloquer le processus
           }
 
           return res.json({
@@ -9952,10 +10093,9 @@ exports.bookCourse = onRequest(
             passType: activePass.passType,
             sessionsRemaining: sessionResult?.sessionsRemaining ?? -1,
             message: activePass.passType === 'semester_pass' ?
-              'Réservation confirmée avec votre Pass Semestriel !' :
-              `Réservation confirmée ! Il vous reste ${
-                sessionResult?.sessionsRemaining
-              } séance(s) sur votre Flow Pass.`,
+            'Réservation confirmée avec votre Pass Semestriel !' :
+            `Réservation confirmée ! Il vous reste ${sessionResult?.sessionsRemaining
+            } séance(s) sur votre Flow Pass.`,
           });
         }
 
@@ -10030,19 +10170,19 @@ exports.bookCourse = onRequest(
                 .get();
 
             const isConfirmed = !existingConfirmation.empty &&
-              existingConfirmation.docs[0].data().confirmed === true;
+            existingConfirmation.docs[0].data().confirmed === true;
 
             if (isConfirmed) {
-              // Contact confirmé : envoyer email de confirmation immédiatement
+            // Contact confirmé : envoyer email de confirmation immédiatement
               const courseDoc = await db.collection('courses').doc(courseId).get();
               const course = courseDoc.data();
 
               try {
-                // Créer un token de désinscription
+              // Créer un token de désinscription
                 const cancellationTokenResult =
-                  await bookingService.createCancellationToken(db, result.bookingId, 30);
+                await bookingService.createCancellationToken(db, result.bookingId, 30);
                 const cancellationUrl = cancellationTokenResult.success ?
-                  cancellationTokenResult.cancellationUrl : null;
+                cancellationTokenResult.cancellationUrl : null;
 
                 await db.collection('mail').add({
                   to: normalizedEmail,
@@ -10079,10 +10219,10 @@ exports.bookCourse = onRequest(
                 }
               } catch (notifError) {
                 console.error('Error sending admin notification:', notifError);
-                // Ne pas bloquer le processus
+              // Ne pas bloquer le processus
               }
             } else {
-              // Nouveau contact : déclencher double opt-in
+            // Nouveau contact : déclencher double opt-in
               await handleDoubleOptInForBooking(
                   db,
                   normalizedEmail,
@@ -10113,8 +10253,8 @@ exports.bookCourse = onRequest(
             console.error('Error handling double opt-in:', optInError);
           }
         } else if (result.success && result.status === 'pending_payment') {
-          // Pour les paiements en ligne, vérifier le double opt-in
-          // L'email de confirmation sera envoyé après paiement réussi via webhook
+        // Pour les paiements en ligne, vérifier le double opt-in
+        // L'email de confirmation sera envoyé après paiement réussi via webhook
           const existingConfirmation = await db.collection('newsletterConfirmations')
               .where('email', '==', normalizedEmail)
               .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
@@ -10122,10 +10262,10 @@ exports.bookCourse = onRequest(
               .get();
 
           const isConfirmed = !existingConfirmation.empty &&
-            existingConfirmation.docs[0].data().confirmed === true;
+          existingConfirmation.docs[0].data().confirmed === true;
 
           if (!isConfirmed) {
-            // Nouveau contact : déclencher double opt-in
+          // Nouveau contact : déclencher double opt-in
             await handleDoubleOptInForBooking(
                 db,
                 normalizedEmail,
@@ -10135,7 +10275,7 @@ exports.bookCourse = onRequest(
             );
           }
         } else if (result.success && result.status === 'confirmed') {
-          // Cours gratuit (essai) : ajouter au Google Sheet et gérer les emails
+        // Cours gratuit (essai) : ajouter au Google Sheet et gérer les emails
           try {
             const sheetId = process.env.GOOGLE_SHEET_ID;
             if (!sheetId) {
@@ -10186,15 +10326,15 @@ exports.bookCourse = onRequest(
               .get();
 
           const isConfirmed = !existingConfirmation.empty &&
-            existingConfirmation.docs[0].data().confirmed === true;
+          existingConfirmation.docs[0].data().confirmed === true;
 
           if (isConfirmed) {
-            // Contact confirmé : envoyer email de confirmation immédiatement
+          // Contact confirmé : envoyer email de confirmation immédiatement
             const courseDoc = await db.collection('courses').doc(courseId).get();
             const course = courseDoc.data();
 
             try {
-              // Créer un token de désinscription
+            // Créer un token de désinscription
               const cancellationTokenResult = await bookingService.createCancellationToken(db, result.bookingId, 30);
               const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
 
@@ -10233,10 +10373,10 @@ exports.bookCourse = onRequest(
               }
             } catch (notifError) {
               console.error('Error sending admin notification:', notifError);
-              // Ne pas bloquer le processus
+            // Ne pas bloquer le processus
             }
           } else {
-            // Nouveau contact : déclencher double opt-in
+          // Nouveau contact : déclencher double opt-in
             await handleDoubleOptInForBooking(
                 db,
                 normalizedEmail,
@@ -10746,11 +10886,11 @@ exports.cancelBookingByToken = onRequest(
       }
 
       try {
-        // Valider le token
+      // Valider le token
         const tokenValidation = await bookingService.validateCancellationToken(db, token);
 
         if (!tokenValidation.success) {
-          // Rediriger vers une page d'erreur
+        // Rediriger vers une page d'erreur
           const errorMessages = {
             'TOKEN_NOT_FOUND': 'Ce lien de désinscription n\'existe pas ou a déjà été utilisé.',
             'TOKEN_ALREADY_USED': 'Ce lien de désinscription a déjà été utilisé.',
@@ -10806,7 +10946,7 @@ exports.getAvailableCoursesForTransfer = onRequest(
         const courses = [];
 
         for (const doc of coursesSnapshot.docs) {
-          // Exclure le cours d'origine si spécifié
+        // Exclure le cours d'origine si spécifié
           if (excludeCourseId && doc.id === excludeCourseId) {
             continue;
           }
