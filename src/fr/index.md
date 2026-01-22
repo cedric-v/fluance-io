@@ -18,8 +18,8 @@ ogImage: assets/img/accueil-miniature-FR.jpg
     <div class="space-y-4">
       <h1 class="text-4xl md:text-6xl font-semibold leading-tight text-[#F5F7F6]">
         Relâcher les tensions.<br>
-        Libérer le trop-plein émotionnel.<br>
-        Détendre et fortifier votre corps.
+        Se libérer par le mouvement.<br>
+        Retrouver fluidité et présence en soi.
       </h1>
       <p class="text-lg md:text-xl text-[#F5F7F6]">
         Rejoignez un mouvement transformateur basé sur une approche simple, ludique, naturelle et libératrice.<br><br>
