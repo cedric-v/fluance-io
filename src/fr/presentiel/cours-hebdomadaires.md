@@ -41,7 +41,7 @@ permalink: /presentiel/cours-hebdomadaires/
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-3">Horaires</h3>
-        <p class="text-[#3E3A35] mb-2"><strong>Les cours débuteront dès le 22 janvier 2026.</strong></p>
+
         <p class="text-[#3E3A35] mb-2">Les jeudis de 12h15 à 13h</p>
         <p class="text-[#3E3A35] mb-2">Les jeudis de 20h15 à 21h</p>
         <p class="text-[#3E3A35]">Vous souhaitez un autre moment ? <a href="{{ '/contact/' | relativeUrl }}" class="text-fluance hover:underline">Faites la demande</a>. S'il y a assez de demandes, un nouveau créneau sera ouvert.</p>

@@ -41,7 +41,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-3">Schedule</h3>
-        <p class="text-[#3E3A35] mb-2"><strong>Classes will begin on January 22, 2026.</strong></p>
+
         <p class="text-[#3E3A35] mb-2">Thursdays from 12:15 PM to 1:00 PM</p>
         <p class="text-[#3E3A35] mb-2">Thursdays from 8:15 PM to 9:00 PM</p>
         <p class="text-[#3E3A35]">Would you like a different time? <a href="{{ '/en/contact/' | relativeUrl }}" class="text-fluance hover:underline">Make a request</a>. If there are enough requests, a new time slot will be opened.</p>
