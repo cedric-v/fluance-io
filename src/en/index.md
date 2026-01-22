@@ -18,8 +18,8 @@ ogImage: assets/img/accueil-miniature-EN.jpg
     <div class="space-y-4">
       <h1 class="text-4xl md:text-6xl font-semibold leading-tight text-[#F5F7F6]">
         Release tension.<br>
-        Free emotional overflow.<br>
-        Relax and strengthen your body.
+        Freeing yourself through movement.<br>
+        Regain fluidity and presence within yourself.
       </h1>
       <p class="text-lg md:text-xl text-[#F5F7F6]">
         Join a transformative movement based on a simple, playful, natural and liberating approach.<br><br>
