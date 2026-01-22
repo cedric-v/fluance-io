@@ -117,7 +117,7 @@ npm install
 
 ```bash
 # Depuis la racine du projet
-firebase deploy --only functions:syncPlanning,functions:syncPlanningManual,functions:getCourseStatus,functions:getAvailableCourses,functions:bookCourse,functions:stripeBookingWebhook,functions:cancelCourseBooking,functions:getUserBookings
+firebase deploy --only functions:syncPlanning,functions:syncPlanningManual,functions:getCourseStatus,functions:getAvailableCourses,functions:bookCourse,functions:stripeBookingWebhook,functions:cancelCourseBooking,functions:getUserBookings,functions:sendTrialFollowUps,functions:sendTrialFollowUpsManual
 ```
 
 ### 3. Déployer le site (GitHub Pages)

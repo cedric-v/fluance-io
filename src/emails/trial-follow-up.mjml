@@ -1,0 +1,62 @@
+---
+layout: false
+permalink: /emails/trial-follow-up.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold">
+          Votre Fluance d'hier
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          J'espère que le cours Fluance d'hier vous a fait du bien.
+        </mj-text>
+        <mj-text>
+          Si vous souhaitez continuer, il vous suffit de vous inscrire à un prochain cours via la page suivante :
+        </mj-text>
+        <mj-button
+          href="https://fluance.io/presentiel/reserver/"
+          background-color="#E6B84A"
+          color="#0f172a"
+          font-weight="bold"
+          padding="15px 30px"
+          border-radius="5px"
+        >
+          Réserver mon prochain cours
+        </mj-button>
+        <mj-text>
+          Je me réjouis de peut-être vous retrouver.
+        </mj-text>
+        <mj-text>
+          Cédric
+        </mj-text>
+        <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
+        <mj-text font-size="14px" color="#666666">
+<strong>P.S.</strong> Si certaines de vos connaissances pourraient avoir envie de découvrir Fluance, elles sont bienvenues. Le premier cours est offert et l’inscription se fait via la même page.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" color="#666666">
+          Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
