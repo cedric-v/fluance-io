@@ -62,9 +62,10 @@ ogImage: assets/img/accueil-miniature-FR.jpg
     </p>
   </div>
   <div class="grid md:grid-cols-[1fr_2fr] gap-8 items-center">
-    <div class="section-card overflow-hidden max-w-xs mx-auto md:mx-0" style="aspect-ratio: 500/276;">
-      {% image "assets/img/parcours-fluance.jpg", "Parcours Fluance", "w-full h-full object-cover", "lazy", "", "500", "276" %}
-    </div>
+    <figure class="section-card overflow-hidden max-w-xs mx-auto md:mx-0">
+      {% responsiveImage "/assets/img/duplex-fluance-clem-piller.jpg", "Le duplex danse & bien-être", "(max-width: 768px) 100vw, 400px", "w-full h-auto object-cover" %}
+      <figcaption class="text-[10px] text-[#3E3A35]/60 p-1 text-right italic bg-white/80">Clem Piller© pour le duplex</figcaption>
+    </figure>
     <div class="text-left space-y-4">
       <h3 class="text-2xl md:text-3xl font-semibold text-[#3E3A35]">L'accès direct au calme pour les esprits agités</h3>
       <p class="text-lg text-[#3E3A35]">

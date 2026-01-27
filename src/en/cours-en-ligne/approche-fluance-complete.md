@@ -40,42 +40,70 @@ ogImage: assets/img/cedric-bord-mer.jpg
       <p class="text-lg text-[#3E3A35]">If you recognize yourself in these situations, Fluance can particularly help you</p>
     </div>
 
-    <div id="approche-complete-grid" class="grid gap-6">
+    <style>
+      .approche-grid-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        width: 100%;
+        margin-top: 3rem;
+      }
+      @media (min-width: 768px) {
+        .approche-grid-container {
+          flex-direction: row;
+          align-items: stretch;
+        }
+        .approche-card {
+          flex: 1;
+        }
+      }
+    </style>
+
+    <div class="approche-grid-container">
       <!-- Fatigue and exhaustion -->
-      <div class="bg-white rounded-lg p-6 shadow-md border-l-4 border-fluance">
-        <h3 class="text-xl font-semibold text-fluance mb-4">When fatigue persists</h3>
-        <p class="text-[#3E3A35] leading-relaxed mb-3">
-          Do you know that fatigue that remains even after a good night's sleep? That feeling of being simply... flat, perhaps without being sad or angry?
-        </p>
-        <p class="text-[#3E3A35] leading-relaxed">
-          <strong>The difference:</strong> Instead of moving to feel (training the body), Fluance invites you to feel then move. This approach allows your body to find its natural rhythm and access its self-regeneration system.
-        </p>
+      <div class="approche-card bg-white rounded-3xl p-8 shadow-md border-l-4 border-fluance flex flex-col hover:shadow-xl transition-all duration-300">
+        <div class="text-3xl mb-4 text-center">🌱</div>
+        <h3 class="text-xl font-bold text-fluance mb-4 leading-tight">When fatigue persists</h3>
+        <div class="space-y-4 flex-grow text-[#3E3A35]">
+          <p class="leading-relaxed italic opacity-80">
+            "Do you know that fatigue that remains even after a good night's sleep? That feeling of being simply... flat?"
+          </p>
+          <p class="leading-relaxed border-t border-fluance/10 pt-4">
+            <strong>The difference:</strong> instead of moving to train the body, Fluance invites you to <strong>feel then move</strong>. Your body regains its natural rhythm of self-regeneration.
+          </p>
+        </div>
       </div>
-
+  
       <!-- Sleep -->
-      <div class="bg-white rounded-lg p-6 shadow-md border-l-4 border-fluance">
-        <h3 class="text-xl font-semibold text-fluance mb-4">When sleep eludes you</h3>
-        <p class="text-[#3E3A35] leading-relaxed mb-3">
-          Do you wake up in the middle of the night and struggle to fall back asleep?
-        </p>
-        <p class="text-[#3E3A35] leading-relaxed">
-          <strong>A different perspective:</strong> Gentle movement during the day, oriented toward calming the nervous system, improves sleep quality. Each small improvement creates the conditions for the next.
-        </p>
+      <div class="approche-card bg-white rounded-3xl p-8 shadow-md border-l-4 border-[#8bc34a] flex flex-col hover:shadow-xl transition-all duration-300">
+        <div class="text-3xl mb-4 text-center">🌙</div>
+        <h3 class="text-xl font-bold text-[#689f38] mb-4 leading-tight">When sleep eludes you</h3>
+        <div class="space-y-4 flex-grow text-[#3E3A35]">
+          <p class="leading-relaxed italic opacity-80">
+            "Do you wake up in the middle of the night and struggle to fall back asleep?"
+          </p>
+          <p class="leading-relaxed border-t border-[#8bc34a]/10 pt-4">
+            <strong>A different perspective:</strong> gentle movement, oriented towards calming the nervous system, radically improves the quality of your deep sleep.
+          </p>
+        </div>
       </div>
-
-      <!-- Physical and emotional tensions -->
-      <div class="bg-white rounded-lg p-6 shadow-md border-l-4 border-fluance">
-        <h3 class="text-xl font-semibold text-fluance mb-4">When tensions accumulate</h3>
-        <p class="text-[#3E3A35] leading-relaxed mb-3">
-          Do you feel tensions in your back, neck or shoulders? Stiffness that appears without warning? Emotions that remain blocked?
-        </p>
-        <p class="text-[#3E3A35] leading-relaxed">
-          <strong>A different approach:</strong> Rather than fleeing stress and tensions, Fluance uses them as levers. Each tension becomes an opportunity to return to oneself, each friction a signal to readjust one's alignment. Gentle movement releases both physical tensions and blocked emotions.
-        </p>
+  
+      <!-- Tensions -->
+      <div class="approche-card bg-white rounded-3xl p-8 shadow-md border-l-4 border-[#E6B84A] flex flex-col hover:shadow-xl transition-all duration-300">
+        <div class="text-3xl mb-4 text-center">✨</div>
+        <h3 class="text-xl font-bold text-fluance mb-4 leading-tight">When tensions accumulate</h3>
+        <div class="space-y-4 flex-grow text-[#3E3A35]">
+          <p class="leading-relaxed italic opacity-80">
+            "Back, neck, unforeseen stiffness... That feeling that everything remains blocked?"
+          </p>
+          <p class="leading-relaxed border-t border-[#E6B84A]/10 pt-4">
+            <strong>A different approach:</strong> use tensions as levers. Each friction is a signal to readjust your alignment and release physical tensions and emotions.
+          </p>
+        </div>
       </div>
     </div>
 
-    <div class="bg-fluance/5 rounded-lg p-8 mt-8 border border-fluance/20">
+    <div class="bg-fluance/5 rounded-lg p-8 mt-12 border border-fluance/20">
       <h3 class="text-xl font-semibold text-fluance mb-4 text-center">Shifting from "body we train" to "body we feel"</h3>
       <p class="text-lg text-[#3E3A35] leading-relaxed text-center max-w-3xl mx-auto">
         When we let the body inform rather than just use it as an object, we <strong>access blocked emotions and the self-regeneration system.</strong><br /><br />It's probably not what you do that's wrong. It's perhaps how you do it.
@@ -84,7 +112,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
   </div>
 </section>
 
-<section class="max-w-6xl mx-auto px-6 md:px-12 py-12">
+<section class="max-w-6xl mx-auto px-6 md:px-12 pt-12 pb-12">
   <div class="bg-white rounded-lg p-8 shadow-lg">
     <h2 class="text-2xl font-semibold text-fluance mb-6">What you receive when joining:</h2>
     <ul class="space-y-4 text-lg text-[#3E3A35]/90">
@@ -112,7 +140,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
   </div>
 </section>
 
-<section id="choose-your-subscription" class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-8" style="scroll-margin-top: 100px;">
+<section id="choose-your-subscription" class="max-w-6xl mx-auto px-6 md:px-12 pt-12 pb-16 space-y-8" style="scroll-margin-top: 100px;">
   <div class="text-center space-y-4 mb-12">
     <h2 class="text-3xl font-semibold text-fluance">Choose your subscription</h2>
     <p class="text-lg text-[#3E3A35]">Two <strong>flexible</strong> options to <strong>integrate Fluance into your daily life</strong></p>
