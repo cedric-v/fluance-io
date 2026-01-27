@@ -14,6 +14,8 @@
   },
   "hosting": {
     "public": "_site",
+    "cleanUrls": true,
+    "trailingSlash": true,
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -23,10 +25,6 @@
       {
         "source": "/firebase-web-authn-api",
         "function": "ext-firebase-web-authn-fu06-api"
-      },
-      {
-        "source": "**",
-        "destination": "/index.html"
       }
     ]
   },
