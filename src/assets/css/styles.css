@@ -225,22 +225,3 @@ header .group:hover .absolute {
 main {
   transition: opacity 0.1s ease-in-out;
 }
-
-/* Grid responsive pour approche-fluance-complete */
-#approche-complete-grid {
-  display: grid !important;
-  grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-  gap: 1.5rem;
-}
-
-@media (min-width: 768px) {
-  #approche-complete-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  #approche-complete-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-}
