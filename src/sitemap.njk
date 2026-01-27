@@ -53,19 +53,17 @@ eleventyExcludeFromCollections: true
     {%- if page.locale == "fr" -%}
       {%- set enUrl = cleanUrl | replace("/fr/", "/en/") -%}
       {%- if enUrl != cleanUrl -%}
-        {%- if enUrl != "/en/" -%}
     <xhtml:link rel="alternate" hreflang="fr" href="{{ fullUrl }}" />
     <xhtml:link rel="alternate" hreflang="en" href="https://fluance.io{{ enUrl }}" />
-        {%- endif -%}
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fluance.io/" />
       {%- endif -%}
     {%- endif -%}
     {%- if page.locale == "en" -%}
       {%- set frUrl = cleanUrl | replace("/en/", "/fr/") -%}
       {%- if frUrl != cleanUrl -%}
-        {%- if frUrl != "/fr/" -%}
     <xhtml:link rel="alternate" hreflang="en" href="{{ fullUrl }}" />
     <xhtml:link rel="alternate" hreflang="fr" href="https://fluance.io{{ frUrl }}" />
-        {%- endif -%}
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fluance.io/" />
       {%- endif -%}
     {%- endif -%}
   </url>
