@@ -17,7 +17,7 @@ permalink: /presentiel/cours-hebdomadaires/
       <h2 class="text-2xl font-semibold text-fluance mb-4">Rejoignez le mouvement</h2>
       <div class="flow-root">
         <figure class="float-right ml-6 mb-4 w-full md:w-1/2 lg:w-2/5 max-w-sm">
-          {% responsiveImage "/assets/img/duplex-fluance-clem-piller.jpg", "Le duplex danse & bien-être", "(max-width: 768px) 100vw, 400px", "rounded-xl shadow-sm w-full" %}
+          {% responsiveImage "/assets/img/duplex-fluance-clem-piller.jpg", "Le duplex danse & bien-être", "(max-width: 768px) 100vw, 400px", "rounded-xl shadow-sm w-full", "eager" %}
           <figcaption class="text-xs text-[#3E3A35]/60 mt-2 text-right italic">Clem Piller© pour le duplex</figcaption>
         </figure>
         <p class="text-lg text-[#3E3A35]">
