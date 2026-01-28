@@ -9,7 +9,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
 
 <section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">
   <div class="absolute inset-0 z-0">
-    {% image "assets/img/cedric-bord-mer.jpg", "Cédric au bord de la mer", "w-full h-full object-cover" %}
+    {% image "assets/img/cedric-bord-mer.jpg", "Cédric au bord de la mer", "w-full h-full object-cover", "eager" %}
     <div class="absolute inset-0" style="background: linear-gradient(to right, transparent, rgba(100, 142, 216, 0.7), rgba(100, 142, 216, 0.9));"></div>
     <div class="absolute inset-0 bg-black/30 md:bg-transparent"></div>
   </div>

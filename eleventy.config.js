@@ -11,11 +11,11 @@ require('dotenv').config();
 // PathPrefix conditionnel : vide en dev, /fluance-io en prod (GitHub Pages), vide en prod (fluance.io)
 const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "" : "";
 
-module.exports = function(eleventyConfig) {
-  
+module.exports = function (eleventyConfig) {
+
   // 1. Images responsives optimisées avec eleventy-img
-  eleventyConfig.addShortcode("responsiveImage", async function(src, alt, sizes = "100vw", cls = "", loading = "lazy") {
-    if(alt === undefined) {
+  eleventyConfig.addShortcode("responsiveImage", async function (src, alt, sizes = "100vw", cls = "", loading = "lazy") {
+    if (alt === undefined) {
       throw new Error(`Missing \`alt\` on responsive image from: ${src}`);
     }
 
@@ -38,7 +38,7 @@ module.exports = function(eleventyConfig) {
       alt,
       sizes,
       loading,
-      decoding: "async",
+      decoding: loading === "eager" ? "sync" : "async",
     };
 
     if (cls) {
@@ -50,41 +50,41 @@ module.exports = function(eleventyConfig) {
 
   // 2. Gestion des Images classiques (local, servies depuis GitHub Pages ou tout autre hébergeur statique)
   // Support WebP avec fallback automatique pour jpg/jpeg/png
-  eleventyConfig.addShortcode("image", function(src, alt, cls = "", loading = "lazy", fetchpriority = "", width = "", height = "") {
+  eleventyConfig.addShortcode("image", function (src, alt, cls = "", loading = "lazy", fetchpriority = "", width = "", height = "") {
     const cleanSrc = src.startsWith('/') ? src : `/${src}`;
     const fullSrc = PATH_PREFIX + cleanSrc;
     const loadingAttr = loading ? `loading="${loading}"` : '';
     const fetchpriorityAttr = fetchpriority ? `fetchpriority="${fetchpriority}"` : '';
     const widthAttr = width ? `width="${width}"` : '';
     const heightAttr = height ? `height="${height}"` : '';
-    
+
     // Vérifier si c'est une image jpg/jpeg/png (pour laquelle on peut avoir une version WebP)
     const isConvertibleImage = /\.(jpg|jpeg|png)$/i.test(cleanSrc);
-    
+
     if (isConvertibleImage) {
       // Générer le chemin WebP correspondant
       const webpSrc = cleanSrc.replace(/\.(jpg|jpeg|png)$/i, '.webp');
       const webpFullSrc = PATH_PREFIX + webpSrc;
-      
+
       // Vérifier si le fichier WebP existe dans src/assets/img
       // Utiliser path.resolve pour obtenir le chemin absolu depuis le répertoire du projet
       const projectRoot = path.resolve(__dirname);
       const srcPath = path.join(projectRoot, 'src', cleanSrc.replace(/^\//, ''));
       const webpPath = srcPath.replace(/\.(jpg|jpeg|png)$/i, '.webp');
       const webpExists = fs.existsSync(webpPath);
-      
+
       // Utiliser <picture> avec fallback seulement si le fichier WebP existe
       if (webpExists) {
         const sourceWidthAttr = width ? `width="${width}"` : '';
         const sourceHeightAttr = height ? `height="${height}"` : '';
-        
+
         return `<picture>
           <source srcset="${webpFullSrc}" type="image/webp" ${sourceWidthAttr} ${sourceHeightAttr}>
           <img src="${fullSrc}" alt="${alt}" class="${cls}" ${loadingAttr} ${fetchpriorityAttr} ${widthAttr} ${heightAttr}>
         </picture>`;
       }
     }
-    
+
     // Pour les autres formats ou si WebP n'existe pas, utiliser <img> simple
     return `<img src="${fullSrc}" alt="${alt}" class="${cls}" ${loadingAttr} ${fetchpriorityAttr} ${widthAttr} ${heightAttr}>`;
   });
@@ -98,7 +98,7 @@ module.exports = function(eleventyConfig) {
   });
 
   // 2b. Filtre de date simple pour Nunjucks (utilisé dans le footer)
-  eleventyConfig.addFilter("date", function(value, format) {
+  eleventyConfig.addFilter("date", function (value, format) {
     const date = value === "now" || !value ? new Date() : new Date(value);
     if (format === "yyyy") {
       return date.getFullYear().toString();
@@ -107,7 +107,7 @@ module.exports = function(eleventyConfig) {
   });
 
   // 2c. Filtre pour ajouter le pathPrefix de manière relative (sans domaine)
-  eleventyConfig.addFilter("relativeUrl", function(url) {
+  eleventyConfig.addFilter("relativeUrl", function (url) {
     // Nettoyer l'URL pour commencer par /
     const cleanUrl = url.startsWith('/') ? url : '/' + url;
     // Ajouter le pathPrefix seulement s'il existe
@@ -115,55 +115,55 @@ module.exports = function(eleventyConfig) {
   });
 
   // 2d. Filtre pour construire l'URL complète de l'image OG
-  eleventyConfig.addFilter("buildOgImageUrl", function(imagePath) {
+  eleventyConfig.addFilter("buildOgImageUrl", function (imagePath) {
     if (!imagePath) imagePath = 'assets/img/fond-cedric.jpg';
-    
+
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
-    
+
     if (imagePath.startsWith('/')) {
       return 'https://fluance.io' + imagePath;
     }
-    
+
     return 'https://fluance.io/' + imagePath;
   });
 
   // 2d-bis. Filtre pour normaliser les URLs canoniques
-  eleventyConfig.addFilter("canonicalUrl", function(url) {
+  eleventyConfig.addFilter("canonicalUrl", function (url) {
     if (!url || url === '.' || url === './') return '/';
-    
+
     // Normaliser l'URL : s'assurer qu'elle commence par /
     let normalized = url.startsWith('/') ? url : '/' + url;
-    
+
     // Gérer les cas spéciaux
     if (normalized === '/' || normalized === './' || normalized === '.') {
       return '/';
     }
-    
+
     // S'assurer que l'URL se termine par / pour les pages d'accueil
     if (normalized === '/fr' || normalized === '/en') {
       normalized = normalized + '/';
     }
-    
+
     // Normaliser les doubles slashes (sauf après le protocole)
     normalized = normalized.replace(/\/+/g, '/');
-    
+
     // S'assurer que les pages d'accueil se terminent par /
     if (normalized === '/fr' || normalized === '/en') {
       normalized = normalized + '/';
     }
-    
+
     return normalized;
   });
 
   // 2e. Shortcode pour le contenu protégé
   // Le script JavaScript est dans un fichier externe (protected-content.js)
   // pour éviter les problèmes de minification HTML
-  eleventyConfig.addShortcode("protectedContent", function(contentId) {
+  eleventyConfig.addShortcode("protectedContent", function (contentId) {
     // Échapper correctement le contentId pour l'attribut HTML
     const escapedContentIdAttr = contentId.replace(/"/g, '&quot;');
-    
+
     return `<div class="protected-content" data-content-id="${escapedContentIdAttr}">
   <div class="bg-gray-100 rounded-lg p-8 text-center">
     <p class="text-gray-600 mb-4">Chargement du contenu protégé...</p>
@@ -177,7 +177,7 @@ module.exports = function(eleventyConfig) {
 
   // 2e-bis. Shortcode pour injecter la configuration Stripe
   // Permet d'injecter la clé publique Stripe depuis une variable d'environnement
-  eleventyConfig.addShortcode("stripeConfig", function() {
+  eleventyConfig.addShortcode("stripeConfig", function () {
     const stripeKey = process.env.STRIPE_PUBLISHABLE_KEY || '';
     // Échapper la clé pour JavaScript
     const escapedKey = stripeKey.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
@@ -189,7 +189,7 @@ module.exports = function(eleventyConfig) {
   });
 
   // 2f. Shortcode pour générer les schémas Schema.org JSON-LD
-  eleventyConfig.addShortcode("schemaOrg", function(locale) {
+  eleventyConfig.addShortcode("schemaOrg", function (locale) {
     // Accéder au contexte Eleventy via 'this'
     const page = this.page || this.ctx?.page || {};
     const pageData = page.data || this.ctx || {};
@@ -270,7 +270,7 @@ module.exports = function(eleventyConfig) {
 
     // 4. Schémas spécifiques selon le type de page
     const pagePath = page.url || '';
-    
+
     // Page d'accueil
     if (pagePath === '/' || pagePath === '/fr/' || pagePath === '/en/') {
       const serviceSchema = {
@@ -285,7 +285,7 @@ module.exports = function(eleventyConfig) {
           "@type": "Country",
           "name": "Switzerland"
         },
-        "description": pageLocale === 'fr' 
+        "description": pageLocale === 'fr'
           ? "Fluance : libérez votre corps des tensions grâce à une approche simple basée sur le mouvement, le souffle et le jeu."
           : "Fluance: release tension from your body through a simple approach based on movement, breath and play.",
         "offers": [
@@ -310,7 +310,7 @@ module.exports = function(eleventyConfig) {
         "@context": "https://schema.org",
         "@type": "Course",
         "name": pageData.title || (pageLocale === 'fr' ? "Cours Fluance" : "Fluance Course"),
-        "description": pageData.description || (pageLocale === 'fr' 
+        "description": pageData.description || (pageLocale === 'fr'
           ? "Cours de bien-être basé sur le mouvement, le souffle et le jeu"
           : "Wellness course based on movement, breath and play"),
         "provider": {
@@ -322,7 +322,7 @@ module.exports = function(eleventyConfig) {
         "courseMode": "online",
         "inLanguage": pageLocale === 'fr' ? 'fr-FR' : 'en-US',
         "url": pageUrl,
-        "teaches": pageLocale === 'fr' 
+        "teaches": pageLocale === 'fr'
           ? "Bien-être, mouvement, respiration, gestion du stress, mobilité corporelle"
           : "Wellness, movement, breathing, stress management, body mobility"
       };
@@ -345,12 +345,12 @@ module.exports = function(eleventyConfig) {
           "url": pageUrl,
           "priceValidUntil": "2026-12-31"
         };
-        
+
         // Ajouter un schéma VideoObject pour la vidéo de présentation
         const videoSchema = {
           "@context": "https://schema.org",
           "@type": "VideoObject",
-          "name": pageLocale === 'fr' 
+          "name": pageLocale === 'fr'
             ? "Fluance - 21 jours - vidéo de vente"
             : "Fluance - 21 days - sales video",
           "description": pageLocale === 'fr'
@@ -653,7 +653,7 @@ module.exports = function(eleventyConfig) {
   });
 
   // 3. Minification HTML sécurisée
-  eleventyConfig.addTransform("htmlmin", function(content, outputPath) {
+  eleventyConfig.addTransform("htmlmin", function (content, outputPath) {
     if (process.env.ELEVENTY_ENV === 'prod' && outputPath && outputPath.endsWith(".html")) {
       return htmlmin.minify(content, {
         removeComments: true,
@@ -675,9 +675,9 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/.nojekyll": ".nojekyll" });
   // Copie de la favicon à la racine
   eleventyConfig.addPassthroughCopy({ "src/assets/img/favicon.ico": "favicon.ico" });
-  
+
   // Shortcode pour préserver le code JavaScript sans interprétation des entités HTML
-  eleventyConfig.addPairedShortcode("rawjs", function(content) {
+  eleventyConfig.addPairedShortcode("rawjs", function (content) {
     return content;
   });
 
@@ -710,13 +710,13 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.on('eleventy.after', async () => {
     const emailTemplatesDir = path.join(__dirname, '_site', 'emails');
     const functionsEmailsDir = path.join(__dirname, 'functions', 'emails');
-    
+
     if (fs.existsSync(emailTemplatesDir)) {
       // Créer le dossier functions/emails s'il n'existe pas
       if (!fs.existsSync(functionsEmailsDir)) {
         fs.mkdirSync(functionsEmailsDir, { recursive: true });
       }
-      
+
       // Copier tous les fichiers HTML d'emails
       const files = fs.readdirSync(emailTemplatesDir);
       files.forEach((file) => {
@@ -729,7 +729,7 @@ module.exports = function(eleventyConfig) {
       });
     }
   });
-  
+
   return {
     dir: { input: "src", output: "_site" },
     markdownTemplateEngine: "njk",
