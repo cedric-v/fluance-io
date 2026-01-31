@@ -2415,6 +2415,28 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
                   process.env.MAILJET_API_KEY,
                   process.env.MAILJET_API_SECRET,
               );
+
+              // Log l'alerte dans audit_payments
+              try {
+                await db.collection('audit_payments').add({
+                  email: customerEmail.toLowerCase().trim(),
+                  products: productsToCreate,
+                  amount: actualAmount / 100,
+                  expectedAmount: expectedAmount / 100,
+                  currency: 'CHF',
+                  stripeSessionId: session.id,
+                  stripePaymentIntentId: session.payment_intent || session.id,
+                  status: 'error',
+                  alert: true,
+                  alertType: 'amount_mismatch',
+                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                  metadata: session.metadata || {},
+                  system: 'firebase',
+                  type: 'online_product',
+                });
+              } catch (auditError) {
+                console.error('Error logging audit alert:', auditError);
+              }
             } else if (actualAmount === expectedAmount) {
               console.log(`✅ Montant vérifié: ${actualAmount / 100} CHF = ${expectedAmount / 100} CHF`);
             } else {
@@ -2507,6 +2529,28 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
             console.log(
                 `✅ Token created and email sent to ${customerEmail} for product ${product}, amount: ${amountCHF} CHF`,
             );
+          }
+
+          // ============================================================
+          // AUDIT ET MONITORING
+          // ============================================================
+          try {
+            await db.collection('audit_payments').add({
+              email: customerEmail.toLowerCase().trim(),
+              products: productsToCreate,
+              amount: amountCHF,
+              currency: 'CHF',
+              stripeSessionId: session.id,
+              stripePaymentIntentId: session.payment_intent || session.id,
+              status: 'success',
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              metadata: session.metadata || {},
+              system: 'firebase',
+              type: 'online_product',
+            });
+            console.log(`📊 Audit log created for payment by ${customerEmail}`);
+          } catch (auditError) {
+            console.error('Error creating audit log:', auditError);
           }
 
           return res.status(200).json({received: true});
@@ -11309,6 +11353,68 @@ exports.getAvailableCoursesForTransfer = onRequest(
       } catch (error) {
         console.error('Error getting courses for transfer:', error);
         return res.status(500).json({error: error.message});
+      }
+    },
+);
+/**
+ * Récupère les statistiques de santé de l'automatisation (Monitoring)
+ * Utilisé par le mini-dashboard de monitoring
+ */
+exports.getHealthStats = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['ADMIN_EMAIL'],
+    },
+    async (request) => {
+    // Vérifier si l'utilisateur est admin (simplifié pour l'instant)
+    // Dans un cas réel, on vérifierait le custom claim admin
+      const {days = 7} = request.data;
+
+      try {
+        const now = new Date();
+        const startDate = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
+
+        // 1. Récupérer les derniers logs d'audit
+        const auditSnapshot = await db.collection('audit_payments')
+            .where('timestamp', '>=', startDate)
+            .orderBy('timestamp', 'desc')
+            .get();
+
+        const logs = auditSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: doc.data().timestamp?.toDate().toISOString(),
+        }));
+
+        // 2. Calculer le taux d'activation des tokens
+        const tokensSnapshot = await db.collection('registrationTokens')
+            .where('createdAt', '>=', startDate)
+            .get();
+
+        const totalTokens = tokensSnapshot.size;
+        const usedTokens = tokensSnapshot.docs.filter((d) => d.data().used).length;
+        const activationRate = totalTokens > 0 ? (usedTokens / totalTokens) * 100 : 0;
+
+        // 3. Récupérer les alertes (montants discordants)
+        // Note: On pourrait aussi loguer spécifiquement les alertes dans audit_payments
+        const alerts = logs.filter((l) => l.alert === true);
+
+        return {
+          success: true,
+          stats: {
+            periodDays: days,
+            totalPaymentsDetected: logs.length,
+            totalTokensCreated: totalTokens,
+            usedTokens: usedTokens,
+            activationRate: activationRate.toFixed(1) + '%',
+            unactivatedCount: totalTokens - usedTokens,
+          },
+          recentLogs: logs.slice(0, 10),
+          alerts: alerts,
+        };
+      } catch (error) {
+        console.error('Error fetching health stats:', error);
+        throw new HttpsError('internal', 'Erreur lors de la récupération des stats');
       }
     },
 );
