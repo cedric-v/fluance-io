@@ -186,7 +186,7 @@ if (args.length < 2) {
     console.error('❌ Erreur: Veuillez fournir un email et au moins un produit');
     console.log('Usage: node repair-user-document.js EMAIL PRODUCT1 [PRODUCT2] ...');
     console.log('');
-    console.log('Exemple: node repair-user-document.js veronique.corminboeuf@bluewin.ch 21jours sos-dos-cervicales');
+    console.log('Exemple: node repair-user-document.js customer@example.com 21jours sos-dos-cervicales');
     process.exit(1);
 }
 

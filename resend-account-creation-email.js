@@ -160,7 +160,7 @@ const email = process.argv[2];
 if (!email) {
     console.error('❌ Erreur: Veuillez fournir un email');
     console.log('Usage: node resend-account-creation-email.js EMAIL');
-    console.log('Exemple: node resend-account-creation-email.js veronique.corminboeuf@bluewin.ch');
+    console.log('Exemple: node resend-account-creation-email.js customer@example.com');
     process.exit(1);
 }
 
