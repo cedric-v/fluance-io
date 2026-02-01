@@ -28,12 +28,12 @@ function loadFirebase() {
 
     // Charger Firebase SDK
     const script1 = document.createElement('script');
-    script1.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
+    script1.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js';
     document.head.appendChild(script1);
 
     script1.onload = () => {
       const script2 = document.createElement('script');
-      script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+      script2.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
       document.head.appendChild(script2);
 
       script2.onload = () => {
