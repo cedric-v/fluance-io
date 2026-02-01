@@ -25,17 +25,17 @@ window.firebaseConfig = firebaseConfig;
 if (typeof firebase === 'undefined') {
   // Charger Firebase SDK si pas déjà chargé
   const script1 = document.createElement('script');
-  script1.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
+  script1.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js';
   document.head.appendChild(script1);
   
   script1.onload = () => {
     const script2 = document.createElement('script');
-    script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js';
+    script2.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth-compat.js';
     document.head.appendChild(script2);
     
     script2.onload = () => {
       const script3 = document.createElement('script');
-      script3.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js';
+      script3.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore-compat.js';
       document.head.appendChild(script3);
       
       script3.onload = () => {
@@ -180,7 +180,7 @@ async function verifyTokenAndCreateAccount(token, password, email = null) {
     // Initialiser Firebase Functions si nécessaire
     if (!firebase.functions) {
       const functionsScript = document.createElement('script');
-      functionsScript.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+      functionsScript.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
       document.head.appendChild(functionsScript);
       await new Promise((resolve) => {
         functionsScript.onload = resolve;
@@ -329,7 +329,7 @@ async function sendSignInLink(email, actionCodeSettings = null) {
       if (!functionsScript) {
         // Charger le script Firebase Functions
         functionsScript = document.createElement('script');
-        functionsScript.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+        functionsScript.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
         document.head.appendChild(functionsScript);
         
         // Attendre que le script se charge
@@ -466,7 +466,7 @@ async function sendPasswordResetEmail(email) {
         console.log('[Firebase Auth] Chargement du script Firebase Functions...');
         // Charger le script Firebase Functions
         functionsScript = document.createElement('script');
-        functionsScript.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+        functionsScript.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
         document.head.appendChild(functionsScript);
         
         // Attendre que le script se charge
@@ -1267,11 +1267,11 @@ function initCommentSection(contentId) {
   if (typeof firebase === 'undefined') {
     // Charger Firebase pour les commentaires
     const script1 = document.createElement('script');
-    script1.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
+    script1.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js';
     document.head.appendChild(script1);
     
     const script2 = document.createElement('script');
-    script2.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js';
+    script2.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore-compat.js';
     document.head.appendChild(script2);
     
     script2.onload = () => {
@@ -1655,7 +1655,7 @@ function ensureFunctionsLoaded() {
   
   // Charger Firebase Functions si pas déjà chargé
   const functionsScript = document.createElement('script');
-  functionsScript.src = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+  functionsScript.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
   document.head.appendChild(functionsScript);
   
   return new Promise((resolve, reject) => {

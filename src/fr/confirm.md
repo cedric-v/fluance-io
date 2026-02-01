@@ -102,8 +102,8 @@ eleventyExcludeFromCollections: true
           return;
         }
 
-        const appScriptUrl = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js';
-        const functionsScriptUrl = 'https://www.gstatic.com/firebasejs/12.6.0/firebase-functions-compat.js';
+        const appScriptUrl = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js';
+        const functionsScriptUrl = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
 
         if (document.querySelector(`script[src="${appScriptUrl}"]`)) {
           if (typeof firebase !== 'undefined') {
