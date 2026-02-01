@@ -226,8 +226,15 @@ module.exports = function (eleventyConfig) {
         "https://www.instagram.com/fluanceio/",
         "https://ch.pinterest.com/fluanceio/",
         "https://x.com/fluanceio",
-        "https://www.linkedin.com/company/fluance-consulting/"
-      ]
+        "https://www.linkedin.com/company/fluance-consulting/",
+        "https://cedricv.com"
+      ],
+      "founder": {
+        "@type": "Person",
+        "@id": "https://cedricv.com/#person",
+        "name": "Cédric Vonlanthen",
+        "url": "https://cedricv.com"
+      }
     };
     schemas.push(organizationSchema);
 
@@ -250,21 +257,45 @@ module.exports = function (eleventyConfig) {
     };
     schemas.push(websiteSchema);
 
-    // 3. Person Schema (Cédric Vonlanthen)
+    // 3. Person Schema (Cédric Vonlanthen) - Référence au hub central
     const personSchema = {
       "@context": "https://schema.org",
       "@type": "Person",
+      "@id": "https://cedricv.com/#person",
       "name": "Cédric Vonlanthen",
       "jobTitle": pageLocale === 'fr' ? "Fondateur et facilitateur Fluance" : "Founder and Fluance facilitator",
       "worksFor": {
         "@type": "Organization",
         "name": "Fluance"
       },
-      "url": `${baseUrl}${pageLocale === 'fr' ? '/a-propos/philosophie/' : '/en/a-propos/philosophie/'}`,
+      "url": "https://cedricv.com",
       "sameAs": [
+        "https://cedricv.com",
+        "https://instant-academie.com",
+        "https://vie-explosive.fr",
+        "https://www.techniquesdemeditation.com",
+        "https://developpementpersonnel.org",
+        "https://lapleineconscience.com",
         "https://www.youtube.com/@fluanceio",
         "https://www.instagram.com/fluanceio/"
-      ]
+      ],
+      "knowsAbout": pageLocale === 'fr'
+        ? [
+          "Mouvement en conscience",
+          "Bien-être corporel",
+          "Respiration",
+          "Méditation",
+          "Gestion du stress",
+          "Fluidité corps-esprit"
+        ]
+        : [
+          "Conscious Movement",
+          "Body Wellness",
+          "Breathing",
+          "Meditation",
+          "Stress Management",
+          "Body-Mind Fluidity"
+        ]
     };
     schemas.push(personSchema);
 
