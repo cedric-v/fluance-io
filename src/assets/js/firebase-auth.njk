@@ -317,15 +317,15 @@ async function sendSignInLink(email, actionCodeSettings = null) {
     
     // Pour l'instant, on passe directement au fallback Firebase Auth
     // sans essayer d'appeler la Cloud Function
-    try {
-      // Fallback sur Firebase Auth
-      console.log('[Firebase Auth] Appel de auth.sendSignInLinkToEmail (Direct SDK)...');
+    
+    // Fallback sur Firebase Auth
+    console.log('[Firebase Auth] Appel de auth.sendSignInLinkToEmail (Direct SDK)...');
 
-      await auth.sendSignInLinkToEmail(email, settings);
-      
-      console.log('[Firebase Auth] ✅ Lien de connexion envoyé via Firebase Auth (fallback)');
-      return { success: true, message: 'Lien de connexion envoyé avec succès. Vérifiez votre boîte de réception.' };
-    }
+    await auth.sendSignInLinkToEmail(email, settings);
+    
+    console.log('[Firebase Auth] ✅ Lien de connexion envoyé via Firebase Auth (fallback)');
+    return { success: true, message: 'Lien de connexion envoyé avec succès. Vérifiez votre boîte de réception.' };
+
   } catch (error) {
     console.error('[Firebase Auth] ❌ ERREUR lors de l\'envoi du lien');
     console.error('[Firebase Auth] Erreur complète:', error);
