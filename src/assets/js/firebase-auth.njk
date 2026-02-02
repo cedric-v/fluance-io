@@ -314,6 +314,7 @@ async function sendSignInLink(email, actionCodeSettings = null) {
     // Essayer d'abord Mailjet (meilleure délivrabilité), puis Firebase Auth en fallback
     console.log('[Firebase Auth] Tentative d\'envoi via Mailjet (méthode principale)...');
     
+    /*
     try {
       // Charger Firebase Functions si nécessaire
       let app;
@@ -371,8 +372,10 @@ async function sendSignInLink(email, actionCodeSettings = null) {
         throw new Error(result.data?.error || 'Erreur lors de l\'envoi via Mailjet');
       }
     } catch (mailjetError) {
-      console.warn('[Firebase Auth] ⚠️ Mailjet a échoué, tentative avec Firebase Auth (fallback)');
+      console.warn('[Firebase Auth] ⚠️ Mailjet a échoué (ou désactivé), tentative avec Firebase Auth (fallback)');
       console.warn('[Firebase Auth] Erreur Mailjet:', mailjetError.message);
+      */
+
       
       // Fallback sur Firebase Auth
       console.log('[Firebase Auth] Appel de auth.sendSignInLinkToEmail (fallback)...');
