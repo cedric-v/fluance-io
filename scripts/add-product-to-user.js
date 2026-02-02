@@ -36,10 +36,10 @@ const auth = admin.auth();
 async function addProductToUser(email, productName) {
   try {
     console.log(`🔍 Recherche de l'utilisateur: ${email}`);
-    
+
     // Normaliser l'email
     const normalizedEmail = email.toLowerCase().trim();
-    
+
     // Trouver l'utilisateur dans Firebase Auth
     let userRecord;
     try {
@@ -55,11 +55,11 @@ async function addProductToUser(email, productName) {
     }
 
     const userId = userRecord.uid;
-    
+
     // Récupérer le document utilisateur dans Firestore
     const userDocRef = db.collection('users').doc(userId);
     const userDoc = await userDocRef.get();
-    
+
     if (!userDoc.exists) {
       console.error(`❌ Document Firestore non trouvé pour ${normalizedEmail}`);
       console.error('   Le document utilisateur n\'existe pas dans Firestore.');
@@ -69,7 +69,7 @@ async function addProductToUser(email, productName) {
     const userData = userDoc.data();
     console.log(`📄 Document Firestore trouvé`);
     console.log(`   Produits actuels: ${JSON.stringify(userData.products || [])}`);
-    
+
     // Récupérer ou initialiser le tableau products
     // Si products n'existe pas mais product existe, migrer
     let products = userData.products || [];
@@ -82,10 +82,10 @@ async function addProductToUser(email, productName) {
         purchasedAt: userData.createdAt || existingStartDate,
       }];
     }
-    
+
     // Vérifier si le produit existe déjà
     const productExists = products.some(p => p.name === productName);
-    
+
     if (productExists) {
       console.log(`⚠️  Le produit "${productName}" existe déjà pour cet utilisateur.`);
       console.log(`   Produits actuels: ${products.map(p => p.name).join(', ')}`);
@@ -112,7 +112,7 @@ async function addProductToUser(email, productName) {
     console.log(`✅ Produit "${productName}" ajouté avec succès!`);
     console.log(`   Produits actuels: ${products.map(p => p.name).join(', ')}`);
     console.log(`   Date de démarrage: maintenant (déblocage immédiat du bonus)`);
-    
+
   } catch (error) {
     console.error('❌ Erreur:', error.message);
     console.error(error);
@@ -133,7 +133,7 @@ const email = args[0];
 const product = args[1];
 
 // Valider le produit
-const validProducts = ['21jours', 'complet'];
+const validProducts = ['21jours', 'complet', 'sos-dos-cervicales'];
 if (!validProducts.includes(product)) {
   console.error(`❌ Produit invalide: ${product}`);
   console.error(`   Produits valides: ${validProducts.join(', ')}`);
