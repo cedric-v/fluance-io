@@ -235,3 +235,16 @@ header .group:hover .absolute {
 main {
   transition: opacity 0.1s ease-in-out;
 }
+
+/* Utilitaires pour masquer la barre de défilement tout en conservant le défilement */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
