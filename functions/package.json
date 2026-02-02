@@ -19,7 +19,7 @@
     "firebase-functions": "^7.0.5",
     "google-auth-library": "^10.5.0",
     "googleapis": "^171.0.0",
-    "stripe": "^20.1.0"
+    "stripe": "^20.3.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
