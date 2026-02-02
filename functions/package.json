@@ -28,5 +28,8 @@
     "eslint-config-google": "^0.14.0",
     "globals": "^17.0.0"
   },
+  "overrides": {
+    "fast-xml-parser": "5.3.4"
+  },
   "private": true
 }

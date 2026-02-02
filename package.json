@@ -35,5 +35,8 @@
     "postcss-cli": "^11.0.1",
     "qrcode": "^1.5.4",
     "tailwindcss": "^4.1.17"
+  },
+  "overrides": {
+    "fast-xml-parser": "5.3.4"
   }
 }
