@@ -168,6 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('[Espace Membre] Produits chargés:', products);
       console.log('[Espace Membre] Résultat complet:', result);
       
+      // DIAGNOSTIC : Loguer les noms des produits pour vérifier les correspondances
+      console.log('[Espace Membre] Noms des produits possédés:', products.map(p => typeof p === 'string' ? p : p.name));
+      
       // Stocker les produits dans une variable accessible aux event listeners
       window.currentUserProducts = products;
       
@@ -186,17 +189,17 @@ document.addEventListener('DOMContentLoaded', function() {
           description: 'Accès à une <strong>nouvelle mini-série</strong> de pratiques <strong>chaque semaine.</strong><br><br>Pour <strong>garder l\'élan</strong> et <strong>continuer à prendre soin</strong> de votre <strong>corps</strong> et de <strong>vos ressentis</strong>.'
         },
         {
+          id: 'sos-dos-cervicales',
+          name: 'SOS dos & cervicales',
+          url: 'https://buy.stripe.com/aFadR2bSl7ePaeA8PK8k80p',
+          description: 'Effacez les tensions de la posture "Ordinateur". Ajoutez la pratique SOS dos & cervicales (15 min) pour dérouler votre colonne et soulager la nuque après une journée assise.'
+        },
+        {
           id: 'communaute',
           name: '👥 Communauté',
           url: null, // Pas de page de vente
           description: null, // Pas de description pour l'onglet communauté
           isCommunity: true // Marqueur pour identifier l'onglet communauté
-        },
-        {
-          id: 'sos-dos-cervicales',
-          name: 'SOS dos & cervicales',
-          url: 'https://buy.stripe.com/aFadR2bSl7ePaeA8PK8k80p',
-          description: 'Effacez les tensions de la posture "Ordinateur". Ajoutez la pratique SOS dos & cervicales (15 min) pour dérouler votre colonne et soulager la nuque après une journée assise.'
         }
       ];
       
@@ -232,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Créer les onglets
       let tabsHTML = '<div class="border-b border-gray-200 mb-6">';
-      tabsHTML += '<nav class="flex space-x-4" role="tablist">';
+      tabsHTML += '<nav class="flex space-x-4 overflow-x-auto flex-nowrap pb-1" role="tablist">';
       
       allProducts.forEach((prod, index) => {
         // Pour l'onglet communauté, toujours accessible
@@ -241,9 +244,10 @@ document.addEventListener('DOMContentLoaded', function() {
           tabsHTML += `
             <button 
               role="tab"
+              aria-selected="${isActive}"
               data-product-id="${prod.id}"
-              class="px-4 py-2 font-medium text-sm border-b-2 transition-colors
-                     ${isActive ? 'border-fluance text-fluance' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+              class="px-4 py-3 font-semibold text-sm border-b-4 transition-all duration-200 whitespace-nowrap
+                     ${isActive ? 'border-fluance text-fluance bg-fluance/5' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}"
               onclick="switchProductTab('${prod.id}')">
               ${prod.name}
             </button>
@@ -271,10 +275,11 @@ document.addEventListener('DOMContentLoaded', function() {
         tabsHTML += `
           <button 
             role="tab"
+            aria-selected="${isActive}"
             data-product-id="${prod.id}"
-            class="px-4 py-2 font-medium text-sm border-b-2 transition-colors
-                   ${isActive ? 'border-fluance text-fluance' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-                   ${isPurchased ? '' : 'opacity-60'}"
+            class="px-4 py-3 font-semibold text-sm border-b-4 transition-all duration-200 whitespace-nowrap
+                   ${isActive ? 'border-fluance text-fluance bg-fluance/5' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}
+                   ${isPurchased ? '' : 'opacity-50 grayscale'}"
             onclick="switchProductTab('${prod.id}')">
             ${prod.name}
             ${isPurchased ? '<span class="ml-2 text-green-600">✓</span>' : ''}
@@ -403,7 +408,6 @@ document.addEventListener('DOMContentLoaded', function() {
                   
                   return currentDayContent ? `
                     <div class="mb-6" id="current-day-content-${prod.id}">
-                      <h2 class="text-2xl font-semibold mb-4">${currentDayContent.title}</h2>
                       <div class="protected-content" data-content-id="${currentDayContent.id}">
                         <div class="bg-gray-100 rounded-lg p-8 text-center">
                           <p class="text-gray-600 mb-4">Chargement du contenu...</p>
@@ -485,7 +489,6 @@ document.addEventListener('DOMContentLoaded', function() {
                   
                   return currentWeekContent ? `
                     <div class="mb-6" id="current-week-content-${prod.id}">
-                      <h2 class="text-2xl font-semibold mb-4">${currentWeekContent.title}</h2>
                       <div class="protected-content" data-content-id="${currentWeekContent.id}">
                         <div class="bg-gray-100 rounded-lg p-8 text-center">
                           <p class="text-gray-600 mb-4">Chargement du contenu...</p>
@@ -533,7 +536,6 @@ document.addEventListener('DOMContentLoaded', function() {
               contentHTML += `
                 <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
                   <div class="mb-6">
-                    <h2 class="text-2xl font-semibold mb-4">${firstContent.title || prod.name}</h2>
                     <div class="protected-content" data-content-id="${firstContent.id}">
                       <div class="bg-gray-100 rounded-lg p-8 text-center">
                         <p class="text-gray-600 mb-4">Chargement du contenu...</p>
