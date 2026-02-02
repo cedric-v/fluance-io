@@ -1,77 +1,61 @@
-# Guide rapide : Configurer la clé API Firebase
+# Guide : Configurer la configuration Firebase (Sécurisé)
 
-## ⚠️ Problème actuel
+## 🔧 Nouvelle méthode : Variables d'environnement
 
-L'erreur `API key not valid` indique que le fichier `src/assets/js/firebase-auth.js` contient encore les placeholders au lieu des vraies clés API Firebase.
+Depuis la mise à jour de sécurité, la configuration Firebase n'est plus écrite en dur dans les fichiers JavaScript. Elle est injectée dynamiquement lors de la génération du site (build) via Eleventy.
 
-## 🔧 Solution : Remplacer les placeholders
+### Étape 1 : Créer ou mettre à jour votre fichier `.env` local
 
-### Étape 1 : Obtenir la configuration Firebase
+À la racine du projet `fluance-io`, créez un fichier `.env` (s'il n'existe pas) et ajoutez-y votre configuration complète :
+
+```bash
+# Configuration Firebase (Copier depuis la console Firebase)
+FIREBASE_API_KEY=AIzaSy...
+FIREBASE_AUTH_DOMAIN=fluance-protected-content.firebaseapp.com
+FIREBASE_PROJECT_ID=fluance-protected-content
+FIREBASE_STORAGE_BUCKET=fluance-protected-content.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=173938686776
+FIREBASE_APP_ID=1:173938686776:web:891caf76098a42c3579fcd
+FIREBASE_MEASUREMENT_ID=G-CWPNXDQEYR
+```
+
+### Étape 2 : Configurer GitHub pour le déploiement
+
+Pour que le site fonctionne une fois déployé sur GitHub Pages, vous devez ajouter ces mêmes variables dans les **Secrets** de votre dépôt GitHub :
+
+1. Allez dans **Settings > Secrets and variables > Actions**.
+2. Cliquez sur **New repository secret**.
+3. Ajoutez chacune des variables ci-dessus (ex: `FIREBASE_API_KEY`, etc.).
+
+### Étape 3 : Fonctionnement technique
+
+Le projet utilise maintenant :
+- Un shortcode Eleventy `{% firebaseConfig %}` (défini dans `eleventy.config.js`) qui lit ces variables.
+- Ce shortcode injecte la configuration dans `window.FLUANCE_FIREBASE_CONFIG` via le layout `base.njk`.
+- Les scripts du site (comme l'authentification ou le paiement) utilisent cette variable globale au lieu de valeurs en dur.
+
+## ⚠️ Important : Restrictions de clé
+
+Même si la clé est maintenant gérée par variables d'environnement, elle finit par être visible dans le code source du navigateur (c'est inhérent aux applications web).
+
+**Vous DEVEZ restreindre votre clé API** dans la [Console Google Cloud](https://console.cloud.google.com/apis/credentials) :
+1. Sélectionnez la clé API utilisée.
+2. Sous **Restrictions relatives aux applications**, choisissez **Référents HTTP**.
+3. Ajoutez vos domaines autorisés :
+   - `fluance.io/*`
+   - `*.fluance.io/*`
+   - `cedricv.com/*` (si partagée)
+   - `localhost:8080/*` (pour le développement local)
+4. Sous **Restrictions relatives aux API**, limitez la clé aux services utilisés :
+   - Identity Toolkit API
+   - Cloud Firestore API
+   - Cloud Functions API
+
+## 📋 Où trouver ces valeurs ?
 
 1. Allez sur [Firebase Console](https://console.firebase.google.com/)
 2. Sélectionnez votre projet : **fluance-protected-content**
-3. Cliquez sur l'icône ⚙️ (Paramètres du projet) en haut à gauche
-4. Cliquez sur **Paramètres du projet** / **Project settings**
-5. Faites défiler jusqu'à la section **Vos applications** / **Your apps**
-6. Si aucune application web n'existe :
-   - Cliquez sur **</>** (Ajouter une application) ou **Add app**
-   - Donnez un nom : "Fluance Website"
-   - Cliquez sur **Enregistrer** / **Register app**
-7. Copiez la configuration affichée
+3. Cliquez sur **Paramètres du projet** (icône ⚙️).
+4. La configuration se trouve en bas de page dans la section **Vos applications**.
 
-### Étape 2 : Mettre à jour `src/assets/js/firebase-auth.js`
-
-Ouvrez le fichier `src/assets/js/firebase-auth.js` et remplacez les lignes 9-16 :
-
-**Avant (placeholders)** :
-```javascript
-const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY_ICI",
-  authDomain: "fluance-protected-content.firebaseapp.com",
-  projectId: "fluance-protected-content",
-  storageBucket: "fluance-protected-content.firebasestorage.app",
-  messagingSenderId: "VOTRE_MESSAGING_SENDER_ID",
-  appId: "VOTRE_APP_ID"
-};
-```
-
-**Après (avec vos vraies clés)** :
-```javascript
-const firebaseConfig = {
-  apiKey: "AIzaSy...", // Votre vraie clé API (commence par AIzaSy)
-  authDomain: "fluance-protected-content.firebaseapp.com",
-  projectId: "fluance-protected-content",
-  storageBucket: "fluance-protected-content.firebasestorage.app",
-  messagingSenderId: "123456789012", // Votre vrai ID numérique
-  appId: "1:123456789012:web:abcdef123456" // Votre vrai App ID
-};
-```
-
-### Étape 3 : Vérifier
-
-1. Rechargez la page `/creer-compte/` ou `/connexion-membre/`
-2. Ouvrez la console du navigateur (F12)
-3. L'erreur `API key not valid` ne devrait plus apparaître
-4. Testez la création de compte avec un code d'activation valide
-
-## 📋 Où trouver chaque valeur
-
-| Champ | Où le trouver |
-|-------|---------------|
-| `apiKey` | Dans la configuration Firebase, commence par `AIzaSy...` |
-| `authDomain` | Généralement `{projectId}.firebaseapp.com` |
-| `projectId` | `fluance-protected-content` (déjà correct) |
-| `storageBucket` | Généralement `{projectId}.firebasestorage.app` |
-| `messagingSenderId` | ID numérique dans la configuration Firebase |
-| `appId` | Format `1:...:web:...` dans la configuration Firebase |
-
-## ⚠️ Important
-
-- Ces clés sont **publiques** (c'est normal, elles sont dans le code client)
-- La sécurité est assurée par les **règles Firestore** et l'**authentification**
-- Vous pouvez limiter l'utilisation de la clé API par domaine dans Firebase Console
-
-## 🆘 Si vous ne trouvez pas la configuration
-
-Voir le guide détaillé : `OBTENIR_CONFIGURATION_FIREBASE.md`
 

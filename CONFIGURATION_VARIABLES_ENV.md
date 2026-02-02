@@ -1,13 +1,50 @@
-# Configuration sécurisée des variables d'environnement Firebase
+## Configuration pour le Frontend (Eleventy)
 
-## ⚠️ IMPORTANT : Sécurité
+Ces variables sont utilisées lors de la génération du contenu statique pour configurer le comportement du site dans le navigateur (ex: Stripe, Firebase).
 
-**JAMAIS** de clés API, secrets ou mots de passe dans le code source !  
-Ce projet est public sur GitHub. Toutes les informations sensibles doivent être configurées via les variables d'environnement Firebase.
+### Étape 1 : Fichier `.env` local
 
-## Méthode recommandée : Variables d'environnement Firebase (moderne)
+À la racine du projet, créez un fichier `.env` :
+
+```bash
+# Environnement (dev ou prod)
+ELEVENTY_ENV=dev
+
+# Clé publique Stripe
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+
+# Configuration Firebase
+FIREBASE_API_KEY=AIzaSy...
+FIREBASE_AUTH_DOMAIN=...
+FIREBASE_PROJECT_ID=...
+FIREBASE_STORAGE_BUCKET=...
+FIREBASE_MESSAGING_SENDER_ID=...
+FIREBASE_APP_ID=...
+FIREBASE_MEASUREMENT_ID=...
+```
+
+### Étape 2 : Secrets GitHub (Déploiement)
+
+Pour que ces valeurs soient injectées lors du déploiement automatique via GitHub Actions, vous devez les ajouter dans les **Repository Secrets** de GitHub :
+
+1. Allez dans **Settings > Secrets and variables > Actions**.
+2. Cliquez sur **New repository secret**.
+3. Ajoutez chaque variable (Nom et Valeur).
+
+### Variables supportées par Eleventy
+
+| Variable | Description |
+| :--- | :--- |
+| `ELEVENTY_ENV` | `dev` ou `prod`. Impacte la minification et certains comportements. |
+| `STRIPE_PUBLISHABLE_KEY` | Clé publique pour initialiser Stripe Checkout. |
+| `FIREBASE_*` | Toute la configuration nécessaire au SDK Firebase Web. |
+
+---
+
+## Configuration pour le Backend (Firebase Functions)
 
 Firebase Functions supporte les variables d'environnement depuis la version 2. Cette méthode est la plus sécurisée et la plus simple.
+
 
 ### Étape 1 : Configurer via la console Firebase
 

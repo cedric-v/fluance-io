@@ -143,14 +143,13 @@ eleventyExcludeFromCollections: true
           }
 
           // Firebase configuration
-          const firebaseConfig = {
-            apiKey: 'AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM',
-            authDomain: 'fluance-protected-content.firebaseapp.com',
-            projectId: 'fluance-protected-content',
-            storageBucket: 'fluance-protected-content.firebasestorage.app',
-            messagingSenderId: '173938686776',
-            appId: '1:173938686776:web:891caf76098a42c3579fcd',
-          };
+          const firebaseConfig = window.FLUANCE_FIREBASE_CONFIG;
+          
+          if (!firebaseConfig || !firebaseConfig.apiKey) {
+            console.error("Firebase configuration is missing!");
+            reject(new Error("Firebase configuration non trouvée"));
+            return;
+          }
 
           // Load Firebase App
           const appScriptUrl = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js';

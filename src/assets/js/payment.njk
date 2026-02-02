@@ -1,3 +1,6 @@
+---
+permalink: /assets/js/payment.js
+---
 /**
  * Fonctions JavaScript pour gérer les paiements Stripe
  * Utilise Firebase Functions pour créer les sessions Checkout
@@ -5,7 +8,7 @@
 
 // Configuration Firebase (même que dans firebase-auth.js)
 const firebaseConfig = {
-  apiKey: 'AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM',
+  apiKey: '{{ env.FIREBASE_API_KEY }}',
   authDomain: 'fluance-protected-content.firebaseapp.com',
   projectId: 'fluance-protected-content',
   storageBucket: 'fluance-protected-content.firebasestorage.app',

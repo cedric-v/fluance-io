@@ -83,15 +83,7 @@ permalink: /cours-en-ligne/5jours/j1/
         script2.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore-compat.js';
         document.head.appendChild(script2);
         script2.onload = function() {
-          var firebaseConfig = {
-            apiKey: "AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM",
-            authDomain: "fluance-protected-content.firebaseapp.com",
-            projectId: "fluance-protected-content",
-            storageBucket: "fluance-protected-content.firebasestorage.app",
-            messagingSenderId: "173938686776",
-            appId: "1:173938686776:web:891caf76098a42c3579fcd",
-            measurementId: "G-CWPNXDQEYR"
-          };
+          var firebaseConfig = window.FLUANCE_FIREBASE_CONFIG;
           if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
           }
@@ -100,15 +92,7 @@ permalink: /cours-en-ligne/5jours/j1/
       } else {
         // Firebase déjà initialisé, utiliser l'instance existante
         if (!firebase.apps.length) {
-          var firebaseConfig = {
-            apiKey: "AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM",
-            authDomain: "fluance-protected-content.firebaseapp.com",
-            projectId: "fluance-protected-content",
-            storageBucket: "fluance-protected-content.firebasestorage.app",
-            messagingSenderId: "173938686776",
-            appId: "1:173938686776:web:891caf76098a42c3579fcd",
-            measurementId: "G-CWPNXDQEYR"
-          };
+            var firebaseConfig = window.FLUANCE_FIREBASE_CONFIG;
           firebase.initializeApp(firebaseConfig);
         }
         initComments();

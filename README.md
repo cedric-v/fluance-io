@@ -540,11 +540,10 @@ To keep the project healthy over time:
 ---
 
 ### Security and secrets
-
-- **Dependency security**: Automated monitoring via GitHub Dependabot (see [Maintenance](#maintenance) section)
-- **Secrets management**: No API keys or secrets are committed to the repository
-- **Environment variables**: Use `.env` files or CI/CD secret stores (GitHub Actions secrets) if you add external APIs later
-- **Git ignore**: The `.gitignore` file excludes `.env` and other sensitive or generated files
-- **Security alerts**: Check the **Security** tab in GitHub for active security advisories
-
-
+ 
+ - **Dependency security**: Automated monitoring via GitHub Dependabot (see [Maintenance](#maintenance) section)
+ - **Secrets management**: No API keys or secrets are committed to the repository.
+ - **Frontend Environment variables**: The site uses environment variables for Firebase and Stripe configuration. These are loaded from a local `.env` file during development and from **GitHub Repository Secrets** during deployment.
+ - **Backend Environment variables**: Firebase Functions use environment variables configured via the Firebase Console (see `CONFIGURATION_VARIABLES_ENV.md`).
+ - **Git ignore**: The `.gitignore` file correctly excludes `.env` and other sensitive files.
+ - **Security alerts**: Check the **Security** tab in GitHub for active security advisories.
