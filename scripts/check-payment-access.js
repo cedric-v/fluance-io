@@ -23,7 +23,7 @@ try {
       path.join(__dirname, '../functions/serviceAccountKey.json'),
       path.join(__dirname, '../new-project-service-account.json'),
     ];
-    
+
     let serviceAccountPath = null;
     for (const possiblePath of possiblePaths) {
       if (possiblePath && fs.existsSync(possiblePath)) {
@@ -31,7 +31,7 @@ try {
         break;
       }
     }
-    
+
     if (serviceAccountPath) {
       console.log(`📁 Utilisation du service account : ${serviceAccountPath}`);
       const serviceAccount = require(serviceAccountPath);
@@ -112,8 +112,8 @@ async function checkPaymentAccess(paymentIntentId, email = null) {
         let checkoutSession = null;
         if (paymentIntent.metadata?.checkout_session_id) {
           checkoutSession = await stripe.checkout.sessions.retrieve(
-              paymentIntent.metadata.checkout_session_id,
-              {expand: ['line_items']},
+            paymentIntent.metadata.checkout_session_id,
+            { expand: ['line_items'] },
           );
         } else {
           // Chercher la session checkout qui utilise ce payment intent
@@ -124,8 +124,8 @@ async function checkPaymentAccess(paymentIntentId, email = null) {
             });
             if (sessions.data.length > 0) {
               checkoutSession = await stripe.checkout.sessions.retrieve(
-                  sessions.data[0].id,
-                  {expand: ['line_items']},
+                sessions.data[0].id,
+                { expand: ['line_items'] },
               );
             }
           } catch (sessionError) {
@@ -203,22 +203,22 @@ async function checkPaymentAccess(paymentIntentId, email = null) {
       console.log('🔍 Recherche de l\'email dans Firestore...\n');
       // Chercher dans les tokens avec ce paymentIntentId
       const tokensWithPayment = await db.collection('registrationTokens')
-          .where('paymentIntentId', '==', paymentIntentId)
-          .limit(1)
-          .get();
-      
+        .where('paymentIntentId', '==', paymentIntentId)
+        .limit(1)
+        .get();
+
       if (!tokensWithPayment.empty) {
         customerEmail = tokensWithPayment.docs[0].data().email;
         console.log(`   ✅ Email trouvé dans Firestore: ${customerEmail}\n`);
       } else {
         // Chercher dans les users avec ce paymentIntentId dans les produits
         const usersQuery = await db.collection('users')
-            .where('products', 'array-contains-any', [
-              {paymentIntentId: paymentIntentId},
-            ])
-            .limit(1)
-            .get();
-        
+          .where('products', 'array-contains-any', [
+            { paymentIntentId: paymentIntentId },
+          ])
+          .limit(1)
+          .get();
+
         if (!usersQuery.empty) {
           customerEmail = usersQuery.docs[0].id;
           console.log(`   ✅ Email trouvé dans Firestore: ${customerEmail}\n`);
@@ -242,8 +242,8 @@ async function checkPaymentAccess(paymentIntentId, email = null) {
     console.log('🔑 TOKENS D\'ACCÈS (registrationTokens):\n');
 
     const tokensQuery = await db.collection('registrationTokens')
-        .where('email', '==', normalizedEmail)
-        .get();
+      .where('email', '==', normalizedEmail)
+      .get();
 
     if (tokensQuery.empty) {
       console.log('   ❌ Aucun token trouvé pour cet email\n');
@@ -268,16 +268,24 @@ async function checkPaymentAccess(paymentIntentId, email = null) {
     console.log('👤 ACCÈS UTILISATEUR (users):\n');
 
     let userData = null;
-    const userDoc = await db.collection('users').doc(normalizedEmail).get();
+    let targetDocId = normalizedEmail;
+    try {
+      const userRecord = await admin.auth().getUserByEmail(normalizedEmail);
+      targetDocId = userRecord.uid;
+    } catch (e) {
+      // Utilisateur non trouvé dans Auth, on continue avec l'email comme ID (fallback)
+    }
+
+    const userDoc = await db.collection('users').doc(targetDocId).get();
     if (!userDoc.exists) {
-      console.log('   ❌ Aucun document utilisateur trouvé\n');
+      console.log(`   ❌ Aucun document utilisateur trouvé (ID: ${targetDocId})\n`);
     } else {
       userData = userDoc.data();
       console.log('   ✅ Document utilisateur trouvé:\n');
       console.log(`      - Email: ${userData.email || normalizedEmail}`);
       console.log(`      - Nom: ${userData.name || 'N/A'}`);
       console.log(`      - Produit (ancien format): ${userData.product || 'Aucun'}`);
-      
+
       if (userData.products && Array.isArray(userData.products)) {
         console.log(`      - Produits (nouveau format):`);
         userData.products.forEach((prod, index) => {
@@ -303,9 +311,9 @@ async function checkPaymentAccess(paymentIntentId, email = null) {
 
     // Requête sans orderBy pour éviter l'erreur d'index
     const mailQuery = await db.collection('mail')
-        .where('to', '==', normalizedEmail)
-        .limit(20)
-        .get();
+      .where('to', '==', normalizedEmail)
+      .limit(20)
+      .get();
 
     if (mailQuery.empty) {
       console.log('   ❌ Aucun email trouvé\n');
@@ -334,12 +342,12 @@ async function checkPaymentAccess(paymentIntentId, email = null) {
     console.log('📊 RÉSUMÉ:\n');
 
     const has21jours = tokensQuery.docs.some((doc) => doc.data().product === '21jours') ||
-      (userData?.products && userData.products.some((p) => 
+      (userData?.products && userData.products.some((p) =>
         (typeof p === 'object' ? p.name : p) === '21jours',
       ));
 
     const hasSosDos = tokensQuery.docs.some((doc) => doc.data().product === 'sos-dos-cervicales') ||
-      (userData?.products && userData.products.some((p) => 
+      (userData?.products && userData.products.some((p) =>
         (typeof p === 'object' ? p.name : p) === 'sos-dos-cervicales',
       ));
 
@@ -387,11 +395,11 @@ if (!paymentIntentId) {
 }
 
 checkPaymentAccess(paymentIntentId, email)
-    .then(() => {
-      console.log('\n✅ Script terminé.');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('❌ Erreur fatale:', error);
-      process.exit(1);
-    });
+  .then(() => {
+    console.log('\n✅ Script terminé.');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('❌ Erreur fatale:', error);
+    process.exit(1);
+  });
