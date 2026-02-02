@@ -280,6 +280,26 @@ async function signIn(email, password, remember = true) {
 }
 
 /**
+ * S'assure que le module Firebase Functions est chargé
+ */
+async function ensureFunctionsLoaded() {
+  if (typeof firebase.functions === 'function') return;
+
+  console.log('[Firebase Auth] Chargement du script Firebase Functions...');
+  const functionsScript = document.createElement('script');
+  functionsScript.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
+  document.head.appendChild(functionsScript);
+
+  await new Promise((resolve, reject) => {
+    functionsScript.onload = resolve;
+    functionsScript.onerror = () => reject(new Error('Erreur chargement Firebase Functions'));
+  });
+  
+  // Attendre l'initialisation
+  await new Promise(resolve => setTimeout(resolve, 500));
+}
+
+/**
  * Envoie un lien de connexion par email (passwordless)
  */
 async function sendSignInLink(email, actionCodeSettings = null) {
@@ -311,15 +331,35 @@ async function sendSignInLink(email, actionCodeSettings = null) {
     console.log('[Firebase Auth] URL complète:', settings.url);
     console.log('[Firebase Auth] handleCodeInApp:', settings.handleCodeInApp);
     
-    /* Code Mailjet désactivé temporairement
-       try { ... } catch (error) { ... } 
-    */
-    
-    // Pour l'instant, on passe directement au fallback Firebase Auth
-    // sans essayer d'appeler la Cloud Function
-    
-    // Fallback sur Firebase Auth
-    console.log('[Firebase Auth] Appel de auth.sendSignInLinkToEmail (Direct SDK)...');
+    // Essayer d'abord Mailjet (via Cloud Function)
+    try {
+      console.log('[Firebase Auth] Tentative d\'envoi via Mailjet (Cloud Function)...');
+      
+      await ensureFunctionsLoaded();
+      const app = firebase.app();
+      const functions = app.functions('europe-west1');
+      const sendSignInLinkViaMailjet = functions.httpsCallable('sendSignInLinkViaMailjet');
+      
+      const result = await sendSignInLinkViaMailjet({ email });
+      
+      if (result.data && result.data.success) {
+        console.log('[Firebase Auth] ✅ Lien de connexion envoyé via Mailjet');
+        if (result.data.isClient === false) {
+           console.log('[Firebase Auth] ℹ️ Note: Utilisateur non client, email de redirection envoyé');
+        }
+        return { success: true, message: 'Lien de connexion envoyé avec succès via Mailjet.' };
+      }
+      
+      // Si la fonction ne renvoie pas success: true sans erreur, on continue vers le fallback
+      console.warn('[Firebase Auth] La fonction Mailjet n\'a pas retourné de succès explicite, passage au fallback...');
+      
+    } catch (mailjetError) {
+      console.warn('[Firebase Auth] ⚠️ Erreur lors de l\'appel à la Cloud Function Mailjet:', mailjetError);
+      console.warn('[Firebase Auth] Passage au fallback standard Firebase Auth...');
+    }
+
+    // Fallback sur Firebase Auth (SDK standard)
+    console.log('[Firebase Auth] Appel de auth.sendSignInLinkToEmail (Fallback SDK)...');
 
     await auth.sendSignInLinkToEmail(email, settings);
     
