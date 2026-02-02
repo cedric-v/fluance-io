@@ -6,8 +6,8 @@ locale: fr
 permalink: /membre/
 ---
 
-<section class="max-w-6xl mx-auto px-6 py-16">
-  <div class="bg-white rounded-lg shadow-lg p-8 space-y-8">
+<section class="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-16">
+  <div class="bg-white rounded-lg shadow-lg p-5 md:p-8 space-y-6 md:space-y-8 overflow-hidden">
     <header class="relative pt-8">
       <button
         id="logout-button"
@@ -234,8 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
       localStorage.setItem('fluance-active-product-tab', activeProductId);
       
       // Créer les onglets
-      let tabsHTML = '<div class="border-b border-gray-200 mb-6">';
-      tabsHTML += '<nav class="flex space-x-4 overflow-x-auto flex-nowrap pb-1" role="tablist">';
+      let tabsHTML = '<div class="border-b border-gray-200 mb-6 w-full overflow-hidden">';
+      tabsHTML += '<nav class="flex space-x-4 overflow-x-auto flex-nowrap pb-3 scrollbar-hide touch-pan-x" role="tablist">';
       
       allProducts.forEach((prod, index) => {
         // Pour l'onglet communauté, toujours accessible
