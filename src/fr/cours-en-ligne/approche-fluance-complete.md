@@ -159,7 +159,15 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#3E3A35] text-center mb-6">
             <strong class="text-fluance">Les 14 premiers jours sont offerts</strong>
           </p>
-          <button onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block">
+          
+          <div class="mb-4 flex items-start gap-3 bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-left">
+            <input type="checkbox" id="cross-sell-sos-dos-1" class="mt-1 w-5 h-5 text-fluance rounded border-gray-300 focus:ring-fluance shrink-0">
+            <label for="cross-sell-sos-dos-1" class="text-sm text-[#3E3A35] cursor-pointer leading-tight">
+              <strong>Offre spéciale :</strong> Ajouter "SOS Dos & Cervicales" pour seulement <span class="line-through text-gray-500">47 CHF</span> <strong>17 CHF</strong> ?
+            </label>
+          </div>
+
+          <button onclick="window.FluancePayment.redirectToMollie('complet', 'mensuel', 'fr', event, document.getElementById('cross-sell-sos-dos-1').checked)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block w-full">
             <span>S'abonner mensuellement</span>
             <span>→</span>
           </button>
@@ -186,7 +194,15 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-lg text-[#3E3A35] text-center mb-6">
             <strong class="text-fluance">Les 14 premiers jours sont offerts</strong>
           </p>
-          <button onclick="window.FluancePayment.redirectToStripe('complet', 'trimestriel', 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block">
+
+          <div class="mb-4 flex items-start gap-3 bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-left">
+            <input type="checkbox" id="cross-sell-sos-dos-2" class="mt-1 w-5 h-5 text-fluance rounded border-gray-300 focus:ring-fluance shrink-0">
+            <label for="cross-sell-sos-dos-2" class="text-sm text-[#3E3A35] cursor-pointer leading-tight">
+              <strong>Offre spéciale :</strong> Ajouter "SOS Dos & Cervicales" pour seulement <span class="line-through text-gray-500">47 CHF</span> <strong>17 CHF</strong> ?
+            </label>
+          </div>
+
+          <button onclick="window.FluancePayment.redirectToMollie('complet', 'trimestriel', 'fr', event, document.getElementById('cross-sell-sos-dos-2').checked)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block w-full">
             <span>S'abonner trimestriellement</span>
             <span>→</span>
           </button>

@@ -32,7 +32,17 @@ const db = admin.firestore();
 const auth = admin.auth();
 
 // Import du service d'alertes admin
+// Import du service d'alertes admin
 const { sendAdminAlert } = require('./services/adminAlerts');
+
+// Import services nouveaux
+const { mollieService } = require('./services/mollieService');
+const { bexioService } = require('./services/bexioService');
+const { PubSub } = require('@google-cloud/pubsub');
+const { onMessagePublished } = require('firebase-functions/v2/pubsub');
+
+// PubSub client for publishing messages from HTTP function
+const pubSubClient = new PubSub();
 
 // Price ID du produit cross-sell "SOS dos & cervicales"
 const STRIPE_PRICE_ID_SOS_DOS_CERVICALES = 'price_1SeWdF2Esx6PN6y1XlbpIObG';
@@ -10180,56 +10190,61 @@ exports.bookCourse = onRequest(
       'MAILJET_API_KEY',
       'MAILJET_API_SECRET',
       'ADMIN_EMAIL',
+      'MOLLIE_API_KEY',
+      'BEXIO_API_TOKEN',
     ],
     cors: true,
   },
   async (req, res) => {
-    if (!bookingService) {
-      return res.status(500).json({ error: 'Booking service not available' });
-    }
-
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    const {
-      courseId,
-      email,
-      firstName,
-      lastName,
-      phone,
-      paymentMethod,
-      pricingOption,
-      usePass, // true si l'utilisateur veut utiliser son pass existant
-      passId, // ID du pass à utiliser (optionnel)
-    } = req.body;
-
-    // Validation
-    if (!courseId || !email) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        required: ['courseId', 'email'],
-      });
-    }
-
-    // Validation des champs obligatoires
-    if (!firstName || !lastName) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        required: ['firstName', 'lastName'],
-        message: 'Le prénom et le nom sont obligatoires',
-      });
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-
-    // Initialiser Stripe
-    let stripe = null;
-    if (process.env.STRIPE_SECRET_KEY) {
-      stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-    }
-
     try {
+      console.log('📦 bookCourse request body:', JSON.stringify(req.body));
+      console.log('🔍 Checking services... bookingService:', !!bookingService, 'passService:', !!passService);
+      if (!bookingService) {
+        console.error('❌ bookingService is missing!');
+        return res.status(500).json({ error: 'Booking service not available' });
+      }
+
+      if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+
+      const {
+        courseId,
+        email,
+        firstName,
+        lastName,
+        phone,
+        paymentMethod,
+        pricingOption,
+        usePass, // true si l'utilisateur veut utiliser son pass existant
+        passId, // ID du pass à utiliser (optionnel)
+      } = req.body;
+
+      // Validation
+      if (!courseId || !email) {
+        return res.status(400).json({
+          error: 'Missing required fields',
+          required: ['courseId', 'email'],
+        });
+      }
+
+      // Validation des champs obligatoires
+      if (!firstName || !lastName) {
+        return res.status(400).json({
+          error: 'Missing required fields',
+          required: ['firstName', 'lastName'],
+          message: 'Le prénom et le nom sont obligatoires',
+        });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Initialiser Stripe
+      let stripe = null;
+      if (process.env.STRIPE_SECRET_KEY) {
+        stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+      }
+
       const userData = {
         email: normalizedEmail,
         firstName: firstName || '',
@@ -10434,7 +10449,7 @@ exports.bookCourse = onRequest(
                 location: course.location,
                 bookingId: bookingId,
                 passType: activePass.passType,
-                sessionsRemaining: sessionResult?.sessionsRemaining,
+                sessionsRemaining: sessionResult?.sessionsRemaining ?? -1,
                 cancellationUrl: cancellationUrl,
               },
             },
@@ -10480,6 +10495,15 @@ exports.bookCourse = onRequest(
 
       // Récupérer le code partenaire si fourni
       const partnerCode = req.body.partnerCode || null;
+      console.log('🏁 Calling processBooking with:', {
+        courseId,
+        email: userData.email,
+        paymentMethod,
+        pricingOption,
+        partnerCode,
+        stripeExists: !!stripe,
+        mollieServiceExists: !!mollieService,
+      });
 
       const result = await bookingService.processBooking(
         db,
@@ -10489,7 +10513,10 @@ exports.bookCourse = onRequest(
         paymentMethod || 'card',
         pricingOption || 'single',
         partnerCode, // Code partenaire pour remise
+        mollieService, // Inject Mollie Service
+        req.body.origin || 'https://fluance.io', // Inject Origin
       );
+      console.log('✅ processBooking finished successfully');
 
       // Si paiement espèces, ajouter au Google Sheet et envoyer email
       if (result.success && result.status === 'confirmed_pending_cash') {
@@ -10782,10 +10809,13 @@ exports.bookCourse = onRequest(
 
       return res.json(result);
     } catch (error) {
-      console.error('Error processing booking:', error);
+      console.error('🔥 bookCourse CRITICAL ERROR:', error.message);
+      console.error('🔥 Stack trace:', error.stack);
       return res.status(500).json({
         success: false,
         error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        type: 'CRITICAL_INTERNAL_ERROR',
       });
     }
   },
@@ -11419,6 +11449,327 @@ exports.getHealthStats = onCall(
     } catch (error) {
       console.error('Error fetching health stats:', error);
       throw new HttpsError('internal', 'Erreur lors de la récupération des stats');
+    }
+  },
+);
+
+/**
+ * Webhook Mollie (v2 HTTP)
+ * Reçoit les notifications de Mollie, accuse réception immédiatement (200 OK),
+ * et publie un message Pub/Sub pour le traitement asynchrone.
+ */
+exports.webhookMollie = onRequest(
+  {
+    region: 'europe-west1',
+    cors: true, // Accepter les requêtes de Mollie
+  },
+  async (req, res) => {
+    // Mollie envoie l'ID du paiement dans le corps (x-www-form-urlencoded)
+    // id=tr_WDqYK6vllg
+    const paymentId = req.body.id;
+
+    if (!paymentId) {
+      console.warn('⚠️ Mollie webhook received without payment ID');
+      return res.status(400).send('No payment ID');
+    }
+
+    try {
+      console.log(`🔔 Mollie webhook received for payment ${paymentId}`);
+
+      // Publier un message sur le topic Pub/Sub pour traitement asynchrone
+      // Cela permet de répondre immédiatement à Mollie pour éviter les timeouts
+      const dataBuffer = Buffer.from(JSON.stringify({ paymentId }));
+
+      await pubSubClient
+        .topic('process-mollie-payment')
+        .publishMessage({ data: dataBuffer });
+
+      console.log(`✅ Message published to process-mollie-payment for ${paymentId}`);
+
+      // Répondre 200 OK immédiatement
+      return res.status(200).send('OK');
+    } catch (error) {
+      console.error('❌ Error processing Mollie webhook:', error);
+      // Même en cas d'erreur de publication, on essaie de ne pas bloquer Mollie
+      // Mais si on ne peut pas traiter, Mollie réessaiera plus tard si on renvoie 500
+      return res.status(500).send('Internal Server Error');
+    }
+  },
+);
+
+/**
+ * Traitement asynchrone des paiements Mollie (v2 Pub/Sub)
+ * Déclenché par le topic 'process-mollie-payment'
+ */
+exports.processMolliePayment = onMessagePublished(
+  {
+    topic: 'process-mollie-payment',
+    region: 'europe-west1',
+    secrets: ['MOLLIE_API_KEY', 'BEXIO_API_TOKEN', 'BEXIO_USER_ID', 'GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_SHEET_ID_SALES', 'BEXIO_ACCOUNT_DEBIT', 'BEXIO_ACCOUNT_CREDIT'],
+    // Timeout plus long pour les opérations externes
+    timeoutSeconds: 300,
+  },
+  async (event) => {
+    try {
+      // 1. Extraire les données du message
+      const messageData = event.data.message.json;
+      const { paymentId } = messageData;
+
+      if (!paymentId) {
+        console.error('❌ No paymentId in Pub/Sub message');
+        return;
+      }
+
+      console.log(`🚀 Processing Mollie payment ${paymentId} started`);
+
+      // 2. Récupérer les détails du paiement chez Mollie
+      const payment = await mollieService.getPayment(paymentId);
+      console.log(`💰 Payment status for ${paymentId}: ${payment.status}`);
+
+      // On ne traite que les paiements réussis (paid)
+      // Mollie peut envoyer des webhooks pour 'open', 'expired', 'failed', etc.
+      if (payment.status !== 'paid') {
+        console.log(`ℹ️ Payment ${paymentId} is ${payment.status}, skipping processing`);
+        return;
+      }
+
+      // 3. Logique Bexio (Manual Entry - Stripe Logic)
+      try {
+        const amount = parseFloat(payment.amount.value); // { value: "100.00", currency: "CHF" }
+        const metadata = payment.metadata || {};
+
+        // Determine Country for VAT
+        // Priority: Metadata -> Payment Locale -> Default CH
+        let countryCode = 'CH';
+        if (metadata.country) {
+          countryCode = metadata.country;
+        } else if (payment.details?.countryCode) {
+          countryCode = payment.details.countryCode;
+        } else if (payment.locale) {
+          // e.g. fr_CH, de_DE
+          const parts = payment.locale.split('_');
+          if (parts.length > 1) countryCode = parts[1];
+        }
+
+        const isSwiss = countryCode === 'CH' || countryCode === 'LI'; // Liechtenstein uses Swiss VAT usually
+
+        // Accounts Config
+        // Defaults based on "Stripe Logic" from reference project
+        // Caisse: 1023 (Stripe) -> Here we use 1027 (Mollie) or whatever variable provided
+        const debitAccount = process.env.BEXIO_ACCOUNT_MOLLIE ? parseInt(process.env.BEXIO_ACCOUNT_MOLLIE) : 1027;
+
+        // Sales: 3400 (CH) / 3410 (Intl)
+        // Sales: 3400 (CH) / 3410 (Intl)
+        const creditAccountCH = process.env.BEXIO_ACCOUNT_SALES_CH ?
+          parseInt(process.env.BEXIO_ACCOUNT_SALES_CH) :
+          3400;
+        const creditAccountIntl = process.env.BEXIO_ACCOUNT_SALES_INTL ?
+          parseInt(process.env.BEXIO_ACCOUNT_SALES_INTL) :
+          3410;
+        const creditAccount = isSwiss ? creditAccountCH : creditAccountIntl;
+
+        // Taxes: 14 (CH 8.1%) / 3 (Intl 0%) - Note: Tax IDs might change over time, 14 is typical for 8.1%
+        // Reference project: 8.1% -> 14. 0% -> 3.
+        const taxId = isSwiss ? 14 : 3;
+
+        console.log(`📊 Booking Manual Entry: Amount ${amount}, Country ${countryCode}, TaxID ${taxId}`);
+
+        await bexioService.createManualEntry({
+          date: payment.paidAt ? payment.paidAt.split('T')[0] : new Date().toISOString().split('T')[0],
+          debit_account_id: debitAccount,
+          credit_account_id: creditAccount,
+          amount: amount,
+          text: `Mollie Payment ${paymentId} - ${payment.description}`,
+          reference: paymentId,
+          tax_id: taxId,
+        });
+      } catch (bexioError) {
+        console.error('❌ Error in Bexio integration:', bexioError);
+      }
+
+      // 4. Logique Google Sheets
+      try {
+        const sheetId = process.env.GOOGLE_SHEET_ID_SALES;
+        if (sheetId && googleService) {
+          console.log(`📝 Todo: Add to Google Sheet ${sheetId} (Implement addGenericTransaction logic)`);
+        }
+      } catch (sheetError) {
+        console.error('❌ Error in Google Sheets integration:', sheetError);
+      }
+
+      // 5. Confirmer la réservation (Booking) si applicable
+      if (payment.metadata && payment.metadata.bookingId) {
+        const bookingId = payment.metadata.bookingId;
+        console.log(`🎫 Confirming Booking ${bookingId} for Payment ${paymentId}`);
+        try {
+          // Utilise bookingService global
+          await bookingService.confirmBookingPayment(db, bookingId, paymentId);
+          console.log(`✅ Booking ${bookingId} confirmed`);
+        } catch (bookingError) {
+          console.error(`❌ Error confirming booking ${bookingId}:`, bookingError);
+          // Ne pas bloquer, on a déjà logué
+        }
+      }
+
+      console.log(`✅ Processing Mollie payment ${paymentId} completed`);
+    } catch (error) {
+      console.error('❌ Error in processMolliePayment:', error);
+    }
+  },
+);
+
+/**
+ * Crée une session de paiement Mollie (Hosted Checkout)
+ * Remplace createStripeCheckoutSession
+ */
+exports.createMollieCheckoutSession = onCall(
+  {
+    region: 'europe-west1',
+    secrets: ['MOLLIE_API_KEY', 'BEXIO_API_TOKEN', 'ADMIN_EMAIL'],
+  },
+  async (request) => {
+    const { product, variant, includeSosDos, email, firstName, lastName, locale = 'fr' } = request.data;
+
+    // Validation
+    if (!product) {
+      throw new HttpsError('invalid-argument', 'Product is required');
+    }
+
+    // Prix (CHF)
+    const PRICES = {
+      '21jours': 19.00,
+      'sos-dos-cervicales': 17.00,
+
+      // RDV Clarté
+      'rdv-clarte_unique': 100.00,
+      'rdv-clarte_abonnement': 69.00, // Mensuel
+
+      // Programme Complet
+      'complet_mensuel': 30.00, // Mensuel
+      'complet_trimestriel': 75.00, // Trimestriel (25/mois)
+
+      // Presentiel (pour référence ou usage futur via cette fonction)
+      'single': 25.00,
+      'flow_pass': 210.00,
+      'semester_pass': 340.00,
+    };
+
+    // Déterminer la clé de prix
+    let priceKey = product;
+    if (product === 'rdv-clarte' || product === 'complet') {
+      if (!variant) throw new HttpsError('invalid-argument', `Variant required for ${product}`);
+      priceKey = `${product}_${variant}`;
+    }
+
+    let amount = PRICES[priceKey];
+    if (!amount) {
+      // Fallback pour presentiel si passé directement
+      if (PRICES[product]) amount = PRICES[product];
+      else throw new HttpsError('not-found', `Price not found for ${priceKey}`);
+    }
+
+    let description = `${product} ${variant || ''}`;
+
+    // Gestion Cross-Sell "SOS Dos"
+    if (includeSosDos) {
+      amount += PRICES['sos-dos-cervicales'];
+      description += ' + SOS Dos & Cervicales';
+    }
+
+    // Déterminer le type de séquence (First vs One-off)
+    // Abonnements : Complet (mens/trim), RDV Clarté (abo), Semester Pass
+    const isSubscription =
+      (product === 'complet') ||
+      (product === 'rdv-clarte' && variant === 'abonnement') ||
+      (product === 'semester_pass');
+
+    const sequenceType = isSubscription ? 'first' : 'oneoff';
+
+    // Création du Customer (Requis pour SequenceType = first, recommandé pour tous)
+    let customerId = null;
+    if (isSubscription && !email) {
+      throw new HttpsError('invalid-argument', 'An email is required for subscriptions');
+    }
+
+    if (email) {
+      try {
+        const customer = await mollieService.createCustomer({
+          name: `${firstName || ''} ${lastName || ''}`.trim() || 'Client Fluance',
+          email: email,
+          metadata: {
+            system: 'firebase',
+            uid: request.auth?.uid || null,
+          },
+        });
+        customerId = customer.id;
+      } catch (e) {
+        console.warn('⚠️ Could not create Mollie customer:', e.message);
+        // On continue sans customerId si erreur, sauf si first payment
+        if (isSubscription) throw new HttpsError('internal', 'Failed to create customer for subscription: ' + e.message);
+      }
+    }
+
+    // URLs de redirection
+    let baseUrl = request.data.origin;
+    if (!baseUrl) {
+      baseUrl = (product === 'rdv-clarte') ? 'https://cedricv.com' : 'https://fluance.io';
+    }
+    const langPrefix = (locale === 'en') ? '/en' : '';
+
+    let redirectUrl;
+    const gatewayParams = `?utm_nooverride=1&gateway=mollie&product=${product}&variant=${variant || ''}`;
+    if (product === 'rdv-clarte') {
+      redirectUrl = `${baseUrl}${langPrefix}/confirmation${gatewayParams}`;
+    } else if (product === 'presentiel' || product === 'single' || product === 'flow_pass' || product === 'semester_pass') {
+      redirectUrl = `${baseUrl}${langPrefix}/presentiel/reservation-confirmee${gatewayParams}`;
+    } else {
+      redirectUrl = `${baseUrl}${langPrefix}/success${gatewayParams}`;
+    }
+
+    // Paramètres URL (pour le frontend)
+    // Note: Mollie ajoute ?id={paymentId} mais on peut ajouter nos paramètres
+    // On ne peut pas facilement ajouter session_id={CHECKOUT_SESSION_ID} comme Stripe
+    // Mais on peut utiliser l'ID Mollie au retour
+
+
+    try {
+      const paymentPayload = {
+        amount: {
+          currency: 'CHF',
+          value: amount.toFixed(2), // Mollie requiert 2 décimales string "10.00"
+        },
+        description: description,
+        redirectUrl: redirectUrl,
+        webhookUrl: `https://europe-west1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/webhookMollie`,
+        metadata: {
+          product: product,
+          variant: variant || null,
+          includeSosDos: !!includeSosDos,
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+          locale: locale,
+          type: isSubscription ? 'subscription_first' : 'order',
+        },
+      };
+
+      if (customerId) {
+        paymentPayload.customerId = customerId;
+      }
+      if (sequenceType === 'first') {
+        paymentPayload.sequenceType = 'first';
+      }
+
+      const payment = await mollieService.createPayment(paymentPayload);
+
+      return {
+        success: true,
+        url: payment.getCheckoutUrl(),
+        paymentId: payment.id,
+      };
+    } catch (error) {
+      console.error('Error creating Mollie payment:', error);
+      throw new HttpsError('internal', error.message);
     }
   },
 );

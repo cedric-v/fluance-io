@@ -23,9 +23,9 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
       </p>
     </div>
     <div class="flex flex-col gap-4">
-      <button onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center w-full">
+      <a href="#commander" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] text-center w-full">
         Démarrer le challenge de 21 jours pour 19 CHF / équivalent €
-      </button>
+      </a>
       <a href="#en-savoir-plus" class="btn-secondary border-[#F5F7F6]/80 text-[#F5F7F6] hover:bg-[#F5F7F6]/10 text-center">
         En savoir plus
       </a>
@@ -258,11 +258,11 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
       </ul>
     </div>
 
-    <div class="pt-4 flex justify-center">
-        <button onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex flex-col items-center text-center">
+    <div class="pt-4 flex flex-col items-center gap-4">
+        <a href="#commander" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] flex flex-col items-center text-center">
           <span>Je rejoins ce challenge vers un chemin vers un corps libre de tensions</span>
           <span class="text-sm font-normal opacity-90">19 CHF / équivalent €</span>
-        </button>
+        </a>
     </div>
 
     <div class="section-card p-8 bg-white space-y-6">
@@ -306,15 +306,21 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
       </p>
     </div>
 
-    <div class="text-center space-y-6 pt-8">
+    <div id="commander" class="text-center space-y-6 pt-8" style="scroll-margin-top: 100px;">
       <p class="text-xl text-[#3E3A35]">
         Et si, après avoir peut-être déjà "tout essayé", vous <strong>découvriez enfin une approche qui vous ressemble</strong> ?
       </p>
       <p class="text-lg text-[#3E3A35]">
         Une <strong>manière simple, douce et vivante de retrouver fluidité et apaisement</strong>, sans chercher à rentrer dans un cadre.
       </p>
-      <div class="pt-4 flex justify-center">
-        <button onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr', event)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex flex-col items-center text-center">
+      <div class="pt-4 flex flex-col items-center gap-4">
+        <div class="mb-2 flex items-start gap-3 bg-yellow-50 p-4 rounded-xl border border-yellow-200 text-left max-w-md mx-auto">
+          <input type="checkbox" id="cross-sell-sos-dos-3" class="mt-1 w-6 h-6 text-fluance rounded border-gray-300 focus:ring-fluance shrink-0">
+          <label for="cross-sell-sos-dos-3" class="text-base text-[#3E3A35] cursor-pointer leading-tight">
+            <strong>Offre spéciale :</strong> Ajouter "SOS Dos & Cervicales" pour seulement <span class="line-through text-gray-400">47 CHF</span> <strong>17 CHF</strong> ?
+          </label>
+        </div>
+        <button onclick="window.FluancePayment.redirectToMollie('21jours', null, 'fr', event, document.getElementById('cross-sell-sos-dos-3').checked)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] flex flex-col items-center text-center">
           <span>Je rejoins ce challenge vers un chemin vers un corps libre de tensions</span>
           <span class="text-sm font-normal opacity-90">19 CHF / équivalent €</span>
         </button>

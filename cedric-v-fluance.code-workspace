@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../cedric-v"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../bexio/bexio-import-mvp-v3"
+		}
+	],
+	"settings": {}
+}

@@ -229,6 +229,10 @@
         https://*.facebook.com
         https://*.stripe.com;
       frame-src 'self' 
+        https://www.google.com
+        https://*.google.com
+        https://www.facebook.com
+        https://*.facebook.com
         https://www.googletagmanager.com 
         https://challenges.cloudflare.com 
         https://*.cloudflare.com
@@ -244,7 +248,7 @@
         https://hooks.stripe.com;
       object-src 'none';
       base-uri 'self';
-      form-action 'self';
+      form-action 'self' https://www.facebook.com;
     ">
     
     <!-- Schema.org JSON-LD -->

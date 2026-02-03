@@ -8,7 +8,7 @@
  * - Intégration Stripe pour le paiement
  */
 
-(function() {
+(function () {
   'use strict';
 
   // Configuration
@@ -47,12 +47,12 @@
    */
   function hasAcceptedCGV(email) {
     if (!email) return false;
-    
+
     // Si on a déjà vérifié via Firestore et que ce n'est pas la première visite, pas besoin d'afficher
     if (currentUserEmail === email.toLowerCase().trim() && !isFirstVisit) {
       return true;
     }
-    
+
     // Fallback : vérifier localStorage (cache local)
     const key = `cgv_accepted_${email.toLowerCase().trim()}`;
     return localStorage.getItem(key) === 'true';
@@ -156,6 +156,7 @@
   let userPassStatus = null;
   let currentStep = 1; // 1: email, 2: pass/pricing, 3: infos, 4: payment
   let storedFirstName = ''; // Prénom stocké pour pré-remplir les formulaires
+  let storedLastName = ''; // Nom stocké pour pré-remplir les formulaires
 
   /**
    * Formate une date au format DD/MM/YYYY en format lisible selon la locale
@@ -257,13 +258,13 @@
 
     } catch (error) {
       console.error('Error loading courses:', error);
-        const errorText = currentLocale === 'en' 
-          ? 'Error loading classes.'
-          : 'Erreur lors du chargement des cours.';
-        const retryText = currentLocale === 'en'
-          ? 'Retry'
-          : 'Réessayer';
-        container.innerHTML = `
+      const errorText = currentLocale === 'en'
+        ? 'Error loading classes.'
+        : 'Erreur lors du chargement des cours.';
+      const retryText = currentLocale === 'en'
+        ? 'Retry'
+        : 'Réessayer';
+      container.innerHTML = `
         <div class="text-center py-8 text-red-500">
           <p>${errorText}</p>
           <button onclick="window.FluanceBooking.loadAvailableCourses()" class="mt-2 text-fluance underline">
@@ -300,7 +301,7 @@
 
     // Calculer le nombre de participants (0 à 7 réservations = message qualitatif)
     const participantCount = maxCapacity - spotsRemaining;
-    
+
     // Si 0 à 7 réservations : vérifier si on doit afficher la rareté temporelle
     if (participantCount <= 7) {
       // Calculer le temps restant jusqu'au cours si date et heure sont fournies
@@ -311,7 +312,7 @@
           const [day, month, year] = courseDate.split('/');
           // Parser l'heure (format HH:MM)
           const [hours, minutes] = courseTime.split(':');
-          
+
           if (day && month && year && hours && minutes) {
             const courseDateTime = new Date(
               parseInt(year),
@@ -320,7 +321,7 @@
               parseInt(hours),
               parseInt(minutes)
             );
-            
+
             const now = new Date();
             const diffMs = courseDateTime.getTime() - now.getTime();
             hoursUntilCourse = Math.floor(diffMs / (1000 * 60 * 60));
@@ -329,32 +330,32 @@
           console.error('Error calculating time until course:', error);
         }
       }
-      
+
       // Si moins de 2 jours (48 heures) avant le cours, afficher la rareté temporelle
       if (hoursUntilCourse !== null && hoursUntilCourse > 0 && hoursUntilCourse < 48) {
         return {
           colorClass: 'text-orange-600',
           bgClass: 'bg-orange-50',
           borderClass: 'border-orange-200',
-          text: isEnglish 
+          text: isEnglish
             ? `Reservations end in ${hoursUntilCourse} hour${hoursUntilCourse > 1 ? 's' : ''}`
             : `Fin des réservations dans ${hoursUntilCourse} heure${hoursUntilCourse > 1 ? 's' : ''}`,
           urgency: 'high',
           icon: '⏰'
         };
       }
-      
-        // Sinon, afficher le message qualitatif standard
-        return {
-          colorClass: 'text-gray-600',
-          bgClass: 'bg-gray-50',
-          borderClass: 'border-gray-200',
-          text: isEnglish 
-            ? `Limited to ${maxCapacity} participants`
-            : `Limité à ${maxCapacity} participants`,
-          urgency: 'low',
-          icon: ''
-        };
+
+      // Sinon, afficher le message qualitatif standard
+      return {
+        colorClass: 'text-gray-600',
+        bgClass: 'bg-gray-50',
+        borderClass: 'border-gray-200',
+        text: isEnglish
+          ? `Limited to ${maxCapacity} participants`
+          : `Limité à ${maxCapacity} participants`,
+        urgency: 'low',
+        icon: ''
+      };
     }
 
     // Calculer le pourcentage de disponibilité (adaptatif selon la capacité)
@@ -368,7 +369,7 @@
         colorClass: 'text-red-600',
         bgClass: 'bg-red-50',
         borderClass: 'border-red-200',
-        text: spotsCount === 1 
+        text: spotsCount === 1
           ? (isEnglish ? 'Last spot!' : 'Dernière place !')
           : (isEnglish ? `${spotsCount} spots left` : `${spotsCount} places restantes`),
         urgency: 'critical',
@@ -382,7 +383,7 @@
         colorClass: 'text-orange-600',
         bgClass: 'bg-orange-50',
         borderClass: 'border-orange-200',
-        text: isEnglish 
+        text: isEnglish
           ? `${spotsCount} spot${spotsCount > 1 ? 's' : ''} left`
           : `${spotsCount} place${spotsCount > 1 ? 's' : ''} restante${spotsCount > 1 ? 's' : ''}`,
         urgency: 'high',
@@ -422,14 +423,14 @@
    */
   function renderCourseCard(course) {
     const availability = getAvailabilityStyle(
-      course.spotsRemaining, 
-      course.maxCapacity, 
+      course.spotsRemaining,
+      course.maxCapacity,
       course.isFull,
       course.date, // Format DD/MM/YYYY
       course.time  // Format HH:MM
     );
 
-    const spotsText = course.isFull 
+    const spotsText = course.isFull
       ? `<span class="${availability.colorClass} font-semibold flex items-center gap-1">
            <span>${availability.icon}</span>
            <span>${availability.text}</span>
@@ -439,16 +440,16 @@
            <span>${availability.text}</span>
          </span>`;
 
-    const buttonText = course.isFull 
+    const buttonText = course.isFull
       ? (currentLocale === 'en' ? 'Waitlist' : 'Liste d\'attente')
       : (currentLocale === 'en' ? 'Book' : 'Réserver');
-    const buttonClass = course.isFull 
+    const buttonClass = course.isFull
       ? 'bg-gray-400 hover:bg-gray-500'
       : 'bg-[#E6B84A] hover:bg-[#E8C15A] !text-[#7A1F3D]';
 
     // Formater la date (format DD/MM/YYYY depuis l'API)
     const dateStr = formatDateFromDDMMYYYY(course.date);
-    
+
     // Corriger l'adresse selon la locale
     const displayLocation = formatLocation(course.location);
 
@@ -506,19 +507,19 @@
    */
   function openBookingModal(courseId, courseData) {
     currentCourseId = courseId;
-    
+
     // S'assurer que la date est correctement formatée
     // Si courseDate est "Invalid Date" ou invalide, reformater depuis la date originale
-    if (courseData.courseDateRaw && 
-        (courseData.courseDate === 'Invalid Date' || !courseData.courseDate || courseData.courseDate.includes('Invalid'))) {
+    if (courseData.courseDateRaw &&
+      (courseData.courseDate === 'Invalid Date' || !courseData.courseDate || courseData.courseDate.includes('Invalid'))) {
       courseData.courseDate = formatDateFromDDMMYYYY(courseData.courseDateRaw);
     }
-    
+
     // Corriger l'adresse selon la locale
     if (courseData.courseLocation) {
       courseData.courseLocation = formatLocation(courseData.courseLocation);
     }
-    
+
     currentCourseData = courseData;
     currentStep = 1;
     userPassStatus = null;
@@ -544,7 +545,7 @@
   function renderStep1EmailCheck() {
     const modal = document.getElementById('booking-modal');
     const content = modal.querySelector('.modal-content') || modal.querySelector('> div > div');
-    
+
     if (!content) return;
 
     content.innerHTML = `
@@ -606,16 +607,16 @@
       // L'utilisateur a déjà accepté, pas besoin d'afficher la case
       return '';
     }
-    
+
     return `
       <!-- Case à cocher CGV -->
       <div class="flex items-start gap-2">
         <input type="checkbox" id="${checkboxId}" name="acceptCGV" required
                class="mt-1 w-4 h-4 text-fluance border-gray-300 rounded focus:ring-fluance">
         <label for="${checkboxId}" class="text-sm text-[#3E3A35]">
-          ${currentLocale === 'en' 
-            ? `I have read and accept the <a href="/cgv/" target="_blank" rel="noopener noreferrer" class="text-fluance hover:underline">Terms and Conditions (T&C)</a>, including the provisions relating to insurance and liability, as well as the venue regulations.`
-            : `J'ai pris connaissance et j'accepte les <a href="/cgv/" target="_blank" rel="noopener noreferrer" class="text-fluance hover:underline">Conditions générales de vente (CGV)</a>, y compris les dispositions relatives à l'assurance et à la responsabilité, ainsi que le règlement du lieu d'accueil.`}
+          ${currentLocale === 'en'
+        ? `I have read and accept the <a href="/cgv/" target="_blank" rel="noopener noreferrer" class="text-fluance hover:underline">Terms and Conditions (T&C)</a>, including the provisions relating to insurance and liability, as well as the venue regulations.`
+        : `J'ai pris connaissance et j'accepte les <a href="/cgv/" target="_blank" rel="noopener noreferrer" class="text-fluance hover:underline">Conditions générales de vente (CGV)</a>, y compris les dispositions relatives à l'assurance et à la responsabilité, ainsi que le règlement du lieu d'accueil.`}
         </label>
       </div>
     `;
@@ -627,7 +628,7 @@
   async function checkUserEmail(email) {
     const btn = document.getElementById('check-email-btn');
     const errorContainer = document.getElementById('email-check-error');
-    
+
     btn.disabled = true;
     btn.textContent = t.checking;
     errorContainer.classList.add('hidden');
@@ -640,14 +641,17 @@
       const data = await response.json();
 
       userPassStatus = data;
-      
+
       // Stocker l'email actuel et le statut de première visite
       currentUserEmail = email.toLowerCase().trim();
       isFirstVisit = data.isFirstVisit === true;
-      
-      // Stocker le firstName si disponible pour pré-remplir les formulaires
+
+      // Stocker le firstName et lastName si disponibles pour pré-remplir les formulaires
       if (data.firstName) {
         storedFirstName = data.firstName;
+      }
+      if (data.lastName) {
+        storedLastName = data.lastName;
       }
 
       if (data.hasActivePass) {
@@ -678,7 +682,7 @@
     currentStep = 2;
     const modal = document.getElementById('booking-modal');
     const content = modal.querySelector('.modal-content') || modal.querySelector('> div > div');
-    
+
     const pass = passStatus.pass;
     const isFlowPass = pass.passType === 'flow_pass';
     const passIcon = isFlowPass ? '🎫' : '✨';
@@ -744,6 +748,7 @@
             <div>
               <label for="lastName" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.lastName}</label>
               <input type="text" id="lastName" name="lastName" required
+                     value="${storedLastName || ''}"
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
             </div>
           </div>
@@ -822,6 +827,7 @@
             <div>
               <label for="lastName" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.lastName}</label>
               <input type="text" id="lastName" name="lastName" required
+                     value="${storedLastName || ''}"
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
             </div>
           </div>
@@ -947,6 +953,7 @@
             <div>
               <label for="lastName" class="block text-sm font-medium text-[#3E3A35] mb-1">${t.lastName}</label>
               <input type="text" id="lastName" name="lastName" required
+                     value="${storedLastName || ''}"
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance">
             </div>
           </div>
@@ -973,9 +980,9 @@
             <!-- Message informatif pour le paiement en espèces -->
             <div id="cash-payment-info" class="hidden mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p class="text-sm text-blue-800">
-                <strong>💡 Important :</strong> ${currentLocale === 'en' 
-                  ? 'Please bring the exact amount in cash.' 
-                  : 'Merci d\'apporter le montant exact en espèces.'}
+                <strong>💡 Important :</strong> ${currentLocale === 'en'
+        ? 'Please bring the exact amount in cash.'
+        : 'Merci d\'apporter le montant exact en espèces.'}
               </p>
             </div>
           </div>
@@ -1003,27 +1010,27 @@
     const partnerCodeInput = document.getElementById('partnerCode');
     const applyCodeBtn = document.getElementById('apply-partner-code-btn');
     const partnerCodeMessage = document.getElementById('partner-code-message');
-    
+
     // Fonction pour réinitialiser les prix affichés
     function resetPrices() {
       const flowPassPrice = document.getElementById('price-display-flow_pass');
       const flowPassDiscount = document.getElementById('discount-display-flow_pass');
       const semesterPassPrice = document.getElementById('price-display-semester_pass');
       const semesterPassDiscount = document.getElementById('discount-display-semester_pass');
-      
+
       if (flowPassPrice) flowPassPrice.textContent = '210 CHF';
       if (flowPassDiscount) {
         flowPassDiscount.classList.add('hidden');
         flowPassDiscount.textContent = '';
       }
-      
+
       if (semesterPassPrice) semesterPassPrice.textContent = '340 CHF';
       if (semesterPassDiscount) {
         semesterPassDiscount.classList.add('hidden');
         semesterPassDiscount.textContent = '';
       }
     }
-    
+
     // Fonction pour afficher/masquer le champ code partenaire
     function togglePartnerCodeField(show) {
       if (partnerCodeSection) {
@@ -1042,32 +1049,32 @@
         }
       }
     }
-    
+
     // Fonction pour valider et appliquer le code partenaire
     async function validatePartnerCode(code, pricingOption) {
       if (!code || !code.trim()) {
         return { valid: false, message: currentLocale === 'en' ? 'Please enter a code' : 'Veuillez entrer un code' };
       }
-      
+
       try {
         const validFor = pricingOption || 'semester_pass';
         const response = await fetch(`${CONFIG.API_BASE_URL}/validatePartnerCode?code=${encodeURIComponent(code.toUpperCase().trim())}&validFor=${encodeURIComponent(validFor)}`);
         const data = await response.json();
-        
+
         if (data.valid) {
           return {
             valid: true,
             discount: data.discount || 0,
             discountPercent: data.discountPercent || 0,
-            message: data.message || (currentLocale === 'en' 
-              ? `Discount of ${data.discountPercent}% applied!` 
+            message: data.message || (currentLocale === 'en'
+              ? `Discount of ${data.discountPercent}% applied!`
               : `Remise de ${data.discountPercent}% appliquée !`)
           };
         } else {
           return {
             valid: false,
-            message: data.message || (currentLocale === 'en' 
-              ? 'Invalid code' 
+            message: data.message || (currentLocale === 'en'
+              ? 'Invalid code'
               : 'Code invalide')
           };
         }
@@ -1075,21 +1082,21 @@
         console.error('Error validating partner code:', error);
         return {
           valid: false,
-          message: currentLocale === 'en' 
-            ? 'Error validating code. Please try again.' 
+          message: currentLocale === 'en'
+            ? 'Error validating code. Please try again.'
             : 'Erreur lors de la validation du code. Veuillez réessayer.'
         };
       }
     }
-    
+
     // Fonction pour appliquer la remise au prix affiché
     function applyDiscount(discountPercent) {
       // Récupérer l'option tarifaire sélectionnée
       const selectedRadio = pricingContainer.querySelector('input[type="radio"]:checked');
       if (!selectedRadio) return;
-      
+
       const pricingOption = selectedRadio.value;
-      
+
       // Définir le prix original selon l'option
       let originalPrice;
       if (pricingOption === 'flow_pass') {
@@ -1099,26 +1106,26 @@
       } else {
         return; // Pas de remise pour les autres options
       }
-      
+
       const discountAmount = (originalPrice * discountPercent) / 100;
       const finalPrice = originalPrice - discountAmount;
-      
+
       const priceDisplay = document.getElementById(`price-display-${pricingOption}`);
       const discountDisplay = document.getElementById(`discount-display-${pricingOption}`);
-      
+
       if (priceDisplay) {
         priceDisplay.innerHTML = `
           <span class="line-through text-gray-400 text-base">${originalPrice} CHF</span>
           <span class="ml-2">${finalPrice.toFixed(2)} CHF</span>
         `;
       }
-      
+
       if (discountDisplay) {
         discountDisplay.textContent = `-${discountPercent}%`;
         discountDisplay.classList.remove('hidden');
       }
     }
-    
+
     if (pricingContainer) {
       pricingContainer.querySelectorAll('input[type="radio"]').forEach(radio => {
         radio.addEventListener('change', () => {
@@ -1130,25 +1137,25 @@
           const selectedLabel = radio.closest('label');
           selectedLabel.classList.remove('border-gray-200');
           selectedLabel.classList.add('border-fluance', 'bg-fluance/5');
-          
+
           // Réinitialiser les prix affichés lors du changement d'option
           resetPrices();
-          
+
           // Réinitialiser le code partenaire et le message
           if (partnerCodeInput) partnerCodeInput.value = '';
           if (partnerCodeMessage) {
             partnerCodeMessage.classList.add('hidden');
             partnerCodeMessage.textContent = '';
           }
-          
+
           // Afficher/masquer le champ code partenaire (Flow Pass et Pass Semestriel)
           togglePartnerCodeField(radio.value === 'flow_pass' || radio.value === 'semester_pass');
-          
+
           // Mettre à jour les options de paiement selon le type de pass
           updatePaymentMethodsForPricingOption(radio.value);
         });
       });
-      
+
       // Gérer aussi les clics sur les labels
       pricingContainer.querySelectorAll('label').forEach(label => {
         label.addEventListener('click', () => {
@@ -1159,7 +1166,7 @@
           }
         });
       });
-      
+
       // Vérifier l'option sélectionnée au chargement
       const selectedRadio = pricingContainer.querySelector('input[type="radio"]:checked');
       if (selectedRadio) {
@@ -1169,7 +1176,7 @@
         updatePaymentMethodsForPricingOption(selectedRadio.value);
       }
     }
-    
+
     /**
      * Met à jour les options de paiement selon le type de pass sélectionné
      * - Pass Semestriel : Carte uniquement (pas TWINT car pas d'abonnements récurrents)
@@ -1178,7 +1185,7 @@
     function updatePaymentMethodsForPricingOption(pricingOption) {
       const cardPaymentLabel = document.getElementById('card-payment-label');
       if (!cardPaymentLabel) return;
-      
+
       if (pricingOption === 'semester_pass') {
         // Pass Semestriel : Carte uniquement (abonnement récurrent)
         cardPaymentLabel.textContent = currentLocale === 'en' ? 'Card' : 'Carte bancaire';
@@ -1187,12 +1194,12 @@
         cardPaymentLabel.textContent = currentLocale === 'en' ? 'Card / TWINT' : 'Carte / TWINT';
       }
     }
-    
+
     // Gérer l'application du code partenaire
     if (applyCodeBtn && partnerCodeInput) {
       applyCodeBtn.addEventListener('click', async () => {
         const code = partnerCodeInput.value.trim().toUpperCase();
-        
+
         // Si le champ est vide, retirer le code partenaire si une remise est appliquée
         if (!code) {
           // Vérifier si une remise est actuellement appliquée
@@ -1200,38 +1207,38 @@
           if (selectedRadio) {
             const pricingOption = selectedRadio.value;
             const discountDisplay = document.getElementById(`discount-display-${pricingOption}`);
-            
+
             // Si une remise est visible, la retirer
             if (discountDisplay && !discountDisplay.classList.contains('hidden')) {
               resetPrices();
-              partnerCodeMessage.textContent = currentLocale === 'en' 
-                ? 'Partner code removed' 
+              partnerCodeMessage.textContent = currentLocale === 'en'
+                ? 'Partner code removed'
                 : 'Code partenaire retiré';
               partnerCodeMessage.className = 'mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800';
               partnerCodeMessage.classList.remove('hidden');
               return;
             }
           }
-          
+
           // Si aucune remise n'est appliquée, afficher l'erreur
-          partnerCodeMessage.textContent = currentLocale === 'en' 
-            ? 'Please enter a code' 
+          partnerCodeMessage.textContent = currentLocale === 'en'
+            ? 'Please enter a code'
             : 'Veuillez entrer un code';
           partnerCodeMessage.className = 'mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800';
           partnerCodeMessage.classList.remove('hidden');
           return;
         }
-        
+
         applyCodeBtn.disabled = true;
         applyCodeBtn.textContent = currentLocale === 'en' ? 'Checking...' : 'Vérification...';
-        
+
         // Récupérer l'option tarifaire sélectionnée
         const selectedPricingOption = pricingContainer.querySelector('input[type="radio"]:checked')?.value || 'semester_pass';
         const result = await validatePartnerCode(code, selectedPricingOption);
-        
+
         applyCodeBtn.disabled = false;
         applyCodeBtn.textContent = currentLocale === 'en' ? 'Apply' : 'Appliquer';
-        
+
         if (result.valid) {
           // Construire le message avec mention spéciale pour RETRAITE50
           let messageHTML = result.message;
@@ -1256,7 +1263,7 @@
           partnerCodeMessage.classList.remove('hidden');
         }
       });
-      
+
       // Permettre d'appliquer le code avec Enter
       partnerCodeInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
@@ -1280,7 +1287,7 @@
           const selectedLabel = radio.closest('label');
           selectedLabel.classList.remove('border-gray-200');
           selectedLabel.classList.add('border-fluance', 'bg-fluance/5');
-          
+
           // Afficher/masquer le message informatif pour le paiement en espèces
           if (cashPaymentInfo) {
             if (radio.value === 'cash') {
@@ -1291,7 +1298,7 @@
           }
         });
       });
-      
+
       // Gérer aussi les clics sur les labels (pour compatibilité)
       paymentMethodsContainer.querySelectorAll('label').forEach(label => {
         label.addEventListener('click', () => {
@@ -1388,7 +1395,7 @@
    */
   async function handleBookingWithPass(e) {
     e.preventDefault();
-    
+
     const form = e.target;
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
@@ -1495,6 +1502,7 @@
       paymentMethod: formData.get('paymentMethod') || 'card',
       pricingOption: formData.get('pricing') || formData.get('pricingOption') || 'single',
       partnerCode: partnerCode || undefined, // Inclure seulement si présent
+      origin: window.location.origin,
     };
 
     try {
@@ -1511,15 +1519,18 @@
         if (acceptCGV && acceptCGV.checked && email) {
           markCGVAccepted(email);
         }
-        
+
         if (result.status === 'waitlisted') {
           const waitlistTitle = currentLocale === 'en' ? 'Added to waitlist' : 'Ajouté à la liste d\'attente';
           const waitlistMsg = currentLocale === 'en'
             ? `You are in position ${result.position}. We will contact you if a spot becomes available.`
             : `Vous êtes en position ${result.position}. Nous vous contacterons si une place se libère.`;
           showSuccessMessage(waitlistTitle, waitlistMsg);
+        } else if (result.requiresPayment && result.redirectUrl) {
+          // MOLLIE: Redirection vers la page de paiement
+          window.location.href = result.redirectUrl;
         } else if (result.requiresPayment && result.clientSecret) {
-          // Passer l'email et l'acceptation CGV pour le marquer après paiement réussi
+          // STRIPE: Passer l'email et l'acceptation CGV pour le marquer après paiement réussi
           await handleStripePayment(result.clientSecret, data, email, acceptCGV && acceptCGV.checked);
         } else {
           // Réservation confirmée sans paiement (cours gratuit ou espèces)
@@ -1624,16 +1635,16 @@
     // Confirmer le paiement
     const confirmBtn = document.getElementById('confirm-payment-btn');
     const errorContainer = document.getElementById('payment-error');
-    
+
     confirmBtn.onclick = async () => {
       confirmBtn.disabled = true;
       confirmBtn.textContent = 'Traitement...';
       errorContainer.classList.add('hidden');
 
-      const {error} = await stripe.confirmPayment({
+      const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: currentLocale === 'en' 
+          return_url: currentLocale === 'en'
             ? `${window.location.origin}/en/presentiel/booking-confirmed/`
             : `${window.location.origin}/presentiel/reservation-confirmee/`,
         },
@@ -1654,7 +1665,7 @@
   function showSuccessMessage(title, message) {
     const modal = document.getElementById('booking-modal');
     const content = modal.querySelector('.modal-content') || modal.querySelector('> div > div');
-    
+
     if (content) {
       content.innerHTML = `
         <div class="p-6 text-center">

@@ -40,8 +40,9 @@ async function checkUserPass(db, email) {
   const now = new Date();
 
   try {
-    // Chercher le firstName dans les bookings précédents ou les pass
+    // Chercher le firstName et lastName dans les bookings précédents ou les pass
     let existingFirstName = '';
+    let existingLastName = '';
 
     // D'abord chercher dans les bookings (sans orderBy pour éviter besoin d'index)
     const bookingsSnapshot = await db.collection('bookings')
@@ -50,31 +51,37 @@ async function checkUserPass(db, email) {
         .get();
 
     if (!bookingsSnapshot.empty) {
-      // Parcourir pour trouver le premier avec firstName
+      // Parcourir pour trouver le premier avec firstName/lastName
       for (const doc of bookingsSnapshot.docs) {
         const booking = doc.data();
-        if (booking.firstName) {
+        if (booking.firstName && !existingFirstName) {
           existingFirstName = booking.firstName;
-          break; // Prendre le premier trouvé
         }
+        if (booking.lastName && !existingLastName) {
+          existingLastName = booking.lastName;
+        }
+        if (existingFirstName && existingLastName) break;
       }
     }
 
     // Si pas trouvé, chercher dans les pass (tous, pas seulement actifs)
-    if (!existingFirstName) {
+    if (!existingFirstName || !existingLastName) {
       const allPassesSnapshot = await db.collection('userPasses')
           .where('email', '==', normalizedEmail)
           .limit(10) // Limiter pour performance
           .get();
 
       if (!allPassesSnapshot.empty) {
-        // Parcourir pour trouver le premier avec firstName
+        // Parcourir pour trouver le premier avec firstName/lastName
         for (const doc of allPassesSnapshot.docs) {
           const pass = doc.data();
-          if (pass.firstName) {
+          if (pass.firstName && !existingFirstName) {
             existingFirstName = pass.firstName;
-            break; // Prendre le premier trouvé
           }
+          if (pass.lastName && !existingLastName) {
+            existingLastName = pass.lastName;
+          }
+          if (existingFirstName && existingLastName) break;
         }
       }
     }
@@ -96,7 +103,8 @@ async function checkUserPass(db, email) {
           'Bienvenue ! Votre première séance est offerte.' :
           'Vous n\'avez pas de pass actif. Choisissez une formule pour réserver.',
         availablePasses: [],
-        firstName: existingFirstName, // Retourner le firstName si trouvé
+        firstName: existingFirstName,
+        lastName: existingLastName,
       };
     }
 
@@ -147,7 +155,8 @@ async function checkUserPass(db, email) {
         canUseTrial: false,
         message: 'Votre pass a expiré ou est épuisé. Renouvelez pour continuer.',
         availablePasses: [],
-        firstName: existingFirstName, // Retourner le firstName si trouvé
+        firstName: existingFirstName,
+        lastName: existingLastName,
       };
     }
 
@@ -160,13 +169,16 @@ async function checkUserPass(db, email) {
 
     const primaryPass = validPasses[0];
 
-    // Si pas de firstName trouvé précédemment, chercher dans le pass actif
-    if (!existingFirstName && primaryPass) {
+    // Si pas de firstName/lastName trouvé précédemment, chercher dans le pass actif
+    if ((!existingFirstName || !existingLastName) && primaryPass) {
       const primaryPassDoc = passesSnapshot.docs.find((doc) => doc.id === primaryPass.passId);
       if (primaryPassDoc) {
         const passData = primaryPassDoc.data();
-        if (passData.firstName) {
+        if (passData.firstName && !existingFirstName) {
           existingFirstName = passData.firstName;
+        }
+        if (passData.lastName && !existingLastName) {
+          existingLastName = passData.lastName;
         }
       }
     }
@@ -180,7 +192,8 @@ async function checkUserPass(db, email) {
       message: primaryPass.passType === 'semester_pass' ?
         `Pass Semestriel actif (${primaryPass.daysRemaining} jours restants)` :
         `Flow Pass : ${primaryPass.sessionsRemaining}/${primaryPass.sessionsTotal} séances restantes`,
-      firstName: existingFirstName, // Retourner le firstName si trouvé
+      firstName: existingFirstName,
+      lastName: existingLastName,
     };
   } catch (error) {
     console.error('Error checking user pass:', error);
