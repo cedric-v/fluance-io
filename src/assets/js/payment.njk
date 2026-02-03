@@ -99,25 +99,31 @@ async function redirectToMollieCheckout(product, variant = null, locale = 'fr', 
     let email = storedEmail;
     let firstName = storedFirstName;
     let lastName = localStorage.getItem('user_lastname');
-    // Pour les abonnements et RDV Clarté, l'email/prénom/nom sont obligatoires
-    const isRequiredForProduct = (product === 'complet' || product === 'rdv-clarte');
+    // Pour les abonnements, RDV Clarté et 21 Jours, l'email/prénom/nom sont obligatoires
+    const isRequiredForProduct = (product === 'complet' || product === 'rdv-clarte' || product === '21jours');
     const isMissingInfo = !email || !firstName || !lastName;
 
     if (isRequiredForProduct && isMissingInfo) {
-      try {
-        const userDataCaptured = await showEmailCaptureModal(locale);
-        if (!userDataCaptured || !userDataCaptured.email) throw new Error('Email required');
-        
-        email = userDataCaptured.email;
-        firstName = userDataCaptured.firstName;
-        lastName = userDataCaptured.lastName;
-        
-        localStorage.setItem('user_email', email);
-        if (firstName) localStorage.setItem('user_firstname', firstName);
-        if (lastName) localStorage.setItem('user_lastname', lastName);
-      } catch (e) {
-        throw new Error('Required info missing for subscription');
+      const userDataCaptured = await showEmailCaptureModal(locale);
+      
+      // Si l'utilisateur a fermé la modal sans valider
+      if (!userDataCaptured) {
+        if (button && originalText) {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+        return; // Sortie silencieuse (pas d'alert d'erreur)
       }
+
+      if (!userDataCaptured.email) throw new Error('Email required');
+      
+      email = userDataCaptured.email;
+      firstName = userDataCaptured.firstName;
+      lastName = userDataCaptured.lastName;
+      
+      localStorage.setItem('user_email', email);
+      if (firstName) localStorage.setItem('user_firstname', firstName);
+      if (lastName) localStorage.setItem('user_lastname', lastName);
     }
 
     const data = {
