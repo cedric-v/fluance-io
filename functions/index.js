@@ -11635,6 +11635,13 @@ exports.createMollieCheckoutSession = onCall(
       throw new HttpsError('invalid-argument', 'Product is required');
     }
 
+    // Vérifier les infos requises pour les produits critiques (Complet, RDV Clarté)
+    if (product === 'complet' || product === 'rdv-clarte') {
+      if (!email || !firstName || !lastName) {
+        throw new HttpsError('invalid-argument', 'Required info missing (email, firstName, lastName)');
+      }
+    }
+
     // Prix (CHF)
     const PRICES = {
       '21jours': 19.00,
