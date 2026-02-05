@@ -25,7 +25,7 @@ permalink: /presentiel/reserver/
   <!-- Informations sur les tarifs -->
   <div class="bg-white rounded-2xl shadow-lg p-8 mb-12">
     <h2 class="text-2xl font-semibold text-fluance mb-6 text-center">Nos formules</h2>
-    <div class="grid md:grid-cols-4 gap-6">
+    <div class="grid md:grid-cols-4 gap-6 mb-8">
       <div class="text-center p-4 rounded-xl border-2 border-green-200 bg-green-50">
         <span class="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full mb-3">OFFERT</span>
         <h3 class="font-semibold text-[#3E3A35] mb-1">Cours d'essai</h3>
@@ -49,6 +49,9 @@ permalink: /presentiel/reserver/
         <p class="text-2xl font-bold text-[#E6B84A] mb-2">340 CHF</p>
         <p class="text-sm text-[#3E3A35]/60">Illimité pendant 6 mois</p>
       </div>
+    </div>
+    <div class="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-center">
+      <p class="text-[#3E3A35]"><strong>Offre spéciale lancement pour les retraités :</strong> -50 % sur le Flow Pass et le Pass Semestriel avec le code <span class="bg-yellow-200 px-2 py-0.5 rounded font-mono font-bold text-fluance">RETRAITE50</span></p>
     </div>
   </div>
 

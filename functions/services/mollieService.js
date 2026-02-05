@@ -1,4 +1,4 @@
-const {createMollieClient} = require('@mollie/api-client');
+const { createMollieClient } = require('@mollie/api-client');
 
 class MollieService {
   constructor() {
@@ -16,7 +16,7 @@ class MollieService {
       throw new Error('MOLLIE_API_KEY secret not configured');
     }
 
-    this.mollieClient = createMollieClient({apiKey});
+    this.mollieClient = createMollieClient({ apiKey });
   }
 
   /**
@@ -75,14 +75,38 @@ class MollieService {
   async listCustomers(limit = 10) {
     this.initialize();
     try {
-      const customers = await this.mollieClient.customers.list({limit});
+      const customers = await this.mollieClient.customers.list({ limit });
       return customers;
     } catch (error) {
       console.error('Error listing Mollie customers:', error);
       throw error;
     }
   }
+  /**
+   * Create a subscription
+   * @param {Object} subscriptionData - must include customerId
+   * @returns {Promise<Object>}
+   */
+  async createSubscription(subscriptionData) {
+    this.initialize();
+    try {
+      const { customerId, ...data } = subscriptionData;
+
+      if (!customerId) {
+        throw new Error('customerId is required for subscription');
+      }
+
+      const subscription = await this.mollieClient.customers_subscriptions.create({
+        customerId,
+        ...data,
+      });
+      return subscription;
+    } catch (error) {
+      console.error('Error creating Mollie subscription:', error);
+      throw error;
+    }
+  }
 }
 
 const mollieService = new MollieService();
-module.exports = {mollieService};
+module.exports = { mollieService };

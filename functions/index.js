@@ -11533,6 +11533,7 @@ exports.processMolliePayment = onMessagePublished(
         return;
       }
 
+
       // 3. Logique Bexio (Manual Entry - Stripe Logic)
       try {
         const amount = parseFloat(payment.amount.value); // { value: "100.00", currency: "CHF" }
@@ -11559,7 +11560,6 @@ exports.processMolliePayment = onMessagePublished(
         const debitAccount = process.env.BEXIO_ACCOUNT_MOLLIE ? parseInt(process.env.BEXIO_ACCOUNT_MOLLIE) : 1027;
 
         // Sales: 3400 (CH) / 3410 (Intl)
-        // Sales: 3400 (CH) / 3410 (Intl)
         const creditAccountCH = process.env.BEXIO_ACCOUNT_SALES_CH ?
           parseInt(process.env.BEXIO_ACCOUNT_SALES_CH) :
           3400;
@@ -11583,6 +11583,49 @@ exports.processMolliePayment = onMessagePublished(
           reference: paymentId,
           tax_id: taxId,
         });
+
+        // 3b. Gestion des abonnements (Subscription Creation)
+        // Si c'est un premier paiement d'abonnement, on crée la souscription Mollie
+        let mollieSubscriptionId = null;
+        if (metadata.type === 'subscription_first' && payment.customerId) {
+          try {
+            console.log(`🔄 Creating subscription for payment ${paymentId} (Customer: ${payment.customerId})`);
+
+            let interval = '1 month'; // Default
+            if (metadata.variant === 'trimestriel') interval = '3 months';
+            else if (metadata.product === 'semester_pass') interval = '6 months';
+
+            // Calculer la date de début (startDate) pour éviter double facturation immédiate
+            // La date de début doit être aujourd'hui + intervalle
+            const paidAt = payment.paidAt ? new Date(payment.paidAt) : new Date();
+            const startDate = new Date(paidAt);
+
+            if (interval === '1 month') startDate.setMonth(startDate.getMonth() + 1);
+            else if (interval === '3 months') startDate.setMonth(startDate.getMonth() + 3);
+            else if (interval === '6 months') startDate.setMonth(startDate.getMonth() + 6);
+
+            const startDateStr = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            const subscription = await mollieService.createSubscription({
+              customerId: payment.customerId,
+              amount: payment.amount, // { value: "10.00", currency: "CHF" }
+              interval: interval,
+              startDate: startDateStr,
+              description: `Abonnement ${metadata.product} (${interval})`,
+              webhookUrl: `https://europe-west1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/webhookMollie`,
+              metadata: {
+                ...metadata,
+                type: 'subscription_renewal', // Marquer les futurs paiements comme renouvellements
+              },
+            });
+
+            mollieSubscriptionId = subscription.id;
+            console.log(`✅ Subscription created successfully for ${payment.customerId} (ID: ${mollieSubscriptionId}) starting ${startDateStr}`);
+          } catch (subError) {
+            console.error('❌ Error creating subscription:', subError);
+            // On continue car le paiement a réussi, mais l'abo a échoué (à monitorer)
+          }
+        }
       } catch (bexioError) {
         console.error('❌ Error in Bexio integration:', bexioError);
       }
@@ -11608,6 +11651,76 @@ exports.processMolliePayment = onMessagePublished(
         } catch (bookingError) {
           console.error(`❌ Error confirming booking ${bookingId}:`, bookingError);
           // Ne pas bloquer, on a déjà logué
+        }
+      }
+
+      // 6. Gestion des Pass (Flow Pass & Semester Pass)
+      // On détecte si c'est un achat de pass via les métadonnées
+      const isFlowPassPurchase = (metadata.passType === 'flow_pass' || metadata.product === 'flow_pass') && metadata.type !== 'subscription_renewal';
+      const isSemesterPassPurchase = (metadata.product === 'semester_pass') && (metadata.type === 'subscription_first' || metadata.type === 'semester_pass');
+      const isRenewal = metadata.type === 'subscription_renewal' || !!payment.subscriptionId;
+
+      if (isRenewal && passService) {
+        const subscriptionId = payment.subscriptionId || metadata.subscriptionId;
+        if (subscriptionId) {
+          console.log(`🔄 Processing renewal for subscription ${subscriptionId}`);
+          try {
+            await passService.renewSemesterPass(db, subscriptionId);
+            console.log(`✅ Semester Pass renewed for subscription ${subscriptionId}`);
+          } catch (renewError) {
+            console.error('❌ Error renewing pass:', renewError);
+          }
+        }
+      } else if ((isFlowPassPurchase || isSemesterPassPurchase) && passService) {
+        try {
+          // Vérifier si le pass a déjà été créé pour ce paiement (idempotence)
+          // On utilise le paymentId comme référence unique
+          const passSnapshot = await db.collection('userPasses')
+            .where('molliePaymentId', '==', paymentId)
+            .limit(1)
+            .get();
+
+          if (passSnapshot.empty) {
+            console.log(`🎟️ Creating ${isFlowPassPurchase ? 'Flow Pass' : 'Semester Pass'} for ${metadata.email}`);
+
+            const passType = isFlowPassPurchase ? 'flow_pass' : 'semester_pass';
+            const config = passService.PASS_CONFIG[passType];
+
+            const pass = await passService.createUserPass(db, metadata.email, passType, {
+              firstName: metadata.firstName || '',
+              lastName: metadata.lastName || '',
+              phone: metadata.phone || '',
+              molliePaymentId: paymentId,
+              // Note: stripeSubscriptionId est utilisé pour stocker l'ID Mollie sub_... pour les renouvellements
+              stripeSubscriptionId: mollieSubscriptionId || payment.subscriptionId || null,
+              // Note: stripePaymentIntentId est utilisé comme champ générique pour l'ID de transaction dans certains services
+              stripePaymentIntentId: paymentId,
+            });
+
+            console.log(`✅ Pass created: ${pass.passId}`);
+
+            // Envoyer l'e-mail de confirmation spécifique au pass via l'extension Firebase
+            await db.collection('mail').add({
+              to: metadata.email,
+              template: {
+                name: 'pass-purchase-confirmation',
+                data: {
+                  firstName: metadata.firstName || '',
+                  passType: config.name,
+                  isUnlimited: config.sessions === -1,
+                  sessions: config.sessions,
+                  validityMonths: Math.round(config.validityDays / 30),
+                  isRecurring: config.isRecurring,
+                  passId: pass.passId,
+                },
+              },
+            });
+            console.log(`📧 Pass confirmation email queued for ${metadata.email}`);
+          } else {
+            console.log(`ℹ️ Pass already exists for payment ${paymentId}, skipping creation`);
+          }
+        } catch (passError) {
+          console.error('❌ Error in pass creation logic:', passError);
         }
       }
 

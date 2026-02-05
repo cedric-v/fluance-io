@@ -62,7 +62,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-6 text-center">Our Pricing Options</h3>
-        <div class="grid md:grid-cols-4 gap-6">
+        <div class="grid md:grid-cols-4 gap-6 mb-8">
           <a href="{{ '/en/presentiel/reserver/' | relativeUrl }}" class="text-center p-4 rounded-xl border-2 border-green-200 bg-green-50 hover:shadow-lg hover:scale-105 transition-all cursor-pointer block">
             <span class="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full mb-3">FREE</span>
             <h4 class="font-semibold text-[#3E3A35] mb-1">Trial Class</h4>
@@ -86,6 +86,9 @@ permalink: /en/presentiel/cours-hebdomadaires/
             <p class="text-2xl font-bold text-[#E6B84A] mb-2">340 CHF</p>
             <p class="text-sm text-[#3E3A35]/60">Unlimited for 6 months</p>
           </a>
+        </div>
+        <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-center">
+          <p class="text-[#3E3A35]"><strong>Special launch offer for retirees:</strong> -50% on Flow Pass and Semester Pass with the code <span class="bg-yellow-200 px-2 py-0.5 rounded font-mono font-bold text-fluance">RETRAITE50</span></p>
         </div>
       </div>
     </div>
