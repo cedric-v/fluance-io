@@ -33,7 +33,7 @@ module.exports = function (eleventyConfig) {
       outputDir: "./_site/assets/img/",
       urlPath: "/assets/img/",
       sharpWebpOptions: {
-        quality: 80,
+        quality: 75,
         smartSubsample: true
       }
     });
@@ -46,6 +46,7 @@ module.exports = function (eleventyConfig) {
       sizes,
       loading,
       decoding: loading === "eager" ? "sync" : "async",
+      fetchpriority: loading === "eager" ? "high" : "auto",
     };
 
     if (cls) imageAttributes.class = cls;

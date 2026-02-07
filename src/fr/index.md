@@ -16,7 +16,7 @@ ogImage: assets/img/accueil-miniature-FR.jpg
   </div>
   <div class="relative z-10 max-w-2xl text-[#F5F7F6] space-y-8">
     <div class="space-y-4">
-      <h1 class="text-4xl md:text-6xl font-semibold leading-tight text-[#F5F7F6]">
+      <h1 class="text-4xl md:text-6xl font-semibold leading-tight text-[#F5F7F6]" style="font-size: clamp(2rem, 8vw, 3.75rem);">
         Relâcher les tensions.<br>
         Se libérer par le mouvement.<br>
         Retrouver fluidité et présence en soi.

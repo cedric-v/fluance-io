@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Précharger les polices critiques pour réduire le CLS -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2" as="font" type="font/woff2" crossorigin>
+    
     <!-- Charger les fonts de manière asynchrone pour ne pas bloquer le rendu (économise ~760ms) -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
@@ -132,11 +135,20 @@
       #main-header img {
         height: 3rem;
         width: auto;
-        aspect-ratio: 1.5; /* Valeur approchée pour réserver l'espace avant chargement */
+        aspect-ratio: 1.5; /* Valeur précise du logo 1536/1024 = 1.5 */
+        display: block;
       }
       @media (min-width: 768px) {
         #main-header img {
           height: 3.5rem;
+        }
+      }
+      .header-container {
+        min-height: 4rem; /* Réserve l'espace pour le header mobile */
+      }
+      @media (min-width: 768px) {
+        .header-container {
+          min-height: 4.5rem; /* Réserve l'espace pour le header desktop */
         }
       }
       .header-slogan {
@@ -169,13 +181,13 @@
       (function() {
         var link = document.querySelector('link[rel="preload"][as="style"]');
         if (link) {
-          // Vérifier après 100ms si le CSS s'est chargé, sinon forcer le chargement synchrone
+          // Vérifier après 200ms si le CSS s'est chargé, sinon forcer le chargement synchrone
           setTimeout(function() {
             if (link.rel !== 'stylesheet') {
               link.rel = 'stylesheet';
               link.onload = null; // Nettoyer le handler
             }
-          }, 100);
+          }, 200);
         }
       })();
     </script>
