@@ -126,10 +126,13 @@
         right: 0;
         z-index: 50;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        will-change: transform, background-color;
+        transition: transform 0.3s ease, background-color 0.3s ease;
       }
       #main-header img {
         height: 3rem;
         width: auto;
+        aspect-ratio: 1.5; /* Valeur approchée pour réserver l'espace avant chargement */
       }
       @media (min-width: 768px) {
         #main-header img {
@@ -141,6 +144,7 @@
         color: rgba(230, 184, 74, 0.8);
         font-style: italic;
         margin-top: -0.25rem;
+        will-change: opacity, transform;
       }
       body {
         background-color: #fdfaf6;
@@ -370,44 +374,46 @@
     function updateHeader() {
       const scrollY = window.scrollY;
       const isScrolled = scrollY > 50;
-      const isMobile = window.innerWidth < 768;
+      const isDesktop = window.matchMedia('(min-width: 768px)').matches;
       const slogan = header.querySelector('.header-slogan');
       
-      // Appliquer l'effet sur desktop (md et plus)
-      if (!isMobile) {
+      if (isDesktop) {
         if (isScrolled) {
-          header.classList.add('header-scrolled');
-          header.classList.add('header-scrolled-mobile');
-          // Cacher le slogan sur desktop aussi lors du scroll
-          if (slogan) {
-            slogan.style.display = 'none';
-            slogan.style.visibility = 'hidden';
+          if (!header.classList.contains('header-scrolled')) {
+            header.classList.add('header-scrolled');
+            header.classList.add('header-scrolled-mobile');
+            if (slogan) {
+              slogan.style.display = 'none';
+              slogan.style.visibility = 'hidden';
+            }
           }
         } else {
-          header.classList.remove('header-scrolled');
-          header.classList.remove('header-scrolled-mobile');
-          // Réafficher le slogan
-          if (slogan) {
-            slogan.style.display = '';
-            slogan.style.visibility = '';
+          if (header.classList.contains('header-scrolled')) {
+            header.classList.remove('header-scrolled');
+            header.classList.remove('header-scrolled-mobile');
+            if (slogan) {
+              slogan.style.display = '';
+              slogan.style.visibility = '';
+            }
           }
         }
       } else {
-        // Sur mobile, garder le style original mais cacher le slogan au scroll
         header.classList.remove('header-scrolled');
         if (isScrolled) {
-          header.classList.add('header-scrolled-mobile');
-          // Forcer le masquage via JavaScript pour Safari
-          if (slogan) {
-            slogan.style.display = 'none';
-            slogan.style.visibility = 'hidden';
+          if (!header.classList.contains('header-scrolled-mobile')) {
+            header.classList.add('header-scrolled-mobile');
+            if (slogan) {
+              slogan.style.display = 'none';
+              slogan.style.visibility = 'hidden';
+            }
           }
         } else {
-          header.classList.remove('header-scrolled-mobile');
-          // Réafficher le slogan
-          if (slogan) {
-            slogan.style.display = '';
-            slogan.style.visibility = '';
+          if (header.classList.contains('header-scrolled-mobile')) {
+            header.classList.remove('header-scrolled-mobile');
+            if (slogan) {
+              slogan.style.display = '';
+              slogan.style.visibility = '';
+            }
           }
         }
       }
@@ -424,10 +430,16 @@
     }
     
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', updateHeader);
+    window.addEventListener('resize', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(updateHeader);
+            ticking = true;
+        }
+    }, { passive: true });
     
-    // Initialiser au chargement
-    updateHeader();
+    // Initialiser au chargement via rAF pour éviter le forced reflow au parsing
+    window.requestAnimationFrame(updateHeader);
+  })();
   })();
 
   // Gestion du consentement aux cookies

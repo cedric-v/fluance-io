@@ -49,7 +49,7 @@ ogImage: assets/img/accueil-miniature-FR.jpg
     </p>
   </div>
   <a href="{{ '/a-propos/approche-fluance/' | relativeUrl }}" class="section-card overflow-hidden max-w-xs mx-auto md:mx-0 block hover:opacity-90 transition-opacity">
-    {% responsiveImage "/assets/img/approche-fluance.png", "Schéma de l'approche Fluance", "(max-width: 768px) 100vw, 400px", "w-full h-auto object-contain" %}
+    {% responsiveImage "/assets/img/approche-fluance.png", "Schéma de l'approche Fluance", "(min-width: 768px) 320px, 100vw", "w-full h-auto object-contain" %}
   </a>
 </section>
 
@@ -63,7 +63,7 @@ ogImage: assets/img/accueil-miniature-FR.jpg
   </div>
   <div class="grid md:grid-cols-[1fr_2fr] gap-8 items-center">
     <figure class="section-card overflow-hidden max-w-xs mx-auto md:mx-0">
-      {% responsiveImage "/assets/img/duplex-fluance-clem-piller.jpg", "Le duplex danse & bien-être", "(max-width: 768px) 100vw, 400px", "w-full h-auto object-cover" %}
+      {% responsiveImage "/assets/img/duplex-fluance-clem-piller.jpg", "Le duplex danse & bien-être", "(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw", "w-full h-auto object-cover" %}
       <figcaption class="text-[10px] text-[#3E3A35]/60 p-1 text-right italic bg-white/80">Clem Piller© pour le duplex</figcaption>
     </figure>
     <div class="text-left space-y-4">

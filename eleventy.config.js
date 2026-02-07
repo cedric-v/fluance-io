@@ -14,7 +14,7 @@ const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "" : "";
 module.exports = function (eleventyConfig) {
 
   // 1. Images responsives optimisées avec eleventy-img
-  eleventyConfig.addShortcode("responsiveImage", async function (src, alt, sizes = "100vw", cls = "", loading = "lazy") {
+  eleventyConfig.addShortcode("responsiveImage", async function (src, alt, sizes = "100vw", cls = "", loading = "lazy", width = null, height = null) {
     if (alt === undefined) {
       throw new Error(`Missing \`alt\` on responsive image from: ${src}`);
     }
@@ -28,11 +28,18 @@ module.exports = function (eleventyConfig) {
     }
 
     let metadata = await EleventyImage(inputPath, {
-      widths: [300, 600, 900, 1200, 1600],
+      widths: [150, 300, 450, 600, 750, 900, 1050, 1200, 1400, 1600],
       formats: ["webp", "jpeg"],
       outputDir: "./_site/assets/img/",
-      urlPath: "/assets/img/"
+      urlPath: "/assets/img/",
+      sharpWebpOptions: {
+        quality: 80,
+        smartSubsample: true
+      }
     });
+
+    let lowsrc = metadata.jpeg[0];
+    let highsrc = metadata.jpeg[metadata.jpeg.length - 1];
 
     let imageAttributes = {
       alt,
@@ -41,8 +48,18 @@ module.exports = function (eleventyConfig) {
       decoding: loading === "eager" ? "sync" : "async",
     };
 
-    if (cls) {
-      imageAttributes.class = cls;
+    if (cls) imageAttributes.class = cls;
+
+    // Ajouter des attributs width/height basés sur l'image la plus large pour aider le navigateur
+    // à calculer l'aspect ratio avant le chargement.
+    imageAttributes.width = width || highsrc.width;
+    imageAttributes.height = height || highsrc.height;
+
+    // Ajouter l'aspect-ratio via le style inline pour une stabilité maximale
+    const aspectRatio = (highsrc.width / highsrc.height).toFixed(4);
+    imageAttributes.style = `aspect-ratio: ${aspectRatio}; width: 100%; height: auto;`;
+    if (cls.includes('w-auto')) {
+      imageAttributes.style = `aspect-ratio: ${aspectRatio}; height: 100%; width: auto;`;
     }
 
     return EleventyImage.generateHTML(metadata, imageAttributes);
