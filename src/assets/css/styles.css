@@ -234,6 +234,15 @@ header .group:hover .absolute {
   .object-position-mobile {
     object-position: center 25%;
   }
+
+  /* Ajustement spécifique pour la page Philosophie (Cédric avec chapeau) */
+  .object-position-philosophie {
+    object-position: center 40%;
+  }
+}
+
+.object-position-philosophie {
+  object-position: center 30%;
 }
 
 /* Transition douce pour le contenu principal */

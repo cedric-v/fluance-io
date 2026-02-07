@@ -9,8 +9,9 @@
     <link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2" as="font" type="font/woff2" crossorigin>
     
     <!-- Charger les fonts de manière asynchrone pour ne pas bloquer le rendu (économise ~760ms) -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+    <!-- Utiliser display=optional pour éviter le CLS (pas de basculement de police si le chargement est lent) -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=optional" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=optional" rel="stylesheet"></noscript>
 
     {% if title %}
     <title>{{ title }} | Fluance</title>
@@ -158,6 +159,30 @@
       @media (min-width: 768px) {
         .header-container {
           min-height: 4.5rem; /* Réserve l'espace pour le header desktop */
+        }
+        
+        /* Force l'affichage du menu desktop (anticipe .md:flex) */
+        [data-menu] {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+        }
+        
+        /* Cache les éléments mobiles sur desktop (anticipe .md:hidden) */
+        .md\:hidden {
+          display: none;
+        }
+      }
+
+      /* Empêche le flash du menu mobile (anticipe .hidden) */
+      [data-menu-mobile].hidden {
+        display: none;
+      }
+
+      /* Empêche le flash du menu desktop sur mobile */
+      @media (max-width: 767px) {
+        [data-menu].hidden {
+          display: none;
         }
       }
       .header-slogan {
