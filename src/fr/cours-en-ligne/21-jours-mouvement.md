@@ -9,7 +9,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
 
 <section id="hero" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">
   <div class="absolute inset-0 z-0">
-    {% image "assets/img/bienvenue-21-jour-bandeau.jpg", "Bienvenue au parcours de 21 jours", "w-full h-full object-cover" %}
+    {% responsiveImage "/assets/img/bienvenue-21-jour-bandeau.jpg", "Bienvenue au parcours de 21 jours", "100vw", "w-full h-full object-cover", "eager" %}
     <div class="absolute inset-0 md:hidden" style="background-color: rgba(100, 142, 216, 0.8);"></div>
     <div class="hidden md:block absolute inset-0" style="background: linear-gradient(to right, transparent, rgba(100, 142, 216, 0.7), rgba(100, 142, 216, 0.9));"></div>
   </div>

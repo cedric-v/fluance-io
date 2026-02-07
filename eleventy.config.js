@@ -57,11 +57,23 @@ module.exports = function (eleventyConfig) {
     imageAttributes.height = height || highsrc.height;
 
     // Ajouter l'aspect-ratio via le style inline pour une stabilité maximale
+    // Ajouter l'aspect-ratio via le style inline pour une stabilité maximale
+    // Ajouter l'aspect-ratio via le style inline pour une stabilité maximale
     const aspectRatio = (highsrc.width / highsrc.height).toFixed(4);
-    imageAttributes.style = `aspect-ratio: ${aspectRatio}; width: 100%; height: auto;`;
+
+    // Par défaut : width 100% et height auto
+    let inlineStyle = `aspect-ratio: ${aspectRatio}; width: 100%; height: auto;`;
+
+    // Si w-auto est présent : width auto (la hauteur sera gérée par le ratio ou les classes)
     if (cls.includes('w-auto')) {
-      imageAttributes.style = `aspect-ratio: ${aspectRatio}; height: 100%; width: auto;`;
+      inlineStyle = `aspect-ratio: ${aspectRatio}; width: auto;`;
     }
+    // Si h-full est présent : force height 100% (et width auto ou 100% selon le cas, ici on garde width 100% par défaut mais on enlève height auto)
+    else if (cls.includes('h-full')) {
+      inlineStyle = `aspect-ratio: ${aspectRatio}; width: 100%; height: 100%;`;
+    }
+
+    imageAttributes.style = inlineStyle;
 
     return EleventyImage.generateHTML(metadata, imageAttributes);
   });
@@ -721,7 +733,7 @@ module.exports = function (eleventyConfig) {
 
   // 3. Minification HTML sécurisée
   eleventyConfig.addTransform("htmlmin", function (content, outputPath) {
-    if (process.env.ELEVENTY_ENV === 'prod' && outputPath && outputPath.endsWith(".html")) {
+    if (process.env.ELEVENTY_ENV === 'prod' && outputPath && outputPath.endsWith(".html") && !outputPath.includes("/emails/")) {
       return htmlmin.minify(content, {
         removeComments: true,
         collapseWhitespace: true,

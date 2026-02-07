@@ -134,9 +134,18 @@
       }
       #main-header img {
         height: 3rem;
-        width: auto;
-        aspect-ratio: 1.5; /* Valeur précise du logo 1536/1024 = 1.5 */
+        width: auto; /* Important: laisser la largeur s'adapter */
+        max-width: none; /* Empêcher d'autres styles de perturber */
+        aspect-ratio: 1.5;
         display: block;
+      }
+      /* Fix pour les images en background (hero) : cibler uniquement le conteneur hero */
+      .hero-image-container picture,
+      .hero-image-container picture img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
       @media (min-width: 768px) {
         #main-header img {
@@ -450,8 +459,6 @@
     }, { passive: true });
     
     // Initialiser au chargement via rAF pour éviter le forced reflow au parsing
-    window.requestAnimationFrame(updateHeader);
-  })();
   })();
 
   // Gestion du consentement aux cookies

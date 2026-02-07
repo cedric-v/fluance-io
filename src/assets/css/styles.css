@@ -158,8 +158,9 @@ header .group:hover .absolute {
   transition: transform 0.4s ease-out, opacity 0.4s ease-out;
 }
 
-/* Effet menu iOS au scroll (desktop uniquement) */
-#main-header.header-scrolled {
+/* Effet menu iOS au scroll (desktop et mobile) */
+#main-header.header-scrolled,
+#main-header.header-scrolled-mobile {
   background: rgba(122, 31, 61, 0.85);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -169,14 +170,18 @@ header .group:hover .absolute {
 
 /* Assurer la compatibilité avec les navigateurs */
 @supports (backdrop-filter: blur(20px)) {
-  #main-header.header-scrolled {
+
+  #main-header.header-scrolled,
+  #main-header.header-scrolled-mobile {
     background: rgba(122, 31, 61, 0.8);
   }
 }
 
 /* Fallback pour les navigateurs qui ne supportent pas backdrop-filter */
 @supports not (backdrop-filter: blur(20px)) {
-  #main-header.header-scrolled {
+
+  #main-header.header-scrolled,
+  #main-header.header-scrolled-mobile {
     background: rgba(122, 31, 61, 0.95);
   }
 }
