@@ -7,7 +7,7 @@
  * - L'écriture dans Google Sheets pour le suivi
  */
 
-const {google} = require('googleapis');
+const { google } = require('googleapis');
 const admin = require('firebase-admin');
 
 // Configuration des IDs (à définir via les secrets Firebase)
@@ -83,7 +83,7 @@ class GoogleService {
         }
 
         throw new Error(
-            `Invalid JSON in GOOGLE_SERVICE_ACCOUNT: ${parseError.message}. ${helpMessage}`,
+          `Invalid JSON in GOOGLE_SERVICE_ACCOUNT: ${parseError.message}. ${helpMessage}`,
         );
       }
 
@@ -97,8 +97,8 @@ class GoogleService {
 
       const authClient = await this.auth.getClient();
 
-      this.calendar = google.calendar({version: 'v3', auth: authClient});
-      this.sheets = google.sheets({version: 'v4', auth: authClient});
+      this.calendar = google.calendar({ version: 'v3', auth: authClient });
+      this.sheets = google.sheets({ version: 'v4', auth: authClient });
 
       console.log('✅ GoogleService initialized successfully');
     } catch (error) {
@@ -146,7 +146,7 @@ class GoogleService {
             // Utiliser l'ID Google Calendar comme ID du document
             const docId = event.id;
 
-            await db.collection('courses').doc(docId).set(courseData, {merge: true});
+            await db.collection('courses').doc(docId).set(courseData, { merge: true });
             synced++;
             console.log(`✅ Synced: ${courseData.title} on ${courseData.date}`);
           }
@@ -160,15 +160,15 @@ class GoogleService {
       const cleanupDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const cleanupTimestamp = admin.firestore.Timestamp.fromDate(cleanupDate);
       const oldCourses = await db.collection('courses')
-          .where('startTime', '<', cleanupTimestamp)
-          .get();
+        .where('startTime', '<', cleanupTimestamp)
+        .get();
 
       for (const doc of oldCourses.docs) {
         await doc.ref.delete();
         console.log(`🗑️ Deleted old course: ${doc.id}`);
       }
 
-      return {synced, errors};
+      return { synced, errors };
     } catch (error) {
       console.error('❌ Error fetching calendar events:', error.message);
       throw error;
@@ -207,9 +207,9 @@ class GoogleService {
 
     // Nettoyer la description (retirer les balises)
     const cleanDescription = description
-        .replace(/\[max:\d+\]/gi, '')
-        .replace(/\[price:\d+\]/gi, '')
-        .trim();
+      .replace(/\[max:\d+\]/gi, '')
+      .replace(/\[price:\d+\]/gi, '')
+      .trim();
 
     // Convertir la date/heure en tenant compte du fuseau horaire
     // Google Calendar envoie les dates en ISO avec timezone
@@ -344,12 +344,13 @@ class GoogleService {
     // Déterminer si en liste d'attente
     const isWaitlisted = (bookingData.status === 'waitlisted' || bookingData.isWaitlisted) ? 'Oui' : 'Non';
 
-    // Formater la date du cours pour Google Sheets (format DD/MM/YYYY)
-    // Si la date est déjà au format DD/MM/YYYY, on la garde telle quelle avec une apostrophe pour forcer le texte
+    // Formater la date du cours pour Google Sheets (format YYYY-MM-DD pour Looker Studio)
     let courseDateFormatted = bookingData.courseDate || '';
-    if (courseDateFormatted && !courseDateFormatted.startsWith('\'')) {
-      // Ajouter une apostrophe pour forcer le format texte et éviter l'interprétation comme nombre
-      courseDateFormatted = `'${courseDateFormatted}`;
+    if (courseDateFormatted && courseDateFormatted.includes('/')) {
+      const [day, month, year] = courseDateFormatted.split('/');
+      if (day && month && year) {
+        courseDateFormatted = `${year}-${month}-${day}`;
+      }
     }
 
     // Formater l'heure pour Google Sheets (format HH:MM)

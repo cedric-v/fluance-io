@@ -10,7 +10,7 @@ ogImage: assets/img/accueil-miniature-EN.jpg
 
 <section id="fond-cedric" class="relative min-h-screen flex items-center justify-end px-6 md:px-12 pt-32 pb-20 overflow-hidden -mt-28">
   <div class="absolute inset-0 z-0">
-    {% image "assets/img/fond-cedric.jpg", "Cédric Vonlanthen by the lake", "w-full h-full object-cover object-center md:object-right", "eager", "high", "1280", "960" %}
+    {% responsiveImage "/assets/img/fond-cedric.jpg", "Cédric Vonlanthen by the lake", "100vw", "w-full h-full object-cover object-center md:object-right", "eager" %}
     <div class="absolute inset-0 md:hidden" style="background-color: rgba(100, 142, 216, 0.8);"></div>
     <div class="hidden md:block absolute inset-0" style="background: linear-gradient(to right, transparent, rgba(100, 142, 216, 0.7), rgba(100, 142, 216, 0.9));"></div>
   </div>
@@ -49,7 +49,7 @@ ogImage: assets/img/accueil-miniature-EN.jpg
     </p>
   </div>
   <a href="{{ '/en/a-propos/approche-fluance/' | relativeUrl }}" class="section-card overflow-hidden max-w-xs mx-auto md:mx-0 block hover:opacity-90 transition-opacity">
-    {% image "assets/img/approche-fluance.png", "Fluance approach diagram", "w-full h-auto object-contain", "lazy", "", "400", "400" %}
+    {% responsiveImage "/assets/img/approche-fluance.png", "Fluance approach diagram", "(max-width: 768px) 100vw, 400px", "w-full h-auto object-contain" %}
   </a>
 </section>
 
