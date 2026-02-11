@@ -29,12 +29,18 @@ module.exports = function (eleventyConfig) {
 
     let metadata = await EleventyImage(inputPath, {
       widths: [150, 300, 450, 600, 750, 900, 1050, 1200, 1400, 1600],
-      formats: ["webp", "jpeg"],
+      formats: ["avif", "webp", "jpeg"],
       outputDir: "./_site/assets/img/",
       urlPath: "/assets/img/",
       sharpWebpOptions: {
-        quality: 75,
+        quality: 70,
         smartSubsample: true
+      },
+      sharpAvifOptions: {
+        quality: 60
+      },
+      sharpJpegOptions: {
+        quality: 70
       }
     });
 

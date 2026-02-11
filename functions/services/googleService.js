@@ -7,7 +7,7 @@
  * - L'écriture dans Google Sheets pour le suivi
  */
 
-const { google } = require('googleapis');
+const {google} = require('googleapis');
 const admin = require('firebase-admin');
 
 // Configuration des IDs (à définir via les secrets Firebase)
@@ -83,7 +83,7 @@ class GoogleService {
         }
 
         throw new Error(
-          `Invalid JSON in GOOGLE_SERVICE_ACCOUNT: ${parseError.message}. ${helpMessage}`,
+            `Invalid JSON in GOOGLE_SERVICE_ACCOUNT: ${parseError.message}. ${helpMessage}`,
         );
       }
 
@@ -97,8 +97,8 @@ class GoogleService {
 
       const authClient = await this.auth.getClient();
 
-      this.calendar = google.calendar({ version: 'v3', auth: authClient });
-      this.sheets = google.sheets({ version: 'v4', auth: authClient });
+      this.calendar = google.calendar({version: 'v3', auth: authClient});
+      this.sheets = google.sheets({version: 'v4', auth: authClient});
 
       console.log('✅ GoogleService initialized successfully');
     } catch (error) {
@@ -137,6 +137,7 @@ class GoogleService {
 
       let synced = 0;
       let errors = 0;
+      const syncedIds = new Set();
 
       for (const event of events) {
         try {
@@ -145,8 +146,9 @@ class GoogleService {
           if (courseData) {
             // Utiliser l'ID Google Calendar comme ID du document
             const docId = event.id;
+            syncedIds.add(docId);
 
-            await db.collection('courses').doc(docId).set(courseData, { merge: true });
+            await db.collection('courses').doc(docId).set(courseData, {merge: true});
             synced++;
             console.log(`✅ Synced: ${courseData.title} on ${courseData.date}`);
           }
@@ -156,19 +158,33 @@ class GoogleService {
         }
       }
 
-      // Nettoyer les anciens cours (passés depuis plus de 7 jours)
+      // 1. Nettoyer les cours supprimés de Google Calendar dans la plage synchronisée
+      // On récupère tous les cours futurs dans Firestore qui sont dans la plage de temps synchronisée
+      const futureCourses = await db.collection('courses')
+          .where('startTime', '>=', admin.firestore.Timestamp.fromDate(new Date(timeMin)))
+          .where('startTime', '<=', admin.firestore.Timestamp.fromDate(new Date(timeMax)))
+          .get();
+
+      for (const doc of futureCourses.docs) {
+        if (!syncedIds.has(doc.id)) {
+          await doc.ref.delete();
+          console.log(`🗑️ Deleted orphaned course (removed from GCal): ${doc.id}`);
+        }
+      }
+
+      // 2. Nettoyer les anciens cours (passés depuis plus de 7 jours)
       const cleanupDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const cleanupTimestamp = admin.firestore.Timestamp.fromDate(cleanupDate);
       const oldCourses = await db.collection('courses')
-        .where('startTime', '<', cleanupTimestamp)
-        .get();
+          .where('startTime', '<', cleanupTimestamp)
+          .get();
 
       for (const doc of oldCourses.docs) {
         await doc.ref.delete();
         console.log(`🗑️ Deleted old course: ${doc.id}`);
       }
 
-      return { synced, errors };
+      return {synced, errors};
     } catch (error) {
       console.error('❌ Error fetching calendar events:', error.message);
       throw error;
@@ -207,9 +223,9 @@ class GoogleService {
 
     // Nettoyer la description (retirer les balises)
     const cleanDescription = description
-      .replace(/\[max:\d+\]/gi, '')
-      .replace(/\[price:\d+\]/gi, '')
-      .trim();
+        .replace(/\[max:\d+\]/gi, '')
+        .replace(/\[price:\d+\]/gi, '')
+        .trim();
 
     // Convertir la date/heure en tenant compte du fuseau horaire
     // Google Calendar envoie les dates en ISO avec timezone
