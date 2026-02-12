@@ -27,6 +27,7 @@ Les clés et IDs sensibles sont stockés dans **Firebase Secrets**. Ils ne doive
 | `BEXIO_ACCOUNT_MOLLIE` | Compte Bexio "Caisse Mollie" (Débit) | **1027** (ou autre compte caisse 10xx) |
 | `BEXIO_ACCOUNT_SALES_CH` | Compte Ventes Suisse (Crédit) | **3400** (Prestations de services Suisse) |
 | `BEXIO_ACCOUNT_SALES_INTL` | Compte Ventes International (Crédit) | **3410** (Prestations de services Étranger) |
+| `BEXIO_ACCOUNT_FEES` | Compte de Frais Mollie (Débit) | **6941** (Frais Mollie) |
 | `GOOGLE_SHEET_ID_SALES` | ID du Google Sheet pour le suivi des ventes | `...` |
 
 ### Configuration :
@@ -53,20 +54,31 @@ Le système détermine automatiquement si la vente est **Suisse (CH)** ou **Inte
 - **Suisse (CH/LI)** : Taux **8.1%** (Bexio Tax ID: **14**).
 - **International** : Taux **0%** (Bexio Tax ID: **3**).
 
-### B. Sélection des Comptes
-L'écriture comptable est générée comme suit :
+### B. Sélection des Comptes & Montants
+Deux écritures manuelles sont générées systématiquement pour assurer le suivi du CA Brut et des commissions. Ils équilibrent ainsi le solde du compte Mollie.
 
-| Sens | Compte (Variable) | Description |
-|------|-------------------|-------------|
-| **Débit** | `BEXIO_ACCOUNT_MOLLIE` | L'argent entre sur le compte intermédiaire Mollie. |
-| **Crédit** | `BEXIO_ACCOUNT_SALES_...` | Vente enregistrée (3400 si Suisse, 3410 si International). |
+#### 1. Écriture de Vente (CA Brut)
+Le montant total payé par le client est enregistré comme vente (Crédit) et débité sur le compte Mollie.
 
-### C. Écriture Manuelle (Manual Entry)
-Une écriture de type `manual_single_entry` est créée dans Bexio via l'API 3.0.
-- **Date** : Date du paiement (`paidAt`).
-- **Libellé** : "Mollie Payment [ID] - [Description]".
-- **Référence** : ID du paiement Mollie.
-- **Montant** : Montant brut de la transaction.
+| Sens | Compte (Variable) | Description | Montant |
+|------|-------------------|-------------|---------|
+| **Débit** | `BEXIO_ACCOUNT_MOLLIE` | Caisse Mollie | **Brut** |
+| **Crédit** | `BEXIO_ACCOUNT_SALES_...` | Ventes (3400/3410) | **Brut** |
+
+#### 2. Écriture de Frais (Commissions)
+La commission Mollie est déduite du compte Caisse pour refléter le montant net réel restant.
+
+| Sens | Compte (Variable) | Description | Montant |
+|------|-------------------|-------------|---------|
+| **Débit** | `BEXIO_ACCOUNT_FEES` | Frais (6941) | **Commission** |
+| **Crédit** | `BEXIO_ACCOUNT_MOLLIE` | Caisse Mollie | **Commission** |
+
+### C. Détails Techniques
+- **Écritures** : Chaque transaction génère deux `manual_single_entry` distinctes via l'API 3.0.
+- **TVA sur CA** :
+  - **Suisse (CH/LI)** : Taux **8.1%** (Bexio Tax ID: **14**), calculé sur la base du montant **Brut**.
+  - **International** : Taux **0%** (Bexio Tax ID: **3**).
+- **TVA sur Frais** : Les commissions sont enregistrées sans influence TVA (Bexio Tax ID: **3** / 0%).
 
 ---
 
@@ -77,8 +89,8 @@ Une écriture de type `manual_single_entry` est créée dans Bexio via l'API 3.0
 - Rechercher "Mollie Payment" ou "Bexio" pour filtrer.
 
 ### Points d'attention
-- Si un paiement Mollie est remboursé (`refunded` ou `chargeback`), cette logique **ne traite actuellement que les paiements entrants (`paid`)**. Les remboursements doivent être gérés manuellement ou via une évolution future du script.
-- Les **frais Mollie** ne sont pas déduits de cette écriture (c'est le montant brut qui est comptabilisé). Les frais perçus par Mollie sont généralement comptabilisés séparément lors du virement (Payout) de Mollie vers le compte bancaire, ou via une écriture de frais distincte.
+- Si un paiement Mollie est remboursé (`refunded` ou `chargeback`), cette logique **ne traite actuellement que les paiements entrants (`paid`)**.
+- Les **frais Mollie** sont automatiquement extraits via l'attribut `settlementAmount` de Mollie. S'il est manquant au moment du webhook, seule l'écriture de vente (Brut) est créée et un warning est loggé.
 
 ### Mise à jour des Taux TVA
 Si les IDs de taxe Bexio changent (ex: changement de taux légal), mettre à jour la logique dans `functions/index.js` (variable `taxId`).

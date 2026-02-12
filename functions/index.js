@@ -1743,6 +1743,11 @@ exports.webhookStripe = onRequest(
       const paymentIntent = event.data.object;
       const bookingId = paymentIntent.metadata?.bookingId;
 
+      // Uniquement pour Fluance (system: firebase)
+      if (paymentIntent.metadata?.system !== 'firebase') {
+        return res.status(200).json({ received: true, ignored: true, reason: 'not_fluance_system' });
+      }
+
       if (bookingId && bookingService) {
         console.log(`❌ Payment failed for booking ${bookingId}`);
         try {
@@ -1831,7 +1836,8 @@ exports.webhookStripe = onRequest(
       // GESTION DES RÉSERVATIONS DE COURS ET PASS
       // ============================================================
       // Vérifier si c'est une réservation de cours ou un achat de pass
-      if (session.metadata?.type === 'course_booking' || session.metadata?.passType) {
+      // On filtre strictement par system === 'firebase' pour éviter les collisions avec d'autres apps Stripe
+      if (session.metadata?.system === 'firebase' && (session.metadata?.type === 'course_booking' || session.metadata?.passType)) {
         if (bookingService || passService) {
           const paymentIntent = session;
           const bookingId = paymentIntent.metadata?.bookingId;
@@ -11505,7 +11511,7 @@ exports.processMolliePayment = onMessagePublished(
   {
     topic: 'process-mollie-payment',
     region: 'europe-west1',
-    secrets: ['MOLLIE_API_KEY', 'BEXIO_API_TOKEN', 'BEXIO_USER_ID', 'GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_SHEET_ID_SALES', 'BEXIO_ACCOUNT_DEBIT', 'BEXIO_ACCOUNT_CREDIT'],
+    secrets: ['MOLLIE_API_KEY', 'BEXIO_API_TOKEN', 'BEXIO_USER_ID', 'GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_SHEET_ID_SALES', 'BEXIO_ACCOUNT_DEBIT', 'BEXIO_ACCOUNT_CREDIT', 'BEXIO_ACCOUNT_FEES'],
     // Timeout plus long pour les opérations externes
     timeoutSeconds: 300,
   },
@@ -11536,7 +11542,6 @@ exports.processMolliePayment = onMessagePublished(
 
       // 3. Logique Bexio (Manual Entry - Stripe Logic)
       try {
-        const amount = parseFloat(payment.amount.value); // { value: "100.00", currency: "CHF" }
         const metadata = payment.metadata || {};
 
         // Determine Country for VAT
@@ -11572,17 +11577,40 @@ exports.processMolliePayment = onMessagePublished(
         // Reference project: 8.1% -> 14. 0% -> 3.
         const taxId = isSwiss ? 14 : 3;
 
-        console.log(`📊 Booking Manual Entry: Amount ${amount}, Country ${countryCode}, TaxID ${taxId}`);
+        const amountGross = parseFloat(payment.amount.value);
+        const amountSettlement = payment.settlementAmount ? parseFloat(payment.settlementAmount.value) : amountGross;
+        const amountFee = Math.round((amountGross - amountSettlement) * 100) / 100;
 
+        console.log(`📊 Booking Manual Entry: Gross ${amountGross}, Net ${amountSettlement}, Fee ${amountFee}, Country ${countryCode}, TaxID ${taxId}`);
+
+        // 1. Écriture de Vente (Montant Brut)
+        // On utilise le montant Brut pour le CA (Suisse et International)
         await bexioService.createManualEntry({
           date: payment.paidAt ? payment.paidAt.split('T')[0] : new Date().toISOString().split('T')[0],
           debit_account_id: debitAccount,
           credit_account_id: creditAccount,
-          amount: amount,
+          amount: amountGross,
           text: `Mollie Payment ${paymentId} - ${payment.description}`,
           reference: paymentId,
           tax_id: taxId,
         });
+
+        // 2. Écriture de Commission (Frais Mollie)
+        // On crée une écriture séparée si des frais sont détectés
+        if (amountFee > 0) {
+          const feeAccount = process.env.BEXIO_ACCOUNT_FEES ? parseInt(process.env.BEXIO_ACCOUNT_FEES) : 6941;
+          console.log(`📊 Booking Fee Entry: Amount ${amountFee}, Account ${feeAccount}`);
+
+          await bexioService.createManualEntry({
+            date: payment.paidAt ? payment.paidAt.split('T')[0] : new Date().toISOString().split('T')[0],
+            debit_account_id: feeAccount,
+            credit_account_id: debitAccount, // On déduit du compte Caisse Mollie
+            amount: amountFee,
+            text: `Commission Mollie ${paymentId} - ${payment.description}`,
+            reference: paymentId,
+            tax_id: 3, // Sans influence TVA (0%)
+          });
+        }
 
         // 3b. Gestion des abonnements (Subscription Creation)
         // Si c'est un premier paiement d'abonnement, on crée la souscription Mollie
