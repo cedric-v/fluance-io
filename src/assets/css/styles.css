@@ -225,9 +225,12 @@ header .group:hover .absolute {
   display: none !important;
 }
 
-/* Ajustement du positionnement des images d'en-tête pour mobile */
-.object-position-mobile {
-  object-position: center 30%;
+.object-position-philosophie {
+  object-position: center 55%;
+}
+
+.hero-header-philosophie {
+  height: 300px;
 }
 
 @media (min-width: 768px) {
@@ -237,12 +240,12 @@ header .group:hover .absolute {
 
   /* Ajustement spécifique pour la page Philosophie (Cédric avec chapeau) */
   .object-position-philosophie {
-    object-position: center 40%;
+    object-position: center 55%;
   }
-}
 
-.object-position-philosophie {
-  object-position: center 30%;
+  .hero-header-philosophie {
+    height: 450px;
+  }
 }
 
 /* Transition douce pour le contenu principal */
