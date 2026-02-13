@@ -1890,6 +1890,27 @@ exports.webhookStripe = onRequest(
 
           // Cas 2: Achat d'un Flow Pass ou Pass Semestriel
           if (passType && customerEmail && passService) {
+            // IMPORTANT: Fluance utilise Mollie pour les achats de pass, pas Stripe
+            // Tout paiement Stripe avec passType provient d'un autre système (ex: Instant Académie)
+            // On ignore ces paiements pour éviter les fausses notifications admin
+            // Note: Le code ci-dessous est conservé comme backup en cas de problème avec Mollie
+            console.log(`⏭️ Ignoring Stripe pass purchase (passType: ${passType}) - Fluance uses Mollie for passes`);
+            console.log(`   Email: ${customerEmail}, Payment Intent: ${paymentIntent.id || session.id}`);
+            console.log(`   This is likely from another system (e.g., Instant Académie)`);
+            return res.status(200).json({
+              received: true,
+              ignored: true,
+              reason: 'fluance_uses_mollie_for_passes',
+              note: 'Stripe pass logic preserved as backup payment processor'
+            });
+
+            // ============================================================
+            // CODE CONSERVÉ COMME BACKUP (non exécuté actuellement)
+            // Pour réactiver Stripe comme processeur de paiement backup:
+            // 1. Commenter le return ci-dessus
+            // 2. Vérifier que les sessions Stripe incluent system: 'firebase'
+            // ============================================================
+            /* eslint-disable no-unreachable */
             console.log(`✅ ${passType} purchased for ${customerEmail}`);
             try {
               const pass = await passService.createUserPass(db, customerEmail, passType, {
