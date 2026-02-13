@@ -5,6 +5,7 @@ description: "Votre réservation pour un cours Fluance est confirmée"
 locale: fr
 permalink: /presentiel/reservation-confirmee/
 eleventyExcludeFromCollections: true
+robots: noindex, nofollow
 ---
 
 <section class="max-w-2xl mx-auto px-6 md:px-12 py-16 text-center">

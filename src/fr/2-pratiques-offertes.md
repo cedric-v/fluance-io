@@ -5,6 +5,7 @@ description: "Recevez 2 pratiques libératrices offertes par Fluance."
 locale: fr
 permalink: /2-pratiques-offertes/
 eleventyExcludeFromCollections: true
+robots: noindex, nofollow
 ---
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">

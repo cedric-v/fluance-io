@@ -5,6 +5,7 @@ description: "Your payment has been cancelled"
 locale: en
 permalink: /en/presentiel/payment-cancelled/
 eleventyExcludeFromCollections: true
+robots: noindex, nofollow
 ---
 
 <section class="max-w-2xl mx-auto px-6 md:px-12 py-16 text-center">

@@ -5,6 +5,7 @@ description: "Your Fluance course booking is confirmed"
 locale: en
 permalink: /en/presentiel/booking-confirmed/
 eleventyExcludeFromCollections: true
+robots: noindex, nofollow
 ---
 
 <section class="max-w-2xl mx-auto px-6 md:px-12 py-16 text-center">

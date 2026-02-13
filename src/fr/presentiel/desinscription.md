@@ -5,6 +5,7 @@ description: "Désinscription d'un cours Fluance"
 locale: fr
 permalink: /presentiel/desinscription/
 eleventyExcludeFromCollections: true
+robots: noindex, nofollow
 ---
 
 <section class="max-w-2xl mx-auto px-6 md:px-12 py-16 text-center">

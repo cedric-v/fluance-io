@@ -5,6 +5,7 @@ description: "Votre inscription aux cours Fluance en présentiel est confirmée.
 locale: fr
 permalink: /presentiel/confirmation/
 eleventyExcludeFromCollections: true
+robots: noindex, nofollow
 ---
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">

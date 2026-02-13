@@ -10,11 +10,11 @@ eleventyExcludeFromCollections: true
     {%- if page.url != "/sitemap.xml" -%}
       {%- if page.url != "/404.html" -%}
         {%- if page.url != "/" -%}
-        {%- set hasJson = false -%}
-        {%- if ".json" in page.url -%}
-          {%- set hasJson = true -%}
+        {%- set isNoIndex = false -%}
+        {%- if page.data.robots and "noindex" in page.data.robots -%}
+          {%- set isNoIndex = true -%}
         {%- endif -%}
-        {%- if not hasJson -%}
+        {%- if not page.url.endsWith(".js") and not page.url.endsWith(".css") and not page.url.endsWith(".xml") and not isNoIndex and not page.data.eleventyExcludeFromCollections -%}
           {%- set cleanUrl = page.url | replace("/fluance-io", "") -%}
           {%- set fullUrl = "https://fluance.io" + cleanUrl -%}
           {%- if page.date -%}
