@@ -10,7 +10,7 @@
  * - Notifications email
  */
 
-const { googleService } = require('./googleService');
+const {googleService} = require('./googleService');
 const crypto = require('crypto');
 
 /**
@@ -90,9 +90,9 @@ async function getCourseAvailability(db, courseId) {
 
   // Compter les réservations confirmées
   const confirmedBookings = await db.collection('bookings')
-    .where('courseId', '==', courseId)
-    .where('status', 'in', [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING_CASH])
-    .get();
+      .where('courseId', '==', courseId)
+      .where('status', 'in', [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING_CASH])
+      .get();
 
   const participantCount = confirmedBookings.size;
   const spotsRemaining = course.maxCapacity - participantCount;
@@ -220,14 +220,14 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
       // 2. Vérifier si l'utilisateur a déjà réservé ce cours (AVANT de compter les places)
       // Cette vérification doit être faite en premier pour éviter les doublons
       const existingBookingQuery = db.collection('bookings')
-        .where('courseId', '==', courseId)
-        .where('email', '==', userData.email.toLowerCase())
-        .where('status', 'in', [
-          BOOKING_STATUS.CONFIRMED,
-          BOOKING_STATUS.PENDING_CASH,
-          BOOKING_STATUS.PENDING,
-        ])
-        .limit(1);
+          .where('courseId', '==', courseId)
+          .where('email', '==', userData.email.toLowerCase())
+          .where('status', 'in', [
+            BOOKING_STATUS.CONFIRMED,
+            BOOKING_STATUS.PENDING_CASH,
+            BOOKING_STATUS.PENDING,
+          ])
+          .limit(1);
 
       // Utiliser transaction.get() pour rendre la vérification atomique
       // Note: transaction.get() ne supporte pas les requêtes avec where(),
@@ -240,9 +240,9 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
 
       // 3. Compter les réservations existantes (après vérification doublon)
       const bookingsSnapshot = await db.collection('bookings')
-        .where('courseId', '==', courseId)
-        .where('status', 'in', [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING_CASH])
-        .get();
+          .where('courseId', '==', courseId)
+          .where('status', 'in', [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING_CASH])
+          .get();
 
       const participantCount = bookingsSnapshot.size;
       const spotsRemaining = course.maxCapacity - participantCount;
@@ -362,7 +362,7 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
         const webhookUrl = `https://europe-west1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/webhookMollie`;
 
         const paymentPayload = {
-          amount: { currency: 'CHF', value: (amount / 100).toFixed(2) }, // cents to units
+          amount: {currency: 'CHF', value: (amount / 100).toFixed(2)}, // cents to units
           description: description,
           redirectUrl: redirectUrl,
           webhookUrl: webhookUrl,
@@ -374,7 +374,7 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
             firstName: userData.firstName,
             lastName: userData.lastName,
             // Add passType for Flow Pass
-            ...(pricingOption === 'flow_pass' ? { passType: 'flow_pass' } : {}),
+            ...(pricingOption === 'flow_pass' ? {passType: 'flow_pass'} : {}),
           },
         };
 
@@ -514,7 +514,7 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
               email: userData.email,
               type: 'course_booking',
               // Ajouter passType si c'est un achat de Flow Pass avec cours
-              ...(pricingOption === 'flow_pass' ? { passType: 'flow_pass' } : {}),
+              ...(pricingOption === 'flow_pass' ? {passType: 'flow_pass'} : {}),
               // Ajouter les infos utilisateur pour la création du pass
               ...(pricingOption === 'flow_pass' ? {
                 firstName: userData.firstName || '',
@@ -615,14 +615,14 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
     const bookingDoc = await bookingRef.get();
 
     if (!bookingDoc.exists) {
-      return { success: false, error: 'BOOKING_NOT_FOUND' };
+      return {success: false, error: 'BOOKING_NOT_FOUND'};
     }
 
     const booking = bookingDoc.data();
 
     // Vérifier que le PaymentIntent ou Mollie Payment ID correspond
     if (booking.stripePaymentIntentId !== paymentIntentId && booking.molliePaymentId !== paymentIntentId) {
-      return { success: false, error: 'PAYMENT_MISMATCH' };
+      return {success: false, error: 'PAYMENT_MISMATCH'};
     }
 
     // Mettre à jour la réservation
@@ -647,30 +647,30 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
       const sheetId = process.env.GOOGLE_SHEET_ID;
       if (sheetId) {
         await googleService.appendUserToSheet(
-          sheetId,
-          booking.courseId,
-          {
-            firstName: booking.firstName,
-            lastName: booking.lastName,
-            email: booking.email,
-            phone: booking.phone,
-            ipAddress: booking.ipAddress || '',
-          },
-          {
-            courseName: booking.courseName,
-            courseDate: booking.courseDate,
-            courseTime: booking.courseTime,
-            location: booking.courseLocation || '',
-            paymentMethod: booking.paymentMethod,
-            paymentStatus: 'Payé',
-            amount: booking.amount / 100 + ' CHF',
-            status: 'Confirmé',
-            bookingId: bookingId,
-            paidAt: booking.paidAt || new Date(),
-            source: 'web',
-            isCancelled: false,
-            isWaitlisted: false,
-          },
+            sheetId,
+            booking.courseId,
+            {
+              firstName: booking.firstName,
+              lastName: booking.lastName,
+              email: booking.email,
+              phone: booking.phone,
+              ipAddress: booking.ipAddress || '',
+            },
+            {
+              courseName: booking.courseName,
+              courseDate: booking.courseDate,
+              courseTime: booking.courseTime,
+              location: booking.courseLocation || '',
+              paymentMethod: booking.paymentMethod,
+              paymentStatus: 'Payé',
+              amount: booking.amount / 100 + ' CHF',
+              status: 'Confirmé',
+              bookingId: bookingId,
+              paidAt: booking.paidAt || new Date(),
+              source: 'web',
+              isCancelled: false,
+              isWaitlisted: false,
+            },
         );
       }
     } catch (sheetError) {
@@ -723,7 +723,7 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
     };
   } catch (error) {
     console.error('Error confirming booking:', error);
-    return { success: false, error: error.message };
+    return {success: false, error: error.message};
   }
 }
 
@@ -741,14 +741,14 @@ async function cancelBooking(db, stripe, bookingId, reason = '') {
     const bookingDoc = await bookingRef.get();
 
     if (!bookingDoc.exists) {
-      return { success: false, error: 'BOOKING_NOT_FOUND' };
+      return {success: false, error: 'BOOKING_NOT_FOUND'};
     }
 
     const booking = bookingDoc.data();
 
     // Si déjà annulé
     if (booking.status === BOOKING_STATUS.CANCELLED) {
-      return { success: false, error: 'ALREADY_CANCELLED' };
+      return {success: false, error: 'ALREADY_CANCELLED'};
     }
 
     // Note: Pas de remboursement automatique
@@ -785,7 +785,7 @@ async function cancelBooking(db, stripe, bookingId, reason = '') {
     };
   } catch (error) {
     console.error('Error cancelling booking:', error);
-    return { success: false, error: error.message };
+    return {success: false, error: error.message};
   }
 }
 
@@ -797,11 +797,11 @@ async function cancelBooking(db, stripe, bookingId, reason = '') {
 async function notifyFirstInWaitlist(db, courseId) {
   try {
     const waitlistSnapshot = await db.collection('waitlist')
-      .where('courseId', '==', courseId)
-      .where('status', '==', BOOKING_STATUS.WAITING)
-      .orderBy('createdAt', 'asc')
-      .limit(1)
-      .get();
+        .where('courseId', '==', courseId)
+        .where('status', '==', BOOKING_STATUS.WAITING)
+        .orderBy('createdAt', 'asc')
+        .limit(1)
+        .get();
 
     if (waitlistSnapshot.empty) {
       return;
@@ -852,13 +852,13 @@ async function getWaitlistPosition(db, email, courseId) {
   try {
     // Récupérer toutes les entrées en liste d'attente pour ce cours
     const allWaitlist = await db.collection('waitlist')
-      .where('courseId', '==', courseId)
-      .where('status', '==', BOOKING_STATUS.WAITING)
-      .orderBy('createdAt', 'asc')
-      .get();
+        .where('courseId', '==', courseId)
+        .where('status', '==', BOOKING_STATUS.WAITING)
+        .orderBy('createdAt', 'asc')
+        .get();
 
     if (allWaitlist.empty) {
-      return { success: false, error: 'NO_WAITLIST' };
+      return {success: false, error: 'NO_WAITLIST'};
     }
 
     // Trouver la position de l'utilisateur
@@ -877,7 +877,7 @@ async function getWaitlistPosition(db, email, courseId) {
     }
 
     if (!userDoc) {
-      return { success: false, error: 'NOT_IN_WAITLIST' };
+      return {success: false, error: 'NOT_IN_WAITLIST'};
     }
 
     return {
@@ -888,7 +888,7 @@ async function getWaitlistPosition(db, email, courseId) {
     };
   } catch (error) {
     console.error('Error getting waitlist position:', error);
-    return { success: false, error: error.message };
+    return {success: false, error: error.message};
   }
 }
 
@@ -904,17 +904,17 @@ async function removeFromWaitlist(db, waitlistId, email) {
     const waitlistDoc = await db.collection('waitlist').doc(waitlistId).get();
 
     if (!waitlistDoc.exists) {
-      return { success: false, error: 'WAITLIST_NOT_FOUND' };
+      return {success: false, error: 'WAITLIST_NOT_FOUND'};
     }
 
     const waitlistData = waitlistDoc.data();
 
     if (waitlistData.email.toLowerCase() !== email.toLowerCase()) {
-      return { success: false, error: 'EMAIL_MISMATCH' };
+      return {success: false, error: 'EMAIL_MISMATCH'};
     }
 
     if (waitlistData.status !== BOOKING_STATUS.WAITING) {
-      return { success: false, error: 'ALREADY_PROCESSED' };
+      return {success: false, error: 'ALREADY_PROCESSED'};
     }
 
     await waitlistDoc.ref.update({
@@ -928,7 +928,7 @@ async function removeFromWaitlist(db, waitlistId, email) {
     };
   } catch (error) {
     console.error('Error removing from waitlist:', error);
-    return { success: false, error: error.message };
+    return {success: false, error: error.message};
   }
 }
 
@@ -946,25 +946,25 @@ async function transferBooking(db, bookingId, newCourseId, email) {
     const bookingDoc = await bookingRef.get();
 
     if (!bookingDoc.exists) {
-      return { success: false, error: 'BOOKING_NOT_FOUND' };
+      return {success: false, error: 'BOOKING_NOT_FOUND'};
     }
 
     const booking = bookingDoc.data();
 
     // Vérifier l'email
     if (booking.email.toLowerCase() !== email.toLowerCase()) {
-      return { success: false, error: 'EMAIL_MISMATCH' };
+      return {success: false, error: 'EMAIL_MISMATCH'};
     }
 
     // Vérifier que la réservation peut être transférée
     if (booking.status === BOOKING_STATUS.CANCELLED) {
-      return { success: false, error: 'BOOKING_ALREADY_CANCELLED' };
+      return {success: false, error: 'BOOKING_ALREADY_CANCELLED'};
     }
 
     // Vérifier le nouveau cours
     const newCourseDoc = await db.collection('courses').doc(newCourseId).get();
     if (!newCourseDoc.exists) {
-      return { success: false, error: 'NEW_COURSE_NOT_FOUND' };
+      return {success: false, error: 'NEW_COURSE_NOT_FOUND'};
     }
 
     const newCourse = newCourseDoc.data();
@@ -981,14 +981,14 @@ async function transferBooking(db, bookingId, newCourseId, email) {
 
     // Vérifier si l'utilisateur n'est pas déjà inscrit au nouveau cours
     const existingBooking = await db.collection('bookings')
-      .where('courseId', '==', newCourseId)
-      .where('email', '==', email.toLowerCase())
-      .where('status', 'in', [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING_CASH, BOOKING_STATUS.PENDING])
-      .limit(1)
-      .get();
+        .where('courseId', '==', newCourseId)
+        .where('email', '==', email.toLowerCase())
+        .where('status', 'in', [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.PENDING_CASH, BOOKING_STATUS.PENDING])
+        .limit(1)
+        .get();
 
     if (!existingBooking.empty) {
-      return { success: false, error: 'ALREADY_BOOKED', message: 'Vous êtes déjà inscrit à ce cours' };
+      return {success: false, error: 'ALREADY_BOOKED', message: 'Vous êtes déjà inscrit à ce cours'};
     }
 
     // Créer l'ID de la nouvelle réservation avant la transaction
@@ -1056,7 +1056,7 @@ async function transferBooking(db, bookingId, newCourseId, email) {
     };
   } catch (error) {
     console.error('Error transferring booking:', error);
-    return { success: false, error: error.message };
+    return {success: false, error: error.message};
   }
 }
 
@@ -1079,12 +1079,12 @@ async function createCancellationToken(db, bookingId, expirationDays = 30) {
   try {
     const bookingDoc = await db.collection('bookings').doc(bookingId).get();
     if (!bookingDoc.exists) {
-      return { success: false, error: 'BOOKING_NOT_FOUND' };
+      return {success: false, error: 'BOOKING_NOT_FOUND'};
     }
 
     const booking = bookingDoc.data();
     if (booking.status === BOOKING_STATUS.CANCELLED) {
-      return { success: false, error: 'ALREADY_CANCELLED' };
+      return {success: false, error: 'ALREADY_CANCELLED'};
     }
 
     const token = generateCancellationToken();
@@ -1109,7 +1109,7 @@ async function createCancellationToken(db, bookingId, expirationDays = 30) {
     };
   } catch (error) {
     console.error('Error creating cancellation token:', error);
-    return { success: false, error: error.message };
+    return {success: false, error: error.message};
   }
 }
 
@@ -1124,27 +1124,27 @@ async function validateCancellationToken(db, token) {
     const tokenDoc = await db.collection('cancellationTokens').doc(token).get();
 
     if (!tokenDoc.exists) {
-      return { success: false, error: 'TOKEN_NOT_FOUND' };
+      return {success: false, error: 'TOKEN_NOT_FOUND'};
     }
 
     const tokenData = tokenDoc.data();
 
     // Vérifier si déjà utilisé
     if (tokenData.used) {
-      return { success: false, error: 'TOKEN_ALREADY_USED' };
+      return {success: false, error: 'TOKEN_ALREADY_USED'};
     }
 
     // Vérifier l'expiration
     const now = new Date();
     const expiresAt = tokenData.expiresAt.toDate ? tokenData.expiresAt.toDate() : new Date(tokenData.expiresAt);
     if (now > expiresAt) {
-      return { success: false, error: 'TOKEN_EXPIRED' };
+      return {success: false, error: 'TOKEN_EXPIRED'};
     }
 
     // Récupérer la réservation
     const bookingDoc = await db.collection('bookings').doc(tokenData.bookingId).get();
     if (!bookingDoc.exists) {
-      return { success: false, error: 'BOOKING_NOT_FOUND' };
+      return {success: false, error: 'BOOKING_NOT_FOUND'};
     }
 
     const booking = bookingDoc.data();
@@ -1152,8 +1152,8 @@ async function validateCancellationToken(db, token) {
     // Vérifier que la réservation n'est pas déjà annulée
     if (booking.status === BOOKING_STATUS.CANCELLED) {
       // Marquer le token comme utilisé quand même
-      await tokenDoc.ref.update({ used: true, usedAt: new Date() });
-      return { success: false, error: 'ALREADY_CANCELLED' };
+      await tokenDoc.ref.update({used: true, usedAt: new Date()});
+      return {success: false, error: 'ALREADY_CANCELLED'};
     }
 
     return {
@@ -1165,7 +1165,7 @@ async function validateCancellationToken(db, token) {
     };
   } catch (error) {
     console.error('Error validating cancellation token:', error);
-    return { success: false, error: error.message };
+    return {success: false, error: error.message};
   }
 }
 
