@@ -37,6 +37,7 @@ const {sendAdminAlert} = require('./services/adminAlerts');
 
 // Import services nouveaux
 const {mollieService} = require('./services/mollieService');
+const {getAllowedOrigin} = require('./services/mollieUtils');
 const {bexioService} = require('./services/bexioService');
 const {PubSub} = require('@google-cloud/pubsub');
 const {onMessagePublished} = require('firebase-functions/v2/pubsub');
@@ -11491,9 +11492,20 @@ exports.webhookMollie = onRequest(
       cors: true, // Accepter les requêtes de Mollie
     },
     async (req, res) => {
+      if (req.method !== 'POST') {
+        return res.status(405).send('Method Not Allowed');
+      }
     // Mollie envoie l'ID du paiement dans le corps (x-www-form-urlencoded)
     // id=tr_WDqYK6vllg
-      const paymentId = req.body.id;
+      let paymentId = req.body?.id;
+      if (!paymentId && req.rawBody) {
+        try {
+          const params = new URLSearchParams(req.rawBody.toString('utf8'));
+          paymentId = params.get('id');
+        } catch (e) {
+          console.warn('⚠️ Failed to parse Mollie webhook raw body:', e);
+        }
+      }
 
       if (!paymentId) {
         console.warn('⚠️ Mollie webhook received without payment ID');
@@ -11537,6 +11549,8 @@ exports.processMolliePayment = onMessagePublished(
       timeoutSeconds: 300,
     },
     async (event) => {
+      let processedRef = null;
+      let shouldProcess = false;
       try {
       // 1. Extraire les données du message
         const messageData = event.data.message.json;
@@ -11549,6 +11563,31 @@ exports.processMolliePayment = onMessagePublished(
 
         console.log(`🚀 Processing Mollie payment ${paymentId} started`);
 
+        // Idempotence guard: avoid double-processing for the same Mollie payment
+        processedRef = db.collection('processedPayments').doc(`mollie_${paymentId}`);
+        shouldProcess = await db.runTransaction(async (transaction) => {
+          const snap = await transaction.get(processedRef);
+          if (snap.exists) {
+            const status = snap.data()?.status;
+            if (status === 'completed' || status === 'processing') {
+              return false;
+            }
+          }
+          transaction.set(processedRef, {
+            gateway: 'mollie',
+            paymentId: paymentId,
+            status: 'processing',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }, {merge: true});
+          return true;
+        });
+
+        if (!shouldProcess) {
+          console.log(`ℹ️ Payment ${paymentId} already processed or in progress, skipping`);
+          return;
+        }
+
         // 2. Récupérer les détails du paiement chez Mollie
         const payment = await mollieService.getPayment(paymentId);
         console.log(`💰 Payment status for ${paymentId}: ${payment.status}`);
@@ -11557,11 +11596,32 @@ exports.processMolliePayment = onMessagePublished(
         // Mollie peut envoyer des webhooks pour 'open', 'expired', 'failed', etc.
         if (payment.status !== 'paid') {
           console.log(`ℹ️ Payment ${paymentId} is ${payment.status}, skipping processing`);
+          if (processedRef) {
+            await processedRef.set({
+              status: 'ignored',
+              reason: `status_${payment.status}`,
+              updatedAt: new Date(),
+            }, {merge: true});
+          }
           return;
         }
 
 
         const metadata = payment.metadata || {};
+
+        // Ne traiter que les paiements explicitement taggés Fluance
+        if (metadata.system !== 'firebase') {
+          console.log(`ℹ️ Payment ${paymentId} ignored (metadata.system missing or invalid)`);
+          if (processedRef) {
+            await processedRef.set({
+              status: 'ignored',
+              reason: 'missing_system_metadata',
+              updatedAt: new Date(),
+            }, {merge: true});
+          }
+          return;
+        }
+
         let mollieSubscriptionId = null;
 
         // 3. Logique Bexio (Manual Entry - Stripe Logic)
@@ -11776,8 +11836,25 @@ exports.processMolliePayment = onMessagePublished(
         }
 
         console.log(`✅ Processing Mollie payment ${paymentId} completed`);
+        if (processedRef) {
+          await processedRef.set({
+            status: 'completed',
+            updatedAt: new Date(),
+          }, {merge: true});
+        }
       } catch (error) {
         console.error('❌ Error in processMolliePayment:', error);
+        if (processedRef && shouldProcess) {
+          try {
+            await processedRef.set({
+              status: 'failed',
+              error: error?.message || 'unknown_error',
+              updatedAt: new Date(),
+            }, {merge: true});
+          } catch (e) {
+            console.error('❌ Error updating processedPayments status:', e);
+          }
+        }
       }
     },
 );
@@ -11880,11 +11957,9 @@ exports.createMollieCheckoutSession = onCall(
         }
       }
 
-      // URLs de redirection
-      let baseUrl = request.data.origin;
-      if (!baseUrl) {
-        baseUrl = (product === 'rdv-clarte') ? 'https://cedricv.com' : 'https://fluance.io';
-      }
+      // URLs de redirection (allowlist)
+      const DEFAULT_BASE_URL = (product === 'rdv-clarte') ? 'https://cedricv.com' : 'https://fluance.io';
+      const baseUrl = getAllowedOrigin(request.data.origin, DEFAULT_BASE_URL);
       const langPrefix = (locale === 'en') ? '/en' : '';
 
       let redirectUrl;
@@ -11913,6 +11988,7 @@ exports.createMollieCheckoutSession = onCall(
           redirectUrl: redirectUrl,
           webhookUrl: `https://europe-west1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/webhookMollie`,
           metadata: {
+            system: 'firebase',
             product: product,
             variant: variant || null,
             includeSosDos: !!includeSosDos,

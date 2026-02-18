@@ -367,6 +367,7 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
           redirectUrl: redirectUrl,
           webhookUrl: webhookUrl,
           metadata: {
+            system: 'firebase',
             bookingId: bookingId,
             courseId: courseId,
             email: userData.email,
@@ -612,34 +613,50 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
 async function confirmBookingPayment(db, bookingId, paymentIntentId) {
   try {
     const bookingRef = db.collection('bookings').doc(bookingId);
-    const bookingDoc = await bookingRef.get();
 
-    if (!bookingDoc.exists) {
-      return {success: false, error: 'BOOKING_NOT_FOUND'};
-    }
+    const result = await db.runTransaction(async (transaction) => {
+      const bookingDoc = await transaction.get(bookingRef);
+      if (!bookingDoc.exists) {
+        return {success: false, error: 'BOOKING_NOT_FOUND'};
+      }
 
-    const booking = bookingDoc.data();
+      const booking = bookingDoc.data();
 
-    // Vérifier que le PaymentIntent ou Mollie Payment ID correspond
-    if (booking.stripePaymentIntentId !== paymentIntentId && booking.molliePaymentId !== paymentIntentId) {
-      return {success: false, error: 'PAYMENT_MISMATCH'};
-    }
+      // Vérifier que le PaymentIntent ou Mollie Payment ID correspond
+      if (booking.stripePaymentIntentId !== paymentIntentId && booking.molliePaymentId !== paymentIntentId) {
+        return {success: false, error: 'PAYMENT_MISMATCH'};
+      }
 
-    // Mettre à jour la réservation
-    await bookingRef.update({
-      status: BOOKING_STATUS.CONFIRMED,
-      paidAt: new Date(),
-      updatedAt: new Date(),
+      // Idempotence: si déjà confirmé, ne pas re-compter
+      if (booking.status === BOOKING_STATUS.CONFIRMED) {
+        return {success: true, alreadyConfirmed: true};
+      }
+
+      // Mettre à jour la réservation
+      transaction.update(bookingRef, {
+        status: BOOKING_STATUS.CONFIRMED,
+        paidAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Mettre à jour le compteur du cours
+      const courseRef = db.collection('courses').doc(booking.courseId);
+      const courseDoc = await transaction.get(courseRef);
+      if (courseDoc.exists) {
+        const course = courseDoc.data();
+        transaction.update(courseRef, {
+          participantCount: (course.participantCount || 0) + 1,
+        });
+      }
+
+      return {success: true};
     });
 
-    // Mettre à jour le compteur du cours
-    const courseRef = db.collection('courses').doc(booking.courseId);
-    const courseDoc = await courseRef.get();
-    if (courseDoc.exists) {
-      const course = courseDoc.data();
-      await courseRef.update({
-        participantCount: (course.participantCount || 0) + 1,
-      });
+    if (!result.success) {
+      return result;
+    }
+    if (result.alreadyConfirmed) {
+      return result;
     }
 
     // Ajouter au Google Sheet

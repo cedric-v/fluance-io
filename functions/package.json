@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
+    "test": "node --test",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
