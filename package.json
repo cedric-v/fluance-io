@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
-    "autoprefixer": "^10.4.23",
+    "autoprefixer": "^10.4.24",
     "html-minifier-next": "^4.19.0",
     "mjml": "^4.18.0",
     "postcss": "^8.5.6",
