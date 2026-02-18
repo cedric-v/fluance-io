@@ -66,7 +66,7 @@ permalink: /en/member-login/
           <label for="password" class="block text-sm font-medium text-[#3E3A35]">
             Password
           </label>
-          <a href="/en/reset-password" class="text-sm text-fluance hover:text-fluance/80">
+          <a href="/en/reset-password/" class="text-sm text-fluance hover:text-fluance/80">
             Forgot password?
           </a>
         </div>
@@ -151,7 +151,7 @@ permalink: /en/member-login/
         </div>
         <div>
           <p class="font-semibold text-[#3E3A35] mb-1">Still need help?</p>
-          <p><a href="/en/contact" class="text-fluance hover:underline">Contact us.</a></p>
+          <p><a href="/en/contact/" class="text-fluance hover:underline">Contact us.</a></p>
         </div>
       </div>
     </div>
@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   if (actionCode && mode === 'resetPassword') {
     // Redirect to the reset password page with the code
-    window.location.replace(`/en/reset-password?oobCode=${actionCode}&mode=${mode}`);
+    window.location.replace(`/en/reset-password/?oobCode=${actionCode}&mode=${mode}`);
     return;
   }
   
@@ -472,4 +472,3 @@ document.addEventListener('DOMContentLoaded', async function() {
   window.toggleHelp = toggleHelp;
 });
 </script>
-

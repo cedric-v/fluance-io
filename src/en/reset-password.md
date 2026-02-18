@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           confirmSuccessDiv.classList.remove('hidden');
           
           // Clean URL to prevent Firebase Auth from auto-redirecting
-          window.history.replaceState({}, document.title, '/en/reset-password');
+          window.history.replaceState({}, document.title, '/en/reset-password/');
           
           // Redirect to login page
           // User can log in with their new password
@@ -312,4 +312,3 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 });
 </script>
-

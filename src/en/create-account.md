@@ -159,7 +159,7 @@ permalink: /en/create-account/
         </div>
         <div>
           <p class="font-semibold text-[#3E3A35] mb-1">Still need help?</p>
-          <p><a href="/en/contact" class="text-fluance hover:underline">Contact us.</a></p>
+          <p><a href="/en/contact/" class="text-fluance hover:underline">Contact us.</a></p>
         </div>
       </div>
     </div>
@@ -376,4 +376,3 @@ document.addEventListener('DOMContentLoaded', function() {
   window.toggleHelp = toggleHelp;
 });
 </script>
-

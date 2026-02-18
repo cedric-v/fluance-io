@@ -94,7 +94,7 @@ permalink: /en/presentiel/prochains-stages/
         </button>
         
         <div class="text-xs text-gray-500 mt-4">
-          By submitting this form, I agree that my information will be used in the context of my request and the ethical and personalized business relationship that may result. To know and exercise my rights, including to cancel my consent, I consult the <a href="/en/mentions-legales" class="text-fluance hover:underline" target="_blank">legal notices and privacy policy</a>.
+          By submitting this form, I agree that my information will be used in the context of my request and the ethical and personalized business relationship that may result. To know and exercise my rights, including to cancel my consent, I consult the <a href="/en/mentions-legales/" class="text-fluance hover:underline" target="_blank">legal notices and privacy policy</a>.
         </div>
       </form>
     </div>

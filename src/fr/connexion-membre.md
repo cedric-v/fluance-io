@@ -167,7 +167,7 @@ permalink: /connexion-membre/
         </div>
         <div>
           <p class="font-semibold text-[#3E3A35] mb-1">Encore besoin d'aide ?</p>
-          <p><a href="/contact" class="text-fluance hover:underline">Contactez-nous.</a></p>
+          <p><a href="/contact/" class="text-fluance hover:underline">Contactez-nous.</a></p>
         </div>
       </div>
     </div>
@@ -516,6 +516,5 @@ document.addEventListener('DOMContentLoaded', async function() {
   window.toggleHelp = toggleHelp;
 });
 </script>
-
 
 
