@@ -79,7 +79,7 @@ robots: noindex, nofollow
       </li>
       <li class="flex items-start gap-2">
         <span class="text-fluance">✓</span>
-        <span>En cas d'empêchement, pensez à annuler votre réservation via Momoyoga</span>
+        <span>En cas d'empêchement, pensez à annuler votre réservation via votre espace membre ou le lien dans l'email</span>
       </li>
     </ul>
   </div>

@@ -1,6 +1,6 @@
 # Système de Réservation de Cours Fluance
 
-Alternative à MomoYoga - Système intégré de réservation avec synchronisation Google Calendar.
+Système intégré de réservation avec synchronisation Google Calendar.
 
 ## Architecture
 

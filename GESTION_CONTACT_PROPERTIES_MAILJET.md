@@ -26,7 +26,6 @@ Les properties suivantes sont gérées automatiquement :
 | `nombre_cours_presentiel` | Integer | Nombre total de cours en présentiel réservés | Nombre entier |
 | `premier_cours_presentiel` | Date | Date du premier cours en présentiel | Format `DD/MM/YYYY` |
 | `dernier_cours_presentiel` | Date | Date du dernier cours en présentiel | Format `DD/MM/YYYY` |
-| `compte_momoyoga` | Date | Date de création du compte Momoyoga | Format `YYYY-MM-DD` |
 
 ## 🔄 Flux d'intégration
 
@@ -80,25 +79,8 @@ Les properties suivantes sont gérées automatiquement :
 
 **Code** : `functions/index.js` ligne ~484-642 (fonction `createTokenAndSendEmail`)
 
-### 4. Inscription Momoyoga (compte)
 
-**Fonction** : `registerMomoyogaAccount`
-
-**Actions** :
-- Ajoute le contact à la liste **10524140**
-- Envoie un email de bienvenue avec double opt-in
-- Définit les properties :
-  - `statut`: `"prospect"`
-  - `source_optin`: `"presentiel_compte"`
-  - `compte_momoyoga`: Date actuelle
-  - `est_client`: `"False"`
-  - `langue`: `"fr"`
-
-**Note** : Si le contact a déjà une confirmation en attente ou confirmée, aucun email n'est envoyé.
-
-**Code** : `functions/index.js` (fonction `registerMomoyogaAccount`)
-
-### 5. Réservation de cours en présentiel
+### 4. Réservation de cours en présentiel
 
 **Fonction** : `registerPresentielCourse`
 

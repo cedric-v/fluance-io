@@ -31,7 +31,7 @@ permalink: /connexion/
           Regardez le planning des prochains cours et inscrivez-vous à une séance.
         </p>
         <div class="text-center">
-          <a href="https://www.momoyoga.com/fluance/schedule" target="_blank" rel="noopener noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2">Regarder le planning et s'inscrire à une séance <span>→</span></a>
+          <a href="/presentiel/reserver/" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2">Regarder le planning et s'inscrire à une séance <span>→</span></a>
         </div>
       </div>
     </div>

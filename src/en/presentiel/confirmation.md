@@ -78,7 +78,7 @@ eleventyExcludeFromCollections: true
       </li>
       <li class="flex items-start gap-2">
         <span class="text-fluance">✓</span>
-        <span>If you can't make it, please cancel your booking via Momoyoga</span>
+        <span>If you can't make it, please cancel your booking via your member area or the link in the email</span>
       </li>
     </ul>
   </div>

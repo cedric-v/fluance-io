@@ -23,7 +23,7 @@ permalink: /emails/bienvenue-presentiel.html
           Bonjour {{firstName}},
         </mj-text>
         <mj-text>
-          Merci pour votre inscription sur Momoyoga ! Vous êtes désormais prêt(e) à réserver vos 
+          Merci pour votre inscription ! Vous êtes désormais prêt(e) à réserver vos 
           premiers cours Fluance en présentiel.
         </mj-text>
         <mj-text>
@@ -60,13 +60,13 @@ permalink: /emails/bienvenue-presentiel.html
           Comment réserver un cours ?
         </mj-text>
         <mj-text>
-          1. Rendez-vous sur <a href="https://www.momoyoga.com/fluance/schedule" style="color: #648ED8;" target="_blank">le planning Fluance</a><br>
+          1. Rendez-vous sur <a href="https://fluance.io/presentiel/reserver/" style="color: #648ED8;" target="_blank">le planning Fluance</a><br>
           2. Choisissez le cours qui vous convient<br>
-          3. Réservez votre place en un clic
+          3. Réservez votre place en quelques clics
         </mj-text>
         <mj-divider border-color="#e0e0e0" border-width="1px" padding="20px 0" />
         <mj-text font-size="14px" color="#666666">
-          Si vous n'avez pas créé de compte sur Momoyoga, vous pouvez ignorer cet email.
+          Si vous n'avez pas demandé d'informations sur les cours Fluance, vous pouvez ignorer cet email.
         </mj-text>
       </mj-column>
     </mj-section>
