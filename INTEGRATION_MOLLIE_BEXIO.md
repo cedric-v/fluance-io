@@ -55,7 +55,7 @@ Le système détermine automatiquement si la vente est **Suisse (CH)** ou **Inte
 - **International** : Taux **0%** (Bexio Tax ID: **3**).
 
 ### B. Sélection des Comptes & Montants
-Deux écritures manuelles sont générées systématiquement pour assurer le suivi du CA Brut et des commissions. Ils équilibrent ainsi le solde du compte Mollie.
+Une écriture de vente est générée systématiquement. Une écriture de frais est ajoutée uniquement si une commission est détectée (`amountFee > 0`).
 
 #### 1. Écriture de Vente (CA Brut)
 Le montant total payé par le client est enregistré comme vente (Crédit) et débité sur le compte Mollie.
@@ -74,11 +74,16 @@ La commission Mollie est déduite du compte Caisse pour refléter le montant net
 | **Crédit** | `BEXIO_ACCOUNT_MOLLIE` | Caisse Mollie | **Commission** |
 
 ### C. Détails Techniques
-- **Écritures** : Chaque transaction génère deux `manual_single_entry` distinctes via l'API 3.0.
+- **Écritures** :
+  - Toujours 1 `manual_single_entry` pour la vente (brut).
+  - +1 `manual_single_entry` pour les frais si commission > 0.
 - **TVA sur CA** :
   - **Suisse (CH/LI)** : Taux **8.1%** (Bexio Tax ID: **14**), calculé sur la base du montant **Brut**.
   - **International** : Taux **0%** (Bexio Tax ID: **3**).
 - **TVA sur Frais** : Les commissions sont enregistrées sans influence TVA (Bexio Tax ID: **3** / 0%).
+- **Tax Account** :
+  - Vente : `tax_account_id` côté compte de vente (crédit).
+  - Frais : `tax_account_id` côté compte de frais (débit).
 
 ---
 

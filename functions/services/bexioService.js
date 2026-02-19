@@ -85,8 +85,10 @@ class BexioService {
           currency_id: 1, // Default to CHF (1), or map from code if needed
           description: entryData.text,
           tax_id: entryData.tax_id || null,
-          // tax_account_id matches credit_account_id (Sales) generally for Sales
-          tax_account_id: entryData.tax_id ? entryData.credit_account_id : null,
+          // Allow caller to override tax_account_id (needed for fee entries where tax side follows debit expense account).
+          tax_account_id: entryData.tax_id ?
+            (entryData.tax_account_id || entryData.credit_account_id) :
+            null,
         },
       ],
     };

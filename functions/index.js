@@ -11692,6 +11692,7 @@ exports.processMolliePayment = onMessagePublished(
               text: `Commission Mollie ${paymentId} - ${payment.description}`,
               reference: paymentId,
               tax_id: 3, // Sans influence TVA (0%)
+              tax_account_id: feeAccount,
             });
           }
 
