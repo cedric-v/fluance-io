@@ -54,7 +54,13 @@ Des moyens d’effacement de données sont mis en place afin d’en prévoir la 
 
 ### Informations sur les cookies
 
-Nous sommes susceptibles de déposer des cookies sur votre terminal. Le cookie enregistre des informations relatives à la navigation sur le service (pages consultées, date et heure). La durée maximale de conservation des cookies est de 13 mois, tout comme la durée de validité du consentement. Certains cookies servent à des fins statistiques (fréquence d’accès, personnalisation des pages), d’autres à des fins publicitaires ou fonctionnelles (lecteurs vidéo, contenus interactifs, sauvegarde d’un panier). Vous pouvez refuser les cookies via votre navigateur, mais certains services pourraient ne plus fonctionner correctement.
+Nous sommes susceptibles de déposer des cookies sur votre terminal. Le cookie enregistre des informations relatives à la navigation sur le service (pages consultées, date et heure). La durée maximale de conservation des cookies est de 13 mois, tout comme la durée de validité du consentement. 
+
+**Services tiers utilisant des cookies sur notre site :**
+- **Google Analytics** : Utilisé à des fins de statistiques détaillées (fréquence d’accès, comportements de navigation) pour améliorer notre site.
+- **Microsoft Clarity** : Utilisé pour comprendre l'interaction des utilisateurs avec notre site web (cartes de chaleur, enregistrements de sessions) afin d'optimiser l'ergonomie et l'expérience utilisateur.
+
+Vous pouvez refuser les cookies via la bannière de consentement présente sur le site ou via votre navigateur, mais certains services pourraient ne plus fonctionner correctement.
 
 ### Webconférences / webinaires / événements et droit à l’image
 
