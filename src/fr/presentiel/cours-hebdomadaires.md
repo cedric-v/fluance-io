@@ -1,6 +1,6 @@
 ---
 layout: base.njk
-title: Cours hebdomadaires
+title: Cours de mouvement libre à Fribourg | Fluance – Expression corporelle consciente
 description: Rejoignez nos cours hebdomadaires en présentiel pour retrouver la fluidité dans votre corps.
 locale: fr
 permalink: /presentiel/cours-hebdomadaires/
@@ -9,7 +9,7 @@ permalink: /presentiel/cours-hebdomadaires/
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="space-y-4 text-center">
     <p class="cta-pill bg-[#8bc34a]/20 text-fluance inline-flex">Suisse - région Fribourg</p>
-    <h1 class="text-4xl font-semibold text-[#3E3A35]">Cours hebdomadaires</h1>
+    <h1 class="text-4xl font-semibold text-[#3E3A35]">Cours de mouvement libre proche de Fribourg : Fluance</h1>
   </header>
 
   <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
@@ -20,8 +20,12 @@ permalink: /presentiel/cours-hebdomadaires/
           {% responsiveImage "/assets/img/duplex-fluance-clem-piller.jpg", "Le duplex danse & bien-être", "(max-width: 768px) 100vw, 400px", "rounded-xl shadow-sm w-full", "eager" %}
           <figcaption class="text-xs text-[#3E3A35]/60 mt-2 text-right italic">Clem Piller© pour le duplex</figcaption>
         </figure>
-        <p class="text-lg text-[#3E3A35]">
+        <p class="text-lg text-[#3E3A35] mb-6">
           Envie de découvrir l'univers Fluance ? Votre <strong>première séance est offerte</strong>.
+        </p>
+
+        <p class="text-lg text-[#3E3A35]">
+          Fluance est un cours de mouvement libre et conscient juste à côté de Fribourg (Granges-Paccot, Suisse), accessible à tous, sans prérequis.
         </p>
       </div>
     </div>
@@ -101,6 +105,18 @@ permalink: /presentiel/cours-hebdomadaires/
           <p class="text-[#3E3A35]">Une tenue confortable et de quoi vous hydrater.</p>
         </div>
         <div>
+          <h3 class="text-xl font-semibold text-fluance mb-2">Vous recherchez une alternative au yoga, plus douce et libre ?</h3>
+          <p class="text-[#3E3A35] mb-4">
+            Si vous souhaitez tester un <strong>cours d’expression corporelle</strong>, Fluance propose une pratique de <strong>mouvement libre à Fribourg</strong> hebdomadaire à Granges-Paccot. 
+          </p>
+          <p class="text-[#3E3A35] mb-4">
+            Cette approche atypique se situe à la croisée de la <strong>danse libre</strong>, de la <strong>pratique somatique</strong> (pour l'écoute du corps et de l'esprit), de la <strong>méditation en mouvement</strong> et de l'<strong>art corporel</strong>.
+          </p>
+          <p class="text-[#3E3A35]">
+            Que vous cherchiez un <strong>mouvement intuitif</strong>, un <strong>atelier de lâcher-prise</strong> ou une <strong>activité de bien-être</strong> différente, Fluance vous offre un espace pour renouer avec vous-même, à quelques minutes du centre-ville fribourgeois.
+          </p>
+        </div>
+        <div>
           <h3 class="text-xl font-semibold text-fluance mb-2">Comment puis-je régler ?</h3>
           <p class="text-[#3E3A35] mb-4">Par carte bancaire ou TWINT lors de la réservation en ligne, ou en liquide sur place avant le début du cours.</p>
           <div class="flex flex-wrap items-center gap-4">
@@ -140,7 +156,6 @@ permalink: /presentiel/cours-hebdomadaires/
               <li><strong>Zones blanches :</strong> au-dessus de la commune, proches de la place de jeux et de la bibliothèque + devant l'école primaire de Chantemerle, + 90 places, disque nécessaire 08:00-18:30 (samedi compris), maximum 2h</li>
             </ul>
           </div>
-          
           <div class="bg-red-50 border-l-4 border-red-400 p-4">
             <h4 class="text-lg font-semibold text-fluance mb-3">INTERDICTIONS DE PARKING</h4>
             <ul class="space-y-2 text-[#3E3A35]">

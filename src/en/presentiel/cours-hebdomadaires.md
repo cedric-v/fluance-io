@@ -1,6 +1,6 @@
 ---
 layout: base.njk
-title: Weekly Classes
+title: Free movement classes in Fribourg | Fluance – Conscious body expression
 description: Join our weekly in-person classes to regain fluidity in your body.
 locale: en
 permalink: /en/presentiel/cours-hebdomadaires/
@@ -9,7 +9,7 @@ permalink: /en/presentiel/cours-hebdomadaires/
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
   <header class="space-y-4 text-center">
     <p class="cta-pill bg-[#8bc34a]/20 text-fluance inline-flex">Switzerland - Fribourg region</p>
-    <h1 class="text-4xl font-semibold text-[#3E3A35]">Weekly Classes</h1>
+    <h1 class="text-4xl font-semibold text-[#3E3A35]">Free movement classes near Fribourg: Fluance</h1>
   </header>
 
   <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
@@ -20,8 +20,12 @@ permalink: /en/presentiel/cours-hebdomadaires/
           {% responsiveImage "/assets/img/duplex-fluance-clem-piller.jpg", "The duplex dance & wellness", "(max-width: 768px) 100vw, 400px", "rounded-xl shadow-sm w-full", "eager" %}
           <figcaption class="text-xs text-[#3E3A35]/60 mt-2 text-right italic">Clem Piller© for the duplex</figcaption>
         </figure>
-        <p class="text-lg text-[#3E3A35]">
+        <p class="text-lg text-[#3E3A35] mb-6">
           Want to discover the Fluance universe? Your <strong>first session is free</strong>.
+        </p>
+
+        <p class="text-lg text-[#3E3A35]">
+          Fluance is a free and conscious movement class right next to Fribourg (Granges-Paccot, Switzerland), accessible to everyone, with no prerequisites.
         </p>
       </div>
     </div>
@@ -101,6 +105,18 @@ permalink: /en/presentiel/cours-hebdomadaires/
           <p class="text-[#3E3A35]">Comfortable clothing and something to hydrate with.</p>
         </div>
         <div>
+          <h3 class="text-xl font-semibold text-fluance mb-2">Looking for an alternative to yoga, gentler and freer?</h3>
+          <p class="text-[#3E3A35] mb-4">
+            If you want to try a <strong>body expression class</strong>, Fluance offers a weekly <strong>free movement practice in Fribourg</strong> in Granges-Paccot. 
+          </p>
+          <p class="text-[#3E3A35] mb-4">
+            This atypical approach is at the crossroads of <strong>free dance</strong>, <strong>somatic practice</strong> (to connect body and mind), <strong>moving meditation</strong>, and <strong>body art</strong>.
+          </p>
+          <p class="text-[#3E3A35]">
+            Whether you are looking for <strong>intuitive movement</strong>, a <strong>letting go workshop</strong>, or a different kind of <strong>wellness activity</strong>, Fluance offers you a space to reconnect with yourself, just minutes from the center of Fribourg.
+          </p>
+        </div>
+        <div>
           <h3 class="text-xl font-semibold text-fluance mb-2">How can I pay?</h3>
           <p class="text-[#3E3A35] mb-4">By bank card or TWINT when booking online, or cash on site before the start of the class.</p>
           <div class="flex flex-wrap items-center gap-4">
@@ -140,7 +156,6 @@ permalink: /en/presentiel/cours-hebdomadaires/
               <li><strong>White zones:</strong> above the commune, near the playground and library + in front of Chantemerle primary school, + 90 spaces, disc required 08:00-18:30 (including Saturday), maximum 2h</li>
             </ul>
           </div>
-          
           <div class="bg-red-50 border-l-4 border-red-400 p-4">
             <h4 class="text-lg font-semibold text-fluance mb-3">PARKING PROHIBITIONS</h4>
             <ul class="space-y-2 text-[#3E3A35]">
