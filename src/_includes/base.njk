@@ -309,30 +309,38 @@
     {% firebaseConfig %}
     {% stripeConfig %}
 
-    <!-- Google Tag Manager - chargé uniquement après consentement -->
+    <!-- Scripts de suivi (GTM & Clarity) - chargés uniquement après consentement -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       
-      // Fonction pour charger GTM après consentement
-      window.loadGTM = function() {
-        // Vérifier si GTM n'est pas déjà chargé
-        if (document.querySelector('script[src*="googletagmanager.com/gtm.js"]')) {
-          return;
+      // Fonction pour charger le tracking après consentement
+      window.loadTracking = function() {
+        // GTM
+        if (!document.querySelector('script[src*="googletagmanager.com/gtm.js"]')) {
+          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer','GTM-FVTMPVN2');
         }
-        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-        })(window,document,'script','dataLayer','GTM-FVTMPVN2');
+
+        // Microsoft Clarity
+        if (!window.clarity) {
+          (function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "vlxat2aprr");
+        }
       };
       
-      // Charger GTM si le consentement a déjà été donné
+      // Charger le tracking si le consentement a déjà été donné
       if (localStorage.getItem('cookieConsent') === 'accepted') {
-        window.loadGTM();
+        window.loadTracking();
       }
     </script>
-    <!-- End Google Tag Manager -->
+    <!-- Fin des scripts de suivi -->
 </head>
 <body class="bg-[#fdfaf6] text-[#1f1f1f] antialiased">
     <!-- Google Tag Manager (noscript) -->
@@ -508,11 +516,9 @@
       localStorage.setItem('cookieConsent', 'accepted');
       cookieBanner.classList.add('hidden');
       
-      // Charger GTM si pas déjà chargé
-      if (!window.dataLayer || !window.dataLayer.find(e => e.event === 'gtm.js')) {
-        if (typeof loadGTM === 'function') {
-          loadGTM();
-        }
+      // Charger les scripts de suivi si le consentement vient d'être accordé
+      if (typeof loadTracking === 'function') {
+        loadTracking();
       }
     });
     
