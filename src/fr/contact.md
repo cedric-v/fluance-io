@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Contact
-description: Contactez-nous pour toute question ou besoin d'aide.
+description: Contactez l'équipe Fluance pour toute question ou si vous avez besoin d'aide concernant nos cours en ligne, nos séances en présentiel ou sur un abonnement.
 locale: fr
 permalink: /contact/
 ---

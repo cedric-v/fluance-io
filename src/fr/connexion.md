@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Connexion
-description: Accédez à votre espace de formation en ligne ou inscrivez-vous à une séance en présentiel.
+description: Accédez à votre espace membre Fluance pour suivre vos formations en ligne ou connectez-vous pour consulter le planning et réserver une séance en présentiel.
 locale: fr
 permalink: /connexion/
 ---

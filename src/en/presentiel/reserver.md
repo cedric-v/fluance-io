@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Book a Class - In-Person Classes
-description: "Book your spot for Fluance in-person classes in Fribourg"
+description: "Réservez facilement votre place pour les cours Fluance en présentiel près de Fribourg. Parcourez le planning hebdomadaire et inscrivez-vous à votre séance."
 locale: en
 permalink: /en/presentiel/reserver/
 ---

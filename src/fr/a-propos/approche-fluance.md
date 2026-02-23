@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Approche Fluance
-description: Découvrez l'approche globale de Fluance pour la fluidité corps et esprit.
+description: Découvrez l'approche globale de Fluance pour reconnecter votre corps et votre esprit. Retrouvez souplesse, vitalité et sérénité grâce au mouvement libre.
 locale: fr
 permalink: /a-propos/approche-fluance/
 ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg

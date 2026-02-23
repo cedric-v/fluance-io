@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Connexion - Contenu protégé
-description: Connectez-vous pour accéder à votre contenu protégé Fluance
+description: Connectez-vous à votre espace membre Fluance pour accéder à tout votre contenu protégé, vos cours en ligne, vos vidéos et vos pratiques de mouvement libre.
 locale: fr
 permalink: /connexion-membre/
 ---

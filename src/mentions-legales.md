@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Mentions légales & Politique de confidentialité
-description: Mentions légales officielles et politique de confidentialité de Fluance / Instants Zen Sàrl.
+description: Consultez les mentions légales officielles et notre politique de confidentialité détaillant le traitement de vos données personnelles par Instants Zen Sàrl.
 locale: fr
 permalink: /mentions-legales/
 ---

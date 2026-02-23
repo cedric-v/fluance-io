@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Créer mon compte
-description: Créez votre compte Fluance pour accéder à votre contenu protégé
+description: Créez gratuitement votre compte Fluance en quelques clics pour sécuriser vos actions et accéder immédiatement à votre contenu en ligne protégé et personnalisé.
 locale: fr
 permalink: /creer-compte/
 ---

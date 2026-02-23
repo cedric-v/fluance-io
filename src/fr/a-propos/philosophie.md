@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Philosophie
-description: "La philosophie de Fluance : accompagner vers la fluidité corps et esprit."
+description: "Explorez la philosophie profonde de Fluance : vous accompagner avec bienveillance vers une véritable fluidité du corps et de l'esprit à travers le mouvement."
 locale: fr
 permalink: /a-propos/philosophie/
 ---

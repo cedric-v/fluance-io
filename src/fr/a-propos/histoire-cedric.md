@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: L'histoire de Cédric Vonlanthen
-description: Découvrez le parcours de Cédric Vonlanthen, fondateur de Fluance.
+description: Découvrez le parcours inspirant de Cédric Vonlanthen, fondateur de Fluance. Comprenez comment ses propres expériences l'ont amené à créer l'approche Fluance.
 locale: fr
 permalink: /a-propos/histoire-cedric/
 ---
