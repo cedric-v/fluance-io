@@ -16,6 +16,10 @@
         "to": "/en/connexion/"
     },
     {
+        "from": "/en/cgv",
+        "to": "/cgv/"
+    },
+    {
         "from": "/en/mentions-legales",
         "to": "/mentions-legales/"
     },
