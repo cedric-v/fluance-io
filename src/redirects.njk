@@ -1,0 +1,16 @@
+---
+pagination:
+  data: redirectRules
+  size: 1
+  alias: rule
+permalink: "{{ rule.from }}/index.html"
+layout: base.njk
+eleventyComputed:
+  redirectTo: "{{ rule.to }}"
+  title: "Redirection en cours..."
+  robots: "noindex, follow"
+---
+<div class="max-w-xl mx-auto py-16 text-center text-[#3E3A35]">
+  <h1 class="text-3xl font-semibold mb-6">Vous allez être redirigé...</h1>
+  <p class="mb-6 opacity-80">Si la redirection ne se fait pas automatiquement, <a href="{{ rule.to | relativeUrl }}" class="font-semibold text-fluance hover:underline">cliquez ici</a>.</p>
+</div>

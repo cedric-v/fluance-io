@@ -1,0 +1,74 @@
+[
+    {
+        "from": "/pro/mois-clarte/presentation",
+        "to": "/"
+    },
+    {
+        "from": "/5jours",
+        "to": "/"
+    },
+    {
+        "from": "/connexion-firebase",
+        "to": "/connexion/"
+    },
+    {
+        "from": "/en/firebase-login",
+        "to": "/en/connexion/"
+    },
+    {
+        "from": "/en/mentions-legales",
+        "to": "/mentions-legales/"
+    },
+    {
+        "from": "/fr/cours-en-ligne/approche-fluance-complete",
+        "to": "/cours-en-ligne/approche-fluance-complete/"
+    },
+    {
+        "from": "/fr/cours-en-ligne/21-jours-mouvement",
+        "to": "/cours-en-ligne/21-jours-mouvement/"
+    },
+    {
+        "from": "/fr/a-propos/histoire-cedric",
+        "to": "/a-propos/histoire-cedric/"
+    },
+    {
+        "from": "/par/presentation",
+        "to": "/"
+    },
+    {
+        "from": "/en/cours-en-ligne/5jours/j1",
+        "to": "/"
+    },
+    {
+        "from": "/en/cours-en-ligne/21jours",
+        "to": "/en/cours-en-ligne/21-jours-mouvement/"
+    },
+    {
+        "from": "/en/reinitialiser-mot-de-passe",
+        "to": "/en/reset-password/"
+    },
+    {
+        "from": "/test-contenu-protege",
+        "to": "/"
+    },
+    {
+        "from": "/par/presentation/21j",
+        "to": "/"
+    },
+    {
+        "from": "/par/abo/bdc/mens",
+        "to": "/"
+    },
+    {
+        "from": "/par/21jours/bdc",
+        "to": "/"
+    },
+    {
+        "from": "/par/bdc-abo-tri",
+        "to": "/"
+    },
+    {
+        "from": "/pro/mois-clarte/bdc",
+        "to": "/"
+    }
+]
