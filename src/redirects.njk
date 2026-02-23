@@ -9,8 +9,15 @@ eleventyComputed:
   redirectTo: "{{ rule.to }}"
   title: "Redirection en cours..."
   robots: "noindex, follow"
----
-<div class="max-w-xl mx-auto py-16 text-center text-[#3E3A35]">
-  <h1 class="text-3xl font-semibold mb-6">Vous allez être redirigé...</h1>
-  <p class="mb-6 opacity-80">Si la redirection ne se fait pas automatiquement, <a href="{{ rule.to | relativeUrl }}" class="font-semibold text-fluance hover:underline">cliquez ici</a>.</p>
+---<div class="flex items-center justify-center min-h-[60vh]">
+  <div class="text-center space-y-4">
+    <h1 class="text-4xl font-semibold text-fluance">Redirection...</h1>
+    <p class="text-lg text-[#3E3A35]">
+      {{ title }}<br>
+      Vous allez être redirigé vers la bonne page.
+    </p>
+    <a href="{{ rule.to | relativeUrl }}" class="inline-block px-6 py-3 bg-fluance text-[#F5F7F6] rounded-lg hover:bg-[#E8C15A] transition">
+      Cliquer ici si la redirection ne fonctionne pas
+    </a>
+  </div>
 </div>
