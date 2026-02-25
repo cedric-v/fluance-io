@@ -11296,7 +11296,7 @@ exports.processMolliePayment = onMessagePublished(
   {
     topic: 'process-mollie-payment',
     region: 'europe-west1',
-    secrets: ['MOLLIE_API_KEY', 'BEXIO_API_TOKEN', 'BEXIO_USER_ID', 'GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_SHEET_ID_SALES', 'BEXIO_ACCOUNT_DEBIT', 'BEXIO_ACCOUNT_CREDIT', 'BEXIO_ACCOUNT_FEES'],
+    secrets: ['MOLLIE_API_KEY', 'BEXIO_API_TOKEN', 'GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_SHEET_ID_SALES', 'BEXIO_ACCOUNT_DEBIT', 'BEXIO_ACCOUNT_CREDIT', 'BEXIO_ACCOUNT_FEES'],
     // Timeout plus long pour les opérations externes
     timeoutSeconds: 300,
   },
