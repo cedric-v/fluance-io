@@ -68,7 +68,7 @@ class BexioService {
         amount: 100.00,
         text: 'Description...',
         reference: 'MollieID',
-        tax_id: 14 // Optional (14=CH 8.1%, 3=0%)
+        tax_id: 14 // Optional (14=CH 8.1%, 4=0% CSE)
         currency_code: 'CHF' // Optional
       }
     */
@@ -85,7 +85,8 @@ class BexioService {
           currency_id: 1, // Default to CHF (1), or map from code if needed
           description: entryData.text,
           tax_id: entryData.tax_id || null,
-          // Allow caller to override tax_account_id (needed for fee entries where tax side follows debit expense account).
+          // Allow caller to override tax_account_id (needed for fee entries where tax side
+          // follows debit expense account).
           tax_account_id: entryData.tax_id ?
             (entryData.tax_account_id || entryData.credit_account_id) :
             null,
@@ -124,4 +125,4 @@ class BexioService {
 }
 
 const bexioService = new BexioService();
-module.exports = {bexioService};
+module.exports = { bexioService };

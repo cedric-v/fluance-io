@@ -614,13 +614,14 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
   try {
     const bookingRef = db.collection('bookings').doc(bookingId);
 
+    let booking;
     const result = await db.runTransaction(async (transaction) => {
       const bookingDoc = await transaction.get(bookingRef);
       if (!bookingDoc.exists) {
         return {success: false, error: 'BOOKING_NOT_FOUND'};
       }
 
-      const booking = bookingDoc.data();
+      booking = bookingDoc.data();
 
       // Vérifier que le PaymentIntent ou Mollie Payment ID correspond
       if (booking.stripePaymentIntentId !== paymentIntentId && booking.molliePaymentId !== paymentIntentId) {

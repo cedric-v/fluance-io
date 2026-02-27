@@ -5,9 +5,6 @@
 		},
 		{
 			"path": "."
-		},
-		{
-			"path": "../bexio/bexio-import-mvp-v3"
 		}
 	],
 	"settings": {}

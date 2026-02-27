@@ -10,7 +10,7 @@ function getAllowedOrigin(input, fallback, allowlist = DEFAULT_MOLLIE_ORIGIN_ALL
   try {
     const url = new URL(input);
     return allowlist.includes(url.origin) ? url.origin : fallback;
-  } catch (e) {
+  } catch {
     return fallback;
   }
 }
