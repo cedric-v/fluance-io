@@ -52,7 +52,7 @@ Le système détermine automatiquement si la vente est **Suisse (CH)** ou **Inte
 
 **Règles TVA :**
 - **Suisse (CH/LI)** : Taux **8.1%** (Bexio Tax ID: **14**).
-- **International** : Taux **0%** (Bexio Tax ID: **3**).
+- **International** : Taux **0%** (Bexio Tax ID: **4**).
 
 ### B. Sélection des Comptes & Montants
 Une écriture de vente est générée systématiquement. Une écriture de frais est ajoutée uniquement si une commission est détectée (`amountFee > 0`).
@@ -79,7 +79,7 @@ La commission Mollie est déduite du compte Caisse pour refléter le montant net
   - +1 `manual_single_entry` pour les frais si commission > 0.
 - **TVA sur CA** :
   - **Suisse (CH/LI)** : Taux **8.1%** (Bexio Tax ID: **14**), calculé sur la base du montant **Brut**.
-  - **International** : Taux **0%** (Bexio Tax ID: **3**).
+  - **International** : Taux **0%** (Bexio Tax ID: **4**).
 - **TVA sur Frais** : Les commissions sont enregistrées sans influence TVA (Bexio Tax ID: **3** / 0%).
 - **Tax Account** :
   - Vente : `tax_account_id` côté compte de vente (crédit).
