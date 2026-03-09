@@ -261,7 +261,7 @@ function showEmailCaptureModal(locale = 'fr') {
       const email = inputEmail.value.trim();
       const firstName = inputFirstName.value.trim();
       const lastName = inputLastName.value.trim();
-      const emailRegex = /^[^s@]+@[^s@]+.[^s@]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (email && emailRegex.test(email) && firstName && lastName) {
         cleanup();
         resolve({ email, firstName, lastName });
