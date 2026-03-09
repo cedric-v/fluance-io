@@ -99,3 +99,14 @@ La commission Mollie est déduite du compte Caisse pour refléter le montant net
 
 ### Mise à jour des Taux TVA
 Si les IDs de taxe Bexio changent (ex: changement de taux légal), mettre à jour la logique dans `functions/index.js` (variable `taxId`).
+
+---
+
+## 5. Liens de Paiement (Mollie)
+
+### Pages de Paiement Manuelles (Cachées)
+Pages créées pour être envoyées manuellement après un appel de qualification :
+
+| Programme | URL de la page | Options de paiement |
+|-----------|----------------|---------------------|
+| **Focus SOS** | `https://cedricv.com/accompagnement/formules/focus-sos/bdc/3x/` | 1x 300 CHF<br>3x 100 CHF |

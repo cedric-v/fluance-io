@@ -125,4 +125,4 @@ class BexioService {
 }
 
 const bexioService = new BexioService();
-module.exports = { bexioService };
+module.exports = {bexioService};

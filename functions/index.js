@@ -11460,8 +11460,13 @@ exports.processMolliePayment = onMessagePublished(
               console.log(`🔄 Creating subscription for payment ${paymentId} (Customer: ${payment.customerId})`);
 
               let interval = '1 month'; // Default
+              let times = undefined;
               if (metadata.variant === 'trimestriel') interval = '3 months';
               else if (metadata.product === 'semester_pass') interval = '6 months';
+              else if (metadata.product === 'focus-sos' && metadata.variant === '3x') {
+                interval = '1 month';
+                times = 2; // 2 prélèvements restants après le 1er paiement
+              }
 
               // Calculer la date de début (startDate) pour éviter double facturation immédiate
               // La date de début doit être aujourd'hui + intervalle
@@ -11474,7 +11479,7 @@ exports.processMolliePayment = onMessagePublished(
 
               const startDateStr = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
-              const subscription = await mollieService.createSubscription({
+              const subscriptionData = {
                 customerId: payment.customerId,
                 amount: payment.amount, // { value: "10.00", currency: "CHF" }
                 interval: interval,
@@ -11485,7 +11490,13 @@ exports.processMolliePayment = onMessagePublished(
                   ...metadata,
                   type: 'subscription_renewal', // Marquer les futurs paiements comme renouvellements
                 },
-              });
+              };
+
+              if (times !== undefined) {
+                subscriptionData.times = times;
+              }
+
+              const subscription = await mollieService.createSubscription(subscriptionData);
 
               mollieSubscriptionId = subscription.id;
               console.log(`✅ Subscription created successfully for ${payment.customerId} ` +
@@ -11650,6 +11661,10 @@ exports.createMollieCheckoutSession = onCall(
         'rdv-clarte_unique': 100.00,
         'rdv-clarte_abonnement': 69.00, // Mensuel
 
+        // Focus SOS
+        'focus-sos_unique': 300.00,
+        'focus-sos_3x': 100.00, // Mensuel (3x total)
+
         // Programme Complet
         'complet_mensuel': 30.00, // Mensuel
         'complet_trimestriel': 75.00, // Trimestriel (25/mois)
@@ -11662,7 +11677,7 @@ exports.createMollieCheckoutSession = onCall(
 
       // Déterminer la clé de prix
       let priceKey = product;
-      if (product === 'rdv-clarte' || product === 'complet') {
+      if (product === 'rdv-clarte' || product === 'complet' || product === 'focus-sos') {
         if (!variant) throw new HttpsError('invalid-argument', `Variant required for ${product}`);
         priceKey = `${product}_${variant}`;
       }
@@ -11683,11 +11698,12 @@ exports.createMollieCheckoutSession = onCall(
       }
 
       // Déterminer le type de séquence (First vs One-off)
-      // Abonnements : Complet (mens/trim), RDV Clarté (abo), Semester Pass
+      // Abonnements : Complet (mens/trim), RDV Clarté (abo), Semester Pass, Focus SOS (3x)
       const isSubscription =
       (product === 'complet') ||
       (product === 'rdv-clarte' && variant === 'abonnement') ||
-      (product === 'semester_pass');
+      (product === 'semester_pass') ||
+      (product === 'focus-sos' && variant === '3x');
 
       const sequenceType = isSubscription ? 'first' : 'oneoff';
 
@@ -11716,18 +11732,18 @@ exports.createMollieCheckoutSession = onCall(
       }
 
       // URLs de redirection (allowlist)
-      const DEFAULT_BASE_URL = (product === 'rdv-clarte') ? 'https://cedricv.com' : 'https://fluance.io';
+      const DEFAULT_BASE_URL = (product === 'rdv-clarte' || product === 'focus-sos') ? 'https://cedricv.com' : 'https://fluance.io';
       const baseUrl = getAllowedOrigin(request.data.origin, DEFAULT_BASE_URL);
       const langPrefix = (locale === 'en') ? '/en' : '';
 
       let redirectUrl;
       const gatewayParams = `?utm_nooverride=1&gateway=mollie&product=${product}&variant=${variant || ''}`;
-      if (product === 'rdv-clarte') {
-        redirectUrl = `${baseUrl}${langPrefix}/confirmation${gatewayParams}`;
+      if (product === 'rdv-clarte' || product === 'focus-sos') {
+        redirectUrl = `${baseUrl}${langPrefix}/confirmation/${gatewayParams}`;
       } else if (product === 'presentiel' || product === 'single' || product === 'flow_pass' || product === 'semester_pass') {
-        redirectUrl = `${baseUrl}${langPrefix}/presentiel/reservation-confirmee${gatewayParams}`;
+        redirectUrl = `${baseUrl}${langPrefix}/presentiel/reservation-confirmee/${gatewayParams}`;
       } else {
-        redirectUrl = `${baseUrl}${langPrefix}/success${gatewayParams}`;
+        redirectUrl = `${baseUrl}${langPrefix}/success/${gatewayParams}`;
       }
 
       // Paramètres URL (pour le frontend)
