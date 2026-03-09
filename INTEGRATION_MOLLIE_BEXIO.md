@@ -104,6 +104,11 @@ Si les IDs de taxe Bexio changent (ex: changement de taux légal), mettre à jou
 
 ## 5. Liens de Paiement (Mollie)
 
+### Architecture Technique
+- **Frontend (`cedric-v`)** : Eleventy (11ty) + Modern CSS. Hébergé sur **GitHub Pages**. Les mises à jour sont déployées automatiquement via GitHub Actions (délai de build/cache d'environ 2-3 minutes).
+- **Backend (`fluance-io`)** : Firebase Functions (Node.js). Gère la création des sessions Mollie et la réconciliation Bexio.
+- **Paiements (`Mollie`)** : Hosted Checkout pour les paiements uniques et abonnements (SEPA Direct Debit).
+
 ### Pages de Paiement Manuelles (Cachées)
 Pages créées pour être envoyées manuellement après un appel de qualification :
 
