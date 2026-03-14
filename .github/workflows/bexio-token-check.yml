@@ -1,0 +1,23 @@
+name: Bexio Token Expiration Check
+
+on:
+  schedule:
+    # Run every Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  check-token:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Check Bexio Token Expiration
+        env:
+          BEXIO_API_TOKEN: ${{ secrets.BEXIO_API_TOKEN }}
+        run: node scripts/check-bexio-token.js

@@ -38,6 +38,7 @@ Pour que ces valeurs soient injectées lors du déploiement automatique via GitH
 | `ELEVENTY_ENV` | `dev` ou `prod`. Impacte la minification et certains comportements. |
 | `STRIPE_PUBLISHABLE_KEY` | Clé publique pour initialiser Stripe Checkout. |
 | `FIREBASE_*` | Toute la configuration nécessaire au SDK Firebase Web. |
+| `BEXIO_API_TOKEN` | Jeton API Bexio (utilisé pour la vérification automatique hebdomadaire de l'expiration). |
 
 ---
 
