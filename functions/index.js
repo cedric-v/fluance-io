@@ -11520,6 +11520,93 @@ exports.processMolliePayment = onMessagePublished(
           console.error('❌ Error in Google Sheets integration:', sheetError);
         }
 
+        // 4b. Produits en ligne (Online Products) - Envoi d'email et Audit
+        if (metadata.type === 'order' || metadata.type === 'subscription_first') {
+          // Si c'est un produit en ligne (focus-sos, complet, 21jours etc)
+          const isOnlineProduct = metadata.product === 'focus-sos' || metadata.product === 'complet' || metadata.product === '21jours';
+
+          if (isOnlineProduct && metadata.email) {
+            console.log(`📦 Processing online product ${metadata.product} for ${metadata.email}`);
+            try {
+              const amountCHF = parseFloat(payment.amount.value);
+              const customerEmail = metadata.email;
+              const customerName = `${metadata.firstName || ''} ${metadata.lastName || ''}`.trim();
+              const customerPhone = metadata.phone || '';
+              const langue = metadata.locale === 'en' ? 'en' : 'fr';
+
+              const productsToCreate = [metadata.product];
+              if (metadata.includeSosDos === 'true' || metadata.includeSosDos === true) {
+                productsToCreate.push('sos-dos-cervicales');
+              }
+
+              if (productsToCreate.length > 1) {
+                console.log(`📧 Envoi d'un seul email pour ${productsToCreate.length} produits: ${productsToCreate.join(', ')}`);
+                await createTokenForMultipleProductsAndSendEmail(
+                    customerEmail,
+                    productsToCreate,
+                    30,
+                    process.env.MAILJET_API_KEY,
+                    process.env.MAILJET_API_SECRET,
+                    amountCHF,
+                    customerName,
+                    customerPhone,
+                    '', // address
+                    langue,
+                );
+              } else {
+                console.log(`📧 Envoi d'un email pour le produit unique: ${metadata.product}`);
+                await createTokenAndSendEmail(
+                    customerEmail,
+                    metadata.product,
+                    30,
+                    process.env.MAILJET_API_KEY,
+                    process.env.MAILJET_API_SECRET,
+                    amountCHF,
+                    customerName,
+                    customerPhone,
+                    '', // address
+                    langue,
+                );
+              }
+
+              // Notification Admin
+              if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                await sendOnlineProductPurchaseNotificationAdmin(
+                    {
+                      email: customerEmail,
+                      product: metadata.product,
+                      amount: amountCHF,
+                      customerName: customerName,
+                      phone: customerPhone,
+                      stripeSessionId: paymentId, // Using Mollie Payment ID
+                    },
+                    process.env.MAILJET_API_KEY,
+                    process.env.MAILJET_API_SECRET,
+                );
+              }
+
+              // Audit
+              await db.collection('audit_payments').add({
+                email: customerEmail.toLowerCase().trim(),
+                products: productsToCreate,
+                amount: amountCHF,
+                currency: 'CHF',
+                stripeSessionId: paymentId,
+                stripePaymentIntentId: paymentId,
+                status: 'success',
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                metadata: metadata,
+                system: 'firebase',
+                type: 'online_product',
+                gateway: 'mollie',
+              });
+              console.log(`📊 Audit log created for Mollie payment by ${customerEmail}`);
+            } catch (onlineError) {
+              console.error('❌ Error processing online product for Mollie:', onlineError);
+            }
+          }
+        }
+
         // 5. Confirmer la réservation (Booking) si applicable
         if (payment.metadata && payment.metadata.bookingId) {
           const bookingId = payment.metadata.bookingId;
