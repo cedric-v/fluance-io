@@ -99,7 +99,9 @@ permalink: /cours-en-ligne/5jours/j2/
       }
       function initComments() {
       var db = firebase.firestore();
-      var pageId = encodeURIComponent(window.location.origin + window.location['pathname']);
+      var normalizedPath = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
+      var pageId = encodeURIComponent('https://fluance.io' + normalizedPath);
+      var pageIds = buildCommentPageIds(normalizedPath);
       var COMMENTS_PER_PAGE = 20;
       var allComments = [];
       var currentPage = 1;
@@ -118,8 +120,86 @@ permalink: /cours-en-ligne/5jours/j2/
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }).then(function() {
           document.getElementById("comment-form").reset();
+          loadComments();
         });
       });
+      function buildCommentPageIds(pathname) {
+        var canonicalPath = pathname.endsWith('/') ? pathname : pathname + '/';
+        var urls = [
+          'https://fluance.io' + canonicalPath,
+          'https://fluance.io' + canonicalPath.replace(/\/$/, ''),
+          'https://fluance.io/par/j2'
+        ];
+        var pageIdsByUrl = {};
+        for (var i = 0; i < urls.length; i++) {
+          pageIdsByUrl[urls[i]] = encodeURIComponent(urls[i]);
+        }
+        return Object.keys(pageIdsByUrl).map(function(url) {
+          return pageIdsByUrl[url];
+        });
+      }
+      function getCommentTimestamp(comment) {
+        if (!comment || !comment.timestamp) return 0;
+        try {
+          var date = comment.timestamp.toDate ? comment.timestamp.toDate() : new Date(comment.timestamp);
+          return date.getTime() || 0;
+        } catch (e) {
+          return 0;
+        }
+      }
+      function buildCommentKey(comment, docId) {
+        var name = decodeHTML(comment.name || '').trim().toLowerCase();
+        var text = decodeHTML(comment.text || '').trim().replace(/\s+/g, ' ');
+        var timestamp = getCommentTimestamp(comment);
+        return [name, timestamp, text || docId].join('|');
+      }
+      function normalizeCommentText(name, text) {
+        var normalizedName = decodeHTML(name || '').trim().toLowerCase();
+        var normalizedText = decodeHTML(text || '').trim();
+        if (normalizedName === 'jean' && normalizedText === "' avant l'exercice puis 8") {
+          return "7 avant l'exercice puis 8";
+        }
+        return normalizedText;
+      }
+      function loadComments() {
+        Promise.all(pageIds.map(function(commentPageId) {
+          return db.collection("comments").doc(commentPageId).collection("messages")
+            .orderBy("timestamp", "desc")
+            .get();
+        })).then(function(snapshots) {
+          var commentsByKey = {};
+          snapshots.forEach(function(snapshot) {
+            snapshot.forEach(function(doc) {
+              var data = doc.data();
+              var key = buildCommentKey(data, doc.id);
+              if (!commentsByKey[key] || (data.text || '').length > (commentsByKey[key].text || '').length) {
+                commentsByKey[key] = data;
+              }
+            });
+          });
+          allComments = Object.keys(commentsByKey).map(function(key) {
+            return commentsByKey[key];
+          });
+          allComments.sort(function(a, b) {
+            return getCommentTimestamp(b) - getCommentTimestamp(a);
+          });
+          currentPage = 1;
+          renderCommentsPage(currentPage);
+        }).catch(function(error) {
+          var container = document.getElementById("comments-container");
+          if (container) {
+            container.innerHTML = '';
+            var errorP = document.createElement('p');
+            errorP.style.color = 'red';
+            if (error.code === 'failed-precondition') {
+              errorP.textContent = 'Erreur : Un index Firestore est requis. Vérifiez la console pour le lien de création.';
+            } else {
+              errorP.textContent = 'Erreur lors du chargement des commentaires : ' + error.message;
+            }
+            container.appendChild(errorP);
+          }
+        });
+      }
       function renderCommentsPage(page) {
         var container = document.getElementById("comments-container");
         if (!container) return;
@@ -155,7 +235,7 @@ permalink: /cours-en-ligne/5jours/j2/
         for (var i = 0; i < pageComments.length; i++) {
           var c = pageComments[i];
           // Décoder les entités HTML existantes (textContent est sûr, pas besoin d'échapper)
-          var text = decodeHTML(c.text || '');
+          var text = normalizeCommentText(c.name, c.text);
           var name = decodeHTML(c.name || '');
           // Créer le conteneur du commentaire
           var commentDiv = document.createElement('div');
@@ -249,42 +329,7 @@ permalink: /cours-en-ligne/5jours/j2/
         }
       }
       if (db) {
-        db.collection("comments").doc(pageId).collection("messages")
-          .orderBy("timestamp", "desc")
-          .onSnapshot(function(snapshot) {
-            allComments = [];
-            snapshot.forEach(function(doc) {
-              allComments.push(doc.data());
-            });
-            // Le tri est déjà fait par orderBy, mais on peut le garder pour sécurité
-            allComments.sort(function(a, b) {
-              if (a.timestamp && b.timestamp) {
-                try {
-                  var timeA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-                  var timeB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-                  return timeB - timeA;
-                } catch (e) {
-                  return 0;
-                }
-              }
-              return 0;
-            });
-            currentPage = 1;
-            renderCommentsPage(currentPage);
-          }, function(error) {
-            var container = document.getElementById("comments-container");
-            if (container) {
-              container.innerHTML = '';
-              var errorP = document.createElement('p');
-              errorP.style.color = 'red';
-              if (error.code === 'failed-precondition') {
-                errorP.textContent = 'Erreur : Un index Firestore est requis. Vérifiez la console pour le lien de création.';
-              } else {
-                errorP.textContent = 'Erreur lors du chargement des commentaires : ' + error.message;
-              }
-              container.appendChild(errorP);
-            }
-          });
+        loadComments();
       }
       }
       </script>
@@ -324,4 +369,3 @@ permalink: /cours-en-ligne/5jours/j2/
     </div>
   </div>
 </section>
-
