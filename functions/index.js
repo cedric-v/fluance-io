@@ -37,7 +37,7 @@ const {sendAdminAlert} = require('./services/adminAlerts');
 
 // Import services nouveaux
 const {mollieService} = require('./services/mollieService');
-const {getAllowedOrigin} = require('./services/mollieUtils');
+const {getAllowedOrigin, getRecurringPaymentMethod, isRecurringProduct} = require('./services/mollieUtils');
 const {bexioService} = require('./services/bexioService');
 const {PubSub} = require('@google-cloud/pubsub');
 const {onMessagePublished} = require('firebase-functions/v2/pubsub');
@@ -11301,7 +11301,7 @@ exports.processMolliePayment = onMessagePublished(
     {
       topic: 'process-mollie-payment',
       region: 'europe-west1',
-      secrets: ['MOLLIE_API_KEY', 'BEXIO_API_TOKEN', 'GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_SHEET_ID_SALES', 'BEXIO_ACCOUNT_DEBIT', 'BEXIO_ACCOUNT_CREDIT', 'BEXIO_ACCOUNT_FEES'],
+      secrets: ['MOLLIE_API_KEY', 'BEXIO_API_TOKEN', 'GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_SHEET_ID_SALES', 'BEXIO_ACCOUNT_DEBIT', 'BEXIO_ACCOUNT_CREDIT', 'BEXIO_ACCOUNT_FEES', 'MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       // Timeout plus long pour les opérations externes
       timeoutSeconds: 300,
     },
@@ -11452,62 +11452,117 @@ exports.processMolliePayment = onMessagePublished(
               tax_account_id: feeAccount,
             });
           }
-
-          // 3b. Gestion des abonnements (Subscription Creation)
-          // Si c'est un premier paiement d'abonnement, on crée la souscription Mollie
-          if (metadata.type === 'subscription_first' && payment.customerId) {
-            try {
-              console.log(`🔄 Creating subscription for payment ${paymentId} (Customer: ${payment.customerId})`);
-
-              let interval = '1 month'; // Default
-              let times = undefined;
-              if (metadata.variant === 'trimestriel') interval = '3 months';
-              else if (metadata.product === 'semester_pass') interval = '6 months';
-              else if (metadata.product === 'focus-sos' && metadata.variant === '3x') {
-                interval = '1 month';
-                times = 2; // 2 prélèvements restants après le 1er paiement
-              }
-
-              // Calculer la date de début (startDate) pour éviter double facturation immédiate
-              // La date de début doit être aujourd'hui + intervalle
-              const paidAt = payment.paidAt ? new Date(payment.paidAt) : new Date();
-              const startDate = new Date(paidAt);
-
-              if (interval === '1 month') startDate.setMonth(startDate.getMonth() + 1);
-              else if (interval === '3 months') startDate.setMonth(startDate.getMonth() + 3);
-              else if (interval === '6 months') startDate.setMonth(startDate.getMonth() + 6);
-
-              const startDateStr = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
-
-              const subscriptionData = {
-                customerId: payment.customerId,
-                amount: payment.amount, // { value: "10.00", currency: "CHF" }
-                interval: interval,
-                startDate: startDateStr,
-                description: `Abonnement ${metadata.product} (${interval})`,
-                webhookUrl: `https://europe-west1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/webhookMollie`,
-                metadata: {
-                  ...metadata,
-                  type: 'subscription_renewal', // Marquer les futurs paiements comme renouvellements
-                },
-              };
-
-              if (times !== undefined) {
-                subscriptionData.times = times;
-              }
-
-              const subscription = await mollieService.createSubscription(subscriptionData);
-
-              mollieSubscriptionId = subscription.id;
-              console.log(`✅ Subscription created successfully for ${payment.customerId} ` +
-              `(ID: ${mollieSubscriptionId}) starting ${startDateStr}`);
-            } catch (subError) {
-              console.error('❌ Error creating subscription:', subError);
-            // On continue car le paiement a réussi, mais l'abo a échoué (à monitorer)
-            }
-          }
         } catch (bexioError) {
           console.error('❌ Error in Bexio integration:', bexioError);
+        }
+
+        // 3b. Gestion des abonnements (Subscription Creation)
+        // Découplé de Bexio: un échec comptable ne doit jamais empêcher
+        // la création d'une souscription récurrente.
+        if (metadata.type === 'subscription_first' && payment.customerId) {
+          try {
+            console.log(`🔄 Creating subscription for payment ${paymentId} (Customer: ${payment.customerId})`);
+
+            let interval = '1 month'; // Default
+            let times = undefined;
+            if (metadata.variant === 'trimestriel') interval = '3 months';
+            else if (metadata.product === 'semester_pass') interval = '6 months';
+            else if (metadata.product === 'focus-sos' && metadata.variant === '3x') {
+              interval = '1 month';
+              times = 2; // 2 prélèvements restants après le 1er paiement
+            }
+
+            const paidAt = payment.paidAt ? new Date(payment.paidAt) : new Date();
+            const startDate = new Date(paidAt);
+
+            if (interval === '1 month') startDate.setMonth(startDate.getMonth() + 1);
+            else if (interval === '3 months') startDate.setMonth(startDate.getMonth() + 3);
+            else if (interval === '6 months') startDate.setMonth(startDate.getMonth() + 6);
+
+            const startDateStr = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
+            const mandates = await mollieService.listMandates(payment.customerId);
+            const activeMandates = Array.from(mandates || []).filter((mandate) =>
+              mandate && (mandate.status === 'valid' || mandate.status === 'pending'),
+            );
+
+            if (activeMandates.length === 0) {
+              const subscriptionError = new Error(
+                  `No valid Mollie mandate found for customer ${payment.customerId}. ` +
+                  `First payment method was ${payment.method || 'unknown'}`,
+              );
+              subscriptionError.code = 'missing_mandate';
+              throw subscriptionError;
+            }
+
+            const subscriptionData = {
+              customerId: payment.customerId,
+              amount: payment.amount, // { value: "10.00", currency: "CHF" }
+              interval: interval,
+              startDate: startDateStr,
+              description: `Abonnement ${metadata.product} (${interval}) ${paymentId.slice(-8)}`,
+              webhookUrl: `https://europe-west1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/webhookMollie`,
+              metadata: {
+                ...metadata,
+                type: 'subscription_renewal', // Marquer les futurs paiements comme renouvellements
+              },
+            };
+
+            if (times !== undefined) {
+              subscriptionData.times = times;
+            }
+
+            const subscription = await mollieService.createSubscription(subscriptionData);
+
+            mollieSubscriptionId = subscription.id;
+            console.log(`✅ Subscription created successfully for ${payment.customerId} ` +
+            `(ID: ${mollieSubscriptionId}) starting ${startDateStr}`);
+          } catch (subError) {
+            console.error('❌ Error creating subscription:', subError);
+            try {
+              await db.collection('mollieSubscriptionIssues').doc(paymentId).set({
+                paymentId,
+                customerId: payment.customerId,
+                paymentMethod: payment.method || null,
+                product: metadata.product || null,
+                variant: metadata.variant || null,
+                email: metadata.email || null,
+                issue: 'subscription_creation_failed',
+                error: subError?.message || 'unknown_error',
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              }, {merge: true});
+
+              if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                await sendAdminAlert(
+                    {
+                      subject: 'Echec creation subscription Mollie',
+                      message:
+                      `Le paiement ${paymentId} a bien ete encaisse, mais la souscription ` +
+                      `Mollie n'a pas pu etre creee.\n\n` +
+                      `Produit: ${metadata.product || 'n/a'}\n` +
+                      `Variant: ${metadata.variant || 'n/a'}\n` +
+                      `Email: ${metadata.email || 'n/a'}\n` +
+                      `Customer: ${payment.customerId}\n` +
+                      `Methode de paiement: ${payment.method || 'unknown'}\n` +
+                      `Erreur: ${subError?.message || 'unknown_error'}`,
+                      severity: 'critical',
+                      metadata: {
+                        paymentId,
+                        customerId: payment.customerId,
+                        paymentMethod: payment.method || null,
+                        product: metadata.product || null,
+                        variant: metadata.variant || null,
+                        error: subError?.message || 'unknown_error',
+                      },
+                    },
+                    process.env.MAILJET_API_KEY,
+                    process.env.MAILJET_API_SECRET,
+                );
+              }
+            } catch (alertError) {
+              console.error('❌ Error recording Mollie subscription issue:', alertError);
+            }
+            // On continue car le paiement a réussi, mais l'abo a échoué (à monitorer)
+          }
         }
 
         // 4. Logique Google Sheets
@@ -11786,11 +11841,7 @@ exports.createMollieCheckoutSession = onCall(
 
       // Déterminer le type de séquence (First vs One-off)
       // Abonnements : Complet (mens/trim), RDV Clarté (abo), Semester Pass, Focus SOS (3x)
-      const isSubscription =
-      (product === 'complet') ||
-      (product === 'rdv-clarte' && variant === 'abonnement') ||
-      (product === 'semester_pass') ||
-      (product === 'focus-sos' && variant === '3x');
+      const isSubscription = isRecurringProduct(product, variant);
 
       const sequenceType = isSubscription ? 'first' : 'oneoff';
 
@@ -11840,6 +11891,7 @@ exports.createMollieCheckoutSession = onCall(
 
 
       try {
+        const recurringPaymentMethod = getRecurringPaymentMethod(product, variant);
         const paymentPayload = {
           amount: {
             currency: 'CHF',
@@ -11866,6 +11918,10 @@ exports.createMollieCheckoutSession = onCall(
         }
         if (sequenceType === 'first') {
           paymentPayload.sequenceType = 'first';
+        }
+        if (recurringPaymentMethod) {
+          paymentPayload.method = recurringPaymentMethod;
+          paymentPayload.metadata.recurringPaymentMethod = recurringPaymentMethod;
         }
 
         const payment = await mollieService.createPayment(paymentPayload);

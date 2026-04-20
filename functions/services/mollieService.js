@@ -82,6 +82,31 @@ class MollieService {
       throw error;
     }
   }
+
+  /**
+   * List mandates for a customer
+   * @param {string} customerId
+   * @param {number} limit
+   * @returns {Promise<Object>}
+   */
+  async listMandates(customerId, limit = 50) {
+    this.initialize();
+    try {
+      if (!customerId) {
+        throw new Error('customerId is required for listing mandates');
+      }
+
+      const mandates = await this.mollieClient.customerMandates.list({
+        customerId,
+        limit,
+      });
+      return mandates;
+    } catch (error) {
+      console.error('Error listing Mollie mandates:', error);
+      throw error;
+    }
+  }
+
   /**
    * Create a subscription
    * @param {Object} subscriptionData - must include customerId
@@ -96,7 +121,7 @@ class MollieService {
         throw new Error('customerId is required for subscription');
       }
 
-      const subscription = await this.mollieClient.customers_subscriptions.create({
+      const subscription = await this.mollieClient.customerSubscriptions.create({
         customerId,
         ...data,
       });
