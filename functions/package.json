@@ -32,7 +32,8 @@
     "globals": "^17.5.0"
   },
   "overrides": {
-    "fast-xml-parser": "5.4.2"
+    "@tootallnate/once": "3.0.1",
+    "fast-xml-parser": "5.5.7"
   },
   "private": true
 }
