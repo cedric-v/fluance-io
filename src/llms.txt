@@ -108,6 +108,7 @@ The site includes:
 - Human-readable API documentation is available at `/docs/api/`
 - Machine-readable API description is available at `/docs/api/openapi.json`
 - Agent skills discovery is available at `/.well-known/agent-skills/index.json`
+- MCP server card is available at `/.well-known/mcp/server-card.json`
 - Browser-side WebMCP tools are published for fit identification, class listing, and opening the booking flow
 - Public same-origin API routes exist under `/api/*`
 
@@ -116,6 +117,8 @@ The site includes:
 - The public website is deployed as static files on GitHub Pages
 - The website booking frontend uses legacy direct Cloud Functions endpoints in production
 - Same-origin `/api/*` routes described in repository config are not browser-routable on production GitHub Pages without an additional reverse proxy or edge layer
+- The public `/.well-known/*` files are live, but `/.well-known/api-catalog` is served with a generic content type because GitHub Pages cannot force `application/linkset+json` on an extensionless path
+- GitHub Pages does not allow Fluance to attach custom `Link` response headers on `/`
 - Dedicated markdown resources for agents exist under `/agent/*.md`
 - The site does not yet support full HTTP content negotiation returning markdown on the same page URLs when `Accept: text/markdown` is sent
 - No OAuth/OIDC discovery metadata is published yet because no dedicated OAuth/OIDC authorization server is currently exposed for this public API surface

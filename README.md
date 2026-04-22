@@ -192,6 +192,7 @@ Important deployment note:
 - Cloud Functions can still be deployed independently with Firebase and called directly from the browser.
 - If you want production browser URLs like `/api/*` to work on `https://fluance.io`, you need an additional reverse proxy or edge layer in front of GitHub Pages.
 - Hidden files and directories such as `/.well-known/*` are excluded by default by the GitHub Pages artifact upload action unless `include-hidden-files: true` is set in `.github/workflows/deploy.yml`.
+- The `/.well-known/*` resources are now published on the live site, but GitHub Pages still does not let us attach custom response headers to `/` or force the ideal media type for extensionless files such as `/.well-known/api-catalog`.
 
 #### GitHub Pages (via GitHub Actions)
 
