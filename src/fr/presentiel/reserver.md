@@ -4,6 +4,7 @@ title: Réserver un cours - Cours en présentiel
 description: "Réservez votre place pour les cours Fluance en présentiel à Fribourg"
 locale: fr
 permalink: /presentiel/reserver/
+markdownAlternate: /agent/presentiel-reserver-fr.md
 ---
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16">

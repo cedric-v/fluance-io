@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "identify-fluance-fit",
+      "type": "skill-md",
+      "description": "Identify who Fluance can help, explain why, and suggest the most relevant Fluance format or course.",
+      "url": "/.well-known/agent-skills/identify-fluance-fit/SKILL.md",
+      "digest": "sha256:6367802bc79f01164e8d283f32cb983f233783dd63c2713ad34119e39d6df3e2"
+    },
+    {
+      "name": "list-fluance-classes",
+      "type": "skill-md",
+      "description": "List currently available Fluance in-person classes with dates, locations, prices, and remaining spots.",
+      "url": "/.well-known/agent-skills/list-fluance-classes/SKILL.md",
+      "digest": "sha256:40a3b0c2975e27f25dcf066adfb9feb8d7a60c432182bef12b25461c4d546941"
+    },
+    {
+      "name": "book-fluance-session",
+      "type": "skill-md",
+      "description": "Open the Fluance booking flow for a selected class and explain the required information to complete the reservation.",
+      "url": "/.well-known/agent-skills/book-fluance-session/SKILL.md",
+      "digest": "sha256:d7d2c461c07c33c37ae23b2f185b5de61b884b432a46fe9ee44ef52f9b05849f"
+    }
+  ]
+}

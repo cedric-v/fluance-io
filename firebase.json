@@ -25,9 +25,142 @@
       {
         "source": "/firebase-web-authn-api",
         "function": "ext-firebase-web-authn-fu06-api"
+      },
+      {
+        "source": "/api/courses",
+        "function": "getAvailableCourses"
+      },
+      {
+        "source": "/api/course-status",
+        "function": "getCourseStatus"
+      },
+      {
+        "source": "/api/pass-status",
+        "function": "checkUserPass"
+      },
+      {
+        "source": "/api/bookings",
+        "function": "bookCourse"
+      },
+      {
+        "source": "/api/partner-code",
+        "function": "validatePartnerCode"
+      },
+      {
+        "source": "/api/status",
+        "function": "apiStatus"
       }
     ],
     "headers": [
+      {
+        "source": "/",
+        "headers": [
+          {
+            "key": "Link",
+            "value": "</.well-known/api-catalog>; rel=\"api-catalog\", </docs/api/>; rel=\"service-doc\", </agent/home.md>; rel=\"alternate\"; type=\"text/markdown\", </.well-known/agent-skills/index.json>; rel=\"describedby\"; type=\"application/json\""
+          },
+          {
+            "key": "Vary",
+            "value": "Accept"
+          }
+        ]
+      },
+      {
+        "source": "/fr",
+        "headers": [
+          {
+            "key": "Link",
+            "value": "</.well-known/api-catalog>; rel=\"api-catalog\", </docs/api/>; rel=\"service-doc\", </agent/home.md>; rel=\"alternate\"; type=\"text/markdown\", </.well-known/agent-skills/index.json>; rel=\"describedby\"; type=\"application/json\""
+          },
+          {
+            "key": "Vary",
+            "value": "Accept"
+          }
+        ]
+      },
+      {
+        "source": "/fr/**",
+        "headers": [
+          {
+            "key": "Link",
+            "value": "</.well-known/api-catalog>; rel=\"api-catalog\", </docs/api/>; rel=\"service-doc\", </.well-known/agent-skills/index.json>; rel=\"describedby\"; type=\"application/json\""
+          }
+        ]
+      },
+      {
+        "source": "/en",
+        "headers": [
+          {
+            "key": "Link",
+            "value": "</.well-known/api-catalog>; rel=\"api-catalog\", </docs/api/>; rel=\"service-doc\", </agent/home.md>; rel=\"alternate\"; type=\"text/markdown\", </.well-known/agent-skills/index.json>; rel=\"describedby\"; type=\"application/json\""
+          },
+          {
+            "key": "Vary",
+            "value": "Accept"
+          }
+        ]
+      },
+      {
+        "source": "/en/**",
+        "headers": [
+          {
+            "key": "Link",
+            "value": "</.well-known/api-catalog>; rel=\"api-catalog\", </docs/api/>; rel=\"service-doc\", </.well-known/agent-skills/index.json>; rel=\"describedby\"; type=\"application/json\""
+          }
+        ]
+      },
+      {
+        "source": "/.well-known/api-catalog",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/linkset+json; profile=\"https://www.rfc-editor.org/info/rfc9727\""
+          },
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
+      },
+      {
+        "source": "/.well-known/agent-skills/index.json",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json; charset=utf-8"
+          },
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
+      },
+      {
+        "source": "/.well-known/mcp/server-card.json",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json; charset=utf-8"
+          },
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
+      },
+      {
+        "source": "/.well-known/agent-skills/**/SKILL.md",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "text/markdown; charset=utf-8"
+          },
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
+      },
       {
         "source": "**/*.@(jpg|jpeg|gif|png|webp|svg|ico|css|js|woff2|woff|ttf|otf)",
         "headers": [
@@ -40,6 +173,19 @@
       {
         "source": "**/*.html",
         "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/agent/**",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "text/markdown; charset=utf-8"
+          },
           {
             "key": "Cache-Control",
             "value": "public, max-age=3600, must-revalidate"

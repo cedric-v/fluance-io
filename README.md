@@ -185,6 +185,13 @@ Output:
 
 You can deploy the content of `_site/` **as a static website**. The project is configured to use **GitHub Pages** via GitHub Actions.
 
+Important deployment note:
+
+- The production website is served by GitHub Pages, not Firebase Hosting.
+- As a result, Firebase Hosting rewrites and response headers defined in `firebase.json` do not apply to the public static site in production.
+- Cloud Functions can still be deployed independently with Firebase and called directly from the browser.
+- If you want production browser URLs like `/api/*` to work on `https://fluance.io`, you need an additional reverse proxy or edge layer in front of GitHub Pages.
+
 #### GitHub Pages (via GitHub Actions)
 
 Recommended: automatically build and deploy the site on each push to `main` using GitHub Actions.

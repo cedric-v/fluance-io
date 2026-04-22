@@ -9930,6 +9930,29 @@ exports.getAvailableCourses = onRequest(
 );
 
 /**
+ * Endpoint santé léger pour discovery agent/API catalog
+ */
+exports.apiStatus = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      return res.json({
+        ok: true,
+        service: 'fluance-booking-api',
+        timestamp: new Date().toISOString(),
+        endpoints: [
+          '/api/courses',
+          '/api/course-status',
+          '/api/pass-status',
+          '/api/bookings',
+        ],
+      });
+    },
+);
+
+/**
  * Vérifie si un utilisateur a un pass actif (Flow Pass ou Semestriel)
  * Appelé par le frontend pour afficher le statut avant réservation
  */

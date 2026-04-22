@@ -1,0 +1,25 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://fluance.io/api",
+      "service-desc": [
+        {
+          "href": "https://fluance.io/docs/api/openapi.json",
+          "type": "application/openapi+json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://fluance.io/docs/api/",
+          "type": "text/html"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://fluance.io/api/status",
+          "type": "application/json"
+        }
+      ]
+    }
+  ]
+}

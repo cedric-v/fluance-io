@@ -1,0 +1,191 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Fluance Booking API",
+    "version": "1.0.0",
+    "description": "API used by fluance.io for in-person course discovery, pass lookup, and booking."
+  },
+  "servers": [
+    {
+      "url": "https://fluance.io"
+    }
+  ],
+  "paths": {
+    "/api/courses": {
+      "get": {
+        "summary": "List available Fluance courses",
+        "operationId": "listAvailableCourses",
+        "responses": {
+          "200": {
+            "description": "Available courses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailableCoursesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/course-status": {
+      "get": {
+        "summary": "Get the status of one course",
+        "operationId": "getCourseStatus",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pass-status": {
+      "get": {
+        "summary": "Check whether a user has an active pass",
+        "operationId": "checkPassStatus",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pass status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bookings": {
+      "post": {
+        "summary": "Create a Fluance booking",
+        "operationId": "bookCourse",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status": {
+      "get": {
+        "summary": "API health endpoint",
+        "operationId": "apiStatus",
+        "responses": {
+          "200": {
+            "description": "Health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Course": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "date": { "type": "string" },
+          "time": { "type": "string" },
+          "location": { "type": "string" },
+          "maxCapacity": { "type": "number" },
+          "spotsRemaining": { "type": "number" },
+          "isFull": { "type": "boolean" },
+          "price": { "type": "number" }
+        }
+      },
+      "AvailableCoursesResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "courses": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Course" }
+          }
+        }
+      },
+      "BookingRequest": {
+        "type": "object",
+        "required": ["courseId", "email", "firstName", "lastName"],
+        "properties": {
+          "courseId": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "firstName": { "type": "string" },
+          "lastName": { "type": "string" },
+          "phone": { "type": "string" },
+          "paymentMethod": { "type": "string" },
+          "pricingOption": { "type": "string" },
+          "usePass": { "type": "boolean" },
+          "passId": { "type": "string" }
+        }
+      },
+      "ApiStatusResponse": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "service": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "endpoints": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

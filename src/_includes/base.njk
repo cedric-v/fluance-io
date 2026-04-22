@@ -29,6 +29,10 @@
     <meta name="robots" content="{{ robots }}">
     {% endif %}
 
+    {% if markdownAlternate %}
+    <link rel="alternate" type="text/markdown" href="https://fluance.io{{ markdownAlternate }}">
+    {% endif %}
+
     {% if redirectTo %}
     <meta http-equiv="refresh" content="0; url={{ redirectTo | relativeUrl }}">
     {% endif %}
@@ -341,6 +345,7 @@
       }
     </script>
     <!-- Fin des scripts de suivi -->
+    <script src="{{ '/assets/js/agent-tools.js' | relativeUrl }}" defer></script>
 </head>
 <body class="bg-[#fdfaf6] text-[#1f1f1f] antialiased">
     <!-- Google Tag Manager (noscript) -->

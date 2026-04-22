@@ -4,6 +4,7 @@ title: Book a Class - In-Person Classes
 description: "Réservez facilement votre place pour les cours Fluance en présentiel près de Fribourg. Parcourez le planning hebdomadaire et inscrivez-vous à votre séance."
 locale: en
 permalink: /en/presentiel/reserver/
+markdownAlternate: /agent/presentiel-reserver-en.md
 ---
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16">

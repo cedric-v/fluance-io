@@ -157,6 +157,7 @@
   let currentStep = 1; // 1: email, 2: pass/pricing, 3: infos, 4: payment
   let storedFirstName = ''; // Prénom stocké pour pré-remplir les formulaires
   let storedLastName = ''; // Nom stocké pour pré-remplir les formulaires
+  let hasOpenedPreselectedCourse = false;
 
   /**
    * Formate une date au format DD/MM/YYYY en format lisible selon la locale
@@ -256,6 +257,8 @@
         });
       });
 
+      maybeOpenPreselectedCourse(coursesToDisplay);
+
     } catch (error) {
       console.error('Error loading courses:', error);
       const errorText = currentLocale === 'en'
@@ -273,6 +276,30 @@
         </div>
       `;
     }
+  }
+
+  function getPreselectedCourseId() {
+    const urlCourseId = new URLSearchParams(window.location.search).get('courseId');
+    const storedCourseId = sessionStorage.getItem('fluance_preselected_course_id');
+    return urlCourseId || storedCourseId || null;
+  }
+
+  function clearPreselectedCourseId() {
+    sessionStorage.removeItem('fluance_preselected_course_id');
+  }
+
+  function maybeOpenPreselectedCourse(courses) {
+    if (hasOpenedPreselectedCourse) return;
+
+    const preselectedCourseId = getPreselectedCourseId();
+    if (!preselectedCourseId) return;
+
+    const matchingCourse = courses.find((course) => course.id === preselectedCourseId);
+    if (!matchingCourse) return;
+
+    hasOpenedPreselectedCourse = true;
+    clearPreselectedCourseId();
+    openBookingModal(matchingCourse.id, matchingCourse);
   }
 
   /**
@@ -1706,6 +1733,7 @@
     closeBookingModal,
     goBackToEmail,
     PRICING_OPTIONS,
+    getCurrentLocale,
   };
 
   // Initialiser au chargement de la page

@@ -756,6 +756,9 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("src/robots.txt");
   eleventyConfig.addPassthroughCopy("src/llms.txt");
   eleventyConfig.addPassthroughCopy("src/site.webmanifest");
+  eleventyConfig.addPassthroughCopy({ "src/.well-known": ".well-known" });
+  eleventyConfig.addPassthroughCopy({ "src/agent": "agent" });
+  eleventyConfig.addPassthroughCopy({ "src/docs/api/openapi.json": "docs/api/openapi.json" });
   eleventyConfig.addPassthroughCopy({ "src/CNAME": "CNAME" });
   eleventyConfig.addPassthroughCopy({ "src/.nojekyll": ".nojekyll" });
   // Copie de la favicon à la racine

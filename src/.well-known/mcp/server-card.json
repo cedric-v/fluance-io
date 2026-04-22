@@ -1,0 +1,25 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/server-card/v1.0",
+  "version": "1.0",
+  "protocolVersion": "2025-06-18",
+  "serverInfo": {
+    "name": "fluance-webmcp",
+    "title": "Fluance WebMCP",
+    "version": "1.0.0",
+    "description": "Browser-exposed WebMCP tools for discovering Fluance courses, evaluating fit, and opening the booking flow."
+  },
+  "homepageUrl": "https://fluance.io/presentiel/reserver/",
+  "transports": [
+    {
+      "type": "webmcp",
+      "url": "https://fluance.io/presentiel/reserver/",
+      "description": "Requires a compatible browser agent with WebMCP support."
+    }
+  ],
+  "capabilities": {
+    "tools": true
+  },
+  "authentication": {
+    "type": "none"
+  }
+}
