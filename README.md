@@ -191,6 +191,7 @@ Important deployment note:
 - As a result, Firebase Hosting rewrites and response headers defined in `firebase.json` do not apply to the public static site in production.
 - Cloud Functions can still be deployed independently with Firebase and called directly from the browser.
 - If you want production browser URLs like `/api/*` to work on `https://fluance.io`, you need an additional reverse proxy or edge layer in front of GitHub Pages.
+- Hidden files and directories such as `/.well-known/*` are excluded by default by the GitHub Pages artifact upload action unless `include-hidden-files: true` is set in `.github/workflows/deploy.yml`.
 
 #### GitHub Pages (via GitHub Actions)
 

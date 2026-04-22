@@ -110,6 +110,23 @@ jobs:
               echo "  ✅ Fichier présent: $file"
             fi
           done
+
+          # Vérifier les artefacts cachés nécessaires au déploiement GitHub Pages
+          HIDDEN_CRITICAL_FILES=(
+            ".nojekyll"
+            ".well-known/api-catalog"
+            ".well-known/agent-skills/index.json"
+            ".well-known/mcp/server-card.json"
+          )
+
+          for file in "${HIDDEN_CRITICAL_FILES[@]}"; do
+            if [ ! -f "_site/$file" ]; then
+              echo "  ❌ Fichier caché manquant: $file"
+              MISSING_FILES=$((MISSING_FILES + 1))
+            else
+              echo "  ✅ Fichier caché présent: $file"
+            fi
+          done
           
           # Vérifier qu'il y a des fichiers HTML
           HTML_COUNT=$(find _site -name "*.html" -type f | wc -l)
@@ -131,6 +148,7 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+          include-hidden-files: true
 
   validate:
     needs: build
