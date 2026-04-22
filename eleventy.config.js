@@ -798,6 +798,7 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.on('eleventy.after', async () => {
     const emailTemplatesDir = path.join(__dirname, '_site', 'emails');
     const functionsEmailsDir = path.join(__dirname, 'functions', 'emails');
+    const robotsMetaTag = '<meta name="robots" content="noindex, nofollow">';
 
     if (fs.existsSync(emailTemplatesDir)) {
       // Créer le dossier functions/emails s'il n'existe pas
@@ -811,7 +812,14 @@ module.exports = function (eleventyConfig) {
         if (file.endsWith('.html')) {
           const srcPath = path.join(emailTemplatesDir, file);
           const destPath = path.join(functionsEmailsDir, file);
-          fs.copyFileSync(srcPath, destPath);
+          let html = fs.readFileSync(srcPath, 'utf8');
+
+          if (!html.includes('name="robots"')) {
+            html = html.replace('<head>', `<head>${robotsMetaTag}`);
+            fs.writeFileSync(srcPath, html, 'utf8');
+          }
+
+          fs.writeFileSync(destPath, html, 'utf8');
           console.log(`📧 Copied email template: ${file}`);
         }
       });

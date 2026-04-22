@@ -1,9 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /emails/
+Disallow: /admin/
+Disallow: /membre/
 Content-Signal: ai-train=no, search=yes, ai-input=yes
 
 Sitemap: https://fluance.io/sitemap.xml
-
 
 
 

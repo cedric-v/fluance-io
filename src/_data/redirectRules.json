@@ -36,6 +36,10 @@
         "to": "/a-propos/histoire-cedric/"
     },
     {
+        "from": "/fr/presentiel/reserver",
+        "to": "/presentiel/reserver/"
+    },
+    {
         "from": "/par/presentation",
         "to": "/"
     },
