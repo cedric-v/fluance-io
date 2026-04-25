@@ -696,27 +696,9 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
       // Ne pas bloquer le processus
     }
 
-    // Envoyer l'email de confirmation via l'extension Firebase
+    // Envoyer l'email de confirmation transactionnel
     try {
-      // Créer un token de désinscription
-      const cancellationTokenResult = await createCancellationToken(db, bookingId, 30);
-      const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
-
-      await db.collection('mail').add({
-        to: booking.email,
-        template: {
-          name: 'booking-confirmation',
-          data: {
-            firstName: booking.firstName,
-            courseName: booking.courseName,
-            courseDate: booking.courseDate,
-            courseTime: booking.courseTime,
-            location: booking.courseLocation,
-            bookingId: bookingId,
-            cancellationUrl: cancellationUrl,
-          },
-        },
-      });
+      await queueBookingConfirmationEmail(db, booking);
     } catch (emailError) {
       console.error('Error sending confirmation email:', emailError);
     }
@@ -1132,6 +1114,57 @@ async function createCancellationToken(db, bookingId, expirationDays = 30) {
 }
 
 /**
+ * Enfile un email de confirmation transactionnel pour une réservation.
+ * Cet email ne dépend pas du double opt-in marketing.
+ * @param {Object} db - Instance Firestore
+ * @param {Object} booking - Réservation
+ * @param {Object|null} course - Données du cours (optionnel)
+ * @returns {Promise<Object>}
+ */
+async function queueBookingConfirmationEmail(db, booking, course = null) {
+  try {
+    const bookingId = booking?.bookingId;
+    if (!bookingId) {
+      return {success: false, error: 'BOOKING_ID_REQUIRED'};
+    }
+
+    if (booking.bookingConfirmationEmailSent) {
+      return {success: true, alreadySent: true};
+    }
+
+    const cancellationTokenResult = await createCancellationToken(db, bookingId, 30);
+    const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
+
+    await db.collection('mail').add({
+      to: booking.email,
+      template: {
+        name: 'booking-confirmation',
+        data: {
+          firstName: booking.firstName || '',
+          courseName: course?.title || booking.courseName || 'Cours Fluance',
+          courseDate: course?.date || booking.courseDate || '',
+          courseTime: course?.time || booking.courseTime || '',
+          location: course?.location || booking.courseLocation || '',
+          bookingId: bookingId,
+          paymentMethod: booking.paymentMethod || 'Non spécifié',
+          cancellationUrl: cancellationUrl,
+        },
+      },
+    });
+
+    await db.collection('bookings').doc(bookingId).update({
+      bookingConfirmationEmailSent: true,
+      bookingConfirmationEmailSentAt: new Date(),
+    });
+
+    return {success: true, alreadySent: false};
+  } catch (error) {
+    console.error('Error queueing booking confirmation email:', error);
+    return {success: false, error: error.message};
+  }
+}
+
+/**
  * Valide et utilise un token de désinscription
  * @param {Object} db - Instance Firestore
  * @param {string} token - Token de désinscription
@@ -1213,6 +1246,7 @@ module.exports = {
   removeFromWaitlist,
   transferBooking,
   createCancellationToken,
+  queueBookingConfirmationEmail,
   validateCancellationToken,
   markCancellationTokenAsUsed,
 };

@@ -467,6 +467,38 @@ async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) 
 }
 
 /**
+ * Envoie ou reprogramme l'email transactionnel de confirmation d'une réservation.
+ * Ce message reste indépendant du double opt-in marketing.
+ */
+async function sendBookingConfirmationEmail(db, bookingId, booking = null, course = null) {
+  let resolvedBooking = booking;
+  if (!resolvedBooking) {
+    const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+    if (!bookingDoc.exists) {
+      throw new Error(`Booking ${bookingId} not found`);
+    }
+    resolvedBooking = bookingDoc.data();
+  }
+
+  if (!course && resolvedBooking.courseId) {
+    const courseDoc = await db.collection('courses').doc(resolvedBooking.courseId).get();
+    course = courseDoc.exists ? courseDoc.data() : null;
+  }
+
+  const emailResult = await bookingService.queueBookingConfirmationEmail(
+      db,
+      resolvedBooking,
+      course,
+  );
+
+  if (!emailResult.success) {
+    throw new Error(emailResult.error || 'BOOKING_CONFIRMATION_EMAIL_FAILED');
+  }
+
+  return emailResult;
+}
+
+/**
  * Envoie une notification admin pour un achat de pass (Flow Pass ou Pass Semestriel)
  */
 async function sendPassPurchaseNotificationAdmin(passData, apiKey, apiSecret) {
@@ -5049,7 +5081,10 @@ exports.confirmNewsletterOptIn = onCall(
         const now = new Date();
         const expiresAt = tokenData.expiresAt.toDate();
         if (now > expiresAt) {
-          throw new HttpsError('deadline-exceeded', 'Ce lien de confirmation a expiré. Veuillez vous réinscrire.');
+          throw new HttpsError(
+              'deadline-exceeded',
+              'Ce lien de confirmation a expiré. Votre réservation reste inchangée. Demandez simplement un nouveau lien.',
+          );
         }
 
         const auth = Buffer.from(`${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
@@ -5235,31 +5270,15 @@ exports.confirmNewsletterOptIn = onCall(
                   const booking = bookingDoc.data();
                   const courseDoc = await db.collection('courses').doc(booking.courseId).get();
                   const course = courseDoc.exists ? courseDoc.data() : null;
-
-                  // Créer un token de désinscription
-                  const cancellationTokenResult =
-                  await bookingService.createCancellationToken(db, tokenData.bookingId, 30);
-                  const cancellationUrl = cancellationTokenResult.success ?
-                  cancellationTokenResult.cancellationUrl : null;
-
-                  // Envoyer l'email de confirmation du cours
-                  await db.collection('mail').add({
-                    to: email.toLowerCase().trim(),
-                    template: {
-                      name: 'booking-confirmation',
-                      data: {
-                        firstName: booking.firstName || tokenData.name || '',
-                        courseName: course?.title || booking.courseName || 'Cours Fluance',
-                        courseDate: course?.date || booking.courseDate || '',
-                        courseTime: course?.time || booking.courseTime || '',
-                        location: course?.location || booking.courseLocation || '',
-                        bookingId: tokenData.bookingId,
-                        paymentMethod: booking.paymentMethod || 'Non spécifié',
-                        cancellationUrl: cancellationUrl,
-                      },
-                    },
-                  });
-                  console.log(`📧 Course confirmation email sent to ${email} after opt-in confirmation`);
+                  if (!booking.bookingConfirmationEmailSent) {
+                    await sendBookingConfirmationEmail(
+                        db,
+                        tokenData.bookingId,
+                        booking,
+                        course,
+                    );
+                    console.log(`📧 Course confirmation email sent to ${email} after opt-in confirmation`);
+                  }
                 }
               } catch (bookingError) {
                 console.error('Error sending course confirmation email:', bookingError);
@@ -8443,8 +8462,8 @@ exports.registerPresentielCourse = onRequest(
           const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
           `Merci pour votre inscription au cours "${courseName || 'Cours Fluance'}"` +
           `${courseDate ? ' du ' + courseDate : ''}${courseTime ? ' à ' + courseTime : ''} !\n\n` +
-          `Pour finaliser votre inscription et recevoir les informations importantes ` +
-          `concernant vos prochains cours, veuillez confirmer votre adresse email :\n\n` +
+          `Votre réservation est bien enregistrée. Pour confirmer votre adresse email ` +
+          `et faciliter les prochains échanges, veuillez cliquer sur ce lien :\n\n` +
           `${confirmationUrl}\n\n` +
           `Ce lien est valide pendant 7 jours.\n\n` +
           `À très bientôt en cours !\n\n` +
@@ -8603,24 +8622,35 @@ async function handleDoubleOptInForBooking(db, email, firstName, courseId, booki
 
     if (!mailjetApiKey || !mailjetApiSecret) {
       console.warn('MailJet credentials not available, skipping double opt-in');
-      return;
+      return {status: 'skipped_missing_credentials'};
     }
 
     // Vérifier si une confirmation existe déjà
     const existingConfirmation = await db.collection('newsletterConfirmations')
         .where('email', '==', normalizedEmail)
         .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
-        .limit(1)
         .get();
 
+    const now = new Date();
     if (!existingConfirmation.empty) {
-      const confirmationData = existingConfirmation.docs[0].data();
-      if (confirmationData.confirmed === true) {
-        // Déjà confirmé, pas besoin de double opt-in
-        return;
+      for (const doc of existingConfirmation.docs) {
+        const confirmationData = doc.data();
+        if (confirmationData.confirmed === true) {
+          return {status: 'already_confirmed'};
+        }
+
+        const expiresAt = confirmationData.expiresAt?.toDate ?
+          confirmationData.expiresAt.toDate() :
+          (confirmationData.expiresAt ? new Date(confirmationData.expiresAt) : null);
+
+        if (expiresAt && now <= expiresAt) {
+          return {
+            status: 'active_token_exists',
+            token: doc.id,
+            expiresAt: expiresAt,
+          };
+        }
       }
-      // Confirmation en attente, ne pas renvoyer d'email
-      return;
     }
 
     // Récupérer les infos du cours
@@ -8744,8 +8774,8 @@ async function handleDoubleOptInForBooking(db, email, firstName, courseId, booki
     const emailText = `Bonjour${firstName ? ' ' + firstName : ''},\n\n` +
       `Merci pour votre réservation au cours "${course?.title || 'Cours Fluance'}"` +
       `${course?.date ? ' du ' + course.date : ''}${course?.time ? ' à ' + course.time : ''} !\n\n` +
-      `Pour finaliser votre réservation et recevoir les informations importantes ` +
-      `concernant vos prochains cours, veuillez confirmer votre adresse email :\n\n` +
+      `Votre réservation est bien enregistrée. Pour confirmer votre adresse email ` +
+      `et faciliter les prochains échanges, veuillez cliquer sur ce lien :\n\n` +
       `${confirmationUrl}\n\n` +
       `Ce lien est valide pendant 7 jours.\n\n` +
       `À très bientôt en cours !\n\n` +
@@ -8776,11 +8806,98 @@ async function handleDoubleOptInForBooking(db, email, firstName, courseId, booki
         mailjetApiKey,
         mailjetApiSecret,
     );
+    return {
+      status: 'email_sent',
+      token: confirmationToken,
+      expiresAt: expirationDate,
+    };
   } catch (error) {
     console.error('Error handling double opt-in for booking:', error);
     // Ne pas bloquer la réservation en cas d'erreur
+    return {status: 'error', error: error.message};
   }
 }
+
+exports.resendBookingOptInConfirmation = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+      cors: true,
+    },
+    async (request) => {
+      const {email} = request.data || {};
+
+      if (!email) {
+        throw new HttpsError('invalid-argument', 'Email is required');
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new HttpsError('invalid-argument', 'Invalid email format');
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      const bookingsSnapshot = await db.collection('bookings')
+          .where('email', '==', normalizedEmail)
+          .get();
+
+      if (bookingsSnapshot.empty) {
+        throw new HttpsError('not-found', 'Aucune réservation trouvée pour cet email');
+      }
+
+      const candidateBookings = bookingsSnapshot.docs
+          .map((doc) => doc.data())
+          .filter((booking) => ['pending', 'pending_cash', 'confirmed'].includes(booking.status));
+
+      if (candidateBookings.length === 0) {
+        throw new HttpsError('not-found', 'Aucune réservation active trouvée pour cet email');
+      }
+
+      candidateBookings.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+
+      const latestBooking = candidateBookings[0];
+      const result = await handleDoubleOptInForBooking(
+          db,
+          normalizedEmail,
+          latestBooking.firstName || '',
+          latestBooking.courseId,
+          latestBooking.bookingId,
+      );
+
+      if (result?.status === 'already_confirmed') {
+        return {
+          success: true,
+          status: 'already_confirmed',
+          message: 'Adresse déjà confirmée',
+        };
+      }
+
+      if (result?.status === 'active_token_exists') {
+        return {
+          success: true,
+          status: 'active_token_exists',
+          message: 'Un lien actif a déjà été envoyé',
+        };
+      }
+
+      if (result?.status === 'email_sent') {
+        return {
+          success: true,
+          status: 'email_sent',
+          message: 'Un nouveau lien de confirmation a été envoyé',
+        };
+      }
+
+      throw new HttpsError(
+          'internal',
+          result?.error || 'Impossible de renvoyer le lien de confirmation',
+      );
+    },
+);
 
 /**
  * Envoie un rappel par email 1 jour avant chaque cours
@@ -10370,97 +10487,43 @@ exports.bookCourse = onRequest(
             });
           }
 
-          // Vérifier le statut de double opt-in et envoyer email de confirmation
           try {
-            const existingConfirmation = await db
-                .collection('newsletterConfirmations')
-                .where('email', '==', normalizedEmail)
-                .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
-                .limit(1)
-                .get();
+            const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
+            const booking = bookingDoc.exists ? bookingDoc.data() : null;
+            const courseDoc = await db.collection('courses').doc(courseId).get();
+            const course = courseDoc.exists ? courseDoc.data() : null;
 
-            const isConfirmed = !existingConfirmation.empty &&
-            existingConfirmation.docs[0].data().confirmed === true;
-
-            if (isConfirmed) {
-            // Contact confirmé : envoyer email de confirmation immédiatement
-              const courseDoc = await db.collection('courses').doc(courseId).get();
-              const course = courseDoc.data();
-
+            if (booking) {
               try {
-              // Créer un token de désinscription
-                const cancellationTokenResult =
-                await bookingService.createCancellationToken(db, result.bookingId, 30);
-                const cancellationUrl = cancellationTokenResult.success ?
-                cancellationTokenResult.cancellationUrl : null;
-
-                await db.collection('mail').add({
-                  to: normalizedEmail,
-                  template: {
-                    name: 'booking-confirmation',
-                    data: {
-                      firstName: userData.firstName,
-                      courseName: course?.title || '',
-                      courseDate: course?.date || '',
-                      courseTime: course?.time || '',
-                      location: course?.location || '',
-                      bookingId: result.bookingId,
-                      paymentMethod: 'Espèces',
-                      cancellationUrl: cancellationUrl,
-                    },
-                  },
-                });
+                await sendBookingConfirmationEmail(db, result.bookingId, booking, course);
                 console.log(`📧 Confirmation email sent to ${normalizedEmail} for cash booking`);
               } catch (emailError) {
                 console.error('Error sending confirmation email:', emailError);
               }
 
-              // Envoyer notification admin pour réservation espèces
-              try {
-                const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
-                const booking = bookingDoc.exists ? bookingDoc.data() : null;
-                if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+              if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                try {
                   await sendBookingNotificationAdmin(
                       booking,
                       course,
                       process.env.MAILJET_API_KEY,
                       process.env.MAILJET_API_SECRET,
                   );
+                } catch (notifError) {
+                  console.error('Error sending admin notification:', notifError);
                 }
-              } catch (notifError) {
-                console.error('Error sending admin notification:', notifError);
-              // Ne pas bloquer le processus
-              }
-            } else {
-            // Nouveau contact : déclencher double opt-in
-              await handleDoubleOptInForBooking(
-                  db,
-                  normalizedEmail,
-                  userData.firstName || '',
-                  courseId,
-                  result.bookingId,
-              );
-
-              // Envoyer notification admin même pour DOI (inscription espèces)
-              try {
-                const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
-                const booking = bookingDoc.exists ? bookingDoc.data() : null;
-                const courseDoc = await db.collection('courses').doc(courseId).get();
-                const course = courseDoc.exists ? courseDoc.data() : null;
-                if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
-                  await sendBookingNotificationAdmin(
-                      booking,
-                      course,
-                      process.env.MAILJET_API_KEY,
-                      process.env.MAILJET_API_SECRET,
-                  );
-                }
-              } catch (notifError) {
-                console.error('Error sending admin notification for DOI booking:', notifError);
               }
             }
+
+            await handleDoubleOptInForBooking(
+                db,
+                normalizedEmail,
+                userData.firstName || '',
+                courseId,
+                result.bookingId,
+            );
           } catch (optInError) {
-            console.error('Error handling double opt-in:', optInError);
+            console.error('Error handling post-booking emails:', optInError);
           }
         } else if (result.success && result.status === 'pending_payment') {
         // Pour les paiements en ligne, vérifier le double opt-in
@@ -10528,65 +10591,34 @@ exports.bookCourse = onRequest(
             });
           }
 
-          // Vérifier le statut de double opt-in et envoyer email de confirmation
-          const existingConfirmation = await db.collection('newsletterConfirmations')
-              .where('email', '==', normalizedEmail)
-              .where('sourceOptin', 'in', ['presentiel', 'presentiel_compte'])
-              .limit(1)
-              .get();
-
-          const isConfirmed = !existingConfirmation.empty &&
-          existingConfirmation.docs[0].data().confirmed === true;
-
-          if (isConfirmed) {
-          // Contact confirmé : envoyer email de confirmation immédiatement
+          try {
+            const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
+            const booking = bookingDoc.exists ? bookingDoc.data() : null;
             const courseDoc = await db.collection('courses').doc(courseId).get();
-            const course = courseDoc.data();
+            const course = courseDoc.exists ? courseDoc.data() : null;
 
-            try {
-            // Créer un token de désinscription
-              const cancellationTokenResult = await bookingService.createCancellationToken(db, result.bookingId, 30);
-              const cancellationUrl = cancellationTokenResult.success ? cancellationTokenResult.cancellationUrl : null;
-
-              await db.collection('mail').add({
-                to: normalizedEmail,
-                template: {
-                  name: 'booking-confirmation',
-                  data: {
-                    firstName: userData.firstName,
-                    courseName: course?.title || '',
-                    courseDate: course?.date || '',
-                    courseTime: course?.time || '',
-                    location: course?.location || '',
-                    bookingId: result.bookingId,
-                    paymentMethod: 'Cours d\'essai gratuit',
-                    cancellationUrl: cancellationUrl,
-                  },
-                },
-              });
-              console.log(`📧 Confirmation email sent to ${normalizedEmail} for free trial booking`);
-            } catch (emailError) {
-              console.error('Error sending confirmation email:', emailError);
-            }
-
-            // Envoyer notification admin pour cours d'essai
-            try {
-              const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
-              const booking = bookingDoc.exists ? bookingDoc.data() : null;
-              if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
-                await sendBookingNotificationAdmin(
-                    booking,
-                    course,
-                    process.env.MAILJET_API_KEY,
-                    process.env.MAILJET_API_SECRET,
-                );
+            if (booking) {
+              try {
+                await sendBookingConfirmationEmail(db, result.bookingId, booking, course);
+                console.log(`📧 Confirmation email sent to ${normalizedEmail} for free trial booking`);
+              } catch (emailError) {
+                console.error('Error sending confirmation email:', emailError);
               }
-            } catch (notifError) {
-              console.error('Error sending admin notification:', notifError);
-            // Ne pas bloquer le processus
+
+              if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                try {
+                  await sendBookingNotificationAdmin(
+                      booking,
+                      course,
+                      process.env.MAILJET_API_KEY,
+                      process.env.MAILJET_API_SECRET,
+                  );
+                } catch (notifError) {
+                  console.error('Error sending admin notification:', notifError);
+                }
+              }
             }
-          } else {
-          // Nouveau contact : déclencher double opt-in
+
             await handleDoubleOptInForBooking(
                 db,
                 normalizedEmail,
@@ -10594,24 +10626,8 @@ exports.bookCourse = onRequest(
                 courseId,
                 result.bookingId,
             );
-
-            // Envoyer notification admin même pour DOI (cours d'essai)
-            try {
-              const bookingDoc = await db.collection('bookings').doc(result.bookingId).get();
-              const booking = bookingDoc.exists ? bookingDoc.data() : null;
-              const courseDoc = await db.collection('courses').doc(courseId).get();
-              const course = courseDoc.exists ? courseDoc.data() : null;
-              if (booking && process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
-                await sendBookingNotificationAdmin(
-                    booking,
-                    course,
-                    process.env.MAILJET_API_KEY,
-                    process.env.MAILJET_API_SECRET,
-                );
-              }
-            } catch (notifError) {
-              console.error('Error sending admin notification for DOI booking:', notifError);
-            }
+          } catch (postBookingError) {
+            console.error('Error handling free trial booking emails:', postBookingError);
           }
         }
 

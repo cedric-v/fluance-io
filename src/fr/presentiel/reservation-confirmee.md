@@ -17,7 +17,7 @@ robots: noindex, nofollow
     </div>
     <h1 class="text-3xl font-semibold text-[#3E3A35] mb-4">Réservation confirmée !</h1>
     <p class="text-lg text-[#3E3A35]/70">
-      Merci pour votre réservation. Un email de confirmation vous a été envoyé.
+      Merci pour votre réservation. Un email récapitulatif avec les informations pratiques vous a été envoyé.
     </p>
   </div>
 
@@ -42,6 +42,9 @@ robots: noindex, nofollow
     </ul>
     <p class="text-sm text-[#3E3A35]/50 mt-4">
       Pensez à vérifier vos spams si vous ne trouvez pas l'email.
+    </p>
+    <p class="text-sm text-[#3E3A35]/50 mt-3">
+      Si c'est votre première réservation, vous pourriez aussi recevoir un second email pour confirmer votre adresse et faciliter les prochains échanges.
     </p>
   </div>
 

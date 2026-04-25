@@ -46,6 +46,11 @@ eleventyExcludeFromCollections: true
       </div>
       <h1 class="text-4xl font-semibold text-[#3E3A35]">Erreur de confirmation</h1>
       <p id="error-message" class="text-xl text-[#3E3A35]"></p>
+      <div id="error-actions" class="hidden pt-2">
+        <button id="resend-presentiel-link" type="button" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold rounded-md shadow-lg transition-all hover:shadow-xl">
+          Recevoir un nouveau lien
+        </button>
+      </div>
       <div class="pt-6">
         <a href="{{ '/' | relativeUrl }}" class="btn-secondary border-fluance text-fluance hover:bg-fluance hover:text-[#F5F7F6] inline-block">
           Retour à l'accueil
@@ -71,6 +76,8 @@ eleventyExcludeFromCollections: true
     const successSubtext = document.getElementById('success-subtext');
     const successCta = document.getElementById('success-cta');
     const successCtaText = document.getElementById('success-cta-text');
+    const errorActions = document.getElementById('error-actions');
+    const resendPresentielLinkButton = document.getElementById('resend-presentiel-link');
 
     // Vérifier que les paramètres sont présents
     if (!email || !token) {
@@ -178,6 +185,19 @@ eleventyExcludeFromCollections: true
       });
     }
 
+    async function resendPresentielLink() {
+      if (!email) {
+        throw new Error('Email manquant');
+      }
+
+      await loadFirebaseFunctions();
+
+      const app = firebase.app();
+      const functions = app.functions('europe-west1');
+      const resendBookingOptInConfirmation = functions.httpsCallable('resendBookingOptInConfirmation');
+      return resendBookingOptInConfirmation({ email: email });
+    }
+
     try {
       // Charger Firebase Functions
       await loadFirebaseFunctions();
@@ -260,7 +280,31 @@ eleventyExcludeFromCollections: true
       if (error.code === 'not-found') {
         errorMsg = 'Lien de confirmation invalide ou expiré.';
       } else if (error.code === 'deadline-exceeded') {
-        errorMsg = 'Ce lien de confirmation a expiré. Veuillez vous réinscrire.';
+        errorMsg = 'Ce lien de confirmation a expiré. Votre réservation reste valable.';
+        if ((redirectParam === 'presentiel' || sourceParam === 'presentiel') && errorActions && resendPresentielLinkButton) {
+          errorActions.classList.remove('hidden');
+          resendPresentielLinkButton.onclick = async function() {
+            resendPresentielLinkButton.disabled = true;
+            resendPresentielLinkButton.textContent = 'Envoi en cours...';
+            try {
+              const resendResult = await resendPresentielLink();
+              const status = resendResult.data?.status;
+              if (status === 'already_confirmed') {
+                errorMessage.textContent = 'Votre adresse email est déjà confirmée.';
+              } else if (status === 'active_token_exists') {
+                errorMessage.textContent = 'Un lien de confirmation encore valide a déjà été envoyé à cette adresse.';
+              } else {
+                errorMessage.textContent = 'Un nouveau lien de confirmation vient d’être envoyé à votre adresse.';
+              }
+              errorActions.classList.add('hidden');
+            } catch (resendError) {
+              console.error('Erreur lors du renvoi du lien:', resendError);
+              errorMessage.textContent = 'Impossible de renvoyer le lien pour le moment. Répondez simplement à l’email reçu ou contactez-nous.';
+              resendPresentielLinkButton.disabled = false;
+              resendPresentielLinkButton.textContent = 'Recevoir un nouveau lien';
+            }
+          };
+        }
       } else if (error.code === 'permission-denied') {
         errorMsg = 'L\'email ne correspond pas au lien de confirmation.';
       } else if (error.message) {
