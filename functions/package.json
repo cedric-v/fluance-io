@@ -22,7 +22,7 @@
     "firebase-functions": "^7.2.5",
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
-    "stripe": "^20.4.0"
+    "stripe": "^22.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
