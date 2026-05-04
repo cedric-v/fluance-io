@@ -5105,6 +5105,16 @@ exports.confirmNewsletterOptIn = onCall(
           confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
+        if (tokenData.siteSource || tokenData.blogSource || tokenData.formulaireSource) {
+          await blogLeadHub.helpers.logLeadEvent('optin_confirmed', {
+            site_source: tokenData.siteSource || '',
+            blog_source: tokenData.blogSource || '',
+            formulaire_source: tokenData.formulaireSource || '',
+            email,
+            token_id: token,
+          });
+        }
+
         // Ajouter le contact à la liste principale MailJet (10524140)
         const listId = '10524140';
         const addToListUrl = `https://api.mailjet.com/v3/REST/listrecipient`;
@@ -8113,6 +8123,398 @@ exports.processPendingSuspensions = onSchedule(
       }
     });
 
+const BLOG_OPS_ALERT_COLLECTION = 'journal_alertes_ops';
+const BLOG_OPS_DIGEST_COLLECTION = 'digest_ops_history';
+const BLOG_OPS_SITE_IDS = Object.keys(blogLeadHub.helpers.SITE_CONFIGS || {});
+
+function buildBlogOpsSummaries() {
+  const summaries = {};
+
+  BLOG_OPS_SITE_IDS.forEach((siteId) => {
+    const site = blogLeadHub.helpers.SITE_CONFIGS[siteId];
+    summaries[siteId] = {
+      siteId,
+      label: site.siteLabel,
+      blogSource: site.blogSource,
+      optins: 0,
+      confirmations: 0,
+      pending: 0,
+      reminders: 0,
+      contacts: 0,
+      turnstileFailures: 0,
+      mailjetFailures: 0,
+      internalErrors: 0,
+    };
+  });
+
+  return summaries;
+}
+
+function ensureBlogSummary(summaries, siteId, fallbackBlogSource = '') {
+  if (siteId && summaries[siteId]) {
+    return summaries[siteId];
+  }
+
+  const key = siteId || 'inconnu';
+  if (!summaries[key]) {
+    summaries[key] = {
+      siteId: key,
+      label: key,
+      blogSource: fallbackBlogSource || '',
+      optins: 0,
+      confirmations: 0,
+      pending: 0,
+      reminders: 0,
+      contacts: 0,
+      turnstileFailures: 0,
+      mailjetFailures: 0,
+      internalErrors: 0,
+    };
+  }
+
+  return summaries[key];
+}
+
+function formatOpsDigestHtml({dateLabel, summaries, criticalErrors, pendingTotal}) {
+  const rows = Object.values(summaries)
+      .map((item) => `
+        <tr>
+          <td style="padding:8px 10px;border-bottom:1px solid #e7e1d8;">${item.label}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e7e1d8;text-align:center;">${item.optins}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e7e1d8;text-align:center;">${item.confirmations}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e7e1d8;text-align:center;">${item.pending}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e7e1d8;text-align:center;">${item.reminders}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e7e1d8;text-align:center;">${item.contacts}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e7e1d8;text-align:center;">
+            ${item.turnstileFailures}
+          </td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e7e1d8;text-align:center;">
+            ${item.mailjetFailures + item.internalErrors}
+          </td>
+        </tr>`)
+      .join('');
+
+  const errorItems = criticalErrors.length > 0 ?
+    criticalErrors.map((item) => `<li>${item}</li>`).join('') :
+    '<li>Aucune erreur critique detectee sur 24h.</li>';
+
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;padding:24px;color:#2d2a26;">
+      <h1 style="font-size:24px;margin:0 0 16px;">Digest leads blogs - ${dateLabel}</h1>
+      <p style="margin:0 0 18px;">
+        Vue operationnelle des 24 dernieres heures. DOI en attente ouverts:
+        <strong>${pendingTotal}</strong>.
+      </p>
+      <table style="width:100%;border-collapse:collapse;background:#fffaf4;border-radius:10px;overflow:hidden;">
+        <thead>
+          <tr style="background:#efe4d6;">
+            <th style="padding:10px;text-align:left;">Blog</th>
+            <th style="padding:10px;">Opt-ins</th>
+            <th style="padding:10px;">Confirmations</th>
+            <th style="padding:10px;">DOI en attente</th>
+            <th style="padding:10px;">Relances</th>
+            <th style="padding:10px;">Contacts</th>
+            <th style="padding:10px;">Echecs Turnstile</th>
+            <th style="padding:10px;">Erreurs</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <h2 style="font-size:18px;margin:24px 0 10px;">Erreurs critiques et signaux</h2>
+      <ul>${errorItems}</ul>
+    </div>
+  `.trim();
+}
+
+function formatOpsDigestText({dateLabel, summaries, criticalErrors, pendingTotal}) {
+  const lines = [
+    `Digest leads blogs - ${dateLabel}`,
+    '',
+    `DOI en attente ouverts: ${pendingTotal}`,
+    '',
+  ];
+
+  Object.values(summaries).forEach((item) => {
+    lines.push(
+        `${item.label}: ${item.optins} opt-ins, ${item.confirmations} confirmations, ` +
+        `${item.pending} DOI en attente, ${item.reminders} relances, ` +
+        `${item.contacts} contacts, ${item.turnstileFailures} echecs Turnstile, ` +
+        `${item.mailjetFailures + item.internalErrors} erreurs`,
+    );
+  });
+
+  lines.push('', 'Erreurs critiques et signaux:');
+  if (criticalErrors.length > 0) {
+    criticalErrors.forEach((item) => lines.push(`- ${item}`));
+  } else {
+    lines.push('- Aucune erreur critique detectee sur 24h.');
+  }
+
+  return lines.join('\n');
+}
+
+function formatOpsAlertHtml({title, lines}) {
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:24px;color:#2d2a26;">
+      <h1 style="font-size:22px;margin:0 0 16px;">${title}</h1>
+      <ul>${lines.map((line) => `<li>${line}</li>`).join('')}</ul>
+    </div>
+  `.trim();
+}
+
+function formatOpsAlertText({title, lines}) {
+  return [title, '', ...lines.map((line) => `- ${line}`)].join('\n');
+}
+
+async function sendBlogOpsAlert({alertType, siteSource = 'global', windowStart, windowEnd, count, lines, mailjetApiKey, mailjetApiSecret}) {
+  const windowKey = windowStart.toISOString().slice(0, 16).replace(/[:T]/g, '-');
+  const alertId = `${alertType}__${siteSource}__${windowKey}`;
+  const alertRef = db.collection(BLOG_OPS_ALERT_COLLECTION).doc(alertId);
+  const existing = await alertRef.get();
+  if (existing.exists) {
+    return false;
+  }
+
+  const siteLabel = blogLeadHub.helpers.SITE_CONFIGS[siteSource]?.siteLabel || siteSource;
+  const title = `Alerte ops blogs - ${siteLabel} - ${alertType}`;
+
+  await sendMailjetEmail(
+      ADMIN_EMAIL,
+      title,
+      formatOpsAlertHtml({title, lines}),
+      formatOpsAlertText({title, lines}),
+      mailjetApiKey,
+      mailjetApiSecret,
+      'support@actu.fluance.io',
+      'Support de Fluance',
+  );
+
+  await alertRef.set({
+    alert_type: alertType,
+    site_source: siteSource,
+    count,
+    lines,
+    window_start: admin.firestore.Timestamp.fromDate(windowStart),
+    window_end: admin.firestore.Timestamp.fromDate(windowEnd),
+    sent_at: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return true;
+}
+
+exports.sendBlogLeadsDailyDigest = onSchedule(
+    {
+      schedule: '0 8 * * *',
+      timeZone: 'Europe/Zurich',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+      region: 'europe-west1',
+    },
+    async (_event) => {
+      const now = new Date();
+      const since = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+      const sinceTs = admin.firestore.Timestamp.fromDate(since);
+      const mailjetApiKey = process.env.MAILJET_API_KEY;
+      const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+      const summaries = buildBlogOpsSummaries();
+
+      const [leadEventsSnapshot, contactSnapshot, pendingSnapshot] = await Promise.all([
+        db.collection('journal_evenements_leads').where('createdAt', '>=', sinceTs).get(),
+        db.collection('journal_formulaires_contact').where('createdAt', '>=', sinceTs).get(),
+        db.collection('newsletterConfirmations').where('confirmed', '==', false).get(),
+      ]);
+
+      const criticalErrors = [];
+
+      leadEventsSnapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const summary = ensureBlogSummary(summaries, data.site_source, data.blog_source);
+
+        switch (data.type_evenement) {
+          case 'optin_capture_success':
+            summary.optins++;
+            break;
+          case 'optin_confirmed':
+            summary.confirmations++;
+            break;
+          case 'doi_reminder_sent':
+            summary.reminders++;
+            break;
+          case 'turnstile_failed_optin':
+            summary.turnstileFailures++;
+            break;
+          case 'mailjet_send_failed_optin':
+          case 'mailjet_send_failed_doi_reminder':
+          case 'mailjet_send_failed_contact':
+            summary.mailjetFailures++;
+            criticalErrors.push(`${summary.label}: ${data.type_evenement} pour ${data.email || 'email inconnu'}`);
+            break;
+          case 'capture_lead_internal_error':
+          case 'send_contact_internal_error':
+          case 'doi_reminder_processing_error':
+            summary.internalErrors++;
+            criticalErrors.push(`${summary.label}: ${data.type_evenement} - ${data.error_message || 'sans detail'}`);
+            break;
+          default:
+            break;
+        }
+      });
+
+      contactSnapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const summary = ensureBlogSummary(summaries, data.site_source, data.blog_source);
+
+        if (data.statut === 'envoye') {
+          summary.contacts++;
+        } else if (data.statut === 'echec_turnstile') {
+          summary.turnstileFailures++;
+        }
+      });
+
+      let pendingTotal = 0;
+      pendingSnapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const expiresAt = data.expiresAt?.toDate?.();
+        if (expiresAt && expiresAt > now) {
+          const summary = ensureBlogSummary(summaries, data.siteSource, data.blogSource);
+          summary.pending++;
+          pendingTotal++;
+        }
+      });
+
+      const dateLabel = now.toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone: 'Europe/Zurich',
+      });
+
+      await sendMailjetEmail(
+          ADMIN_EMAIL,
+          `Digest leads blogs - ${dateLabel}`,
+          formatOpsDigestHtml({dateLabel, summaries, criticalErrors, pendingTotal}),
+          formatOpsDigestText({dateLabel, summaries, criticalErrors, pendingTotal}),
+          mailjetApiKey,
+          mailjetApiSecret,
+          'support@actu.fluance.io',
+          'Support de Fluance',
+      );
+
+      await db.collection(BLOG_OPS_DIGEST_COLLECTION).add({
+        sent_at: admin.firestore.FieldValue.serverTimestamp(),
+        date_label: dateLabel,
+        pending_total: pendingTotal,
+        summaries,
+        critical_errors: criticalErrors,
+      });
+    },
+);
+
+exports.sendBlogLeadOpsAlerts = onSchedule(
+    {
+      schedule: '*/15 * * * *',
+      timeZone: 'Europe/Zurich',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+      region: 'europe-west1',
+    },
+    async (_event) => {
+      const now = new Date();
+      const since15m = new Date(now.getTime() - (15 * 60 * 1000));
+      const since1h = new Date(now.getTime() - (60 * 60 * 1000));
+      const mailjetApiKey = process.env.MAILJET_API_KEY;
+      const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+
+      const [leadEvents15m, leadEvents1h, contacts1h] = await Promise.all([
+        db.collection('journal_evenements_leads')
+            .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(since15m))
+            .get(),
+        db.collection('journal_evenements_leads')
+            .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(since1h))
+            .get(),
+        db.collection('journal_formulaires_contact')
+            .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(since1h))
+            .get(),
+      ]);
+
+      const serverErrorsBySite = {};
+      const turnstileFailuresBySite = {};
+      const mailjetFailures = [];
+
+      leadEvents15m.docs.forEach((doc) => {
+        const data = doc.data();
+        const siteSource = data.site_source || 'global';
+        if (['capture_lead_internal_error', 'send_contact_internal_error', 'doi_reminder_processing_error'].includes(data.type_evenement)) {
+          serverErrorsBySite[siteSource] = (serverErrorsBySite[siteSource] || 0) + 1;
+        }
+        if (['mailjet_send_failed_optin', 'mailjet_send_failed_contact', 'mailjet_send_failed_doi_reminder'].includes(data.type_evenement)) {
+          mailjetFailures.push(data);
+        }
+      });
+
+      leadEvents1h.docs.forEach((doc) => {
+        const data = doc.data();
+        const siteSource = data.site_source || 'global';
+        if (data.type_evenement === 'turnstile_failed_optin') {
+          turnstileFailuresBySite[siteSource] = (turnstileFailuresBySite[siteSource] || 0) + 1;
+        }
+      });
+
+      contacts1h.docs.forEach((doc) => {
+        const data = doc.data();
+        const siteSource = data.site_source || 'global';
+        if (data.statut === 'echec_turnstile') {
+          turnstileFailuresBySite[siteSource] = (turnstileFailuresBySite[siteSource] || 0) + 1;
+        }
+      });
+
+      for (const [siteSource, count] of Object.entries(serverErrorsBySite)) {
+        if (count >= 5) {
+          await sendBlogOpsAlert({
+            alertType: 'server-errors-15m',
+            siteSource,
+            windowStart: since15m,
+            windowEnd: now,
+            count,
+            lines: [`${count} erreurs serveur sur les 15 dernieres minutes pour ${siteSource}.`],
+            mailjetApiKey,
+            mailjetApiSecret,
+          });
+        }
+      }
+
+      for (const [siteSource, count] of Object.entries(turnstileFailuresBySite)) {
+        if (count > 10) {
+          await sendBlogOpsAlert({
+            alertType: 'turnstile-failures-1h',
+            siteSource,
+            windowStart: since1h,
+            windowEnd: now,
+            count,
+            lines: [`${count} echecs Turnstile sur la derniere heure pour ${siteSource}.`],
+            mailjetApiKey,
+            mailjetApiSecret,
+          });
+        }
+      }
+
+      for (const failure of mailjetFailures) {
+        await sendBlogOpsAlert({
+          alertType: failure.type_evenement,
+          siteSource: failure.site_source || 'global',
+          windowStart: since15m,
+          windowEnd: now,
+          count: 1,
+          lines: [
+            `Echec Mailjet detecte pour ${failure.email || 'email inconnu'}.`,
+            `Evenement: ${failure.type_evenement}.`,
+            `Detail: ${failure.error_message || 'sans detail'}.`,
+          ],
+          mailjetApiKey,
+          mailjetApiSecret,
+        });
+      }
+    },
+);
+
 /**
  * Fonction scheduled pour envoyer des relances aux opt-ins non confirmés
  * S'exécute quotidiennement à 9h (Europe/Paris)
@@ -8263,7 +8665,20 @@ exports.sendOptInReminders = onSchedule(
                 mailjetApiSecret,
                 blogLeadHub.helpers.NEWSLETTER_FROM_EMAIL,
                 blogLeadHub.helpers.NEWSLETTER_FROM_NAME,
-            );
+            ).catch(async (mailjetError) => {
+              if (siteConfig) {
+                await blogLeadHub.helpers.logLeadEvent('mailjet_send_failed_doi_reminder', {
+                  site_source: tokenData.siteSource || '',
+                  blog_source: tokenData.blogSource || '',
+                  formulaire_source: tokenData.formulaireSource || '',
+                  email,
+                  token_id: tokenId,
+                  stage_rappel: reminderStage,
+                  error_message: (mailjetError.message || 'unknown').slice(0, 1000),
+                });
+              }
+              throw mailjetError;
+            });
 
             const updatedReminderStages = [...sentStages, reminderStage].sort((a, b) => a - b);
 
@@ -8307,6 +8722,16 @@ exports.sendOptInReminders = onSchedule(
             );
           } catch (error) {
             errors++;
+            if (doc.data()?.siteSource || doc.data()?.blogSource || doc.data()?.formulaireSource) {
+              await blogLeadHub.helpers.logLeadEvent('doi_reminder_processing_error', {
+                site_source: doc.data().siteSource || '',
+                blog_source: doc.data().blogSource || '',
+                formulaire_source: doc.data().formulaireSource || '',
+                email: doc.data().email || '',
+                token_id: doc.id,
+                error_message: (error.message || 'unknown').slice(0, 1000),
+              });
+            }
             console.error(`❌ Error processing reminder for token ${doc.id}:`, error);
           }
         }

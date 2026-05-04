@@ -782,6 +782,15 @@ exports.captureLead = onRequest(
         );
 
         if (!turnstileResult.success) {
+          console.warn('⚠️ [blogLeadHub] Turnstile opt-in verification failed', {
+            siteId: site.siteId,
+            blogSource: site.blogSource,
+            formName,
+            errorCodes: turnstileResult['error-codes'] || [],
+            hostname: turnstileResult.hostname || '',
+            action: turnstileResult.action || '',
+            cdata: turnstileResult.cdata || '',
+          });
           await logLeadEvent('turnstile_failed_optin', {
             site_source: site.siteId,
             blog_source: site.blogSource,
@@ -842,6 +851,15 @@ exports.captureLead = onRequest(
           apiSecret: mailjetApiSecret,
           fromEmail: NEWSLETTER_FROM_EMAIL,
           fromName: NEWSLETTER_FROM_NAME,
+        }).catch(async (error) => {
+          await logLeadEvent('mailjet_send_failed_optin', {
+            site_source: site.siteId,
+            blog_source: site.blogSource,
+            formulaire_source: formName,
+            email,
+            error_message: truncate(error.message || 'unknown', 1000),
+          });
+          throw error;
         });
 
         await logLeadEvent('optin_capture_success', {
@@ -862,6 +880,20 @@ exports.captureLead = onRequest(
         }, 200, corsHeaders);
       } catch (error) {
         console.error('❌ [blogLeadHub] captureLead error:', error);
+        try {
+          await logLeadEvent('capture_lead_internal_error', {
+            site_source: truncate(getFormValue(request, 'site_id') || '', 80),
+            blog_source: '',
+            formulaire_source: truncate(
+                getFormValue(request, 'form-name') || getFormValue(request, 'form_name') || '',
+                120,
+            ),
+            email: normalizeEmail(getFormValue(request, 'email')),
+            error_message: truncate(error.message || 'unknown', 1000),
+          });
+        } catch (logError) {
+          console.error('❌ [blogLeadHub] captureLead error logging failed:', logError);
+        }
         return sendJson(response, {
           success: false,
           error: 'Une erreur est survenue. Veuillez réessayer plus tard.',
@@ -957,6 +989,15 @@ exports.sendContactEmail = onRequest(
         );
 
         if (!turnstileResult.success) {
+          console.warn('⚠️ [blogLeadHub] Turnstile contact verification failed', {
+            siteId: site.siteId,
+            blogSource: site.blogSource,
+            email,
+            errorCodes: turnstileResult['error-codes'] || [],
+            hostname: turnstileResult.hostname || '',
+            action: turnstileResult.action || '',
+            cdata: turnstileResult.cdata || '',
+          });
           await logContactSubmission({
             site_source: site.siteId,
             blog_source: site.blogSource,
@@ -995,6 +1036,15 @@ exports.sendContactEmail = onRequest(
           fromName: TRANSACTIONAL_FROM_NAME,
           replyToEmail: email,
           replyToName: name || email,
+        }).catch(async (error) => {
+          await logLeadEvent('mailjet_send_failed_contact', {
+            site_source: site.siteId,
+            blog_source: site.blogSource,
+            formulaire_source: 'contact',
+            email,
+            error_message: truncate(error.message || 'unknown', 1000),
+          });
+          throw error;
         });
 
         await logContactSubmission({
@@ -1017,6 +1067,17 @@ exports.sendContactEmail = onRequest(
         }, 200, corsHeaders);
       } catch (error) {
         console.error('❌ [blogLeadHub] sendContactEmail error:', error);
+        try {
+          await logLeadEvent('send_contact_internal_error', {
+            site_source: truncate(getFormValue(request, 'site_id') || '', 80),
+            blog_source: '',
+            formulaire_source: 'contact',
+            email: normalizeEmail(getFormValue(request, 'email')),
+            error_message: truncate(error.message || 'unknown', 1000),
+          });
+        } catch (logError) {
+          console.error('❌ [blogLeadHub] sendContactEmail error logging failed:', logError);
+        }
         return sendJson(response, {
           success: false,
           error: 'Une erreur est survenue. Veuillez réessayer plus tard.',
@@ -1042,5 +1103,6 @@ module.exports.helpers = {
   updateMailjetContactProperties,
   sendMailjetEmail,
   logLeadEvent,
+  logContactSubmission,
   getReminderStage,
 };

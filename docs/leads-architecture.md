@@ -73,6 +73,44 @@ Important:
 
 - un formulaire de contact ne doit jamais inscrire un contact dans la liste marketing
 
+## Pilotage operationnel
+
+Deux mecanismes d'exploitation existent en plus des journaux Firestore:
+
+- digest quotidien `sendBlogLeadsDailyDigest`
+- alertes critiques `sendBlogLeadOpsAlerts`
+
+Digest quotidien:
+
+- horaire: `08:00 Europe/Zurich`
+- destination: `support@fluance.io`
+- resume par blog:
+  - opt-ins captures
+  - confirmations DOI
+  - DOI en attente
+  - relances DOI envoyees
+  - formulaires contact recus
+  - echecs Turnstile
+  - erreurs critiques
+
+Alertes critiques:
+
+- cadence: toutes les `15 minutes`
+- destination: `support@fluance.io`
+- dedoublonnage Firestore dans `journal_alertes_ops`
+- seuils initiaux:
+  - `>= 5` erreurs serveur sur `15 min`
+  - `> 10` echecs Turnstile sur `1 h` pour un blog
+  - tout echec Mailjet critique sur DOI, relance DOI ou email contact
+
+Collections Firestore associees:
+
+- `journal_evenements_leads`
+- `journal_formulaires_contact`
+- `newsletterConfirmations`
+- `journal_alertes_ops`
+- `digest_ops_history`
+
 ## Expéditeurs Mailjet
 
 DOI / relances DOI / emails newsletter lies aux opt-ins:
@@ -94,4 +132,3 @@ Transactionnel contact:
 - la segmentation se fait par proprietes, pas par multiplication de listes
 - les formulaires contact ne creent pas de contact marketing
 - les blogs gardent leurs `redirect_url` actuels en phase 1
-

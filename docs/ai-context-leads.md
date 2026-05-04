@@ -46,6 +46,8 @@ For contact transactional emails:
 - `newsletterConfirmations`
 - `journal_evenements_leads`
 - `journal_formulaires_contact`
+- `journal_alertes_ops`
+- `digest_ops_history`
 
 ## Important implementation details
 
@@ -56,6 +58,11 @@ For contact transactional emails:
 - keep current blog `redirect_url` values in phase 1
 - final gift access after DOI is controlled by Fluance confirmation flow
 - central privacy policy URL is `https://fluance.io/mentions-legales/`
+- operational monitoring now includes:
+  - `sendBlogLeadsDailyDigest` at `08:00 Europe/Zurich`
+  - `sendBlogLeadOpsAlerts` every `15 minutes`
+  - deduplicated alert documents in `journal_alertes_ops`
+  - daily digest history in `digest_ops_history`
 
 ## Future improvements already anticipated
 

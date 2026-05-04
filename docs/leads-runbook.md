@@ -36,6 +36,38 @@ La fonction scheduled actuelle:
 - `journal_evenements_leads`
 - `journal_formulaires_contact`
 - `newsletterConfirmations`
+- `journal_alertes_ops`
+- `digest_ops_history`
+
+## Pilotage quotidien
+
+Email attendu:
+
+- un digest quotidien envoye a `support@fluance.io`
+
+Contenu attendu:
+
+- opt-ins par blog
+- confirmations DOI par blog
+- DOI en attente
+- relances DOI
+- contacts recus
+- erreurs critiques
+
+## Alertes critiques
+
+Emails d'alerte attendus seulement si:
+
+- erreurs serveur repetees sur `captureLead` ou `sendContactEmail`
+- echec Mailjet sur DOI, relance DOI ou email contact
+- pic d'echecs Turnstile
+
+Si une alerte arrive:
+
+1. verifier `journal_evenements_leads`
+2. verifier `journal_formulaires_contact`
+3. verifier l'etat Mailjet si l'alerte concerne un envoi
+4. verifier les logs Firebase Functions si l'alerte concerne une erreur serveur
 
 ## Cas particulier important
 
@@ -51,4 +83,3 @@ Si un developpeur ajoute un nouveau formulaire:
 - il doit choisir entre `capture-lead` et `send-contact-email`
 - il ne doit jamais reutiliser `send-contact-email` pour du marketing
 - il ne doit jamais reutiliser `capture-lead` pour du support
-
