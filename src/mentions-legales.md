@@ -24,7 +24,15 @@ Vous trouverez également nos engagements en matière de sous-traitance, de tran
 
 ### Quelles sont les catégories de données personnelles collectées et traitées ?
 
-Dans le cadre de notre activité sur fluance.io (ci-après le « Site »), vous nous transmettez les informations suivantes en remplissant le(s) formulaire(s) de renseignement et en communiquant avec nous :
+Dans le cadre de notre activité sur fluance.io (ci-après le « Site »), ainsi que via certains sites éditoriaux du même écosystème reliés à Fluance, vous nous transmettez les informations suivantes en remplissant le(s) formulaire(s) de renseignement et en communiquant avec nous.
+
+Les sites éditoriaux concernés peuvent inclure notamment :
+
+- techniquesdemeditation.com
+- vie-explosive.fr
+- developpementpersonnel.org
+
+Certains formulaires de ces sites utilisent une infrastructure centralisée opérée par Fluance, notamment via le sous-domaine `api.fluance.io`, afin de gérer les demandes de contact, les inscriptions, les confirmations d’opt-in et la journalisation technique associée.
 
 - Données recueillies grâce aux cookies et technologies similaires (date, heure de connexion et/ou navigation, type de navigateur, langue, adresse IP, données de localisation).
 - Informations d’état civil et de contact (civilité, nom, prénom, adresse mail, adresse postale, numéro de téléphone) permettant de vous identifier et de communiquer avec vous.
@@ -34,7 +42,9 @@ Dans le cadre de notre activité sur fluance.io (ci-après le « Site »), vous 
 
 ### Dans quels buts utilisons-nous ces données ?
 
-Identification des personnes utilisant le Site pour commander nos produits et/ou services ; création et gestion du compte client ; exécution des opérations de paiement ; gestion des contrats, commandes, livraisons, factures et relation commerciale ; gestion de la relation prospects/clients et des avis ; traitement des questions et réclamations ; gestion des accès en ligne ; exécution des paiements ; élaboration de statistiques commerciales et publicitaires ; prospection et envoi d’informations (y compris actions de fidélisation, sondages, tests produits, promotions) ; prévention et lutte contre la fraude ; gestion des impayés et du contentieux ; amélioration du Site et des offres ; participation à des événements spéciaux et programmes de fidélité.
+Identification des personnes utilisant le Site ou les sites éditoriaux reliés à Fluance pour commander nos produits et/ou services ; création et gestion du compte client ; exécution des opérations de paiement ; gestion des contrats, commandes, livraisons, factures et relation commerciale ; gestion de la relation prospects/clients et des avis ; traitement des questions et réclamations ; gestion des accès en ligne ; exécution des paiements ; élaboration de statistiques commerciales et publicitaires ; prospection et envoi d’informations (y compris actions de fidélisation, sondages, tests produits, promotions) ; prévention et lutte contre la fraude ; gestion des impayés et du contentieux ; amélioration du Site et des offres ; participation à des événements spéciaux et programmes de fidélité.
+
+Lorsque vous vous inscrivez via un formulaire d’opt-in relié à Fluance, l’envoi de la ressource demandée et des emails associés repose sur votre confirmation expresse de l’adresse email via un mécanisme de double opt-in.
 
 ### Sur quelles bases légales ?
 
@@ -47,6 +57,8 @@ Les traitements reposent sur :
 ### Combien de temps les données sont-elles conservées ?
 
 Les données ne sont pas conservées au-delà du temps nécessaire à l’exécution des obligations définies lors de la conclusion du contrat, ou imposées par la législation en vigueur. Au-delà, elles peuvent être anonymisées et conservées à des fins exclusivement statistiques.
+
+Pour les formulaires de contact et les confirmations d’inscription gérés via l’infrastructure Fluance, des journaux applicatifs peuvent être conservés pendant une durée limitée et documentée afin d’assurer la sécurité, la preuve du consentement, la délivrabilité, le diagnostic des incidents et la conformité.
 
 Si vous ne vous êtes pas authentifié ou n’avez pas eu d’activité pendant 4 mois (clic sur un lien, etc.), vous pouvez recevoir un e-mail vous invitant à vous connecter, faute de quoi vos données seront supprimées. Ce délai court à compter du dernier contact actif si vous n’êtes pas/plus client, et à compter de la fin de votre abonnement si vous êtes inscrit à une formation.
 
@@ -131,6 +143,9 @@ GitHub Pages (GitHub, Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107, Ét
 Firebase (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande).
 
 Les données sont stockées dans des centres de données situés à Zurich (Suisse) ou en Belgique, conformément aux réglementations européennes sur la protection des données.
+
+**Infrastructure API et fonctions serveur :**
+Firebase Hosting et Firebase Functions (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande), notamment pour le sous-domaine `api.fluance.io`.
 
 **Envois d'e-mails :**
 Mailjet SAS, 13-13 bis, rue de l'Aubrac, 75012 Paris, France.

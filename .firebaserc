@@ -2,7 +2,15 @@
   "projects": {
     "default": "fluance-protected-content"
   },
-  "targets": {},
+  "targets": {
+    "fluance-protected-content": {
+      "hosting": {
+        "api": [
+          "fluance-api"
+        ]
+      }
+    }
+  },
   "etags": {
     "fluance-protected-content": {
       "extensionInstances": {

@@ -34,6 +34,7 @@ const auth = admin.auth();
 // Import du service d'alertes admin
 // Import du service d'alertes admin
 const {sendAdminAlert} = require('./services/adminAlerts');
+const blogLeadHub = require('./blogLeadHub');
 
 // Import services nouveaux
 const {mollieService} = require('./services/mollieService');
@@ -44,6 +45,9 @@ const {onMessagePublished} = require('firebase-functions/v2/pubsub');
 
 // PubSub client for publishing messages from HTTP function
 const pubSubClient = new PubSub();
+
+exports.captureLead = blogLeadHub.captureLead;
+exports.sendContactEmail = blogLeadHub.sendContactEmail;
 
 // Price ID du produit cross-sell "SOS dos & cervicales"
 const STRIPE_PRICE_ID_SOS_DOS_CERVICALES = 'price_1SeWdF2Esx6PN6y1XlbpIObG';
@@ -4651,7 +4655,7 @@ exports.subscribeToNewsletter = onCall(
               emailText,
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
-              'support@actu.fluance.io',
+              'fluance@actu.fluance.io',
               'Cédric de Fluance',
           );
 
@@ -4983,7 +4987,7 @@ exports.subscribeToStagesWaitingList = onCall(
               emailText,
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
-              'support@actu.fluance.io',
+              'fluance@actu.fluance.io',
               'Cédric de Fluance',
           );
 
@@ -5168,6 +5172,69 @@ exports.confirmNewsletterOptIn = onCall(
           }
         } catch (error) {
           console.log('Error fetching contact properties:', error.message);
+        }
+
+        // Mise à jour générique pour tous les opt-ins centralisés
+        if (tokenData.siteSource || tokenData.blogSource || tokenData.formulaireSource) {
+          try {
+            const reminderCount = Array.isArray(tokenData.rappelStagesEnvoyes) ?
+              tokenData.rappelStagesEnvoyes.length :
+              (tokenData.nombreRelancesDoi || 0);
+
+            const currentSourceOptin = currentProperties.source_optin || '';
+            const sourceOptinListBase = currentSourceOptin ?
+              currentSourceOptin.split(',').map((s) => s.trim()).filter((s) => s) :
+              [];
+            const sourceOptinList = tokenData.sourceOptin &&
+              !sourceOptinListBase.includes(tokenData.sourceOptin) ?
+                [...sourceOptinListBase, tokenData.sourceOptin] :
+                sourceOptinListBase;
+
+            const genericProperties = {
+              site_source: tokenData.siteSource || currentProperties.site_source || '',
+              blog_source: tokenData.blogSource || currentProperties.blog_source || '',
+              formulaire_source: tokenData.formulaireSource || currentProperties.formulaire_source || '',
+              url_source: tokenData.urlSource || currentProperties.url_source || '',
+              type_optin: 'newsletter',
+              statut_consentement: 'consenti',
+              date_consentement: dateStr,
+              statut_double_optin: 'confirme',
+              date_double_optin: dateStr,
+              nombre_relances_doi: String(reminderCount),
+              langue_source: tokenData.locale || currentProperties.langue_source || 'fr',
+              lead_magnet_source:
+                tokenData.leadMagnetSource || currentProperties.lead_magnet_source || '',
+              interets_declares:
+                currentProperties.interets_declares ||
+                (tokenData.siteSource ?
+                  (blogLeadHub.helpers.SITE_CONFIGS[tokenData.siteSource]?.interestLabel || '') :
+                  ''),
+              statut: currentProperties.statut || 'prospect',
+              est_client: currentProperties.est_client || 'False',
+            };
+
+            if (sourceOptinList.length > 0) {
+              genericProperties.source_optin = sourceOptinList.join(',');
+            }
+
+            if (tokenData.name) {
+              genericProperties.prenom = capitalizeName(tokenData.name);
+              genericProperties.firstname = capitalizeName(tokenData.name);
+            }
+
+            if (!currentProperties.date_optin) {
+              genericProperties.date_optin = dateStr;
+            }
+
+            await updateMailjetContactProperties(
+                email.toLowerCase().trim(),
+                genericProperties,
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+          } catch (error) {
+            console.error('Error updating generic blog opt-in properties:', error);
+          }
         }
 
         // Si c'est une confirmation pour les 5 jours, mettre à jour le statut de la série
@@ -5366,6 +5433,7 @@ exports.confirmNewsletterOptIn = onCall(
           message: 'Email confirmed successfully',
           email: email,
           sourceOptin: tokenData.sourceOptin || null,
+          redirectUrl: tokenData.redirectUrl || null,
         };
       } catch (error) {
         console.error('Error confirming newsletter opt-in:', error);
@@ -5706,7 +5774,7 @@ exports.subscribeTo5Days = onCall(
               emailText,
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
-              'support@actu.fluance.io',
+              'fluance@actu.fluance.io',
               'Cédric de Fluance',
           );
 
@@ -8028,7 +8096,7 @@ exports.processPendingSuspensions = onSchedule(
                 suspendEmailText,
                 mailjetApiKey,
                 mailjetApiSecret,
-                'support@actu.fluance.io',
+                'fluance@actu.fluance.io',
                 'Cédric de Fluance',
             );
 
@@ -8048,7 +8116,7 @@ exports.processPendingSuspensions = onSchedule(
 /**
  * Fonction scheduled pour envoyer des relances aux opt-ins non confirmés
  * S'exécute quotidiennement à 9h (Europe/Paris)
- * Envoie une relance unique 3-4 jours après l'inscription si non confirmée
+ * Envoie jusqu'à deux relances: J+1 puis J+5
  */
 exports.sendOptInReminders = onSchedule(
     {
@@ -8069,10 +8137,9 @@ exports.sendOptInReminders = onSchedule(
       }
 
       try {
-      // Récupérer tous les opt-ins non confirmés qui n'ont pas encore reçu de relance
+      // Récupérer tous les opt-ins non confirmés
         const unconfirmedQuery = await db.collection('newsletterConfirmations')
             .where('confirmed', '==', false)
-            .where('reminderSent', '==', false)
             .get();
 
         if (unconfirmedQuery.empty) {
@@ -8114,61 +8181,78 @@ exports.sendOptInReminders = onSchedule(
 
             const createdAt = tokenData.createdAt.toDate();
             const daysSinceCreation = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
-
-            // Envoyer la relance entre 3 et 4 jours après l'inscription
-            if (daysSinceCreation < 3 || daysSinceCreation > 4) {
-            // Trop tôt ou trop tard, on attendra le prochain jour
-              continue;
-            }
+            const sentStages = Array.isArray(tokenData.rappelStagesEnvoyes) ?
+              tokenData.rappelStagesEnvoyes :
+              [];
+            const reminderStage = blogLeadHub.helpers.getReminderStage(daysSinceCreation, sentStages);
+            if (!reminderStage) continue;
 
             const email = tokenData.email;
             const name = tokenData.name || '';
             const sourceOptin = tokenData.sourceOptin || '2pratiques';
+            const siteConfig = tokenData.siteSource ?
+              blogLeadHub.helpers.SITE_CONFIGS[tokenData.siteSource] :
+              null;
 
-            // Déterminer le contenu de l'opt-in pour le message
-            let optinContent = 'vos contenus Fluance offerts';
-            let redirectParam = '2pratiques';
-            if (sourceOptin === '5joursofferts') {
-              optinContent = 'vos 5 pratiques Fluance offertes';
-              redirectParam = '5joursofferts';
-            } else if (sourceOptin === '2pratiques') {
-              optinContent = 'vos 2 pratiques Fluance offertes';
-            }
-
-            // Construire l'URL de confirmation
-            const confirmationUrl =
-            `https://fluance.io/confirm?email=${encodeURIComponent(email)}` +
-            `&token=${tokenId}&redirect=${redirectParam}`;
+            let confirmationUrl = tokenData.siteSource ?
+              blogLeadHub.helpers.buildConfirmationUrl({
+                id: tokenId,
+                email,
+              }) :
+              `https://fluance.io/confirm?email=${encodeURIComponent(email)}&token=${tokenId}`;
 
             // Formater la date d'expiration pour l'email
-            const expirationDateStr = expiresAt.toLocaleDateString('fr-FR', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            });
+            const expirationDateStr = blogLeadHub.helpers.formatExpirationDate(expiresAt);
+            let emailSubject = `Un dernier clic pour recevoir vos contenus${name ? ' ' + name : ''}`;
+            let emailHtml;
+            let emailText;
 
-            // Utiliser l'écriture inclusive pour éviter les suppositions de genre
-            const inscriptionText = 'inscrit·e';
-
-            // Charger et envoyer l'email de relance
-            const emailSubject =
-            `Un dernier clic pour recevoir vos contenus${name ? ' ' + name : ''}`;
-            const emailHtml = loadEmailTemplate('relance-confirmation-optin', {
-              firstName: name || '',
-              inscriptionText: inscriptionText,
-              optinContent: optinContent,
-              confirmationUrl: confirmationUrl,
-              expirationDate: expirationDateStr,
-            });
-            const emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
-            `Il y a quelques jours, vous vous êtes ${inscriptionText} ` +
-            `pour recevoir ${optinContent} de Fluance.\n\n` +
-            `Pour finaliser votre inscription et recevoir vos contenus, ` +
-            `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
-            `${confirmationUrl}\n\n` +
-            `Ce lien est valide jusqu'au ${expirationDateStr}.\n\n` +
-            `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email. ` +
-            `Vous ne recevrez plus de relances.`;
+            if (siteConfig) {
+              emailSubject = `Rappel: confirmez votre adresse pour recevoir votre ressource${name ? `, ${name}` : ''}`;
+              emailHtml = blogLeadHub.helpers.buildOptInEmailHtml(
+                  siteConfig,
+                  name,
+                  confirmationUrl,
+                  true,
+                  expirationDateStr,
+              );
+              emailText = blogLeadHub.helpers.buildOptInEmailText(
+                  siteConfig,
+                  name,
+                  confirmationUrl,
+                  expirationDateStr,
+              );
+            } else {
+              // Déterminer le contenu de l'opt-in pour le message
+              let optinContent = 'vos contenus Fluance offerts';
+              let redirectParam = '2pratiques';
+              if (sourceOptin === '5joursofferts') {
+                optinContent = 'vos 5 pratiques Fluance offertes';
+                redirectParam = '5joursofferts';
+              } else if (sourceOptin === '2pratiques') {
+                optinContent = 'vos 2 pratiques Fluance offertes';
+              }
+              confirmationUrl =
+                `https://fluance.io/confirm?email=${encodeURIComponent(email)}` +
+                `&token=${tokenId}&redirect=${redirectParam}`;
+              const inscriptionText = 'inscrit·e';
+              emailHtml = loadEmailTemplate('relance-confirmation-optin', {
+                firstName: name || '',
+                inscriptionText: inscriptionText,
+                optinContent: optinContent,
+                confirmationUrl: confirmationUrl,
+                expirationDate: expirationDateStr,
+              });
+              emailText = `Bonjour${name ? ' ' + name : ''},\n\n` +
+                `Il y a quelques jours, vous vous êtes ${inscriptionText} ` +
+                `pour recevoir ${optinContent} de Fluance.\n\n` +
+                `Pour finaliser votre inscription et recevoir vos contenus, ` +
+                `il vous suffit de confirmer votre adresse email en cliquant sur ce lien :\n\n` +
+                `${confirmationUrl}\n\n` +
+                `Ce lien est valide jusqu'au ${expirationDateStr}.\n\n` +
+                `Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email. ` +
+                `Vous ne recevrez plus de relances.`;
+            }
 
             await sendMailjetEmail(
                 email,
@@ -8177,19 +8261,49 @@ exports.sendOptInReminders = onSchedule(
                 emailText,
                 mailjetApiKey,
                 mailjetApiSecret,
-                'support@actu.fluance.io',
-                'Cédric de Fluance',
+                blogLeadHub.helpers.NEWSLETTER_FROM_EMAIL,
+                blogLeadHub.helpers.NEWSLETTER_FROM_NAME,
             );
+
+            const updatedReminderStages = [...sentStages, reminderStage].sort((a, b) => a - b);
 
             // Marquer la relance comme envoyée
             await db.collection('newsletterConfirmations').doc(tokenId).update({
               reminderSent: true,
               reminderSentAt: admin.firestore.FieldValue.serverTimestamp(),
+              rappelStagesEnvoyes: updatedReminderStages,
+              nombreRelancesDoi: updatedReminderStages.length,
             });
+
+            if (siteConfig) {
+              try {
+                await updateMailjetContactProperties(
+                    email.toLowerCase().trim(),
+                    {
+                      date_derniere_relance_doi: new Date().toISOString(),
+                      nombre_relances_doi: String(updatedReminderStages.length),
+                    },
+                    process.env.MAILJET_API_KEY,
+                    process.env.MAILJET_API_SECRET,
+                );
+              } catch (mailjetError) {
+                console.error(`❌ Error updating Mailjet reminder properties for ${email}:`, mailjetError);
+              }
+
+              await blogLeadHub.helpers.logLeadEvent('doi_reminder_sent', {
+                site_source: tokenData.siteSource || '',
+                blog_source: tokenData.blogSource || '',
+                formulaire_source: tokenData.formulaireSource || '',
+                email,
+                token_id: tokenId,
+                stage_rappel: reminderStage,
+              });
+            }
 
             remindersSent++;
             console.log(
-                `✅ Reminder sent to ${email} (${sourceOptin}, ${daysSinceCreation} days after signup)`,
+                `✅ Reminder sent to ${email} ` +
+                `(${sourceOptin}, ${daysSinceCreation} days after signup, stage ${reminderStage})`,
             );
           } catch (error) {
             errors++;
@@ -8476,7 +8590,7 @@ exports.registerPresentielCourse = onRequest(
               emailText,
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
-              'support@actu.fluance.io',
+              'fluance@actu.fluance.io',
               'Cédric de Fluance',
           );
 
@@ -8788,7 +8902,7 @@ async function handleDoubleOptInForBooking(db, email, firstName, courseId, booki
         emailText,
         mailjetApiKey,
         mailjetApiSecret,
-        'support@actu.fluance.io',
+        'fluance@actu.fluance.io',
         'Cédric de Fluance',
     );
 

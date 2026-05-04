@@ -200,6 +200,11 @@ eleventyExcludeFromCollections: true
         loadingState.classList.add('hidden');
         successState.classList.remove('hidden');
 
+        if (result.data.redirectUrl) {
+          window.location.href = result.data.redirectUrl;
+          return;
+        }
+
         // Déterminer la destination en fonction de la source
         const sourceOptin = sourceParam || result.data.sourceOptin || redirectParam || '2pratiques';
         let target = '2pratiques';
