@@ -25,13 +25,16 @@
     <meta name="description" content="{{ description or 'Accompagnement professionnel et développement personnel.' }}">
     <meta name="generator" content="Eleventy">
 
-    {% if robots %}
-    <meta name="robots" content="{{ robots }}">
-    {% endif %}
+    <meta name="robots" content="{{ (robots ~ ', max-image-preview:large') if robots else 'index, follow, max-image-preview:large' }}">
 
     {% if markdownAlternate %}
     <link rel="alternate" type="text/markdown" href="https://fluance.io{{ markdownAlternate }}">
     {% endif %}
+    <link rel="api-catalog" href="https://fluance.io/.well-known/api-catalog">
+    <link rel="service-doc" href="https://fluance.io/docs/api/">
+    <link rel="describedby" href="https://fluance.io/.well-known/mcp/server-card.json" type="application/json">
+    <link rel="describedby" href="https://fluance.io/.well-known/agent-skills/index.json" type="application/json">
+    <link rel="alternate" href="https://fluance.io/llms.txt" type="text/plain" title="LLMs.txt">
 
     {% if redirectTo %}
     <meta http-equiv="refresh" content="0; url={{ redirectTo | relativeUrl }}">
