@@ -8126,6 +8126,14 @@ exports.processPendingSuspensions = onSchedule(
 const BLOG_OPS_ALERT_COLLECTION = 'journal_alertes_ops';
 const BLOG_OPS_DIGEST_COLLECTION = 'digest_ops_history';
 const BLOG_OPS_SITE_IDS = Object.keys(blogLeadHub.helpers.SITE_CONFIGS || {});
+const FLUANCE_OPS_SUMMARY_KEY = 'fluance';
+const FLUANCE_OPS_SUMMARY_LABEL = 'Fluance';
+const FLUANCE_PENDING_SOURCE_OPTINS = new Set([
+  '2pratiques',
+  '5joursofferts',
+  'stages',
+  'presentiel',
+]);
 
 function buildBlogOpsSummaries() {
   const summaries = {};
@@ -8150,7 +8158,7 @@ function buildBlogOpsSummaries() {
   return summaries;
 }
 
-function ensureBlogSummary(summaries, siteId, fallbackBlogSource = '') {
+function ensureBlogSummary(summaries, siteId, fallbackBlogSource = '', fallbackLabel = '') {
   if (siteId && summaries[siteId]) {
     return summaries[siteId];
   }
@@ -8159,7 +8167,7 @@ function ensureBlogSummary(summaries, siteId, fallbackBlogSource = '') {
   if (!summaries[key]) {
     summaries[key] = {
       siteId: key,
-      label: key,
+      label: fallbackLabel || key,
       blogSource: fallbackBlogSource || '',
       optins: 0,
       confirmations: 0,
@@ -8173,6 +8181,30 @@ function ensureBlogSummary(summaries, siteId, fallbackBlogSource = '') {
   }
 
   return summaries[key];
+}
+
+function resolvePendingDigestSummary(data) {
+  if (data.siteSource) {
+    return {
+      siteId: data.siteSource,
+      blogSource: data.blogSource || '',
+      label: '',
+    };
+  }
+
+  if (FLUANCE_PENDING_SOURCE_OPTINS.has(data.sourceOptin)) {
+    return {
+      siteId: FLUANCE_OPS_SUMMARY_KEY,
+      blogSource: '',
+      label: FLUANCE_OPS_SUMMARY_LABEL,
+    };
+  }
+
+  return {
+    siteId: '',
+    blogSource: data.blogSource || '',
+    label: '',
+  };
 }
 
 function formatOpsDigestHtml({dateLabel, summaries, criticalErrors, pendingTotal}) {
@@ -8375,7 +8407,13 @@ exports.sendBlogLeadsDailyDigest = onSchedule(
         const data = doc.data();
         const expiresAt = data.expiresAt?.toDate?.();
         if (expiresAt && expiresAt > now) {
-          const summary = ensureBlogSummary(summaries, data.siteSource, data.blogSource);
+          const pendingSummary = resolvePendingDigestSummary(data);
+          const summary = ensureBlogSummary(
+              summaries,
+              pendingSummary.siteId,
+              pendingSummary.blogSource,
+              pendingSummary.label,
+          );
           summary.pending++;
           pendingTotal++;
         }
