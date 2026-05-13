@@ -78,26 +78,45 @@ const ROOT_ALLOWED_ORIGINS = Array.from(
     new Set(Object.values(SITE_CONFIGS).flatMap((site) => site.origins)),
 );
 
+const MIN_CONTACT_FORM_FILL_MS = 3000;
+const MAX_CONTACT_FORM_AGE_MS = 1000 * 60 * 60 * 12;
+
+function hostnameMatchesSite(hostname, site) {
+  const normalizedHostname = String(hostname || '').toLowerCase();
+  if (!normalizedHostname || !site) return false;
+
+  return site.origins.some((allowedOrigin) => {
+    try {
+      return new URL(allowedOrigin).hostname.toLowerCase() === normalizedHostname;
+    } catch {
+      return false;
+    }
+  });
+}
+
 function getSiteConfig({siteId, origin}) {
-  if (siteId && SITE_CONFIGS[siteId]) {
-    return SITE_CONFIGS[siteId];
-  }
+  let hostname = '';
 
   if (origin) {
     try {
-      const hostname = new URL(origin).hostname.toLowerCase();
-      return Object.values(SITE_CONFIGS).find((site) => {
-        return site.origins.some((allowedOrigin) => {
-          try {
-            return new URL(allowedOrigin).hostname.toLowerCase() === hostname;
-          } catch {
-            return false;
-          }
-        });
-      }) || null;
+      hostname = new URL(origin).hostname.toLowerCase();
     } catch {
       return null;
     }
+  }
+
+  if (siteId && SITE_CONFIGS[siteId]) {
+    const site = SITE_CONFIGS[siteId];
+    if (hostname && !hostnameMatchesSite(hostname, site)) {
+      return null;
+    }
+    return site;
+  }
+
+  if (hostname) {
+    return Object.values(SITE_CONFIGS).find((site) => {
+      return hostnameMatchesSite(hostname, site);
+    }) || null;
   }
 
   return null;
@@ -939,7 +958,7 @@ exports.sendContactEmail = onRequest(
         const message = truncate(getFormValue(request, 'message') || '', 5000);
         const siteId = truncate(getFormValue(request, 'site_id') || '', 80);
         const redirectUrl = String(getFormValue(request, 'redirect_url') || '');
-        const botField = getFormValue(request, 'bot-field');
+        const contactStartedAt = Number(getFormValue(request, 'contact_started_at') || 0);
         const turnstileToken = String(getFormValue(request, 'cf-turnstile-response') || '');
         const site = getSiteConfig({siteId, origin});
         const optinUrl = String(getFormValue(request, 'optin_url') || getHeader(request, 'Referer') || '');
@@ -948,7 +967,15 @@ exports.sendContactEmail = onRequest(
           return sendJson(response, {success: false, error: 'Site non reconnu'}, 400, corsHeaders);
         }
 
-        if (botField) {
+        const honeypotValues = [
+          getFormValue(request, 'bot-field'),
+          getFormValue(request, 'website'),
+          getFormValue(request, 'company'),
+          getFormValue(request, 'url'),
+        ];
+        const hasFilledHoneypot = honeypotValues.some((value) => String(value || '').trim() !== '');
+
+        if (hasFilledHoneypot) {
           await logContactSubmission({
             site_source: site.siteId,
             blog_source: site.blogSource,
@@ -959,6 +986,37 @@ exports.sendContactEmail = onRequest(
             statut: 'filtre_honeypot',
           });
           return sendJson(response, {success: true, message: 'Requête filtrée'}, 200, corsHeaders);
+        }
+
+        if (Number.isFinite(contactStartedAt) && contactStartedAt > 0) {
+          const elapsedMs = Date.now() - contactStartedAt;
+          if (elapsedMs >= 0 && elapsedMs < MIN_CONTACT_FORM_FILL_MS) {
+            await logContactSubmission({
+              site_source: site.siteId,
+              blog_source: site.blogSource,
+              email,
+              nom: name,
+              sujet: subject,
+              message,
+              statut: 'filtre_trop_rapide',
+              details: {elapsedMs},
+            });
+            return sendJson(response, {success: true, message: 'Requête filtrée'}, 200, corsHeaders);
+          }
+
+          if (elapsedMs > MAX_CONTACT_FORM_AGE_MS) {
+            await logContactSubmission({
+              site_source: site.siteId,
+              blog_source: site.blogSource,
+              email,
+              nom: name,
+              sujet: subject,
+              message,
+              statut: 'filtre_formulaire_perime',
+              details: {elapsedMs},
+            });
+            return sendJson(response, {success: true, message: 'Requête filtrée'}, 200, corsHeaders);
+          }
         }
 
         if (!email || !message) {
@@ -1009,6 +1067,29 @@ exports.sendContactEmail = onRequest(
             details: turnstileResult['error-codes'] || [],
           });
 
+          return sendJson(response, {
+            success: false,
+            error: 'Échec de la vérification de sécurité. Veuillez réessayer.',
+          }, 403, corsHeaders);
+        }
+
+        if (!hostnameMatchesSite(turnstileResult.hostname || '', site)) {
+          console.warn('⚠️ [blogLeadHub] Turnstile hostname mismatch for contact form', {
+            siteId: site.siteId,
+            blogSource: site.blogSource,
+            email,
+            hostname: turnstileResult.hostname || '',
+          });
+          await logContactSubmission({
+            site_source: site.siteId,
+            blog_source: site.blogSource,
+            email,
+            nom: name,
+            sujet: subject,
+            message,
+            statut: 'echec_turnstile_hostname',
+            details: {hostname: turnstileResult.hostname || ''},
+          });
           return sendJson(response, {
             success: false,
             error: 'Échec de la vérification de sécurité. Veuillez réessayer.',
