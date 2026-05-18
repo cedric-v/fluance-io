@@ -1,3 +1,8 @@
+---
+permalink: false
+eleventyExcludeFromCollections: true
+---
+
 # QR Codes pour Flyers
 
 Ce dossier contient les codes QR générés pour les campagnes de flyers.
@@ -61,7 +66,6 @@ Pour vérifier que le QR code fonctionne correctement :
 - Les QR codes sont automatiquement trackés par Google Tag Manager
 - Les paramètres UTM sont conservés dans l'URL et transmis à Google Analytics
 - Pour un meilleur résultat d'impression, utilisez toujours la version SVG
-
 
 
 

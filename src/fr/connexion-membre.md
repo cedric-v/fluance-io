@@ -66,7 +66,7 @@ permalink: /connexion-membre/
           <label for="password" class="block text-sm font-medium text-[#3E3A35]">
             Mot de passe
           </label>
-          <a href="/reinitialiser-mot-de-passe" class="text-sm text-fluance hover:text-fluance/80">
+          <a href="/reinitialiser-mot-de-passe/" class="text-sm text-fluance hover:text-fluance/80">
             Mot de passe oublié ?
           </a>
         </div>
@@ -129,10 +129,10 @@ permalink: /connexion-membre/
     <div class="mt-6 text-center space-y-2">
       <p class="text-sm text-[#1f1f1f]/80">
         Pas encore de compte ? 
-        <a href="/creer-compte" class="text-fluance hover:text-fluance/80 font-medium">Créer un compte</a>
+        <a href="/creer-compte/" class="text-fluance hover:text-fluance/80 font-medium">Créer un compte</a>
       </p>
       <p class="text-sm text-[#1f1f1f]/60">
-        <a href="/connexion" class="hover:text-fluance">Retour à la page de connexion principale</a>
+        <a href="/connexion/" class="hover:text-fluance">Retour à la page de connexion principale</a>
       </p>
     </div>
 
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   if (actionCode && mode === 'resetPassword') {
     // Rediriger vers la page de réinitialisation avec le code
-    window.location.replace(`/reinitialiser-mot-de-passe?oobCode=${actionCode}&mode=${mode}`);
+    window.location.replace(`/reinitialiser-mot-de-passe/?oobCode=${actionCode}&mode=${mode}`);
     return;
   }
   
@@ -516,5 +516,4 @@ document.addEventListener('DOMContentLoaded', async function() {
   window.toggleHelp = toggleHelp;
 });
 </script>
-
 

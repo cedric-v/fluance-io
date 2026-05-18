@@ -128,7 +128,7 @@ permalink: /creer-compte/
     <div class="mt-6 text-center">
       <p class="text-sm text-[#1f1f1f]/80">
         Déjà un compte ? 
-        <a href="/connexion-membre" class="text-fluance hover:text-fluance/80 font-medium">Se connecter</a>
+        <a href="/connexion-membre/" class="text-fluance hover:text-fluance/80 font-medium">Se connecter</a>
       </p>
     </div>
 

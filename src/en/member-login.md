@@ -117,10 +117,10 @@ permalink: /en/member-login/
     <div class="mt-6 text-center space-y-2">
       <p class="text-sm text-[#1f1f1f]/80">
         Don't have an account yet? 
-        <a href="/en/create-account" class="text-fluance hover:text-fluance/80 font-medium">Create an account</a>
+        <a href="/en/create-account/" class="text-fluance hover:text-fluance/80 font-medium">Create an account</a>
       </p>
       <p class="text-sm text-[#1f1f1f]/60">
-        <a href="/en/connexion" class="hover:text-fluance">Back to main login page</a>
+        <a href="/en/connexion/" class="hover:text-fluance">Back to main login page</a>
       </p>
     </div>
 

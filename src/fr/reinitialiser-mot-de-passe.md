@@ -110,7 +110,7 @@ permalink: /reinitialiser-mot-de-passe/
 
     <div class="mt-6 text-center space-y-2">
       <p class="text-sm text-[#1f1f1f]/80">
-        <a href="/connexion-membre" class="text-fluance hover:text-fluance/80 font-medium">Retour à la connexion</a>
+        <a href="/connexion-membre/" class="text-fluance hover:text-fluance/80 font-medium">Retour à la connexion</a>
       </p>
     </div>
   </div>
@@ -228,13 +228,13 @@ document.addEventListener('DOMContentLoaded', async function() {
           confirmSuccessDiv.classList.remove('hidden');
           
           // Nettoyer l'URL pour éviter que Firebase Auth ne redirige automatiquement
-          window.history.replaceState({}, document.title, '/reinitialiser-mot-de-passe');
+          window.history.replaceState({}, document.title, '/reinitialiser-mot-de-passe/');
           
           // Rediriger vers la page de connexion
           // L'utilisateur pourra se connecter avec son nouveau mot de passe
           // Safari détectera correctement le domaine fluance.io lors de la connexion manuelle
           setTimeout(() => {
-            window.location.replace('/connexion-membre');
+            window.location.replace('/connexion-membre/');
           }, 1500);
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Erreur lors de la réinitialisation.';
@@ -312,4 +312,3 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 });
 </script>
-

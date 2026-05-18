@@ -319,8 +319,8 @@ async function sendSignInLink(email, actionCodeSettings = null) {
     // Configuration par défaut : lien valide pour cette page
     const defaultSettings = {
       url: window.location.hostname === 'fluance.io' 
-        ? 'https://fluance.io/connexion-membre' 
-        : window.location.origin + '/connexion-membre',
+        ? 'https://fluance.io/connexion-membre/' 
+        : window.location.origin + '/connexion-membre/',
       handleCodeInApp: true
     };
     
@@ -407,7 +407,7 @@ async function sendPasswordResetEmail(email) {
 
     // Détecter la langue depuis l'URL ou le chemin
     const isEnglish = window.location.pathname.startsWith('/en/');
-    const loginPath = isEnglish ? '/en/member-login' : '/connexion-membre';
+    const loginPath = isEnglish ? '/en/member-login/' : '/connexion-membre/';
 
     // Configuration pour le lien de réinitialisation
     // L'URL pointe vers la page de connexion, qui redirigera vers la page de réinitialisation si un code est présent
@@ -1521,7 +1521,7 @@ function updateUIForUnauthenticatedUser() {
     content.innerHTML = `
       <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <p class="text-yellow-800">Veuillez vous connecter pour accéder à ce contenu.</p>
-        <a href="/connexion" class="text-blue-600 underline">Se connecter</a>
+        <a href="/connexion/" class="text-blue-600 underline">Se connecter</a>
       </div>
     `;
   });
@@ -2205,4 +2205,3 @@ window.FluanceAuth = {
   signInWithPasskey,
   linkPasskeyToAccount
 };
-

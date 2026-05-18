@@ -298,14 +298,6 @@ module.exports = function (eleventyConfig) {
       "@type": "WebSite",
       "name": "Fluance",
       "url": baseUrl,
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": {
-          "@type": "EntryPoint",
-          "urlTemplate": `${baseUrl}/?q={search_term_string}`
-        },
-        "query-input": "required name=search_term_string"
-      },
       "inLanguage": pageLocale === 'fr' ? 'fr-FR' : 'en-US',
       "alternateName": pageLocale === 'fr' ? 'Fluance - Mouvement, souffle et jeu' : 'Fluance - Movement, breath and play'
     };

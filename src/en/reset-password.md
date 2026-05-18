@@ -110,7 +110,7 @@ permalink: /en/reset-password/
 
     <div class="mt-6 text-center space-y-2">
       <p class="text-sm text-[#1f1f1f]/80">
-        <a href="/en/member-login" class="text-fluance hover:text-fluance/80 font-medium">Back to login</a>
+        <a href="/en/member-login/" class="text-fluance hover:text-fluance/80 font-medium">Back to login</a>
       </p>
     </div>
   </div>
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           // User can log in with their new password
           // Safari will correctly detect the fluance.io domain during manual login
           setTimeout(() => {
-            window.location.replace('/en/member-login');
+            window.location.replace('/en/member-login/');
           }, 1500);
         } else {
           confirmErrorDiv.querySelector('p').textContent = result.error || 'Error resetting password.';

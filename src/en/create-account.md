@@ -128,7 +128,7 @@ permalink: /en/create-account/
     <div class="mt-6 text-center">
       <p class="text-sm text-[#1f1f1f]/80">
         Already have an account? 
-        <a href="/en/member-login" class="text-fluance hover:text-fluance/80 font-medium">Login</a>
+        <a href="/en/member-login/" class="text-fluance hover:text-fluance/80 font-medium">Login</a>
       </p>
     </div>
 

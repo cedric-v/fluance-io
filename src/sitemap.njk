@@ -14,7 +14,13 @@ eleventyExcludeFromCollections: true
         {%- if page.data.robots and "noindex" in page.data.robots -%}
           {%- set isNoIndex = true -%}
         {%- endif -%}
-        {%- if not page.url.endsWith(".js") and not page.url.endsWith(".css") and not page.url.endsWith(".xml") and not isNoIndex and not page.data.eleventyExcludeFromCollections -%}
+        {%- set isExcludedFromSitemap = page.data.excludeFromSitemap
+          or page.data.redirectTo
+          or page.url.startsWith("/emails/")
+          or page.url.startsWith("/assets/")
+          or page.url.startsWith("/admin/")
+          or page.url.startsWith("/membre/") -%}
+        {%- if not page.url.endsWith(".js") and not page.url.endsWith(".css") and not page.url.endsWith(".xml") and not isNoIndex and not page.data.eleventyExcludeFromCollections and not isExcludedFromSitemap -%}
           {%- set cleanUrl = page.url | replace("/fluance-io", "") -%}
           {%- set fullUrl = "https://fluance.io" + cleanUrl -%}
           {%- if page.date -%}

@@ -36,6 +36,14 @@
         "to": "/a-propos/histoire-cedric/"
     },
     {
+        "from": "/fr/a-propos/philosophie",
+        "to": "/a-propos/philosophie/"
+    },
+    {
+        "from": "/fr/accompagnements-individuels/entrepreneurs-independants",
+        "to": "/accompagnements-individuels/entrepreneurs-independants/"
+    },
+    {
         "from": "/fr/presentiel/reserver",
         "to": "/presentiel/reserver/"
     },

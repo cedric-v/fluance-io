@@ -1,3 +1,8 @@
+---
+permalink: false
+eleventyExcludeFromCollections: true
+---
+
 # Logos de paiement
 
 Ce dossier doit contenir les logos suivants :
@@ -10,5 +15,4 @@ Ce dossier doit contenir les logos suivants :
 - `paypal.png` - Logo PayPal
 
 Les logos doivent être en format PNG avec un fond transparent ou blanc, et avoir une hauteur d'environ 32px (h-8 en Tailwind).
-
 
