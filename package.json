@@ -39,7 +39,7 @@
     "@tootallnate/once": "3.0.1",
     "@protobufjs/utf8": "1.1.1",
     "fast-xml-builder": "1.2.0",
-    "fast-xml-parser": "5.7.0",
+    "fast-xml-parser": "5.8.0",
     "protobufjs": "7.5.8",
     "yaml": "2.8.3"
   }
