@@ -52,8 +52,13 @@ permalink: /presentiel/cours-hebdomadaires/
       <div class="mt-6 pt-6 border-t border-fluance/20">
         <h3 class="text-xl font-semibold text-fluance mb-3">Horaires</h3>
 
+        <p class="text-sm font-semibold text-fluance mt-4 mb-1">Horaire actuel</p>
         <p class="text-[#3E3A35] mb-2">Les jeudis de 12h15 à 13h</p>
         <p class="text-[#3E3A35] mb-2">Les jeudis de 20h15 à 21h</p>
+
+        <p class="text-sm font-semibold text-fluance mt-4 mb-1">Dès le 27 août 2026</p>
+        <p class="text-[#3E3A35] mb-2">Les mercredis de 17h30 à 18h15</p>
+        <p class="text-[#3E3A35] mb-2">Les jeudis de 12h15 à 13h</p>
         <p class="text-[#3E3A35]">Vous souhaitez un autre moment ? <a href="{{ '/contact/' | relativeUrl }}" class="text-fluance hover:underline">Faites la demande</a>. S'il y a assez de demandes, un nouveau créneau sera ouvert.</p>
       </div>
       <div class="mt-6 pt-6 border-t border-fluance/20">
