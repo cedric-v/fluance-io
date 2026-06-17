@@ -39,7 +39,7 @@
     "@tootallnate/once": "3.0.1",
     "@protobufjs/utf8": "1.1.1",
     "fast-xml-builder": "1.2.0",
-    "fast-xml-parser": "5.9.0",
+    "fast-xml-parser": "5.9.2",
     "liquidjs": "10.27.0",
     "protobufjs": "7.6.4",
     "uuid": "11.1.1",
