@@ -360,11 +360,11 @@
       };
     }
 
-    // Calculer le nombre de participants (0 à 7 réservations = message qualitatif)
+    // Calculer le nombre de participants (moins de 50% de remplissage = message qualitatif)
     const participantCount = maxCapacity - spotsRemaining;
 
-    // Si 0 à 7 réservations : vérifier si on doit afficher la rareté temporelle
-    if (participantCount <= 7) {
+    // Si moins de 50% de remplissage : vérifier si on doit afficher la rareté temporelle
+    if (participantCount < maxCapacity * 0.5) {
       // Calculer le temps restant jusqu'au cours si date et heure sont fournies
       let hoursUntilCourse = null;
       if (courseDate && courseTime) {
@@ -452,8 +452,8 @@
       };
     }
 
-    // Jaune/Amber : 40-70% OU 6-10 places (modéré)
-    if (availabilityPercent < 70 || spotsCount <= 10) {
+    // Jaune/Amber : 40-70% (modéré)
+    if (availabilityPercent < 70) {
       return {
         colorClass: 'text-amber-600',
         bgClass: 'bg-amber-50',

@@ -138,11 +138,11 @@ eleventyExcludeFromCollections: true
         };
       }
 
-      // Calculer le nombre de participants (0 à 7 réservations = message qualitatif)
+      // Calculer le nombre de participants (moins de 50% de remplissage = message qualitatif)
       const participantCount = maxCapacity - spotsRemaining;
       
-      // Si 0 à 7 réservations : vérifier si on doit afficher la rareté temporelle
-      if (participantCount <= 7) {
+      // Si moins de 50% de remplissage : vérifier si on doit afficher la rareté temporelle
+      if (participantCount < maxCapacity * 0.5) {
         // Calculer le temps restant jusqu'au cours si date et heure sont fournies
         let hoursUntilCourse = null;
         if (courseDate && courseTime) {
@@ -226,7 +226,7 @@ eleventyExcludeFromCollections: true
         };
       }
 
-      if (availabilityPercent < 70 || spotsCount <= 10) {
+      if (availabilityPercent < 70) {
         return {
           colorClass: 'text-amber-600',
           bgClass: 'bg-amber-50',
@@ -291,7 +291,7 @@ eleventyExcludeFromCollections: true
         data.courses.forEach(course => {
           const availability = getAvailabilityStyle(
             course.spotsRemaining,
-            course.maxCapacity || 15,
+            course.maxCapacity || 10,
             course.isFull,
             course.date, // Format DD/MM/YYYY
             course.time  // Format HH:MM

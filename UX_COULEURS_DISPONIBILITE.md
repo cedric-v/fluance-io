@@ -17,8 +17,8 @@ Le système utilise **deux critères combinés** pour déterminer la couleur :
 | **Complet** (0 places) | 🔴 Rouge | ⚠️ | "Complet" | Critique | - |
 | **< 20% OU < 3 places** | 🔴 Rouge | 🔥 | "Dernière place !" ou "X places restantes" | Critique | Crée urgence maximale, encourage action immédiate |
 | **20-40% OU 3-5 places** | 🟠 Orange | ⚡ | "X places restantes" | Élevée | Alerte modérée, encourage réservation rapide |
-| **40-70% OU 6-10 places** | 🟡 Amber/Jaune | ✨ | "X places disponibles" | Modérée | Information neutre, pas d'urgence |
-| **> 70% ET > 10 places** | 🟢 Vert | ✓ | "X places disponibles" | Faible | Rassure sur la disponibilité |
+| **40-70%** | 🟡 Amber/Jaune | ✨ | "X places disponibles" | Modérée | Information neutre, pas d'urgence |
+| **> 70%** | 🟢 Vert | ✓ | "X places disponibles" | Faible | Rassure sur la disponibilité |
 
 ## Avantages du Système Adaptatif
 
@@ -33,8 +33,8 @@ Le système utilise **deux critères combinés** pour déterminer la couleur :
 **Cours de 10 personnes :**
 - 2 places restantes → 🔴 Rouge (20% mais < 3 places)
 - 4 places restantes → 🟠 Orange (40% mais ≤ 5 places)
-- 7 places restantes → 🟡 Amber (70% mais ≤ 10 places)
-- 9 places restantes → 🟢 Vert (> 70% et > 10 places ? Non, mais > 70%)
+- 6 places restantes → 🟡 Amber (60%)
+- 9 places restantes → 🟢 Vert (90%)
 
 **Cours de 20 personnes :**
 - 3 places restantes → 🔴 Rouge (15% < 20%)
@@ -103,8 +103,8 @@ const availability = getAvailabilityStyle(
 
 1. **Rouge (< 3 places)** : Encourage réservation immédiate
 2. **Orange (3-5 places)** : Encourage réservation rapide sans stress excessif
-3. **Jaune (6-10 places)** : Information neutre, pas de pression
-4. **Vert (> 10 places)** : Rassure, pas d'urgence
+3. **Jaune (40-70%)** : Information neutre, pas de pression
+4. **Vert (> 70%)** : Rassure, pas d'urgence
 
 ### Éviter le "Cry Wolf"
 
@@ -120,8 +120,8 @@ const availability = getAvailabilityStyle(
 2. **1 place restante** : "Dernière place !" avec animation pulse
 3. **2-3 places** : Rouge avec "X places restantes"
 4. **4-5 places** : Orange avec "X places restantes"
-5. **6-10 places** : Amber avec "X places disponibles"
-6. **> 10 places** : Vert avec "X places disponibles"
+5. **40-70%** : Amber avec "X places disponibles"
+6. **> 70%** : Vert avec "X places disponibles"
 
 ### Capacités à Tester
 
