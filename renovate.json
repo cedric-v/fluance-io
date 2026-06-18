@@ -7,7 +7,19 @@
   "automergeType": "pr",
   "platformAutomerge": true,
   "automergeStrategy": "squash",
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "schedule": ["on monday"],
   "major": {
     "automerge": false
-  }
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
+      "groupName": "non-major dependencies",
+      "groupSlug": "non-major",
+      "automerge": true
+    }
+  ]
 }
