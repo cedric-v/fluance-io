@@ -531,7 +531,7 @@
         
         <!-- Date et heure mises en avant -->
         <div class="bg-fluance/5 border border-fluance/20 rounded-lg p-4 mb-4">
-          <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
             <div class="flex items-center gap-2">
               <svg class="w-5 h-5 text-fluance flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -609,7 +609,7 @@
     }).join('');
 
     return `
-      <div class="col-span-full mb-6">
+      <div class="col-span-full mb-6 min-w-0">
         <div class="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory"
              style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
           ${pills}
