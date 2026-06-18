@@ -159,6 +159,11 @@
   let storedLastName = ''; // Nom stocké pour pré-remplir les formulaires
   let hasOpenedPreselectedCourse = false;
 
+  // État pour la navigation par mois
+  let coursesByMonth = {};
+  let monthKeys = [];
+  let selectedMonthKey = null;
+
   /**
    * Formate une date au format DD/MM/YYYY en format lisible selon la locale
    * @param {string} dateStr - Date au format DD/MM/YYYY
@@ -245,11 +250,40 @@
         return;
       }
 
-      // Limiter à 6 cours maximum (même si l'API en retourne plus)
-      const coursesToDisplay = data.courses.slice(0, 6);
-      container.innerHTML = coursesToDisplay.map(course => renderCourseCard(course)).join('');
+      // Grouper les cours par mois (plus de limite à 6)
+      coursesByMonth = groupCoursesByMonth(data.courses);
+      monthKeys = Object.keys(coursesByMonth).sort();
 
-      // Attacher les événements de clic
+      // Sélectionner le mois par défaut
+      if (!selectedMonthKey || !coursesByMonth[selectedMonthKey]) {
+        const preselectedId = getPreselectedCourseId();
+        if (preselectedId) {
+          const preselectedCourse = data.courses.find(c => c.id === preselectedId);
+          if (preselectedCourse) {
+            const [d, m, y] = preselectedCourse.date.split('/');
+            selectedMonthKey = `${y}-${m}`;
+          } else {
+            selectedMonthKey = monthKeys[0];
+          }
+        } else {
+          selectedMonthKey = monthKeys[0];
+        }
+      }
+
+      // Rendre les pills de navigation + les cartes du mois sélectionné
+      const pillsHtml = renderMonthPills(monthKeys, selectedMonthKey);
+      const coursesHtml = coursesByMonth[selectedMonthKey].map(course => renderCourseCard(course)).join('');
+      container.innerHTML = pillsHtml + coursesHtml;
+
+      // Attacher les événements sur les pills de mois
+      document.querySelectorAll('[data-month-pill]').forEach(pill => {
+        pill.addEventListener('click', () => {
+          const monthKey = pill.dataset.monthPill;
+          switchToMonth(monthKey);
+        });
+      });
+
+      // Attacher les événements de clic sur les cartes
       container.querySelectorAll('[data-course-id]').forEach(card => {
         card.addEventListener('click', () => {
           const courseId = card.dataset.courseId;
@@ -257,7 +291,7 @@
         });
       });
 
-      maybeOpenPreselectedCourse(coursesToDisplay);
+      maybeOpenPreselectedCourse(data.courses);
 
     } catch (error) {
       console.error('Error loading courses:', error);
@@ -527,6 +561,90 @@
         </div>
       </div>
     `;
+  }
+
+  /**
+   * Groupe les cours par mois (YYYY-MM)
+   */
+  function groupCoursesByMonth(courses) {
+    const byMonth = {};
+    courses.forEach(course => {
+      const [day, month, year] = course.date.split('/');
+      const key = `${year}-${month}`;
+      if (!byMonth[key]) {
+        byMonth[key] = [];
+      }
+      byMonth[key].push(course);
+    });
+    return byMonth;
+  }
+
+  /**
+   * Rend les pills de navigation par mois
+   */
+  function renderMonthPills(monthKeys, selectedKey) {
+    if (monthKeys.length <= 1) return '';
+
+    const locale = currentLocale === 'en' ? 'en-US' : 'fr-CH';
+
+    const pills = monthKeys.map(key => {
+      const [year, month] = key.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const monthName = date.toLocaleDateString(locale, { month: 'long' });
+      const count = coursesByMonth[key].length;
+      const label = currentLocale === 'en'
+        ? `${monthName} · ${count} class${count !== 1 ? 'es' : ''}`
+        : `${monthName} · ${count} cours`;
+      const isActive = key === selectedKey;
+
+      return `
+        <button data-month-pill="${key}"
+                class="px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex-shrink-0 snap-start
+                       ${isActive
+                         ? 'bg-fluance text-white shadow-md'
+                         : 'bg-white text-[#3E3A35]/70 border border-gray-200 hover:border-fluance hover:text-fluance'}">
+          ${label}
+        </button>
+      `;
+    }).join('');
+
+    return `
+      <div class="col-span-full mb-6">
+        <div class="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory"
+             style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
+          ${pills}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Change le mois sélectionné et réaffiche les cours
+   */
+  function switchToMonth(monthKey) {
+    if (monthKey === selectedMonthKey) return;
+    selectedMonthKey = monthKey;
+
+    const container = document.getElementById('courses-list');
+    if (!container) return;
+
+    const pillsHtml = renderMonthPills(monthKeys, selectedMonthKey);
+    const coursesHtml = coursesByMonth[selectedMonthKey].map(course => renderCourseCard(course)).join('');
+    container.innerHTML = pillsHtml + coursesHtml;
+
+    document.querySelectorAll('[data-month-pill]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const key = pill.dataset.monthPill;
+        switchToMonth(key);
+      });
+    });
+
+    container.querySelectorAll('[data-course-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        const courseId = card.dataset.courseId;
+        openBookingModal(courseId, card.dataset);
+      });
+    });
   }
 
   /**
@@ -1729,6 +1847,7 @@
   window.FluanceBooking = {
     init,
     loadAvailableCourses,
+    switchToMonth,
     openBookingModal,
     closeBookingModal,
     goBackToEmail,

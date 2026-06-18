@@ -10582,7 +10582,7 @@ exports.getAvailableCourses = onRequest(
             .where('startTime', '>=', now)
             .where('status', '==', 'active')
             .orderBy('startTime', 'asc')
-            .limit(6)
+            .limit(100)
             .get();
 
         const courses = [];
