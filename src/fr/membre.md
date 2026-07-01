@@ -378,11 +378,11 @@ document.addEventListener('DOMContentLoaded', function() {
           } else if (prod.id === '21jours') {
             // Pour 21jours, afficher avec navigation par jour
             const daysSinceStart = userProduct.daysSinceStart || 0;
-            const currentDay = Math.min(daysSinceStart + 1, totalDays);
             
             // Calculer le nombre total de jours (incluant le bonus jour 22)
             const maxDay = Math.max(...userProduct.contents.map(c => c.day || 0), 21);
             const totalDays = maxDay >= 22 ? 23 : 22; // 23 si bonus jour 22 existe, sinon 22
+            const currentDay = Math.min(daysSinceStart + 1, totalDays);
             
             contentHTML += `
               <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
