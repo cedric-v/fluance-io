@@ -707,6 +707,10 @@ async function signOut() {
   }
 }
 
+// Cache session pour éviter les lectures Firestore redondantes
+let _cachedUserProducts = null;
+let _cachedUserUid = null;
+
 /**
  * Charge le contenu protégé depuis Firestore
  */
@@ -722,73 +726,82 @@ async function loadProtectedContent(contentId = null) {
       };
     }
 
-    // Récupérer les informations de l'utilisateur depuis Firestore
-    let userDoc = await db.collection('users').doc(user.uid).get();
-    if (!userDoc.exists) {
-      // Essayer de réparer automatiquement le document Firestore
-      console.log('[Protected Content] Document Firestore manquant, tentative de réparation...');
-      try {
-        await ensureFunctionsLoaded();
-        const app = firebase.app();
-        const functions = app.functions('europe-west1');
-        const repairUserDocument = functions.httpsCallable('repairUserDocument');
-        
-        // Ne pas spécifier de produit : la fonction détectera automatiquement depuis Mailjet
-        const repairResult = await repairUserDocument({
-          email: user.email,
-          // product non spécifié : détection automatique depuis Mailjet
-        });
-        
-        if (repairResult.data && repairResult.data.success) {
-          console.log('[Protected Content] Document Firestore créé avec succès');
-          // Recharger le document
-          userDoc = await db.collection('users').doc(user.uid).get();
-        } else {
-          throw new Error('Réparation échouée');
+    // Récupérer les informations de l'utilisateur (avec cache)
+    let userProducts;
+    
+    if (_cachedUserProducts && _cachedUserUid === user.uid) {
+      userProducts = _cachedUserProducts;
+    } else {
+      let userDoc = await db.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        // Essayer de réparer automatiquement le document Firestore
+        console.log('[Protected Content] Document Firestore manquant, tentative de réparation...');
+        try {
+          await ensureFunctionsLoaded();
+          const app = firebase.app();
+          const functions = app.functions('europe-west1');
+          const repairUserDocument = functions.httpsCallable('repairUserDocument');
+          
+          // Ne pas spécifier de produit : la fonction détectera automatiquement depuis Mailjet
+          const repairResult = await repairUserDocument({
+            email: user.email,
+            // product non spécifié : détection automatique depuis Mailjet
+          });
+          
+          if (repairResult.data && repairResult.data.success) {
+            console.log('[Protected Content] Document Firestore créé avec succès');
+            // Recharger le document
+            userDoc = await db.collection('users').doc(user.uid).get();
+          } else {
+            throw new Error('Réparation échouée');
+          }
+        } catch (repairError) {
+          console.error('[Protected Content] Erreur lors de la réparation:', repairError);
+          return { 
+            success: false, 
+            error: 'Votre compte n\'a pas été trouvé dans notre système. Cela peut arriver si le compte a été créé récemment. Veuillez contacter le support si le problème persiste.',
+            errorCode: 'USER_NOT_FOUND',
+            suggestion: 'Contactez le support avec votre email: ' + user.email
+          };
         }
-      } catch (repairError) {
-        console.error('[Protected Content] Erreur lors de la réparation:', repairError);
+        
+        // Vérifier à nouveau après la tentative de réparation
+        if (!userDoc.exists) {
+          return { 
+            success: false, 
+            error: 'Votre compte n\'a pas été trouvé dans notre système. Veuillez contacter le support.',
+            errorCode: 'USER_NOT_FOUND',
+            suggestion: 'Contactez le support avec votre email: ' + user.email
+          };
+        }
+      }
+
+      const userData = userDoc.data();
+      
+      // Récupérer les produits : nouveau format (products[]) ou ancien format (product) pour compatibilité
+      userProducts = userData.products || [];
+      
+      // Migration automatique : si products[] n'existe pas mais product existe
+      if (userProducts.length === 0 && userData.product) {
+        userProducts = [{
+          name: userData.product,
+          startDate: userData.registrationDate || userData.createdAt || {toDate: () => new Date()},
+          purchasedAt: userData.createdAt || {toDate: () => new Date()},
+        }];
+      }
+      
+      // Vérifier qu'au moins un produit est défini
+      if (userProducts.length === 0) {
         return { 
           success: false, 
-          error: 'Votre compte n\'a pas été trouvé dans notre système. Cela peut arriver si le compte a été créé récemment. Veuillez contacter le support si le problème persiste.',
-          errorCode: 'USER_NOT_FOUND',
+          error: 'Votre compte n\'a pas de produit associé. Veuillez contacter le support pour résoudre ce problème.',
+          errorCode: 'NO_PRODUCT',
           suggestion: 'Contactez le support avec votre email: ' + user.email
         };
       }
       
-      // Vérifier à nouveau après la tentative de réparation
-      if (!userDoc.exists) {
-        return { 
-          success: false, 
-          error: 'Votre compte n\'a pas été trouvé dans notre système. Veuillez contacter le support.',
-          errorCode: 'USER_NOT_FOUND',
-          suggestion: 'Contactez le support avec votre email: ' + user.email
-        };
-      }
-    }
-
-    const userData = userDoc.data();
-    
-    // Récupérer les produits : nouveau format (products[]) ou ancien format (product) pour compatibilité
-    let userProducts = userData.products || [];
-    
-    // Migration automatique : si products[] n'existe pas mais product existe
-    if (userProducts.length === 0 && userData.product) {
-      userProducts = [{
-        name: userData.product,
-        startDate: userData.registrationDate || userData.createdAt || {toDate: () => new Date()},
-        purchasedAt: userData.createdAt || {toDate: () => new Date()},
-      }];
-    }
-    
-    // Vérifier qu'au moins un produit est défini
-    if (userProducts.length === 0) {
-      return { 
-        success: false, 
-        error: 'Votre compte n\'a pas de produit associé. Veuillez contacter le support pour résoudre ce problème.',
-        errorCode: 'NO_PRODUCT',
-        suggestion: 'Contactez le support avec votre email: ' + user.email
-      };
+      _cachedUserProducts = userProducts;
+      _cachedUserUid = user.uid;
     }
     
     // Pour compatibilité rétroactive, garder userProduct comme le premier produit
@@ -890,10 +903,9 @@ async function loadProtectedContent(contentId = null) {
     // Sinon, charger la liste des contenus disponibles pour tous les produits
     try {
       const now = new Date();
-      const productsData = [];
       
-      // Pour chaque produit de l'utilisateur, charger ses contenus
-      for (const userProductData of userProducts) {
+      // Charger les contenus de tous les produits en parallèle
+      const productsData = await Promise.all(userProducts.map(async (userProductData) => {
         const productName = userProductData.name;
         const startDate = userProductData.startDate ? userProductData.startDate.toDate() : new Date();
         
@@ -983,14 +995,14 @@ async function loadProtectedContent(contentId = null) {
           contents.push(contentObj);
         });
         
-        productsData.push({
+        return {
           name: productName,
           startDate: startDate,
           contents: contents,
           daysSinceStart: productName === '21jours' ? daysSinceStart : null,
           weeksSinceStart: productName === 'complet' ? weeksSinceStart : null,
-        });
-      }
+        };
+      }));
 
       // Retourner tous les produits avec leurs contenus
       // Garder aussi product et daysSinceRegistration pour compatibilité rétroactive
@@ -1125,26 +1137,35 @@ async function displayProtectedContent(contentId, containerElement) {
     containerElement.innerHTML = result.content;
     
     // Gérer l'affichage conditionnel des liens selon les produits de l'utilisateur
-    // Récupérer les produits de l'utilisateur depuis loadProtectedContent
+    // Utiliser le cache si disponible pour éviter une lecture Firestore redondante
+    let userProductNames = null;
     const user = auth.currentUser;
     if (user) {
-      db.collection('users').doc(user.uid).get().then((userDoc) => {
-        if (userDoc.exists) {
-          const userData = userDoc.data();
-          const userProducts = userData.products || [];
-          const userProductNames = userProducts.map(p => p.name);
-          
-          // Masquer les liens qui ont data-hide-if-product correspondant à un produit possédé
-          const conditionalLinks = containerElement.querySelectorAll('[data-hide-if-product]');
-          conditionalLinks.forEach((link) => {
-            const productToHide = link.getAttribute('data-hide-if-product');
-            if (userProductNames.includes(productToHide)) {
-              link.style.display = 'none';
-            }
-          });
+      if (_cachedUserProducts && _cachedUserUid === user.uid) {
+        userProductNames = _cachedUserProducts.map(p => p.name);
+      } else {
+        try {
+          const userDoc = await db.collection('users').doc(user.uid).get();
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            const userProducts = userData.products || [];
+            userProductNames = userProducts.map(p => p.name);
+            _cachedUserProducts = userProducts;
+            _cachedUserUid = user.uid;
+          }
+        } catch (error) {
+          console.warn('Erreur lors de la récupération des produits utilisateur pour affichage conditionnel:', error);
         }
-      }).catch((error) => {
-        console.warn('Erreur lors de la récupération des produits utilisateur pour affichage conditionnel:', error);
+      }
+    }
+    
+    if (userProductNames) {
+      const conditionalLinks = containerElement.querySelectorAll('[data-hide-if-product]');
+      conditionalLinks.forEach((link) => {
+        const productToHide = link.getAttribute('data-hide-if-product');
+        if (userProductNames.includes(productToHide)) {
+          link.style.display = 'none';
+        }
       });
     }
     
