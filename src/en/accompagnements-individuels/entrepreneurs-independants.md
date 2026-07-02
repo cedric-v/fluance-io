@@ -11,26 +11,20 @@ permalink: /en/accompagnements-individuels/entrepreneurs-independants/
     <h1 class="text-4xl font-semibold text-[#3E3A35]">Fluidity for your professional business</h1>
   </header>
 
-  <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
-    <p class="text-lg text-[#3E3A35]">
-      Are you an entrepreneur or independent professional?<br><br>
-      Cédric can also help you <strong>regain fluidity and harmony at the level of your professional business structure</strong>.
-    </p>
-
-    <p class="text-lg text-[#3E3A35]">
-      That is, to get out of stress, overload and scattering, and sometimes also to (re)find a business model that fully corresponds to you.
-    </p>
-
-    <p class="text-lg text-[#3E3A35]">
-      This takes the form of individual coaching to regain <strong>strategic clarity</strong> and <strong>operational fluidity</strong>.
-    </p>
-
-    <p class="text-lg text-[#3E3A35]">
-      This <strong>other aspect of Cédric's work</strong> is presented by clicking on the button below:
-    </p>
-
-    <div class="text-center pt-6">
-      <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2">Learn more <span>→</span></a>
+  <article class="prose prose-lg max-w-none text-[#1f1f1f]">
+    <div class="flex flex-col md:flex-row gap-8 md:gap-12 items-start">
+      <div class="w-full md:w-2/5 md:order-1 shrink-0">
+        {% responsiveImage "/assets/img/cedric-main-poches-juin2026.jpg", "Cédric Vonlanthen, entrepreneur coaching", "(max-width: 768px) 100vw, 400px", "rounded-xl shadow-sm w-full h-auto", "eager" %}
+      </div>
+      <div class="w-full md:w-3/5 md:order-2 space-y-6">
+        <p class="text-lg text-[#3E3A35]">Are you an entrepreneur or independent professional?<br><br>Cédric can also help you <strong>regain fluidity and harmony at the level of your professional business structure</strong>.</p>
+        <p class="text-lg text-[#3E3A35]">That is, to get out of stress, overload and scattering, and sometimes also to (re)find a business model that fully corresponds to you.</p>
+        <p class="text-lg text-[#3E3A35]">This takes the form of individual coaching to regain <strong>strategic clarity</strong> and <strong>operational fluidity</strong>.</p>
+        <p class="text-lg text-[#3E3A35]">This <strong>other aspect of Cédric's work</strong> is presented by clicking on the button below:</p>
+        <div class="pt-2">
+          <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2">Learn more <span>→</span></a>
+        </div>
+      </div>
     </div>
   </article>
 </section>

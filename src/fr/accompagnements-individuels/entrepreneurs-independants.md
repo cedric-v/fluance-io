@@ -11,26 +11,20 @@ permalink: /accompagnements-individuels/entrepreneurs-independants/
     <h1 class="text-4xl font-semibold text-[#3E3A35]">Fluidité pour ton activité professionnelle</h1>
   </header>
 
-  <article class="prose prose-lg max-w-none space-y-6 text-[#1f1f1f]">
-    <p class="text-lg text-[#3E3A35]">
-      Tu es entrepreneur·e ou indépendant·e ?<br><br>
-      Cédric peut aussi t'aider à <strong>retrouver de la fluidité et de l'harmonie au niveau de la structure de ton activité professionnelle</strong>.
-    </p>
-
-    <p class="text-lg text-[#3E3A35]">
-      C'est-à-dire à sortir du stress, de la surchage et de l'éparpillement et parfois aussi à (re)trouver un modèle d'affaires qui te correspond pleinement.
-    </p>
-
-    <p class="text-lg text-[#3E3A35]">
-      Cela se présente sous la forme d'un accompagnement individuel pour retrouver la <strong>clarté stratégique</strong> et la <strong>fluidité opérationnelle</strong>.
-    </p>
-
-    <p class="text-lg text-[#3E3A35]">
-      Cette <strong>autre casquette de Cédric</strong> est présentée en cliquant sur le bouton ci-dessous :
-    </p>
-
-    <div class="text-center pt-6">
-      <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2">En savoir plus <span>→</span></a>
+  <article class="prose prose-lg max-w-none text-[#1f1f1f]">
+    <div class="flex flex-col md:flex-row gap-8 md:gap-12 items-start">
+      <div class="w-full md:w-2/5 md:order-1 shrink-0">
+        {% responsiveImage "/assets/img/cedric-main-poches-juin2026.jpg", "Cédric Vonlanthen, accompagnement entrepreneur", "(max-width: 768px) 100vw, 400px", "rounded-xl shadow-sm w-full h-auto", "eager" %}
+      </div>
+      <div class="w-full md:w-3/5 md:order-2 space-y-6">
+        <p class="text-lg text-[#3E3A35]">Tu es entrepreneur·e ou indépendant·e ?<br><br>Cédric peut aussi t'aider à <strong>retrouver de la fluidité et de l'harmonie au niveau de la structure de ton activité professionnelle</strong>.</p>
+        <p class="text-lg text-[#3E3A35]">C'est-à-dire à sortir du stress, de la surchage et de l'éparpillement et parfois aussi à (re)trouver un modèle d'affaires qui te correspond pleinement.</p>
+        <p class="text-lg text-[#3E3A35]">Cela se présente sous la forme d'un accompagnement individuel pour retrouver la <strong>clarté stratégique</strong> et la <strong>fluidité opérationnelle</strong>.</p>
+        <p class="text-lg text-[#3E3A35]">Cette <strong>autre casquette de Cédric</strong> est présentée en cliquant sur le bouton ci-dessous :</p>
+        <div class="pt-2">
+          <a href="https://cedricv.com" target="_blank" rel="noreferrer" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center gap-2">En savoir plus <span>→</span></a>
+        </div>
+      </div>
     </div>
   </article>
 </section>
