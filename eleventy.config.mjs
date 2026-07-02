@@ -52,9 +52,6 @@ export default function (eleventyConfig) {
 
     if (cls) imageAttributes.class = cls;
 
-    imageAttributes.width = width || highsrc.width;
-    imageAttributes.height = height || highsrc.height;
-
     const aspectRatio = (highsrc.width / highsrc.height).toFixed(4);
 
     let inlineStyle = `aspect-ratio: ${aspectRatio}; width: 100%; height: auto;`;
@@ -68,7 +65,15 @@ export default function (eleventyConfig) {
 
     imageAttributes.style = inlineStyle;
 
-    return EleventyImage.generateHTML(metadata, imageAttributes);
+    let html = EleventyImage.generateHTML(metadata, imageAttributes);
+
+    // Safari utilise les attributs HTML width/height comme taille minimum
+    // en flexbox, ce qui agrandit l'image. On les retire : l'aspect-ratio
+    // CSS + width:100% suffisent pour le CLS prevention.
+    html = html.replace(/(<img[^>]*?)\s+width="\d+"([^>]*?>)/g, '$1$2');
+    html = html.replace(/(<img[^>]*?)\s+height="\d+"([^>]*?>)/g, '$1$2');
+
+    return html;
   });
 
   eleventyConfig.addShortcode("image", function (src, alt, cls = "", loading = "lazy", fetchpriority = "", width = "", height = "") {

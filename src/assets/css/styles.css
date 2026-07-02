@@ -46,6 +46,10 @@ img {
   display: block;
 }
 
+picture {
+  min-width: 0;
+}
+
 /* Réduire le clignotement lors de la navigation */
 body.page-transitioning {
   opacity: 0.98;
