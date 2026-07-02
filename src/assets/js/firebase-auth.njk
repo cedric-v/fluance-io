@@ -710,6 +710,10 @@ async function signOut() {
 // Cache session pour éviter les lectures Firestore redondantes
 let _cachedUserProducts = null;
 let _cachedUserUid = null;
+// Cache des documents protectedContent (contentId -> données) pour éviter
+// un re-fetch Firestore lors du changement d'onglet : le contenu de chaque
+// onglet a déjà été chargé par loadProtectedContent() (sans contentId).
+const _cachedContentDocs = {};
 
 /**
  * Charge le contenu protégé depuis Firestore
@@ -809,6 +813,66 @@ async function loadProtectedContent(contentId = null) {
     
     // Si un contentId est spécifié, charger ce contenu spécifique
     if (contentId) {
+      // Utiliser le cache session si le contenu a déjà été chargé par
+      // loadProtectedContent() (sans contentId). Cela évite un re-fetch
+      // Firestore à chaque changement d'onglet et rend l'affichage instantané.
+      const cached = _cachedContentDocs[contentId];
+      if (cached) {
+        // Vérifier que l'utilisateur possède toujours le produit associé
+        const userProductData = userProducts.find(p => p.name === cached.product);
+        if (!userProductData) {
+          return {
+            success: false,
+            error: `Vous n'avez pas accès à ce contenu. Ce contenu fait partie d'une autre formation que celle à laquelle vous êtes inscrit(e).`,
+            errorCode: 'PRODUCT_MISMATCH',
+            suggestion: `Accédez au contenu depuis votre espace membre.`
+          };
+        }
+
+        // Vérifier l'accès progressif
+        if (!cached.isAccessible) {
+          if (cached.product === '21jours' && cached.daysRemaining !== null) {
+            return {
+              success: false,
+              error: `Ce contenu sera disponible dans ${cached.daysRemaining} jour${cached.daysRemaining > 1 ? 's' : ''}. Vous êtes actuellement au jour ${cached.currentDay} du défi de 21 jours.`,
+              errorCode: 'CONTENT_NOT_AVAILABLE_YET',
+              suggestion: 'Continuez à suivre le programme jour par jour. Le contenu se débloque automatiquement chaque jour.',
+              daysRemaining: cached.daysRemaining,
+              currentDay: cached.currentDay
+            };
+          }
+          if (cached.product === 'complet' && cached.weeksRemaining !== null) {
+            return {
+              success: false,
+              error: `Ce contenu sera disponible dans ${cached.weeksRemaining} semaine${cached.weeksRemaining > 1 ? 's' : ''}. Vous êtes actuellement à la semaine ${cached.currentWeek}.`,
+              errorCode: 'CONTENT_NOT_AVAILABLE_YET',
+              suggestion: 'Continuez à suivre le programme semaine par semaine. Le contenu se débloque automatiquement chaque semaine.',
+              weeksRemaining: cached.weeksRemaining,
+              currentWeek: cached.currentWeek
+            };
+          }
+        }
+
+        const cachedResult = {
+          success: true,
+          content: cached.content,
+          product: userProduct,
+          title: cached.title,
+          day: cached.day,
+          commentText: cached.commentText,
+        };
+
+        if (userProduct !== '21jours') {
+          cachedResult.metadata = {
+            createdAt: cached.createdAt,
+            updatedAt: cached.updatedAt
+          };
+        }
+
+        return cachedResult;
+      }
+
+      // Fallback : fetch Firestore si le contenu n'est pas en cache
       const contentDoc = await db.collection('protectedContent').doc(contentId).get();
       
       if (!contentDoc.exists) {
@@ -896,6 +960,27 @@ async function loadProtectedContent(contentId = null) {
           updatedAt: contentData.updatedAt || null
         };
       }
+
+      // Mettre en cache le document fraîchement chargé pour les prochains affichages
+      const now2 = new Date();
+      const startDate2 = userProductData.startDate ? userProductData.startDate.toDate() : new Date();
+      const daysSinceStart2 = Math.floor((now2 - startDate2) / (1000 * 60 * 60 * 24));
+      const weeksSinceStart2 = Math.floor((now2 - startDate2) / (1000 * 60 * 60 * 24 * 7));
+      _cachedContentDocs[contentId] = {
+        product: contentProduct,
+        content: contentData.content || '',
+        title: contentData.title || contentId,
+        day: contentData.day,
+        week: contentData.week,
+        commentText: contentData.commentText || null,
+        createdAt: contentData.createdAt || null,
+        updatedAt: contentData.updatedAt || null,
+        isAccessible: true,
+        daysRemaining: null,
+        weeksRemaining: null,
+        currentDay: contentProduct === '21jours' ? daysSinceStart2 + 1 : undefined,
+        currentWeek: contentProduct === 'complet' ? weeksSinceStart2 + 1 : undefined,
+      };
       
       return result;
     }
@@ -991,6 +1076,24 @@ async function loadProtectedContent(contentId = null) {
             contentObj.createdAt = data.createdAt;
             contentObj.updatedAt = data.updatedAt;
           }
+          
+          // Mettre en cache le document de contenu pour permettre un affichage
+          // instantané lors du changement d'onglet (sans re-fetch Firestore).
+          _cachedContentDocs[doc.id] = {
+            product: productName,
+            content: data.content || '',
+            title: data.title || doc.id,
+            day: dayNumber,
+            week: weekNumber,
+            commentText: data.commentText || null,
+            createdAt: data.createdAt || null,
+            updatedAt: data.updatedAt || null,
+            isAccessible: isAccessible,
+            daysRemaining: daysRemaining,
+            weeksRemaining: weeksRemaining,
+            currentDay: productName === '21jours' ? daysSinceStart + 1 : undefined,
+            currentWeek: productName === 'complet' ? weeksSinceStart + 1 : undefined,
+          };
           
           contents.push(contentObj);
         });
