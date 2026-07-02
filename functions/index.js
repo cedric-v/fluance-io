@@ -6579,6 +6579,12 @@ exports.sendNewContentEmails = onSchedule(
             continue;
           }
 
+          if (userData.isDemo === true) {
+            console.log(`⏭️ Demo user ${email} (${userId}) skipped`);
+            emailsSkipped++;
+            continue;
+          }
+
           const products = userData.products || [];
           const hasComplet = products.some((p) => p && p.name === 'complet');
           const firstName =
