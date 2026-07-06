@@ -11,16 +11,29 @@ eleventyExcludeFromCollections: true
   <div class="space-y-8">
     <div class="space-y-4">
       <h1 class="text-6xl md:text-8xl font-bold text-fluance">404</h1>
-      <h2 class="text-3xl md:text-4xl font-semibold text-[#3E3A35]" id="error-title">Page introuvable</h2>
+      <h2 class="text-3xl md:text-4xl font-semibold text-[#3E3A35]" id="error-title">Cette page a pris son envol</h2>
       <p class="text-lg md:text-xl text-[#3E3A35] max-w-2xl mx-auto" id="error-message">
-        La page que vous recherchez n'existe pas ou a été déplacée.<br>
-        Retournez à l'accueil pour continuer votre navigation.
+        Ici, on ne force jamais un mouvement. Cette page a décidé d'explorer<br>
+        d'autres horizons, et chez Fluance, on respecte ça.
+      </p>
+      <div class="text-base md:text-lg text-[#3E3A35] max-w-xl mx-auto space-y-1" id="error-suggestions">
+        <p>En attendant, vous pouvez :</p>
+        <p>→ Retourner à l'accueil<br>
+        → Découvrir les cours<br>
+        → Ou… en profiter pour souffler 3 secondes.</p>
+      </div>
+      <p class="text-sm md:text-base text-[#7A1F3D] italic max-w-xl mx-auto" id="error-ps">
+        PS. Le vrai mouvement, c'est celui qu'on choisit.
       </p>
     </div>
     
     <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
       <a href="{{ '/' | relativeUrl }}" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]" id="home-link">
         <span>Retour à l'accueil</span>
+        <span>→</span>
+      </a>
+      <a href="{{ '/fr/cours-en-ligne/' | relativeUrl }}" class="btn-primary !text-white bg-fluance hover:bg-[#8F2A4A]" id="courses-link">
+        <span>Découvrir les cours</span>
         <span>→</span>
       </a>
       <a href="{{ '/contact/' | relativeUrl }}" class="inline-flex items-center justify-center gap-2 rounded-full border-[3px] border-fluance text-fluance bg-white hover:bg-fluance hover:text-[#F5F7F6] px-6 py-3 font-bold shadow-lg transition-all duration-200" id="contact-link">
@@ -38,10 +51,14 @@ eleventyExcludeFromCollections: true
     
     if (isEnglish) {
       document.documentElement.lang = 'en';
-      document.getElementById('error-title').textContent = 'Page not found';
-      document.getElementById('error-message').innerHTML = 'The page you are looking for does not exist or has been moved.<br>Return to the homepage to continue browsing.';
+      document.getElementById('error-title').textContent = 'This page has taken flight';
+      document.getElementById('error-message').innerHTML = 'Here, we never force a movement. This page decided to explore<br>other horizons, and at Fluance, we respect that.';
+      document.getElementById('error-suggestions').innerHTML = '<p>In the meantime, you can:</p><p>→ Go back home<br>→ Discover our courses<br>→ Or… take 3 seconds to breathe.</p>';
+      document.getElementById('error-ps').textContent = 'PS. True movement is the one you choose.';
       document.getElementById('home-link').innerHTML = '<span>Back to homepage</span><span>→</span>';
       document.getElementById('home-link').href = '/en/';
+      document.getElementById('courses-link').innerHTML = '<span>Discover courses</span><span>→</span>';
+      document.getElementById('courses-link').href = '/en/cours-en-ligne/';
       document.getElementById('contact-link').innerHTML = '<span>Contact us</span>';
       document.getElementById('contact-link').href = '/en/contact/';
     }
