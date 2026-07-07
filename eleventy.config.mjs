@@ -28,14 +28,14 @@ export default function (eleventyConfig) {
       outputDir: "./_site/assets/img/",
       urlPath: "/assets/img/",
       sharpWebpOptions: {
-        quality: 70,
+        quality: 55,
         smartSubsample: true
       },
       sharpAvifOptions: {
-        quality: 60
+        quality: 45
       },
       sharpJpegOptions: {
-        quality: 70
+        quality: 55
       }
     });
 
