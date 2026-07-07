@@ -32,7 +32,7 @@ export default function (eleventyConfig) {
         smartSubsample: true
       },
       sharpAvifOptions: {
-        quality: 45
+        quality: 35
       },
       sharpJpegOptions: {
         quality: 55

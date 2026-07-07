@@ -181,6 +181,18 @@
         z-index: 10;
         max-width: 42rem;
       }
+      #fond-cedric .space-y-8 > * + * {
+        margin-top: 2rem;
+      }
+      #fond-cedric .space-y-4 > * + * {
+        margin-top: 1rem;
+      }
+      #fond-cedric .leading-tight {
+        line-height: 1.25;
+      }
+      #fond-cedric .font-semibold {
+        font-weight: 600;
+      }
       #fond-cedric picture,
       #fond-cedric picture img {
         display: block;
@@ -486,6 +498,7 @@
     const header = document.getElementById('main-header');
     if (!header) return;
     
+    const slogan = header.querySelector('.header-slogan');
     let lastScrollY = window.scrollY;
     let ticking = false;
     
@@ -493,7 +506,6 @@
       const scrollY = window.scrollY;
       const isScrolled = scrollY > 50;
       const isDesktop = window.matchMedia('(min-width: 768px)').matches;
-      const slogan = header.querySelector('.header-slogan');
       
       if (isDesktop) {
         if (isScrolled) {
