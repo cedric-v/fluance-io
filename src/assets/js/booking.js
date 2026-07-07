@@ -163,6 +163,8 @@
   let coursesByMonth = {};
   let monthKeys = [];
   let selectedMonthKey = null;
+  let viewMode = 'upcoming'; // 'upcoming' (6 prochains cours) ou 'month' (vue par mois)
+  let allCoursesSorted = [];
 
   /**
    * Formate une date au format DD/MM/YYYY en format lisible selon la locale
@@ -254,7 +256,14 @@
       coursesByMonth = groupCoursesByMonth(data.courses);
       monthKeys = Object.keys(coursesByMonth).sort();
 
-      // Sélectionner le mois par défaut
+      // Créer la liste plate triée pour la vue "6 prochains cours"
+      allCoursesSorted = [...data.courses].sort((a, b) => {
+        const [aD, aM, aY] = a.date.split('/');
+        const [bD, bM, bY] = b.date.split('/');
+        return new Date(aY, aM - 1, aD) - new Date(bY, bM - 1, bD);
+      });
+
+      // Vue par défaut: les 6 prochains cours
       if (!selectedMonthKey || !coursesByMonth[selectedMonthKey]) {
         const preselectedId = getPreselectedCourseId();
         if (preselectedId) {
@@ -262,17 +271,25 @@
           if (preselectedCourse) {
             const [d, m, y] = preselectedCourse.date.split('/');
             selectedMonthKey = `${y}-${m}`;
+            viewMode = 'month';
           } else {
-            selectedMonthKey = monthKeys[0];
+            viewMode = 'upcoming';
+            selectedMonthKey = null;
           }
         } else {
-          selectedMonthKey = monthKeys[0];
+          viewMode = 'upcoming';
+          selectedMonthKey = null;
         }
       }
 
-      // Rendre les pills de navigation + les cartes du mois sélectionné
-      const pillsHtml = renderMonthPills(monthKeys, selectedMonthKey);
-      const coursesHtml = coursesByMonth[selectedMonthKey].map(course => renderCourseCard(course)).join('');
+      // Rendre les pills de navigation + les cartes
+      const pillsHtml = renderMonthPills(monthKeys, viewMode === 'upcoming' ? null : selectedMonthKey);
+      let coursesHtml;
+      if (viewMode === 'upcoming') {
+        coursesHtml = allCoursesSorted.slice(0, 6).map(course => renderCourseCard(course)).join('');
+      } else {
+        coursesHtml = coursesByMonth[selectedMonthKey].map(course => renderCourseCard(course)).join('');
+      }
       container.innerHTML = pillsHtml + coursesHtml;
 
       // Attacher les événements sur les pills de mois
@@ -280,6 +297,13 @@
         pill.addEventListener('click', () => {
           const monthKey = pill.dataset.monthPill;
           switchToMonth(monthKey);
+        });
+      });
+
+      // Attacher l'événement sur le pill "6 prochains cours"
+      document.querySelectorAll('[data-upcoming-pill]').forEach(pill => {
+        pill.addEventListener('click', () => {
+          switchToUpcoming();
         });
       });
 
@@ -583,9 +607,13 @@
    * Rend les pills de navigation par mois
    */
   function renderMonthPills(monthKeys, selectedKey) {
-    if (monthKeys.length <= 1) return '';
+    if (monthKeys.length === 0) return '';
 
     const locale = currentLocale === 'en' ? 'en-US' : 'fr-CH';
+
+    const upcomingLabel = currentLocale === 'en'
+      ? 'Next 6 classes'
+      : '6 prochains cours';
 
     const pills = monthKeys.map(key => {
       const [year, month] = key.split('-');
@@ -595,7 +623,7 @@
       const label = currentLocale === 'en'
         ? `${monthName} · ${count} class${count !== 1 ? 'es' : ''}`
         : `${monthName} · ${count} cours`;
-      const isActive = key === selectedKey;
+      const isActive = key === selectedKey && viewMode === 'month';
 
       return `
         <button data-month-pill="${key}"
@@ -612,6 +640,13 @@
       <div class="col-span-full mb-6 min-w-0">
         <div class="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory"
              style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
+          <button data-upcoming-pill
+                  class="px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex-shrink-0 snap-start
+                         ${viewMode === 'upcoming'
+                           ? 'bg-fluance text-white shadow-md'
+                           : 'bg-white text-[#3E3A35]/70 border border-gray-200 hover:border-fluance hover:text-fluance'}">
+            ${upcomingLabel}
+          </button>
           ${pills}
         </div>
       </div>
@@ -622,8 +657,9 @@
    * Change le mois sélectionné et réaffiche les cours
    */
   function switchToMonth(monthKey) {
-    if (monthKey === selectedMonthKey) return;
+    if (monthKey === selectedMonthKey && viewMode === 'month') return;
     selectedMonthKey = monthKey;
+    viewMode = 'month';
 
     const container = document.getElementById('courses-list');
     if (!container) return;
@@ -636,6 +672,45 @@
       pill.addEventListener('click', () => {
         const key = pill.dataset.monthPill;
         switchToMonth(key);
+      });
+    });
+
+    document.querySelectorAll('[data-upcoming-pill]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        switchToUpcoming();
+      });
+    });
+
+    container.querySelectorAll('[data-course-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        const courseId = card.dataset.courseId;
+        openBookingModal(courseId, card.dataset);
+      });
+    });
+  }
+
+  function switchToUpcoming() {
+    if (viewMode === 'upcoming') return;
+    viewMode = 'upcoming';
+    selectedMonthKey = null;
+
+    const container = document.getElementById('courses-list');
+    if (!container) return;
+
+    const pillsHtml = renderMonthPills(monthKeys, null);
+    const coursesHtml = allCoursesSorted.slice(0, 6).map(course => renderCourseCard(course)).join('');
+    container.innerHTML = pillsHtml + coursesHtml;
+
+    document.querySelectorAll('[data-month-pill]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const key = pill.dataset.monthPill;
+        switchToMonth(key);
+      });
+    });
+
+    document.querySelectorAll('[data-upcoming-pill]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        switchToUpcoming();
       });
     });
 
@@ -1848,6 +1923,7 @@
     init,
     loadAvailableCourses,
     switchToMonth,
+    switchToUpcoming,
     openBookingModal,
     closeBookingModal,
     goBackToEmail,
