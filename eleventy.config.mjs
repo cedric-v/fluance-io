@@ -67,12 +67,6 @@ export default function (eleventyConfig) {
 
     let html = EleventyImage.generateHTML(metadata, imageAttributes);
 
-    // Safari utilise les attributs HTML width/height comme taille minimum
-    // en flexbox, ce qui agrandit l'image. On les retire : l'aspect-ratio
-    // CSS + width:100% suffisent pour le CLS prevention.
-    html = html.replace(/(<img[^>]*?)\s+width="\d+"([^>]*?>)/g, '$1$2');
-    html = html.replace(/(<img[^>]*?)\s+height="\d+"([^>]*?>)/g, '$1$2');
-
     return html;
   });
 

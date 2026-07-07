@@ -75,6 +75,8 @@ headerLines.push('*.png');
 headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
 headerLines.push('*.webp');
 headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
+headerLines.push('*.avif');
+headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
 headerLines.push('*.svg');
 headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
 headerLines.push('*.ico');
