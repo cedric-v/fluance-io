@@ -205,10 +205,22 @@ header .group:hover .absolute {
     padding-bottom: 0.5rem;
   }
 
-  /* Réduire encore le padding-bottom quand le slogan est caché */
+  /* Header compact au scroll : logo réduit + padding réduit + slogan caché */
   #main-header.header-scrolled-mobile .header-container {
+    padding-top: 0.25rem;
     padding-bottom: 0.25rem;
+    min-height: auto;
   }
+
+  #main-header.header-scrolled-mobile img {
+    height: 3rem;
+  }
+}
+
+/* Transition smooth pour le logo et le header au scroll */
+#main-header img,
+.header-container {
+  transition: height 0.3s ease, padding 0.3s ease, min-height 0.3s ease;
 }
 
 /* Cacher le slogan lors du scroll (mobile et desktop) */
