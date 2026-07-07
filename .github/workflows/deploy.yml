@@ -1,4 +1,4 @@
-name: Deploy site to GitHub Pages
+name: Deploy site to Cloudflare Pages
 
 on:
   push:
@@ -15,11 +15,9 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: "pages"
+  group: "deploy"
   cancel-in-progress: true
 
 jobs:
@@ -65,16 +63,6 @@ jobs:
           fi
           echo "✅ styles.css présent et valide ($(numfmt --to=iec-i --suffix=B $CSS_SIZE 2>/dev/null || echo "${CSS_SIZE}B"))"
 
-      - name: Ensure .nojekyll exists before upload
-        run: |
-          # S'assurer que .nojekyll existe avant l'upload
-          if [ ! -f "_site/.nojekyll" ]; then
-            echo "⚠️ .nojekyll manquant, création du fichier..."
-            touch "_site/.nojekyll"
-          fi
-          echo "✅ .nojekyll présent avant upload"
-          ls -la _site/.nojekyll
-
       - name: Upload artifact for smoke tests
         uses: actions/upload-artifact@v7
         with:
@@ -98,9 +86,12 @@ jobs:
             "fr/index.html"
             "en/index.html"
             "assets/css/styles.css"
-            "CNAME"
-            ".nojekyll"
             "404.html"
+            "_redirects"
+            "_headers"
+            ".well-known/api-catalog"
+            ".well-known/agent-skills/index.json"
+            ".well-known/mcp/server-card.json"
           )
           
           MISSING_FILES=0
@@ -110,23 +101,6 @@ jobs:
               MISSING_FILES=$((MISSING_FILES + 1))
             else
               echo "  ✅ Fichier présent: $file"
-            fi
-          done
-
-          # Vérifier les artefacts cachés nécessaires au déploiement GitHub Pages
-          HIDDEN_CRITICAL_FILES=(
-            ".nojekyll"
-            ".well-known/api-catalog"
-            ".well-known/agent-skills/index.json"
-            ".well-known/mcp/server-card.json"
-          )
-
-          for file in "${HIDDEN_CRITICAL_FILES[@]}"; do
-            if [ ! -f "_site/$file" ]; then
-              echo "  ❌ Fichier caché manquant: $file"
-              MISSING_FILES=$((MISSING_FILES + 1))
-            else
-              echo "  ✅ Fichier caché présent: $file"
             fi
           done
           
@@ -145,12 +119,6 @@ jobs:
           
           echo ""
           echo "✅ Tous les fichiers critiques sont présents dans l'artifact"
-
-      - name: Upload artifact for deployment
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: _site
-          include-hidden-files: true
 
   validate:
     needs: build
@@ -375,33 +343,19 @@ jobs:
         run: |
           echo "🔍 Vérification de l'artifact téléchargé..."
           
-          # Vérifier que _site existe
           if [ ! -d "_site" ]; then
             echo "❌ Le dossier _site n'existe pas après téléchargement"
             exit 1
           fi
           
-          # Créer .nojekyll s'il manque (les fichiers cachés peuvent être perdus lors de l'upload/téléchargement)
-          if [ ! -f "_site/.nojekyll" ]; then
-            echo "⚠️ .nojekyll manquant après téléchargement, création du fichier..."
-            touch "_site/.nojekyll"
-          fi
-          
-          # Créer CNAME s'il manque
-          if [ ! -f "_site/CNAME" ]; then
-            echo "⚠️ CNAME manquant après téléchargement, création du fichier..."
-            echo "fluance.io" > "_site/CNAME"
-          fi
-          
-          # Vérifier les fichiers critiques
           CRITICAL_FILES=(
             "index.html"
             "fr/index.html"
             "en/index.html"
             "assets/css/styles.css"
-            "CNAME"
-            ".nojekyll"
             "404.html"
+            "_redirects"
+            "_headers"
           )
           
           MISSING_FILES=0
@@ -410,12 +364,10 @@ jobs:
               echo "  ❌ Fichier manquant: $file"
               MISSING_FILES=$((MISSING_FILES + 1))
             else
-              SIZE=$(stat -f%z "_site/$file" 2>/dev/null || stat -c%s "_site/$file" 2>/dev/null || echo "0")
-              echo "  ✅ Fichier présent: $file ($(numfmt --to=iec-i --suffix=B $SIZE 2>/dev/null || echo "${SIZE}B"))"
+              echo "  ✅ Fichier présent: $file"
             fi
           done
           
-          # Vérifier qu'il y a des fichiers HTML
           HTML_COUNT=$(find _site -name "*.html" -type f | wc -l)
           echo ""
           echo "📊 Statistiques de l'artifact téléchargé:"
@@ -424,35 +376,12 @@ jobs:
           
           if [ $MISSING_FILES -gt 0 ]; then
             echo ""
-            echo "❌ $MISSING_FILES fichier(s) critique(s) manquant(s) dans l'artifact téléchargé (après création automatique)"
+            echo "❌ $MISSING_FILES fichier(s) critique(s) manquant(s)"
             exit 1
           fi
           
           echo ""
           echo "✅ L'artifact téléchargé contient tous les fichiers critiques"
-
-      - name: Verify and create required files
-        run: |
-          # Vérifier et créer .nojekyll si manquant
-          if [ ! -f "_site/.nojekyll" ]; then
-            echo "⚠️ .nojekyll manquant, création du fichier..."
-            touch "_site/.nojekyll"
-          else
-            echo "✅ .nojekyll présent"
-          fi
-          
-          # Vérifier et créer CNAME si manquant
-          if [ ! -f "_site/CNAME" ]; then
-            echo "⚠️ CNAME manquant, création du fichier..."
-            echo "fluance.io" > "_site/CNAME"
-          else
-            echo "✅ CNAME présent"
-          fi
-          
-          # Afficher les fichiers pour debug
-          echo ""
-          echo "📁 Fichiers à la racine de _site/:"
-          ls -la _site/ | head -20
 
       - name: Start local server
         run: |
@@ -547,34 +476,6 @@ jobs:
             FAILED_TESTS=$((FAILED_TESTS + 1))
           fi
           
-          # Test du fichier CNAME (nécessaire pour le domaine personnalisé)
-          echo ""
-          echo "🔍 Test du fichier CNAME"
-          if [ -f "_site/CNAME" ]; then
-            CNAME_CONTENT=$(cat "_site/CNAME" | tr -d '\n\r' | xargs)
-            if [ "$CNAME_CONTENT" = "fluance.io" ]; then
-              echo "  ✅ CNAME présent et correct: $CNAME_CONTENT"
-              PASSED_TESTS=$((PASSED_TESTS + 1))
-            else
-              echo "  ❌ CNAME présent mais contenu incorrect: '$CNAME_CONTENT' (attendu: 'fluance.io')"
-              FAILED_TESTS=$((FAILED_TESTS + 1))
-            fi
-          else
-            echo "  ❌ CNAME manquant dans _site/"
-            FAILED_TESTS=$((FAILED_TESTS + 1))
-          fi
-
-          # Test du fichier .nojekyll (nécessaire pour désactiver Jekyll sur GitHub Pages)
-          echo ""
-          echo "🔍 Test du fichier .nojekyll"
-          if [ -f "_site/.nojekyll" ]; then
-            echo "  ✅ .nojekyll présent (Jekyll désactivé)"
-            PASSED_TESTS=$((PASSED_TESTS + 1))
-          else
-            echo "  ❌ .nojekyll manquant dans _site/ (GitHub Pages pourrait traiter le site avec Jekyll)"
-            FAILED_TESTS=$((FAILED_TESTS + 1))
-          fi
-
           # Test de la page 404 personnalisée (page inexistante)
           echo ""
           echo "🔍 Test de la page 404 personnalisée (page inexistante)"
@@ -631,39 +532,31 @@ jobs:
     needs: [build, smoke-test]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
-      
-      - name: Verify deployment status
-        run: |
-          echo "🔍 Vérification du statut du déploiement..."
-          
-          if [ -z "${{ steps.deployment.outputs.page_url }}" ]; then
-            echo "❌ L'URL de la page n'a pas été générée"
-            exit 1
-          fi
-          
-          echo "✅ Déploiement réussi"
-          echo "📄 URL de la page: ${{ steps.deployment.outputs.page_url }}"
-          echo "🌐 URL de production: https://fluance.io"
+      - name: Download build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: build-artifact
+          path: _site
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages deploy _site --project-name=fluance-io
 
   post-deploy:
     needs: deploy
     runs-on: ubuntu-latest
-    # Attendre un peu pour que GitHub Pages propage les changements
     if: success()
     env:
       PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://fluance.io' }}
     steps:
-      - name: Wait for GitHub Pages propagation
+      - name: Wait for Cloudflare Pages propagation
         run: |
-          echo "⏳ Attente de la propagation de GitHub Pages (15 secondes)..."
-          sleep 15
+          echo "⏳ Attente de la propagation Cloudflare (10 secondes)..."
+          sleep 10
           echo "✅ Attente terminée"
 
       - name: Verify production site accessibility
@@ -741,38 +634,18 @@ jobs:
             PASSED_TESTS=$((PASSED_TESTS + 1))
           fi
           
-          # Test du fichier CNAME en production
-          echo ""
-          echo "🔍 Test du fichier CNAME en production"
-          CNAME_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$PRODUCTION_URL/CNAME" || echo "000")
-          
-          if [ "$CNAME_HTTP_CODE" = "200" ]; then
-            CNAME_CONTENT=$(curl -s --max-time 10 "$PRODUCTION_URL/CNAME" | tr -d '\n\r' | xargs || echo "")
-            if [ "$CNAME_CONTENT" = "fluance.io" ]; then
-              echo "  ✅ CNAME accessible et correct: $CNAME_CONTENT"
-              PASSED_TESTS=$((PASSED_TESTS + 1))
-            else
-              echo "  ⚠️ CNAME accessible mais contenu: '$CNAME_CONTENT' (peut être normal selon la config)"
-              PASSED_TESTS=$((PASSED_TESTS + 1))
-            fi
-          else
-            echo "  ⚠️ CNAME non accessible (HTTP $CNAME_HTTP_CODE) - peut être normal selon la config GitHub Pages"
-            PASSED_TESTS=$((PASSED_TESTS + 1))
-          fi
-          
           echo ""
           echo "📊 Résumé des tests de production:"
           echo "  ✅ Tests réussis: $PASSED_TESTS"
           echo "  ❌ Tests échoués: $FAILED_TESTS"
           echo ""
-          echo "ℹ️ Note: Certains tests peuvent échouer si GitHub Pages est encore en cours de propagation."
-          echo "   La propagation peut prendre jusqu'à 10 minutes après le déploiement."
+          echo "ℹ️ Note: Certains tests peuvent échouer si le cache edge Cloudflare n'est pas encore propagé."
+          echo "   La propagation prend généralement 30 à 60 secondes après le déploiement."
           
           if [ $FAILED_TESTS -gt 0 ]; then
             echo ""
-            echo "⚠️ Certains tests ont échoué, mais cela peut être dû à la propagation de GitHub Pages."
+            echo "⚠️ Certains tests ont échoué, mais cela peut être dû à la propagation Cloudflare."
             echo "   Vérifiez manuellement dans quelques minutes si le problème persiste."
-            # Ne pas faire échouer le job car la propagation peut prendre du temps
           else
             echo ""
             echo "✅ Tous les tests de production ont réussi !"

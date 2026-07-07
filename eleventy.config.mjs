@@ -692,8 +692,8 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/.well-known": ".well-known" });
   eleventyConfig.addPassthroughCopy({ "src/agent": "agent" });
   eleventyConfig.addPassthroughCopy({ "src/docs/api/openapi.json": "docs/api/openapi.json" });
-  eleventyConfig.addPassthroughCopy({ "src/CNAME": "CNAME" });
-  eleventyConfig.addPassthroughCopy({ "src/.nojekyll": ".nojekyll" });
+  // Passthrough copies for GitHub Pages-specific files (CNAME, .nojekyll)
+  // have been removed — Cloudflare Pages handles custom domains natively
   eleventyConfig.addPassthroughCopy({ "src/assets/img/favicon.ico": "favicon.ico" });
 
   eleventyConfig.addPairedShortcode("rawjs", function (content) {

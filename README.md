@@ -57,7 +57,8 @@ The site is optimized for Google's Core Web Vitals:
 
 - **Node.js** (recommended: latest LTS)
 - **npm** (comes with Node)
-- A **GitHub** account (for deployment with GitHub Pages or CI)
+- A **GitHub** account (for CI/CD)
+- A **Cloudflare** account (for hosting the site via Cloudflare Pages)
 
 ---
 
@@ -149,7 +150,7 @@ From `package.json`:
   Production build for deployment:
 
   ```bash
-  cross-env ELEVENTY_ENV=prod npm-run-all build:css build:11ty
+  cross-env ELEVENTY_ENV=prod npm-run-all build:css build:11ty build:cf
   ```
 
 - **`npm run build:11ty`**
@@ -162,6 +163,14 @@ From `package.json`:
 
   ```bash
   npx tailwindcss -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --minify
+  ```
+
+- **`npm run build:cf`**
+
+  Generates `_redirects` and `_headers` files for Cloudflare Pages:
+
+  ```bash
+  node scripts/generate-cf-config.mjs
   ```
 
 ---
@@ -183,87 +192,31 @@ Output:
 
 ### Deployment
 
-You can deploy the content of `_site/` **as a static website**. The project is configured to use **GitHub Pages** via GitHub Actions.
+The project is deployed to **Cloudflare Pages** via GitHub Actions.
 
-Important deployment note:
+Important deployment notes:
 
-- The production website is served by GitHub Pages, not Firebase Hosting.
-- As a result, Firebase Hosting rewrites and response headers defined in `firebase.json` do not apply to the public static site in production.
-- Cloud Functions can still be deployed independently with Firebase and called directly from the browser.
-- If you want production browser URLs like `/api/*` to work on `https://fluance.io`, you need an additional reverse proxy or edge layer in front of GitHub Pages.
-- Hidden files and directories such as `/.well-known/*` are excluded by default by the GitHub Pages artifact upload action unless `include-hidden-files: true` is set in `.github/workflows/deploy.yml`.
-- The `/.well-known/*` resources are now published on the live site, but GitHub Pages still does not let us attach custom response headers to `/` or force the ideal media type for extensionless files such as `/.well-known/api-catalog`.
+- The production website is served by Cloudflare Pages, not Firebase Hosting.
+- Firebase Hosting rewrites and response headers defined in `firebase.json` do not apply to the public static site on Cloudflare Pages. Instead, Cloudflare-native `_redirects` and `_headers` files are generated during the build (see `scripts/generate-cf-config.mjs`).
+- Cloud Functions remain deployed independently with Firebase and are called directly from the browser via the Firebase SDK.
+- The `/.well-known/*` resources are published on the live site with proper response headers (Content-Type, CORS) configured via `_headers`.
+- Hidden files (`.well-known/`, etc.) are included in the build output and deployed to Cloudflare Pages.
 
-#### GitHub Pages (via GitHub Actions)
+#### Cloudflare Pages (via GitHub Actions)
 
-Recommended: automatically build and deploy the site on each push to `main` using GitHub Actions.
+Automatically build, smoke-test, and deploy the site on each push to `main` using GitHub Actions.
 
-1. In your repo, create the directory `.github/workflows/` (if it does not exist).
-2. Add a file `.github/workflows/deploy.yml` with this content:
-
-```yaml
-name: Deploy site to GitHub Pages
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build site
-        env:
-          ELEVENTY_ENV: prod
-        run: npm run build
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-```
-
-3. In GitHub → **Settings → Pages**:
-   - Set **Source** to “GitHub Actions”.
-
-On each push to `main`, GitHub will:
-
-- Install dependencies
-- Run `npm run build`
-- Deploy the `_site/` folder to GitHub Pages.
+1. Create a Cloudflare Pages project (dashboard → Pages → Create a project → Connect to Git).
+2. In your repo, add the following GitHub secrets:
+   - `CF_API_TOKEN` — Cloudflare API token with Pages:Edit permission
+   - `CF_ACCOUNT_ID` — Your Cloudflare account ID (dashboard homepage, right column)
+3. No build command is needed in the Cloudflare dashboard — the build is handled entirely by GitHub Actions.
+4. Push to `main` — the workflow will:
+   - Install dependencies
+   - Run `npm run build` (Eleventy + Tailwind + `_redirects`/`_headers` generation)
+   - Run smoke tests (pre-deploy)
+   - Deploy `_site/` to Cloudflare Pages via wrangler-action
+   - Run post-deploy accessibility tests
 
 #### Manual or other hosts (Netlify, S3, etc.)
 
@@ -274,6 +227,14 @@ On each push to `main`, GitHub will:
    ```
 
 2. Deploy the contents of `_site/` to your static host (e.g. connect Netlify to the repo with build command `npm run build` and publish directory `_site`, etc.).
+
+#### DNS
+
+When deploying to Cloudflare Pages, the custom domain `fluance.io` must be configured:
+
+1. In Cloudflare Pages → your project → Custom domains → Add `fluance.io`.
+2. At your domain registrar, replace the nameservers with the Cloudflare nameservers provided during setup.
+3. Traffic transitions seamlessly — Cloudflare Pages serves the site once DNS propagates (the GitHub Actions deployment is already done beforehand).
 
 ---
 
@@ -287,7 +248,7 @@ The project includes automated quality checks to ensure the site works correctly
 
 **Stage 1: Build artifact verification**
 - ✅ Verify that critical files are present in the build output (`_site/`)
-- ✅ Check for required files: `index.html`, `fr/index.html`, `en/index.html`, `CNAME`, `.nojekyll`, `404.html`
+- ✅ Check for required files: `index.html`, `fr/index.html`, `en/index.html`, `404.html`, `_redirects`, `_headers`
 - ✅ Verify artifact statistics (HTML file count, total size)
 
 **Stage 2: Artifact download verification**
@@ -298,20 +259,18 @@ The project includes automated quality checks to ensure the site works correctly
 **Stage 3: Local smoke tests**
 - ✅ Verify that critical pages return HTTP 200 status
 - ✅ Check that pages contain valid HTML content (title and body tags)
-- ✅ Verify CNAME file content (must be `fluance.io`)
-- ✅ Verify `.nojekyll` file presence (disables Jekyll processing)
+- ✅ Verify CSS is accessible and valid
 - ✅ Test custom 404 page handling
 - ✅ **Block deployment** if any critical page fails
 
-**Stage 4: Deployment verification**
-- ✅ Verify deployment status and page URL generation
-- ✅ Confirm successful deployment to GitHub Pages
+**Stage 4: Deployment**
+- ✅ Deploy to Cloudflare Pages via wrangler-action
 
 **Stage 5: Production accessibility tests (post-deploy)**
-- ✅ Wait for GitHub Pages propagation (30 seconds)
+- ✅ Wait for Cloudflare edge propagation (10 seconds)
 - ✅ Test critical pages on production URL (`https://fluance.io`)
-- ✅ Verify production site accessibility and HTML validity
-- ⚠️ Note: Some tests may fail during initial propagation (can take up to 10 minutes)
+- ✅ Verify production site accessibility, HTML validity, and CSS availability
+- ⚠️ Note: Some tests may fail during initial propagation (typically 30–60 seconds)
 
 **Pages tested:**
 - Homepage (root, FR, EN)
@@ -333,7 +292,7 @@ The project includes automated quality checks to ensure the site works correctly
 3. View test results in:
    - **"build"** job: Artifact verification
    - **"smoke-test"** job: Local smoke tests
-   - **"deploy"** job: Deployment status
+   - **"deploy"** job: Cloudflare Pages deployment
    - **"post-deploy"** job: Production accessibility tests
 
 #### Optional validation reports
@@ -345,7 +304,7 @@ The project also includes optional quality checks using **Google Lighthouse** an
 Validation reports are **not generated automatically** by default. To generate them:
 
 1. Go to **Actions** tab in GitHub
-2. Select **"Deploy site to GitHub Pages"** workflow
+2. Select **"Deploy site to Cloudflare Pages"** workflow
 3. Click **"Run workflow"**
 4. **Check the box** "Exécuter les rapports Lighthouse et W3C"
 5. Click **"Run workflow"**
@@ -358,7 +317,7 @@ After running the workflow with validation enabled, reports are uploaded as GitH
 
 1. Go to your repository on GitHub
 2. Click on the **"Actions"** tab
-3. Click on the latest workflow run **"Deploy site to GitHub Pages"**
+3. Click on the latest workflow run **"Deploy site to Cloudflare Pages"**
 4. Click on the **"validate"** job
 5. Scroll down to the **"Artifacts"** section at the bottom of the page
 6. Click on **"validation-reports"** to download the ZIP file
@@ -425,6 +384,21 @@ This project uses environment variables for:
 - **`ELEVENTY_ENV`**
   - `dev` for local development (`npm start`)
   - `prod` for production builds (`npm run build`)
+
+#### GitHub secrets (required for deployment)
+
+| Secret | Description |
+|--------|-------------|
+| `CF_API_TOKEN` | Cloudflare API token with Pages:Edit permission |
+| `CF_ACCOUNT_ID` | Cloudflare account ID |
+| `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key for frontend |
+| `FIREBASE_API_KEY` | Firebase Web API key |
+| `FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
+| `FIREBASE_PROJECT_ID` | Firebase project ID |
+| `FIREBASE_STORAGE_BUCKET` | Firebase storage bucket |
+| `FIREBASE_MESSAGING_SENDER_ID` | Firebase sender ID |
+| `FIREBASE_APP_ID` | Firebase app ID |
+| `FIREBASE_MEASUREMENT_ID` | Firebase measurement ID |
 
 ---
 
