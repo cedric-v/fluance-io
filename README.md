@@ -1,7 +1,7 @@
 ## Fluance.io
 
 Fluance.io is a multilingual (FR/EN) static website built with [Eleventy](https://www.11ty.dev/) and [Tailwind CSS](https://tailwindcss.com/).  
-It is designed to be simple to develop locally, deploy on static hosting (GitHub Pages, Netlify, etc.), and easy to maintain over time.
+It is designed to be simple to develop locally, deploy on static hosting (Cloudflare Pages, Netlify, etc.), and easy to maintain over time.
 
 ---
 
@@ -186,7 +186,7 @@ npm run build
 Output:
 
 - Static files are written to the `_site/` directory.
-- This folder can be served by any static hosting provider (GitHub Pages, Netlify, S3, etc.).
+- This folder can be served by any static hosting provider (Cloudflare Pages, Netlify, S3, etc.).
 
 ---
 

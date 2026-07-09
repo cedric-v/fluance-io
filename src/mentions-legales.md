@@ -14,7 +14,7 @@ permalink: /mentions-legales/
 
   <article class="legal-text space-y-4 text-[#1f1f1f]">
 
-Instants Zen Sàrl (ci-après « nous ») s’engage à ce que la collecte et le traitement de vos données soient effectués de manière licite, loyale et transparente, conformément au règlement général sur la protection des données (« RGPD ») et à la Loi informatiques et Libertés de 1978 modifiée.
+Instants Zen Sàrl (ci-après « nous ») s’engage à ce que la collecte et le traitement de vos données soient effectués de manière licite, loyale et transparente, conformément au règlement général sur la protection des données (« RGPD ») et à la loi fédérale suisse sur la protection des données (« nLPD »).
 
 Notre collecte se limite au nécessaire, conformément au principe de minimisation des données. Les définitions fournies à l’article 4 du RGPD sont applicables aux présentes. En cas de modification des présentes, nous nous engageons à ne pas baisser le niveau de confidentialité de manière substantielle sans vous en informer préalablement.
 
@@ -112,7 +112,7 @@ Nous mettons en œuvre les mesures nécessaires pour garantir un niveau de sécu
 
 ### Transfert des données personnelles à l’étranger
 
-Nous respectons la réglementation relative aux transferts hors UE : transfert vers des pays reconnus comme adéquats, vers les États-Unis uniquement pour les organismes adhérents au Privacy Shield, ou sur autorisation de la CNIL lorsque requis.
+Nous respectons la réglementation relative aux transferts hors UE : transfert vers des pays reconnus comme adéquats, vers les États-Unis uniquement pour les organismes adhérents au Data Privacy Framework (« DPF »), ou sur autorisation de la CNIL lorsque requis.
 
 ### Droit applicable et langue
 
@@ -137,7 +137,7 @@ Instants Zen, société à responsabilité limitée (Sàrl) enregistrée en Suis
 3/ **Hébergements et services techniques :**
 
 **Pages Web :**
-GitHub Pages (GitHub, Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107, États-Unis).
+Cloudflare Pages (Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, États-Unis).
 
 **Base de données et authentification :**
 Firebase (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande).
