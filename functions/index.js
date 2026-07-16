@@ -12499,13 +12499,15 @@ exports.createMollieCheckoutSession = onCall(
       }
 
       // URLs de redirection (allowlist)
-      const DEFAULT_BASE_URL = (product === 'rdv-clarte' || product === 'focus-sos') ? 'https://cedricv.com' : 'https://fluance.io';
+      const DEFAULT_BASE_URL = (product === 'rdv-clarte' || product === 'focus-sos' || product === 'site-vitrine') ? 'https://cedricv.com' : 'https://fluance.io';
       const baseUrl = getAllowedOrigin(request.data.origin, DEFAULT_BASE_URL);
       const langPrefix = (locale === 'en') ? '/en' : '';
 
       let redirectUrl;
       const gatewayParams = `?utm_nooverride=1&gateway=mollie&product=${product}&variant=${variant || ''}`;
-      if (product === 'rdv-clarte' || product === 'focus-sos') {
+      if (product === 'site-vitrine') {
+        redirectUrl = `${baseUrl}${langPrefix}/merci-paiement/${gatewayParams}`;
+      } else if (product === 'rdv-clarte' || product === 'focus-sos') {
         redirectUrl = `${baseUrl}${langPrefix}/confirmation/${gatewayParams}`;
       } else if (product === 'presentiel' || product === 'single' || product === 'flow_pass' || product === 'semester_pass') {
         redirectUrl = `${baseUrl}${langPrefix}/presentiel/reservation-confirmee/${gatewayParams}`;
