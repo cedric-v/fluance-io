@@ -9,7 +9,8 @@ function isRecurringProduct(product, variant) {
   return product === 'complet' ||
     (product === 'rdv-clarte' && variant === 'abonnement') ||
     product === 'semester_pass' ||
-    (product === 'focus-sos' && variant === '3x');
+    (product === 'focus-sos' && variant === '3x') ||
+    (product === 'site-vitrine' && variant === '5x');
 }
 
 function getRecurringPaymentMethod(product, variant) {

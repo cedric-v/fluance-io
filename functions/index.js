@@ -12093,6 +12093,10 @@ exports.processMolliePayment = onMessagePublished(
               interval = '1 month';
               times = 2; // 2 prélèvements restants après le 1er paiement
             }
+            else if (metadata.product === 'site-vitrine' && metadata.variant === '5x') {
+              interval = '1 month';
+              times = 4; // 4 prélèvements restants après le 1er paiement (= 5 total)
+            }
 
             const paidAt = payment.paidAt ? new Date(payment.paidAt) : new Date();
             const startDate = new Date(paidAt);
@@ -12410,7 +12414,7 @@ exports.createMollieCheckoutSession = onCall(
       }
 
       // Vérifier les infos requises pour les produits critiques (Complet, RDV Clarté)
-      if (product === 'complet' || product === 'rdv-clarte') {
+      if (product === 'complet' || product === 'rdv-clarte' || product === 'site-vitrine') {
         if (!email || !firstName || !lastName) {
           throw new HttpsError('invalid-argument', 'Required info missing (email, firstName, lastName)');
         }
@@ -12429,6 +12433,9 @@ exports.createMollieCheckoutSession = onCall(
         'focus-sos_unique': 300.00,
         'focus-sos_3x': 100.00, // Mensuel (3x total)
 
+        // Site Vitrine
+        'site-vitrine_5x': 200.00, // Mensuel (5x total)
+
         // Programme Complet
         'complet_mensuel': 30.00, // Mensuel
         'complet_trimestriel': 75.00, // Trimestriel (25/mois)
@@ -12441,7 +12448,7 @@ exports.createMollieCheckoutSession = onCall(
 
       // Déterminer la clé de prix
       let priceKey = product;
-      if (product === 'rdv-clarte' || product === 'complet' || product === 'focus-sos') {
+      if (product === 'rdv-clarte' || product === 'complet' || product === 'focus-sos' || product === 'site-vitrine') {
         if (!variant) throw new HttpsError('invalid-argument', `Variant required for ${product}`);
         priceKey = `${product}_${variant}`;
       }
@@ -12556,6 +12563,44 @@ exports.createMollieCheckoutSession = onCall(
       } catch (error) {
         console.error('Error creating Mollie payment:', error);
         throw new HttpsError('internal', error.message);
+      }
+    },
+);
+
+exports.cancelMollieSubscription = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MOLLIE_API_KEY'],
+    },
+    async (request) => {
+      const {customerId, subscriptionId} = request.data;
+
+      if (!customerId) {
+        throw new HttpsError('invalid-argument', 'customerId is required');
+      }
+      if (!subscriptionId) {
+        throw new HttpsError('invalid-argument', 'subscriptionId is required');
+      }
+
+      // Seuls les admins authentifiés ou les requêtes internes peuvent annuler
+      if (!request.auth && !request.data._internal) {
+        throw new HttpsError('unauthenticated', 'Authentication required to cancel subscriptions');
+      }
+
+      try {
+        const subscription = await mollieService.cancelSubscription(customerId, subscriptionId);
+
+        console.log(`✅ Abonnement Mollie annulé: ${subscriptionId} (client: ${customerId})`);
+
+        return {
+          success: true,
+          subscriptionId: subscriptionId,
+          customerId: customerId,
+          status: subscription.status,
+        };
+      } catch (error) {
+        console.error(`❌ Erreur annulation abonnement Mollie ${subscriptionId}:`, error);
+        throw new HttpsError('internal', `Failed to cancel subscription: ${error.message}`);
       }
     },
 );
