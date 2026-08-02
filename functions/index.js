@@ -50,6 +50,99 @@ const {onMessagePublished} = require('firebase-functions/v2/pubsub');
 // PubSub client for publishing messages from HTTP function
 const pubSubClient = new PubSub();
 
+// ============================================================
+// Helpers sécurité communs (auth, rate limiting, IP)
+// ============================================================
+
+/**
+ * Vérifie le token Firebase Auth présent dans le header Authorization
+ * (format « Bearer <token> »). Retourne le token décodé ou null.
+ * @param {Object} req - Requête HTTP
+ * @returns {Promise<Object|null>} token décodé ({uid, email, ...}) ou null
+ */
+async function verifyIdToken(req) {
+  const authHeader = req.headers &&
+    (req.headers.authorization || req.headers.Authorization);
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  try {
+    return await admin.auth().verifyIdToken(authHeader.slice(7).trim());
+  } catch (error) {
+    console.warn('Invalid Firebase ID token:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Retourne l'IP du client (header x-forwarded-for ou socket).
+ * @param {Object} req - Requête HTTP (ou rawRequest pour les onCall)
+ * @returns {string}
+ */
+function getClientIp(req) {
+  const headers = (req && req.headers) || (req && req.rawRequest && req.rawRequest.headers) || {};
+  const fwd = headers['x-forwarded-for'] || headers['x-real-ip'];
+  if (fwd) {
+    return String(fwd).split(',')[0].trim();
+  }
+  const ip = (req && req.ip) || (req && req.socket && req.socket.remoteAddress);
+  return ip || 'unknown';
+}
+
+/**
+ * Retourne true si l'IP est privée/locale (développement local uniquement).
+ * @param {string} ip
+ * @returns {boolean}
+ */
+function isPrivateIp(ip) {
+  if (!ip) return false;
+  if (ip === '::1' || ip === '127.0.0.1' || ip === 'localhost' || ip === '::ffff:127.0.0.1') {
+    return true;
+  }
+  return /^10\./.test(ip) ||
+    /^192\.168\./.test(ip) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
+    /^169\.254\./.test(ip);
+}
+
+/**
+ * Rate limiter simple basé sur Firestore (fenêtre glissante par clé).
+ * Ne bloque jamais en cas d'erreur interne (fail-open pour l'utilisateur).
+ * @param {string} key - Clé de limitation (ip, email, ...)
+ * @param {string} bucket - Nom du bucket (préfixe du document)
+ * @param {number} max - Nombre maximal de requêtes autorisées
+ * @param {number} windowSeconds - Fenêtre en secondes
+ * @returns {Promise<{limited: boolean, retryAfterSeconds?: number}>}
+ */
+async function checkRateLimit(key, bucket, max, windowSeconds) {
+  if (!key) {
+    return {limited: false};
+  }
+  const ref = db.collection('rateLimits').doc(`${bucket}_${String(key).slice(0, 128)}`);
+  const now = Date.now();
+  try {
+    return await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const data = snap.exists ? snap.data() : {};
+      if (data.windowStart && now - data.windowStart < windowSeconds * 1000) {
+        if ((data.count || 0) >= max) {
+          const retryAfterSeconds = Math.max(1,
+              Math.ceil((windowSeconds * 1000 - (now - data.windowStart)) / 1000));
+          return {limited: true, retryAfterSeconds};
+        }
+        tx.set(ref, {count: (data.count || 0) + 1, windowStart: data.windowStart});
+        return {limited: false};
+      }
+      tx.set(ref, {count: 1, windowStart: now});
+      return {limited: false};
+    });
+  } catch (error) {
+    // Ne jamais bloquer un utilisateur légitime à cause du limiter lui-même
+    console.warn('Rate limiter error:', error.message);
+    return {limited: false};
+  }
+}
+
 exports.captureLead = blogLeadHub.captureLead;
 exports.sendContactEmail = blogLeadHub.sendContactEmail;
 
@@ -4462,6 +4555,266 @@ exports.verifyToken = onCall(
     });
 
 /**
+ * Récupère le contenu protégé APRÈS vérification serveur des droits d'accès.
+ *
+ * 🔒 Remplace les lectures Firestore directes du client (firebase-auth.mjs) :
+ * les règles Firestore interdisent désormais la lecture de protectedContent
+ * côté client ; cette fonction vérifie que l'utilisateur possède le produit
+ * et respecte la progression (défi 21 jours / approche complète) AVANT de
+ * renvoyer le contenu. Le contenu n'est donc plus accessible en lisant
+ * Firestore directement.
+ *
+ * - Avec contentId : vérifie l'accès au contenu demandé et le retourne.
+ * - Sans contentId : retourne la liste des contenus de tous les produits
+ *   de l'utilisateur avec les informations d'accessibilité.
+ * Région : europe-west1
+ */
+exports.getProtectedContent = onCall(
+    {
+      region: 'europe-west1',
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e) pour accéder au contenu protégé.');
+      }
+
+      const {contentId = null} = request.data || {};
+
+      // 1. Charger le document utilisateur (propriétaire du compte)
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (!userDoc.exists) {
+        throw new HttpsError('not-found', 'Votre compte n\'a pas été trouvé dans notre système. Veuillez contacter le support.');
+      }
+
+      const userData = userDoc.data();
+      let userProducts = userData.products || [];
+
+      // Migration automatique : ancien format (product unique)
+      if (userProducts.length === 0 && userData.product) {
+        userProducts = [{
+          name: userData.product,
+          startDate: userData.registrationDate || userData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
+          purchasedAt: userData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
+        }];
+      }
+
+      if (userProducts.length === 0) {
+        throw new HttpsError('failed-precondition', 'Votre compte n\'a pas de produit associé. Veuillez contacter le support.');
+      }
+
+      const userProduct = userProducts[0].name;
+      const now = new Date();
+
+      /**
+       * Vérifie l'accès progressif (21jours : jour ; complet : semaine).
+       * @returns {{accessible: boolean, daysRemaining?: number,
+       *            weeksRemaining?: number, currentDay?: number, currentWeek?: number}}
+       */
+      function checkProgressiveAccess(productName, contentData, userProductData) {
+        const startDate = userProductData.startDate && typeof userProductData.startDate.toDate === 'function' ?
+          userProductData.startDate.toDate() :
+          (userProductData.startDate instanceof Date ? userProductData.startDate : now);
+
+        if (productName === '21jours' && contentData.day !== undefined) {
+          const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+          const dayNumber = contentData.day;
+          // Jour 0 (déroulé) accessible immédiatement ; jours 1-21 accessibles
+          // à partir du jour correspondant ; jour 22 (bonus) au jour 22.
+          if (dayNumber > 0 && daysSinceStart < dayNumber - 1) {
+            return {
+              accessible: false,
+              daysRemaining: dayNumber - daysSinceStart - 1,
+              currentDay: daysSinceStart + 1,
+            };
+          }
+          return {accessible: true, currentDay: daysSinceStart + 1};
+        }
+
+        if (productName === 'complet' && contentData.week !== undefined) {
+          const weeksSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24 * 7));
+          const weekNumber = contentData.week;
+          // Semaines 0 et 1 accessibles immédiatement ; semaines 2-14 ensuite.
+          if (weekNumber > 1 && weeksSinceStart < weekNumber) {
+            return {
+              accessible: false,
+              weeksRemaining: weekNumber - weeksSinceStart,
+              currentWeek: weeksSinceStart + 1,
+            };
+          }
+          return {accessible: true, currentWeek: weeksSinceStart + 1};
+        }
+
+        return {accessible: true};
+      }
+
+      // 2. Cas : contenu spécifique demandé
+      if (contentId) {
+        const contentDoc = await db.collection('protectedContent').doc(contentId).get();
+
+        if (!contentDoc.exists) {
+          return {
+            success: false,
+            error: 'Le contenu demandé n\'existe pas ou n\'est plus disponible.',
+            errorCode: 'CONTENT_NOT_FOUND',
+            suggestion: 'Essayez d\'accéder au contenu depuis la page principale de votre formation.',
+          };
+        }
+
+        const contentData = contentDoc.data();
+        const contentProduct = contentData.product;
+        const userProductData = userProducts.find((p) => p.name === contentProduct);
+
+        if (!userProductData) {
+          return {
+            success: false,
+            error: 'Vous n\'avez pas accès à ce contenu. Ce contenu fait partie d\'une autre formation que celle à laquelle vous êtes inscrit(e).',
+            errorCode: 'PRODUCT_MISMATCH',
+            suggestion: 'Accédez au contenu depuis votre espace membre.',
+          };
+        }
+
+        const access = checkProgressiveAccess(contentProduct, contentData, userProductData);
+        if (!access.accessible) {
+          if (contentProduct === '21jours' && access.daysRemaining !== undefined) {
+            return {
+              success: false,
+              error: `Ce contenu sera disponible dans ${access.daysRemaining} jour${access.daysRemaining > 1 ? 's' : ''}. Vous êtes actuellement au jour ${access.currentDay} du défi de 21 jours.`,
+              errorCode: 'CONTENT_NOT_AVAILABLE_YET',
+              suggestion: 'Continuez à suivre le programme jour par jour. Le contenu se débloque automatiquement chaque jour.',
+              daysRemaining: access.daysRemaining,
+              currentDay: access.currentDay,
+            };
+          }
+          return {
+            success: false,
+            error: `Ce contenu sera disponible dans ${access.weeksRemaining} semaine${access.weeksRemaining > 1 ? 's' : ''}. Vous êtes actuellement à la semaine ${access.currentWeek}.`,
+            errorCode: 'CONTENT_NOT_AVAILABLE_YET',
+            suggestion: 'Continuez à suivre le programme semaine par semaine. Le contenu se débloque automatiquement chaque semaine.',
+            weeksRemaining: access.weeksRemaining,
+            currentWeek: access.currentWeek,
+          };
+        }
+
+        const result = {
+          success: true,
+          content: contentData.content || '',
+          product: userProduct,
+          // Produit réel du contenu (utilisé côté client pour le cache et l'affichage)
+          contentProduct: contentProduct,
+          title: contentData.title || '',
+          day: contentData.day,
+          commentText: contentData.commentText || null,
+        };
+
+        if (userProduct !== '21jours') {
+          result.metadata = {
+            createdAt: contentData.createdAt || null,
+            updatedAt: contentData.updatedAt || null,
+          };
+        }
+
+        return result;
+      }
+
+      // 3. Cas : liste des contenus de tous les produits de l'utilisateur
+      try {
+        const productsData = [];
+
+        for (const userProductData of userProducts) {
+          const productName = userProductData.name;
+          const startDate = userProductData.startDate && typeof userProductData.startDate.toDate === 'function' ?
+            userProductData.startDate.toDate() :
+            (userProductData.startDate instanceof Date ? userProductData.startDate : now);
+
+          let query = db.collection('protectedContent').where('product', '==', productName);
+
+          if (productName === '21jours') {
+            query = query.orderBy('day', 'asc');
+          } else if (productName === 'complet') {
+            query = query.orderBy('week', 'asc');
+          } else {
+            query = query.orderBy('createdAt', 'desc');
+          }
+
+          let contentsSnapshot;
+          try {
+            contentsSnapshot = await query.get();
+          } catch (indexError) {
+            // Si l'index est en cours de construction, essayer sans orderBy
+            if (indexError.code === 'failed-precondition') {
+              contentsSnapshot = await db.collection('protectedContent')
+                  .where('product', '==', productName)
+                  .get();
+            } else {
+              throw indexError;
+            }
+          }
+
+          const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+          const weeksSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24 * 7));
+          const contents = [];
+
+          contentsSnapshot.forEach((doc) => {
+            const data = doc.data();
+            const dayNumber = data.day;
+            const weekNumber = data.week;
+            const access = checkProgressiveAccess(productName, data, userProductData);
+
+            const contentObj = {
+              id: doc.id,
+              title: data.title || doc.id,
+              content: data.content || '',
+              type: data.type || null,
+              day: dayNumber,
+              week: weekNumber,
+              commentText: data.commentText || null,
+              isAccessible: access.accessible,
+              daysRemaining: access.daysRemaining || null,
+              weeksRemaining: access.weeksRemaining || null,
+            };
+
+            // Pour les autres produits, ajouter createdAt/updatedAt pour le tri
+            if (productName !== '21jours' && productName !== 'complet') {
+              contentObj.createdAt = data.createdAt || null;
+              contentObj.updatedAt = data.updatedAt || null;
+            }
+
+            contents.push(contentObj);
+          });
+
+          productsData.push({
+            name: productName,
+            startDate: startDate.toISOString(),
+            contents: contents,
+            daysSinceStart: productName === '21jours' ? daysSinceStart : null,
+            weeksSinceStart: productName === 'complet' ? weeksSinceStart : null,
+          });
+        }
+
+        return {
+          success: true,
+          products: productsData,
+          product: userProduct,
+          daysSinceRegistration: productsData.find((p) => p.name === '21jours')?.daysSinceStart || null,
+        };
+      } catch (error) {
+        console.error('Error loading protected content list:', error);
+        if (error.code === 'failed-precondition' ||
+            (error.message && error.message.includes('index is currently building'))) {
+          return {
+            success: false,
+            error: 'Le système est en cours de mise à jour. Veuillez réessayer dans quelques minutes.',
+            errorCode: 'INDEX_BUILDING',
+            suggestion: 'Cette opération est temporaire. Attendez 2-3 minutes et rafraîchissez la page.',
+          };
+        }
+        throw new HttpsError('internal', 'Erreur lors du chargement du contenu : ' + error.message);
+      }
+    },
+);
+
+/**
  * Crée ou répare le document Firestore pour un utilisateur existant dans Firebase Auth
  * Utile si l'utilisateur existe dans Auth mais pas dans Firestore
  * Région : europe-west1
@@ -4481,6 +4834,16 @@ exports.repairUserDocument = onCall(
 
       try {
         const normalizedEmail = email.toLowerCase().trim();
+
+        // 🔒 Sécurité : l'appelant doit être authentifié et ne peut réparer
+        // QUE son propre compte. Les admins (claim custom `admin: true`)
+        // peuvent réparer n'importe quel compte et spécifier un produit.
+        const callerUid = request.auth && request.auth.uid;
+        if (!callerUid) {
+          throw new HttpsError('unauthenticated', 'Authentification requise');
+        }
+        const isAdmin = !!(request.auth.token && request.auth.token.admin);
+
         const adminAuth = admin.auth();
 
         // Vérifier que l'utilisateur existe dans Firebase Auth
@@ -4492,6 +4855,12 @@ exports.repairUserDocument = onCall(
             throw new HttpsError('not-found', 'Utilisateur non trouvé dans Firebase Authentication');
           }
           throw error;
+        }
+
+        // Seul le propriétaire du compte (ou un admin) peut réparer ce document
+        if (!isAdmin && userRecord.uid !== callerUid) {
+          throw new HttpsError('permission-denied',
+              'Vous ne pouvez réparer que votre propre compte.');
         }
 
         const userId = userRecord.uid;
@@ -4516,8 +4885,10 @@ exports.repairUserDocument = onCall(
 
         // Essayer de détecter les produits depuis Mailjet si disponible
         let detectedProducts = [];
-        if (product) {
-        // Si un produit est spécifié, l'utiliser
+        if (isAdmin && product) {
+        // Seul un admin peut spécifier un produit. Pour un utilisateur
+        // régulier, le produit est TOUJOURS détecté depuis Mailjet afin
+        // d'empêcher l'auto-octroi d'accès payant (produits payants).
           detectedProducts = [product];
         } else {
         // Sinon, essayer de détecter depuis Mailjet
@@ -4757,7 +5128,7 @@ exports.subscribeToNewsletter = onCall(
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
-      const {email, name, turnstileToken, isLocalhost, turnstileSkipped, locale = 'fr'} = request.data;
+      const {email, name, turnstileToken, locale = 'fr'} = request.data;
 
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
@@ -4769,29 +5140,34 @@ exports.subscribeToNewsletter = onCall(
         throw new HttpsError('invalid-argument', 'Invalid email format');
       }
 
-      // Valider le token Turnstile (sauf en développement local ou si fallback activé)
-      if (!isLocalhost && !turnstileSkipped && !turnstileToken) {
-        throw new HttpsError('invalid-argument', 'Turnstile verification required');
+      // 🔒 Anti-spam : rate limiting par IP et par email
+      const clientIp = getClientIp(request.rawRequest);
+      const ipLimit = await checkRateLimit(`ip:${clientIp}`, 'subscribeNewsletter', 10, 3600);
+      if (ipLimit.limited) {
+        throw new HttpsError('resource-exhausted',
+            `Trop de demandes. Réessayez dans ${ipLimit.retryAfterSeconds} s.`);
+      }
+      const emailLimit = await checkRateLimit(email.toLowerCase().trim(), 'subscribeNewsletter', 3, 3600);
+      if (emailLimit.limited) {
+        throw new HttpsError('resource-exhausted',
+            'Trop de demandes pour cette adresse. Réessayez plus tard.');
       }
 
-      const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
-
-      // Si Turnstile a été ignoré (fallback), logger un avertissement mais continuer
-      if (turnstileSkipped) {
-        console.warn(
-            `[subscribeToNewsletter] Turnstile skipped for ${email} (fallback mode). ` +
-        'Double opt-in will still protect against bots.',
-        );
-      }
-
-      // Valider Turnstile seulement si pas en localhost, pas en fallback, et si le secret est configuré
-      if (!isLocalhost && !turnstileSkipped && turnstileSecret && turnstileToken) {
+      // 🔒 Turnstile : vérification OBLIGATOIRE pour toute requête publique.
+      // Les anciens paramètres client isLocalhost / turnstileSkipped permettaient
+      // de contourner la protection anti-bot : ils sont supprimés. Le statut
+      // localhost est désormais déterminé côté serveur (IP privée).
+      const isLocal = isPrivateIp(clientIp);
+      if (!isLocal) {
+        const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+        if (!turnstileSecret) {
+          // Fail-closed : ne jamais accepter une inscription sans protection
+          throw new HttpsError('failed-precondition', 'Bot protection is not configured');
+        }
+        if (!turnstileToken) {
+          throw new HttpsError('invalid-argument', 'Turnstile verification required');
+        }
         try {
-        // Obtenir l'IP du client depuis les headers
-          const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-          request.rawRequest?.headers?.['x-real-ip'] ||
-          '';
-
           // Valider le token avec Cloudflare Turnstile
           const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
             method: 'POST',
@@ -4801,7 +5177,7 @@ exports.subscribeToNewsletter = onCall(
             body: JSON.stringify({
               secret: turnstileSecret,
               response: turnstileToken,
-              remoteip: clientIP,
+              remoteip: clientIp,
             }),
           });
 
@@ -4818,10 +5194,8 @@ exports.subscribeToNewsletter = onCall(
           console.error('Error verifying Turnstile token:', error);
           throw new HttpsError('internal', 'Error verifying bot protection');
         }
-      } else if (!isLocalhost && !turnstileSecret) {
-        console.warn('TURNSTILE_SECRET_KEY not configured. Skipping bot verification.');
-      } else if (isLocalhost) {
-        console.log('Skipping Turnstile verification in localhost environment.');
+      } else {
+        console.log('Skipping Turnstile verification for local/private IP:', clientIp);
       }
 
       try {
@@ -5066,7 +5440,7 @@ exports.subscribeToStagesWaitingList = onCall(
       cors: true, // Autoriser CORS pour toutes les origines
     },
     async (request) => {
-      const {email, name, region, turnstileToken, isLocalhost, turnstileSkipped, locale = 'fr'} = request.data;
+      const {email, name, region, turnstileToken, locale = 'fr'} = request.data;
 
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
@@ -5102,28 +5476,32 @@ exports.subscribeToStagesWaitingList = onCall(
         throw new HttpsError('invalid-argument', 'Invalid region');
       }
 
-      // Valider le token Turnstile (sauf en développement local ou si fallback activé)
-      if (!isLocalhost && !turnstileSkipped && !turnstileToken) {
-        throw new HttpsError('invalid-argument', 'Turnstile verification required');
+      // 🔒 Anti-spam : rate limiting par IP et par email
+      const clientIp = getClientIp(request.rawRequest);
+      const ipLimit = await checkRateLimit(`ip:${clientIp}`, 'subscribeStagesWaitlist', 10, 3600);
+      if (ipLimit.limited) {
+        throw new HttpsError('resource-exhausted',
+            `Trop de demandes. Réessayez dans ${ipLimit.retryAfterSeconds} s.`);
+      }
+      const emailLimit = await checkRateLimit(email.toLowerCase().trim(), 'subscribeStagesWaitlist', 3, 3600);
+      if (emailLimit.limited) {
+        throw new HttpsError('resource-exhausted',
+            'Trop de demandes pour cette adresse. Réessayez plus tard.');
       }
 
-      const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
-
-      // Si Turnstile a été ignoré (fallback), logger un avertissement mais continuer
-      if (turnstileSkipped) {
-        console.warn(
-            `[subscribeToStagesWaitingList] Turnstile skipped for ${email} (fallback mode)`,
-        );
-      }
-
-      // Valider Turnstile seulement si pas en localhost, pas en fallback, et si le secret est configuré
-      if (!isLocalhost && !turnstileSkipped && turnstileSecret && turnstileToken) {
+      // 🔒 Turnstile : vérification OBLIGATOIRE pour toute requête publique.
+      // Les anciens paramètres client isLocalhost / turnstileSkipped permettaient
+      // de contourner la protection anti-bot : ils sont supprimés.
+      const isLocal = isPrivateIp(clientIp);
+      if (!isLocal) {
+        const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+        if (!turnstileSecret) {
+          throw new HttpsError('failed-precondition', 'Bot protection is not configured');
+        }
+        if (!turnstileToken) {
+          throw new HttpsError('invalid-argument', 'Turnstile verification required');
+        }
         try {
-        // Obtenir l'IP du client depuis les headers
-          const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-          request.rawRequest?.headers?.['x-real-ip'] ||
-          '';
-
           // Valider le token avec Cloudflare Turnstile
           const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
             method: 'POST',
@@ -5133,7 +5511,7 @@ exports.subscribeToStagesWaitingList = onCall(
             body: JSON.stringify({
               secret: turnstileSecret,
               response: turnstileToken,
-              remoteip: clientIP,
+              remoteip: clientIp,
             }),
           });
 
@@ -5150,10 +5528,8 @@ exports.subscribeToStagesWaitingList = onCall(
           console.error('Error verifying Turnstile token:', error);
           throw new HttpsError('internal', 'Error verifying bot protection');
         }
-      } else if (!isLocalhost && !turnstileSecret) {
-        console.warn('TURNSTILE_SECRET_KEY not configured. Skipping bot verification.');
-      } else if (isLocalhost) {
-        console.log('Skipping Turnstile verification in localhost environment.');
+      } else {
+        console.log('Skipping Turnstile verification for local/private IP:', clientIp);
       }
 
       try {
@@ -5825,7 +6201,7 @@ exports.subscribeTo5Days = onCall(
       cors: true,
     },
     async (request) => {
-      const {email, name, turnstileToken, isLocalhost, locale = 'fr'} = request.data;
+      const {email, name, turnstileToken, locale = 'fr'} = request.data;
 
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
@@ -5837,19 +6213,32 @@ exports.subscribeTo5Days = onCall(
         throw new HttpsError('invalid-argument', 'Invalid email format');
       }
 
-      // Valider le token Turnstile (sauf en développement local)
-      if (!isLocalhost && !turnstileToken) {
-        throw new HttpsError('invalid-argument', 'Turnstile verification required');
+      // 🔒 Anti-spam : rate limiting par IP et par email
+      const clientIp = getClientIp(request.rawRequest);
+      const ipLimit = await checkRateLimit(`ip:${clientIp}`, 'subscribe5Days', 10, 3600);
+      if (ipLimit.limited) {
+        throw new HttpsError('resource-exhausted',
+            `Trop de demandes. Réessayez dans ${ipLimit.retryAfterSeconds} s.`);
+      }
+      const emailLimit = await checkRateLimit(email.toLowerCase().trim(), 'subscribe5Days', 3, 3600);
+      if (emailLimit.limited) {
+        throw new HttpsError('resource-exhausted',
+            'Trop de demandes pour cette adresse. Réessayez plus tard.');
       }
 
-      const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
-      // Valider Turnstile seulement si pas en localhost et si le secret est configuré
-      if (!isLocalhost && turnstileSecret && turnstileToken) {
+      // 🔒 Turnstile : vérification OBLIGATOIRE pour toute requête publique.
+      // Le paramètre client isLocalhost permettait de contourner la protection :
+      // le statut localhost est désormais déterminé côté serveur (IP privée).
+      const isLocal = isPrivateIp(clientIp);
+      if (!isLocal) {
+        const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+        if (!turnstileSecret) {
+          throw new HttpsError('failed-precondition', 'Bot protection is not configured');
+        }
+        if (!turnstileToken) {
+          throw new HttpsError('invalid-argument', 'Turnstile verification required');
+        }
         try {
-          const clientIP = request.rawRequest?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
-          request.rawRequest?.headers?.['x-real-ip'] ||
-          '';
-
           const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
             method: 'POST',
             headers: {
@@ -5858,7 +6247,7 @@ exports.subscribeTo5Days = onCall(
             body: JSON.stringify({
               secret: turnstileSecret,
               response: turnstileToken,
-              remoteip: clientIP,
+              remoteip: clientIp,
             }),
           });
 
@@ -5875,10 +6264,8 @@ exports.subscribeTo5Days = onCall(
           console.error('Error verifying Turnstile token:', error);
           throw new HttpsError('internal', 'Error verifying bot protection');
         }
-      } else if (!isLocalhost && !turnstileSecret) {
-        console.warn('TURNSTILE_SECRET_KEY not configured. Skipping bot verification.');
-      } else if (isLocalhost) {
-        console.log('Skipping Turnstile verification in localhost environment.');
+      } else {
+        console.log('Skipping Turnstile verification for local/private IP:', clientIp);
       }
 
       try {
@@ -6194,6 +6581,19 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
 
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
+      }
+
+      // 🔒 Anti-bombardement : rate limiting par IP et par email
+      const clientIp = getClientIp(request.rawRequest);
+      const ipLimit = await checkRateLimit(`ip:${clientIp}`, 'passwordReset', 10, 3600);
+      if (ipLimit.limited) {
+        throw new HttpsError('resource-exhausted',
+            `Trop de demandes. Réessayez dans ${ipLimit.retryAfterSeconds} s.`);
+      }
+      const emailLimit = await checkRateLimit(email.toLowerCase().trim(), 'passwordReset', 3, 3600);
+      if (emailLimit.limited) {
+        throw new HttpsError('resource-exhausted',
+            'Trop de demandes pour cette adresse. Réessayez plus tard.');
       }
 
       try {
@@ -11024,6 +11424,16 @@ exports.checkUserPass = onRequest(
         return res.status(400).json({error: 'email is required'});
       }
 
+      // 🔒 Anti-énumération : rate limiting par IP et par email
+      const ipLimit = await checkRateLimit(`ip:${getClientIp(req)}`, 'checkUserPass', 30, 3600);
+      if (ipLimit.limited) {
+        return res.status(429).json({error: 'Rate limited', message: 'Trop de requêtes. Réessayez plus tard.'});
+      }
+      const emailLimit = await checkRateLimit(email.toLowerCase().trim(), 'checkUserPass', 15, 3600);
+      if (emailLimit.limited) {
+        return res.status(429).json({error: 'Rate limited', message: 'Trop de requêtes. Réessayez plus tard.'});
+      }
+
       try {
         const result = await passService.checkUserPass(db, email);
         return res.json(result);
@@ -11096,6 +11506,48 @@ exports.bookCourse = onRequest(
         }
 
         const normalizedEmail = email.toLowerCase().trim();
+
+        // 🔒 Anti-spam / anti-abus : rate limiting par IP et par email
+        const clientIp = getClientIp(req);
+        const ipLimit = await checkRateLimit(`ip:${clientIp}`, 'bookCourse', 30, 3600);
+        if (ipLimit.limited) {
+          return res.status(429).json({
+            success: false,
+            error: 'RATE_LIMITED',
+            message: `Trop de réservations. Réessayez dans ${ipLimit.retryAfterSeconds} s.`,
+          });
+        }
+        const emailLimit = await checkRateLimit(normalizedEmail, 'bookCourse', 10, 3600);
+        if (emailLimit.limited) {
+          return res.status(429).json({
+            success: false,
+            error: 'RATE_LIMITED',
+            message: 'Trop de réservations pour cette adresse. Réessayez plus tard.',
+          });
+        }
+
+        // 🔒 Utilisation d'un pass : authentification Firebase OBLIGATOIRE.
+        // Empêche d'utiliser/consommer le pass d'un autre utilisateur en
+        // connaissant simplement son email (IDOR). Le pass est associé à
+        // l'email du compte authentifié.
+        if (usePass) {
+          const idToken = await verifyIdToken(req);
+          if (!idToken) {
+            return res.status(401).json({
+              success: false,
+              error: 'AUTH_REQUIRED',
+              message: 'Connectez-vous pour utiliser votre pass.',
+            });
+          }
+          const tokenEmail = (idToken.email || '').toLowerCase().trim();
+          if (!tokenEmail || tokenEmail !== normalizedEmail) {
+            return res.status(403).json({
+              success: false,
+              error: 'EMAIL_MISMATCH',
+              message: 'Ce pass est associé à un autre compte. Vérifiez l\'email utilisé.',
+            });
+          }
+        }
 
         // Initialiser Stripe
         let stripe = null;
@@ -11863,6 +12315,19 @@ exports.cancelCourseBooking = onRequest(
         return res.status(400).json({error: 'bookingId and email are required'});
       }
 
+      // 🔒 Sécurité : authentification Firebase requise et email du compte
+      // authentifié obligatoirement égal à celui de la réservation.
+      // (Empêche l'annulation d'une réservation en connaissant seulement
+      // email + bookingId.)
+      const idToken = await verifyIdToken(req);
+      if (!idToken) {
+        return res.status(401).json({error: 'Authentication required'});
+      }
+      const tokenEmail = (idToken.email || '').toLowerCase().trim();
+      if (!tokenEmail || tokenEmail !== email.toLowerCase().trim()) {
+        return res.status(403).json({error: 'Email does not match authenticated account'});
+      }
+
       // Vérifier que l'email correspond à la réservation
       const bookingDoc = await db.collection('bookings').doc(bookingId).get();
       if (!bookingDoc.exists) {
@@ -11902,6 +12367,16 @@ exports.getUserBookings = onRequest(
 
       if (!email) {
         return res.status(400).json({error: 'email is required'});
+      }
+
+      // 🔒 Anti-énumération : rate limiting par IP et par email
+      const ipLimit = await checkRateLimit(`ip:${getClientIp(req)}`, 'getUserBookings', 20, 3600);
+      if (ipLimit.limited) {
+        return res.status(429).json({error: 'Rate limited', message: 'Trop de requêtes. Réessayez plus tard.'});
+      }
+      const emailLimit = await checkRateLimit(email.toLowerCase().trim(), 'getUserBookings', 10, 3600);
+      if (emailLimit.limited) {
+        return res.status(429).json({error: 'Rate limited', message: 'Trop de requêtes. Réessayez plus tard.'});
       }
 
       try {
@@ -11949,6 +12424,12 @@ exports.getWaitlistPosition = onRequest(
         return res.status(400).json({error: 'email and courseId are required'});
       }
 
+      // 🔒 Rate limiting par IP
+      const ipLimit = await checkRateLimit(`ip:${getClientIp(req)}`, 'getWaitlistPosition', 20, 3600);
+      if (ipLimit.limited) {
+        return res.status(429).json({error: 'Rate limited', message: 'Trop de requêtes. Réessayez plus tard.'});
+      }
+
       try {
         const result = await bookingService.getWaitlistPosition(db, email, courseId);
         return res.json(result);
@@ -11980,6 +12461,16 @@ exports.removeFromWaitlist = onRequest(
 
       if (!waitlistId || !email) {
         return res.status(400).json({error: 'waitlistId and email are required'});
+      }
+
+      // 🔒 Rate limiting par IP et par email
+      const ipLimit = await checkRateLimit(`ip:${getClientIp(req)}`, 'removeFromWaitlist', 20, 3600);
+      if (ipLimit.limited) {
+        return res.status(429).json({error: 'Rate limited', message: 'Trop de requêtes. Réessayez plus tard.'});
+      }
+      const emailLimit = await checkRateLimit(email.toLowerCase().trim(), 'removeFromWaitlist', 10, 3600);
+      if (emailLimit.limited) {
+        return res.status(429).json({error: 'Rate limited', message: 'Trop de requêtes. Réessayez plus tard.'});
       }
 
       try {
@@ -12155,9 +12646,12 @@ exports.getHealthStats = onCall(
       secrets: ['ADMIN_EMAIL'],
     },
     async (request) => {
-    // Vérifier si l'utilisateur est admin (simplifié pour l'instant)
-    // Dans un cas réel, on vérifierait le custom claim admin
-      const {days = 7} = request.data;
+      // 🔒 Sécurité : accès réservé aux admins (claim custom `admin: true`)
+      if (!request.auth || !request.auth.token.admin) {
+        throw new HttpsError('permission-denied', 'Admin access required');
+      }
+
+      const days = Math.min(Math.max(parseInt(request.data && request.data.days, 10) || 7, 1), 90);
 
       try {
         const now = new Date();

@@ -18,6 +18,17 @@ if (existsSync(redirectRulesPath)) {
 writeFileSync(resolve(siteDir, '_redirects'), redirectLines.join('\n') + '\n', 'utf-8');
 console.log(`✅ Generated _redirects with ${redirectLines.length} rules`);
 
+const SECURITY_HEADERS = [
+  'Strict-Transport-Security: max-age=31536000; includeSubDomains',
+  'X-Content-Type-Options: nosniff',
+  'Referrer-Policy: strict-origin-when-cross-origin',
+  'Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()',
+  'X-Frame-Options: SAMEORIGIN',
+  // Anti-clickjacking via CSP (complète le <meta CSP> du site : frame-ancestors
+  // ne peut pas être déclaré en <meta>, il doit passer par un header)
+  'Content-Security-Policy: frame-ancestors \'self\'',
+];
+
 const staticHeaders = [
   { path: '/.well-known/api-catalog', headers: [
     'Content-Type: application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"',
@@ -55,6 +66,18 @@ const staticHeaders = [
   ]},
 ];
 
+// Les règles Cloudflare Pages se REPLACENT (pas de fusion) : les headers de
+// sécurité doivent donc être répétés sur chaque règle de chemin pour couvrir
+// toutes les pages. Le header frame-ancestors (anti-clickjacking) est appliqué
+// partout sauf sur les fichiers statiques (jamais embarqués en iframe).
+for (const entry of staticHeaders) {
+  if (entry.path !== '/.well-known/api-catalog' &&
+      entry.path !== '/.well-known/agent-skills/index.json' &&
+      entry.path !== '/.well-known/mcp/server-card.json') {
+    entry.headers = [...entry.headers, ...SECURITY_HEADERS];
+  }
+}
+
 let headerLines = [];
 for (const entry of staticHeaders) {
   headerLines.push(entry.path);
@@ -64,35 +87,14 @@ for (const entry of staticHeaders) {
   headerLines.push('');
 }
 
-headerLines.push('# Static assets cache');
-headerLines.push('*.jpg');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.jpeg');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.gif');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.png');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.webp');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.avif');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.svg');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.ico');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.css');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.js');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.woff2');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.woff');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.ttf');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
-headerLines.push('*.otf');
-headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
+const ASSET_TYPES = ['jpg', 'jpeg', 'gif', 'png', 'webp', 'avif', 'svg', 'ico', 'css', 'js', 'woff2', 'woff', 'ttf', 'otf'];
+
+for (const ext of ASSET_TYPES) {
+  headerLines.push(`*.${ext}`);
+  headerLines.push('  Cache-Control: public, max-age=31536000, immutable');
+  headerLines.push('  X-Content-Type-Options: nosniff');
+  headerLines.push('');
+}
 
 writeFileSync(resolve(siteDir, '_headers'), headerLines.join('\n') + '\n', 'utf-8');
 console.log(`✅ Generated _headers with ${staticHeaders.length} path-specific rules + glob rules`);

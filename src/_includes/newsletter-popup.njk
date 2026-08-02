@@ -97,7 +97,7 @@
       // Afficher le message de chargement
       if (loadingMessage) loadingMessage.style.display = 'block';
       
-      // Timeout : si Turnstile ne se charge pas après 3 secondes, permettre le fallback
+      // Timeout : si Turnstile ne se charge pas après 3 secondes, afficher un avertissement
       turnstileTimeout = setTimeout(() => {
         const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
         if (!turnstileResponse || !turnstileResponse.value) {
@@ -106,11 +106,11 @@
           if (loadingMessage) loadingMessage.style.display = 'none';
           if (errorMessage) {
             errorMessage.classList.remove('hidden');
-            errorMessage.innerHTML = '⚠️ La vérification anti-bot ne se charge pas. <strong>Vous pouvez quand même vous inscrire en cliquant sur le bouton ci-dessous</strong>. Vous devrez confirmer votre email.';
+            errorMessage.innerHTML = '⚠️ La vérification anti-bot ne se charge pas. Rafraîchissez la page pour réessayer.';
             errorMessage.className = 'text-sm text-yellow-600 mb-2';
           }
           if (turnstileWidget) turnstileWidget.style.display = 'none';
-          console.warn('[Turnstile] Widget failed to load, fallback mode enabled');
+          console.warn('[Turnstile] Widget failed to load');
         }
       }, 3000); // 3 secondes de timeout (réduit pour une meilleure UX)
       
@@ -151,11 +151,11 @@
             if (loadingMessage) loadingMessage.style.display = 'none';
             if (errorMessage) {
               errorMessage.classList.remove('hidden');
-              errorMessage.innerHTML = '⚠️ La vérification anti-bot ne se charge pas. <strong>Vous pouvez quand même vous inscrire en cliquant sur le bouton ci-dessous</strong>. Vous devrez confirmer votre email.';
+              errorMessage.innerHTML = '⚠️ La vérification anti-bot ne se charge pas. Rafraîchissez la page pour réessayer.';
               errorMessage.className = 'text-sm text-yellow-600 mb-2';
             }
             if (turnstileWidget) turnstileWidget.style.display = 'none';
-            console.warn('[Turnstile] Widget failed to initialize, fallback mode enabled');
+            console.warn('[Turnstile] Widget failed to initialize');
           }
         }, 2000);
       }
@@ -342,51 +342,18 @@
           return;
         }
         
-        // Vérifier que Turnstile est complété (seulement si pas en localhost)
+        // Vérifier que Turnstile est complété (obligatoire en production)
         let turnstileToken = null;
-        let turnstileSkipped = false;
-        
+
         if (!isLocalhost) {
           const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
           if (!turnstileResponse || !turnstileResponse.value) {
-            // Si Turnstile a échoué à se charger (fallback activé), permettre la soumission
-            if (turnstileFailed) {
-              turnstileSkipped = true;
-              console.log('[Form] Submitting without Turnstile (fallback mode)');
-              // Afficher un message informatif mais ne pas bloquer
-              if (messageDiv) {
-                messageDiv.textContent = '⚠️ Inscription en cours sans vérification anti-bot. Vous devrez confirmer votre email.';
-                messageDiv.className = 'text-sm text-yellow-600';
-                messageDiv.classList.remove('hidden');
-              }
-            } else {
-              // Turnstile devrait être disponible mais n'est pas complété
-              // Vérifier si le script Turnstile s'est chargé du tout
-              if (typeof turnstile === 'undefined') {
-                // Le script ne s'est jamais chargé, activer le fallback automatiquement
-                turnstileFailed = true;
-                turnstileSkipped = true;
-                console.log('[Form] Turnstile script never loaded, enabling fallback automatically');
-                // Ne pas bloquer, continuer avec le fallback
-              } else {
-                // Le script est chargé mais le widget n'est pas complété
-                const widgetVisible = turnstileWidget && turnstileWidget.style.display !== 'none';
-                if (!widgetVisible) {
-                  // Le widget n'est pas visible, activer le fallback
-                  turnstileFailed = true;
-                  turnstileSkipped = true;
-                  console.log('[Form] Turnstile widget not visible, enabling fallback automatically');
-                  // Ne pas bloquer, continuer avec le fallback
-                } else {
-                  // Le widget est visible mais pas complété
-                  showMessage('Veuillez compléter la vérification anti-bot ci-dessus', 'error');
-                  return;
-                }
-              }
-            }
-          } else {
-            turnstileToken = turnstileResponse.value;
+            // 🔒 La vérification anti-bot est OBLIGATOIRE : le serveur refuse
+            // les inscriptions sans token Turnstile valide (plus de fallback).
+            showMessage('La vérification anti-bot est temporairement indisponible. Veuillez réessayer dans quelques instants.', 'error');
+            return;
           }
+          turnstileToken = turnstileResponse.value;
         }
         
         // Désactiver le bouton et afficher le loading
@@ -423,15 +390,11 @@
             email: email, 
             name: name, 
             turnstileToken: turnstileToken,
-            isLocalhost: isLocalhost, // Informer le serveur si on est en localhost
-            turnstileSkipped: turnstileSkipped, // Informer le serveur si Turnstile a été ignoré (fallback)
             locale: locale // Langue détectée depuis l'URL
           });
           
           if (result.data && result.data.success) {
-            const successMessage = turnstileSkipped 
-              ? 'Merci ! Un email de confirmation vous a été envoyé. Veuillez cliquer sur le lien dans l\'email pour confirmer votre inscription. Pensez à vérifier vos spams / courriers indésirables. (Inscription effectuée sans vérification anti-bot)'
-              : 'Merci ! Un email de confirmation vous a été envoyé. Veuillez cliquer sur le lien dans l\'email pour confirmer votre inscription. Pensez à vérifier vos spams / courriers indésirables.';
+            const successMessage = 'Merci ! Un email de confirmation vous a été envoyé. Veuillez cliquer sur le lien dans l\'email pour confirmer votre inscription. Pensez à vérifier vos spams / courriers indésirables.';
             showMessage(successMessage, 'success');
             // Rediriger vers la page 2-pratiques-offertes après 3 secondes
             setTimeout(() => {

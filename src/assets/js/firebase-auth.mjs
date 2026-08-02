@@ -714,7 +714,48 @@ let _cachedUserUid = null;
 const _cachedContentDocs = {};
 
 /**
- * Charge le contenu protégé depuis Firestore
+ * Appelle la fonction serveur getProtectedContent (vérification serveur
+ * de la possession du produit et de la progression avant de renvoyer
+ * le contenu). Les lectures Firestore directes de protectedContent sont
+ * désormais interdites par les règles de sécurité.
+ */
+async function callGetProtectedContent(contentId = null) {
+  try {
+    await ensureFunctionsLoaded();
+    const app = firebase.app();
+    const functions = app.functions('europe-west1');
+    const getProtectedContent = functions.httpsCallable('getProtectedContent');
+    const response = await getProtectedContent(contentId ? {contentId} : {});
+    return response.data;
+  } catch (error) {
+    console.error('[Protected Content] Erreur getProtectedContent:', error);
+    if (error.code === 'unauthenticated') {
+      return {
+        success: false,
+        error: 'Veuillez vous connecter pour accéder au contenu protégé.',
+        errorCode: 'NOT_AUTHENTICATED',
+        suggestion: 'Connectez-vous depuis la page de connexion.'
+      };
+    }
+    if (error.code === 'permission-denied') {
+      return {
+        success: false,
+        error: error.message || 'Vous n\'avez pas accès à ce contenu.',
+        errorCode: 'PERMISSION_DENIED',
+        suggestion: 'Contactez le support si vous pensez que c\'est une erreur.'
+      };
+    }
+    return {
+      success: false,
+      error: error.message || 'Une erreur est survenue lors du chargement du contenu.',
+      errorCode: error.code || 'UNKNOWN_ERROR',
+      suggestion: 'Si le problème persiste, contactez le support avec le code d\'erreur ci-dessus.'
+    };
+  }
+}
+
+/**
+ * Charge le contenu protégé (vérification serveur des droits d'accès)
  */
 async function loadProtectedContent(contentId = null) {
   try {
@@ -870,258 +911,90 @@ async function loadProtectedContent(contentId = null) {
         return cachedResult;
       }
 
-      // Fallback : fetch Firestore si le contenu n'est pas en cache
-      const contentDoc = await db.collection('protectedContent').doc(contentId).get();
-      
-      if (!contentDoc.exists) {
-        return { 
-          success: false, 
-          error: `Le contenu demandé n'existe pas ou n'est plus disponible.`,
-          errorCode: 'CONTENT_NOT_FOUND',
-          suggestion: 'Essayez d\'accéder au contenu depuis la page principale de votre formation.'
-        };
-      }
+      // Fallback : le contenu n'est pas en cache → vérification serveur
+      // (getProtectedContent vérifie la possession du produit ET la progression)
+      const serverResult = await callGetProtectedContent(contentId);
 
-      const contentData = contentDoc.data();
-      const contentProduct = contentData.product;
-      
-      // Trouver le produit correspondant dans les produits de l'utilisateur
-      const userProductData = userProducts.find(p => p.name === contentProduct);
-      
-      if (!userProductData) {
-        return { 
-          success: false, 
-          error: `Vous n'avez pas accès à ce contenu. Ce contenu fait partie d'une autre formation que celle à laquelle vous êtes inscrit(e).`,
-          errorCode: 'PRODUCT_MISMATCH',
-          suggestion: `Accédez au contenu depuis votre espace membre.`
-        };
-      }
-
-      // Vérifier l'accès progressif selon le type de produit
-      const now = new Date();
-      const startDate = userProductData.startDate ? userProductData.startDate.toDate() : new Date();
-      
-      // Pour le produit "21jours", vérifier l'accès progressif basé sur le jour
-      if (contentProduct === '21jours' && contentData.day !== undefined) {
-        const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
-        const dayNumber = contentData.day;
-
-        // Jour 0 (déroulé) accessible immédiatement
-        // Jours 1-21 : accessibles à partir du jour correspondant
-        // Jour 22 (bonus) : accessible au jour 22 (daysSinceStart >= 21)
-        if (dayNumber > 0 && daysSinceStart < dayNumber - 1) {
-          const daysRemaining = dayNumber - daysSinceStart - 1;
-          return { 
-            success: false, 
-            error: `Ce contenu sera disponible dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}. Vous êtes actuellement au jour ${daysSinceStart + 1} du défi de 21 jours.`,
-            errorCode: 'CONTENT_NOT_AVAILABLE_YET',
-            suggestion: 'Continuez à suivre le programme jour par jour. Le contenu se débloque automatiquement chaque jour.',
-            daysRemaining: daysRemaining,
-            currentDay: daysSinceStart + 1
-          };
-        }
-      }
-      
-      // Pour le produit "complet", vérifier l'accès progressif basé sur la semaine
-      if (contentProduct === 'complet' && contentData.week !== undefined) {
-        const weeksSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24 * 7));
-        const weekNumber = contentData.week;
-
-        // Semaine 0 (bonus) et semaine 1 accessibles immédiatement
-        // Semaines 2-14 : accessibles à partir de la semaine correspondante
-        if (weekNumber > 1 && weeksSinceStart < weekNumber) {
-          const weeksRemaining = weekNumber - weeksSinceStart;
-          return { 
-            success: false, 
-            error: `Ce contenu sera disponible dans ${weeksRemaining} semaine${weeksRemaining > 1 ? 's' : ''}. Vous êtes actuellement à la semaine ${weeksSinceStart + 1}.`,
-            errorCode: 'CONTENT_NOT_AVAILABLE_YET',
-            suggestion: 'Continuez à suivre le programme semaine par semaine. Le contenu se débloque automatiquement chaque semaine.',
-            weeksRemaining: weeksRemaining,
-            currentWeek: weeksSinceStart + 1
-          };
-        }
-      }
-
-      const result = {
-        success: true, 
-        content: contentData.content || '', 
-        product: userProduct,
-        title: contentData.title || '',
-        day: contentData.day,
-        commentText: contentData.commentText || null, // Texte personnalisé pour les commentaires
-      };
-      
-      // Pour les autres produits (pas 21jours), ajouter createdAt/updatedAt
-      if (userProduct !== '21jours') {
-        result.metadata = {
-          createdAt: contentData.createdAt || null,
-          updatedAt: contentData.updatedAt || null
-        };
+      if (!serverResult.success) {
+        return serverResult;
       }
 
       // Mettre en cache le document fraîchement chargé pour les prochains affichages
+      const contentProduct = serverResult.contentProduct || serverResult.product;
+      const userProductDataForCache = userProducts.find(p => p.name === contentProduct) || userProducts[0];
       const now2 = new Date();
-      const startDate2 = userProductData.startDate ? userProductData.startDate.toDate() : new Date();
+      const startDate2 = userProductDataForCache && userProductDataForCache.startDate ? userProductDataForCache.startDate.toDate() : new Date();
       const daysSinceStart2 = Math.floor((now2 - startDate2) / (1000 * 60 * 60 * 24));
       const weeksSinceStart2 = Math.floor((now2 - startDate2) / (1000 * 60 * 60 * 24 * 7));
       _cachedContentDocs[contentId] = {
         product: contentProduct,
-        content: contentData.content || '',
-        title: contentData.title || contentId,
-        day: contentData.day,
-        week: contentData.week,
-        commentText: contentData.commentText || null,
-        createdAt: contentData.createdAt || null,
-        updatedAt: contentData.updatedAt || null,
+        content: serverResult.content || '',
+        title: serverResult.title || contentId,
+        day: serverResult.day,
+        week: serverResult.week,
+        commentText: serverResult.commentText || null,
+        createdAt: serverResult.metadata?.createdAt || null,
+        updatedAt: serverResult.metadata?.updatedAt || null,
         isAccessible: true,
         daysRemaining: null,
         weeksRemaining: null,
         currentDay: contentProduct === '21jours' ? daysSinceStart2 + 1 : undefined,
         currentWeek: contentProduct === 'complet' ? weeksSinceStart2 + 1 : undefined,
       };
-      
-      return result;
+
+      return serverResult;
     }
 
     // Sinon, charger la liste des contenus disponibles pour tous les produits
+    // (vérification serveur des droits d'accès via getProtectedContent)
     try {
-      const now = new Date();
-      
-      // Charger les contenus de tous les produits en parallèle
-      const productsData = await Promise.all(userProducts.map(async (userProductData) => {
-        const productName = userProductData.name;
-        const startDate = userProductData.startDate ? userProductData.startDate.toDate() : new Date();
-        
-        let query = db.collection('protectedContent').where('product', '==', productName);
-        
-        // Pour "21jours", trier par jour (0-22) au lieu de createdAt
-        if (productName === '21jours') {
-          query = query.orderBy('day', 'asc');
-        } else if (productName === 'complet') {
-          // Pour "complet", trier par semaine (0-14)
-          query = query.orderBy('week', 'asc');
-        } else {
-          query = query.orderBy('createdAt', 'desc');
-        }
-        
-        let contentsSnapshot;
-        try {
-          contentsSnapshot = await query.get();
-        } catch (indexError) {
-          // Si l'index est en cours de construction, essayer sans orderBy
-          if (indexError.code === 'failed-precondition') {
-            contentsSnapshot = await db.collection('protectedContent')
-              .where('product', '==', productName)
-              .get();
-          } else {
-            throw indexError;
-          }
-        }
-        
-        const contents = [];
-        const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
-        const weeksSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24 * 7));
-        
-        contentsSnapshot.forEach((doc) => {
-          const data = doc.data();
-          const dayNumber = data.day;
-          const weekNumber = data.week;
-          
-          // Vérifier l'accès progressif selon le type de produit
-          let isAccessible = true;
-          let daysRemaining = null;
-          let weeksRemaining = null;
-          
-          if (productName === '21jours' && dayNumber !== undefined) {
-            if (dayNumber === 0) {
-              // Jour 0 (déroulé) accessible immédiatement
-              isAccessible = true;
-            } else {
-              // Jours 1-21 : accessibles à partir du jour correspondant
-              // Jour 22 (bonus) : accessible au jour 22 (daysSinceStart >= 21)
-              isAccessible = daysSinceStart >= dayNumber - 1;
-              if (!isAccessible && dayNumber > 0) {
-                daysRemaining = Math.max(0, dayNumber - daysSinceStart - 1);
-              }
-            }
-          } else if (productName === 'complet' && weekNumber !== undefined) {
-            if (weekNumber === 0 || weekNumber === 1) {
-              // Semaine 0 (bonus) et semaine 1 accessibles immédiatement
-              isAccessible = true;
-            } else {
-              // Semaines 2-14 : accessibles à partir de la semaine correspondante
-              isAccessible = weeksSinceStart >= weekNumber;
-              if (!isAccessible && weekNumber > 1) {
-                weeksRemaining = Math.max(0, weekNumber - weeksSinceStart);
-              }
-            }
-          }
-          
-          const contentObj = {
-            id: doc.id,
-            title: data.title || doc.id,
-            content: data.content || '',
-            type: data.type || null,
-            day: dayNumber,
-            week: weekNumber,
-            isAccessible: isAccessible,
-            daysRemaining: daysRemaining,
-            weeksRemaining: weeksRemaining,
+      const serverResult = await callGetProtectedContent();
+
+      if (!serverResult.success) {
+        return serverResult;
+      }
+
+      const productsData = serverResult.products || [];
+
+      // Reconstruire le cache des documents de contenu pour un affichage
+      // instantané lors du changement d'onglet (sans nouvel appel serveur)
+      productsData.forEach((prod) => {
+        (prod.contents || []).forEach((content) => {
+          _cachedContentDocs[content.id] = {
+            product: prod.name,
+            content: content.content || '',
+            title: content.title || content.id,
+            day: content.day,
+            week: content.week,
+            commentText: content.commentText || null,
+            createdAt: content.createdAt || null,
+            updatedAt: content.updatedAt || null,
+            isAccessible: content.isAccessible,
+            daysRemaining: content.daysRemaining ?? null,
+            weeksRemaining: content.weeksRemaining ?? null,
+            currentDay: prod.name === '21jours' ? (prod.daysSinceStart || 0) + 1 : undefined,
+            currentWeek: prod.name === 'complet' ? (prod.weeksSinceStart || 0) + 1 : undefined,
           };
-          
-          // Pour les autres produits, ajouter createdAt/updatedAt pour le tri
-          if (productName !== '21jours' && productName !== 'complet') {
-            contentObj.createdAt = data.createdAt;
-            contentObj.updatedAt = data.updatedAt;
-          }
-          
-          // Mettre en cache le document de contenu pour permettre un affichage
-          // instantané lors du changement d'onglet (sans re-fetch Firestore).
-          _cachedContentDocs[doc.id] = {
-            product: productName,
-            content: data.content || '',
-            title: data.title || doc.id,
-            day: dayNumber,
-            week: weekNumber,
-            commentText: data.commentText || null,
-            createdAt: data.createdAt || null,
-            updatedAt: data.updatedAt || null,
-            isAccessible: isAccessible,
-            daysRemaining: daysRemaining,
-            weeksRemaining: weeksRemaining,
-            currentDay: productName === '21jours' ? daysSinceStart + 1 : undefined,
-            currentWeek: productName === 'complet' ? weeksSinceStart + 1 : undefined,
-          };
-          
-          contents.push(contentObj);
         });
-        
-        return {
-          name: productName,
-          startDate: startDate,
-          contents: contents,
-          daysSinceStart: productName === '21jours' ? daysSinceStart : null,
-          weeksSinceStart: productName === 'complet' ? weeksSinceStart : null,
-        };
-      }));
+      });
 
       // Retourner tous les produits avec leurs contenus
       // Garder aussi product et daysSinceRegistration pour compatibilité rétroactive
-      return { 
-        success: true, 
+      return {
+        success: true,
         products: productsData, // Nouveau format : tableau de produits
         product: userProduct, // Premier produit pour compatibilité
         daysSinceRegistration: productsData.find(p => p.name === '21jours')?.daysSinceStart || null,
       };
     } catch (error) {
       console.error('Error loading protected content:', error);
-      // Si l'index est en cours de construction, retourner une erreur explicite
-      if (error.code === 'failed-precondition') {
-        return { 
-          success: false, 
-          error: 'Le système est en cours de mise à jour. Veuillez réessayer dans quelques minutes.',
-          errorCode: 'INDEX_BUILDING',
-          suggestion: 'Cette opération est temporaire. Attendez 2-3 minutes et rafraîchissez la page.'
+      // Erreur de permission
+      if (error.code === 'permission-denied') {
+        return {
+          success: false,
+          error: 'Vous n\'avez pas la permission d\'accéder à ce contenu. Vérifiez que vous êtes bien connecté(e).',
+          errorCode: 'PERMISSION_DENIED',
+          suggestion: 'Déconnectez-vous et reconnectez-vous, puis réessayez.'
         };
       }
       // Relancer l'erreur pour qu'elle soit gérée par le catch externe

@@ -44,7 +44,7 @@
          │ Accède au   │
          │ contenu     │
          │ protégé     │
-         │ (Storage)   │
+         │ (Firestore) │
          └─────────────┘
 ```
 
@@ -60,7 +60,10 @@
 - `.firebaserc` : ID du projet Firebase
 - `firestore.rules` : Règles de sécurité Firestore
 - `firestore.indexes.json` : Index Firestore
-- `storage.rules` : Règles de sécurité Storage
+
+> ℹ️ **Pas de Firebase Storage** : le contenu protégé est stocké dans
+> Firestore (collection `protectedContent`). Aucun bucket Storage n'est
+> utilisé ni déployé.
 
 ### Code client
 - `src/assets/js/firebase-auth.mjs` : Authentification et accès au contenu
@@ -132,7 +135,7 @@ Déconnecte l'utilisateur actuel.
 Vérifie un token et crée un compte.
 
 ### `FluanceAuth.loadProtectedContent(contentId)`
-Charge le contenu protégé depuis Firebase Storage.
+Charge le contenu protégé (vérification serveur des droits d'accès via la fonction callable `getProtectedContent`).
 
 ### `FluanceAuth.displayProtectedContent(contentId, containerElement)`
 Affiche le contenu protégé dans un élément HTML.
@@ -180,19 +183,19 @@ Page de connexion Firebase Auth. Accepte le paramètre `?return=/path` pour redi
 
 - ✅ Tokens uniques à usage unique
 - ✅ Tokens avec expiration automatique
-- ✅ Vérification côté serveur et côté client
+- ✅ Vérification des droits d'accès côté serveur (`getProtectedContent`)
 - ✅ Contenu protégé jamais exposé sur GitHub
-- ✅ Règles de sécurité Firestore et Storage
+- ✅ Règles de sécurité Firestore (lecture de `protectedContent` interdite côté client)
 - ✅ Authentification requise pour accéder au contenu
 
 ## Prochaines étapes
 
 1. **Configurer Mailjet** : Obtenir les credentials et configurer SPF/DKIM/DMARC
 2. **Configurer les webhooks** : Stripe et/ou PayPal
-3. **Déployer les règles** : `firebase deploy --only firestore:rules,storage:rules`
+3. **Déployer les règles** : `firebase deploy --only firestore:rules`
 4. **Déployer les fonctions** : `firebase deploy --only functions`
 5. **Tester** : Créer un token de test et vérifier le flux complet
-6. **Uploader le contenu** : Mettre les fichiers HTML dans Firebase Storage
+6. **Ajouter le contenu** : Créer les documents dans la collection Firestore `protectedContent`
 
 Voir `FIREBASE_SETUP.md` pour les détails complets de configuration.
 

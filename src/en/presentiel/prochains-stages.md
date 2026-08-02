@@ -325,35 +325,18 @@ permalink: /en/presentiel/prochains-stages/
           return;
         }
         
+        // Turnstile verification is REQUIRED in production
         let turnstileToken = null;
-        let turnstileSkipped = false;
-        
+
         if (!isLocalhost) {
           const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
           if (!turnstileResponse || !turnstileResponse.value) {
-            if (turnstileFailed) {
-              turnstileSkipped = true;
-              console.log('[Form] Submitting without Turnstile (fallback mode)');
-            } else {
-              if (typeof turnstile === 'undefined') {
-                turnstileFailed = true;
-                turnstileSkipped = true;
-                console.log('[Form] Turnstile script never loaded, enabling fallback automatically');
-              } else {
-                const widgetVisible = turnstileWidget && turnstileWidget.style.display !== 'none';
-                if (!widgetVisible) {
-                  turnstileFailed = true;
-                  turnstileSkipped = true;
-                  console.log('[Form] Turnstile widget not visible, enabling fallback automatically');
-                } else {
-                  showMessage('Please complete the bot verification above', 'error');
-                  return;
-                }
-              }
-            }
-          } else {
-            turnstileToken = turnstileResponse.value;
+            // 🔒 Bot verification is mandatory: the server rejects submissions
+            // without a valid Turnstile token (no more fallback).
+            showMessage('The bot verification is temporarily unavailable. Please try again in a few moments.', 'error');
+            return;
           }
+          turnstileToken = turnstileResponse.value;
         }
         
         if (submitBtn) submitBtn.disabled = true;
@@ -387,8 +370,6 @@ permalink: /en/presentiel/prochains-stages/
             name: name,
             region: region,
             turnstileToken: turnstileToken,
-            isLocalhost: isLocalhost,
-            turnstileSkipped: turnstileSkipped,
             locale: locale // Langue détectée depuis l'URL
           });
           

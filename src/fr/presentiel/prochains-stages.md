@@ -330,36 +330,18 @@ permalink: /presentiel/prochains-stages/
           return;
         }
         
-        // Vérifier que Turnstile est complété (seulement si pas en localhost)
+        // Vérifier que Turnstile est complété (obligatoire en production)
         let turnstileToken = null;
-        let turnstileSkipped = false;
-        
+
         if (!isLocalhost) {
           const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
           if (!turnstileResponse || !turnstileResponse.value) {
-            if (turnstileFailed) {
-              turnstileSkipped = true;
-              console.log('[Form] Submitting without Turnstile (fallback mode)');
-            } else {
-              if (typeof turnstile === 'undefined') {
-                turnstileFailed = true;
-                turnstileSkipped = true;
-                console.log('[Form] Turnstile script never loaded, enabling fallback automatically');
-              } else {
-                const widgetVisible = turnstileWidget && turnstileWidget.style.display !== 'none';
-                if (!widgetVisible) {
-                  turnstileFailed = true;
-                  turnstileSkipped = true;
-                  console.log('[Form] Turnstile widget not visible, enabling fallback automatically');
-                } else {
-                  showMessage('Veuillez compléter la vérification anti-bot ci-dessus', 'error');
-                  return;
-                }
-              }
-            }
-          } else {
-            turnstileToken = turnstileResponse.value;
+            // 🔒 La vérification anti-bot est OBLIGATOIRE : le serveur refuse
+            // les inscriptions sans token Turnstile valide (plus de fallback).
+            showMessage('La vérification anti-bot est temporairement indisponible. Veuillez réessayer dans quelques instants.', 'error');
+            return;
           }
+          turnstileToken = turnstileResponse.value;
         }
         
         // Désactiver le bouton et afficher le loading
@@ -394,8 +376,6 @@ permalink: /presentiel/prochains-stages/
             name: name,
             region: region,
             turnstileToken: turnstileToken,
-            isLocalhost: isLocalhost,
-            turnstileSkipped: turnstileSkipped,
             locale: locale // Langue détectée depuis l'URL
           });
           

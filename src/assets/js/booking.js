@@ -37,6 +37,31 @@
 
   const currentLocale = getCurrentLocale();
 
+  /**
+   * Retourne un token Firebase Auth (ID token) si l'utilisateur est connecté,
+   * sinon null. Utilisé pour les opérations qui exigent une authentification
+   * (ex. utilisation d'un pass).
+   */
+  async function getFirebaseIdToken() {
+    try {
+      if (typeof firebase !== 'undefined' && firebase.auth) {
+        const user = firebase.auth().currentUser;
+        if (user) {
+          return await user.getIdToken();
+        }
+      }
+      if (typeof window.FluanceAuth !== 'undefined' && window.FluanceAuth.getCurrentUser) {
+        const user = window.FluanceAuth.getCurrentUser();
+        if (user && typeof user.getIdToken === 'function') {
+          return await user.getIdToken();
+        }
+      }
+    } catch (error) {
+      console.warn('[Booking] Impossible d\'obtenir le token Firebase:', error);
+    }
+    return null;
+  }
+
   // Variable pour stocker l'email actuel et le statut de première visite
   let currentUserEmail = null;
   let isFirstVisit = false;
@@ -1638,6 +1663,22 @@
     submitBtn.textContent = 'Réservation...';
     errorContainer?.classList.add('hidden');
 
+    // 🔒 Utilisation d'un pass : le serveur exige une authentification Firebase
+    // (le pass est associé à l'email du compte authentifié).
+    const authToken = await getFirebaseIdToken();
+    if (!authToken) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+      if (errorContainer) {
+        errorContainer.innerHTML =
+          'Pour utiliser votre pass, veuillez vous connecter avec l\'adresse email associée à votre achat. ' +
+          '<a href="/connexion-membre/?return=' + encodeURIComponent(window.location.pathname + window.location.search) +
+          '" class="underline font-semibold">Se connecter</a>';
+        errorContainer.classList.remove('hidden');
+      }
+      return;
+    }
+
     const data = {
       courseId: currentCourseId,
       email: email,
@@ -1651,7 +1692,10 @@
     try {
       const response = await fetch(`${CONFIG.API_BASE_URL}/bookCourse`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + authToken,
+        },
         body: JSON.stringify(data),
       });
 
@@ -1666,6 +1710,16 @@
           'Réservation confirmée !',
           result.message || 'Vous recevrez un email de confirmation.'
         );
+      } else if (result.error === 'AUTH_REQUIRED' || result.error === 'EMAIL_MISMATCH') {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        if (errorContainer) {
+          errorContainer.innerHTML =
+            result.message + ' ' +
+            '<a href="/connexion-membre/?return=' + encodeURIComponent(window.location.pathname + window.location.search) +
+            '" class="underline font-semibold">Se connecter</a>';
+          errorContainer.classList.remove('hidden');
+        }
       } else {
         if (errorContainer) {
           errorContainer.textContent = result.message || 'Une erreur est survenue';

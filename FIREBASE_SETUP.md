@@ -6,10 +6,12 @@ Ce document explique comment configurer et déployer la solution de contenu prot
 
 La solution comprend :
 - **Firebase Authentication** : Authentification des utilisateurs
-- **Firestore** : Stockage des tokens et métadonnées utilisateurs
-- **Firebase Storage** : Stockage du contenu protégé (code embed vidéos, HTML)
+- **Firestore** : Stockage des tokens, métadonnées utilisateurs ET contenu protégé (collection `protectedContent`)
 - **Firebase Functions** : Webhooks de paiement, génération de tokens, envoi d'emails
 - **Mailjet API** : Envoi d'emails transactionnels et marketing
+
+> ℹ️ **Pas de Firebase Storage** : le contenu protégé est stocké dans
+> Firestore, pas dans Storage (voir note section 4).
 
 ## Prérequis
 

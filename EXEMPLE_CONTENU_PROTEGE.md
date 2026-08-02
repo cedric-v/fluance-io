@@ -1,24 +1,12 @@
 # Exemple d'utilisation du contenu protégé
 
-## Structure du contenu dans Firebase Storage
+## Structure du contenu dans Firestore
 
-Organisez vos fichiers HTML dans Firebase Storage selon cette structure :
+> ℹ️ **Ce projet n'utilise PAS Firebase Storage** : le contenu protégé est
+> stocké dans la collection Firestore `protectedContent`, sous forme de
+> documents (un document = un contenu HTML).
 
-```
-protected-content/
-  ├── Approche Fluance Complète/
-  │   ├── video-1.html
-  │   ├── video-2.html
-  │   ├── introduction.html
-  │   └── ...
-  ├── Cours en ligne/
-  │   ├── cours-1.html
-  │   ├── cours-2.html
-  │   └── ...
-  └── Produit standard/
-      └── ...
-```
-
+Chaque document correspond à un contenu, identifié par son `contentId` :
 ## Format des fichiers HTML
 
 Chaque fichier HTML peut contenir du contenu riche : vidéos, texte, images, etc.
@@ -177,77 +165,68 @@ document.addEventListener('DOMContentLoaded', async function() {
 </script>
 ```
 
-## Upload des fichiers dans Firebase Storage
+## Ajout du contenu dans Firestore
 
-### Via la console Firebase
+> ℹ️ **Ce projet n'utilise PAS Firebase Storage** : tout le contenu protégé
+> est stocké directement dans la collection Firestore `protectedContent`.
 
-1. Aller dans **Storage** dans la console Firebase
-2. Créer la structure de dossiers : `protected-content/Produit/`
-3. Uploader les fichiers HTML
+Chaque document de la collection `protectedContent` contient :
 
-### Via Firebase CLI
-
-```bash
-# Installer Firebase CLI si pas déjà fait
-npm install -g firebase-tools
-
-# Se connecter
-firebase login
-
-# Uploader un fichier
-firebase storage:upload ./video-1.html protected-content/Approche\ Fluance\ Complète/video-1.html
+```
+protectedContent/{contentId}
+  ├── product: "21jours" | "complet" | "sos-dos-cervicales" | ...
+  ├── title: "Jour 1 : Éveil du corps"
+  ├── content: "<div>...code HTML complet...</div>"
+  ├── day: 1            (pour le produit 21jours)
+  ├── week: 2           (pour le produit complet)
+  ├── commentText: "Texte personnalisé pour les commentaires"
+  ├── createdAt: Timestamp
+  └── updatedAt: Timestamp
 ```
 
-### Via script Node.js
+### Via script Node.js (Admin SDK)
 
 Créer un script `scripts/upload-content.js` :
 
 ```javascript
 const admin = require('firebase-admin');
-const fs = require('fs');
-const path = require('path');
 
-// Initialiser Firebase Admin
-const serviceAccount = require('./path/to/serviceAccountKey.json');
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  storageBucket: 'your-project.appspot.com'
-});
+// Initialiser Firebase Admin (credentials par défaut du CLI)
+admin.initializeApp({projectId: 'fluance-protected-content'});
+const db = admin.firestore();
 
-const bucket = admin.storage().bucket();
-
-async function uploadFile(localPath, remotePath) {
-  await bucket.upload(localPath, {
-    destination: remotePath,
-    metadata: {
-      contentType: 'text/html',
-    },
+async function createContent(contentId, data) {
+  await db.collection('protectedContent').doc(contentId).set({
+    product: data.product,
+    title: data.title,
+    content: data.content, // HTML complet
+    day: data.day || null,
+    week: data.week || null,
+    commentText: data.commentText || null,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
-  console.log(`✅ Uploaded ${localPath} to ${remotePath}`);
+  console.log(`✅ Contenu ${contentId} créé dans Firestore`);
 }
-
-// Exemple d'utilisation
-async function main() {
-  await uploadFile(
-    './content/video-1.html',
-    'protected-content/Approche Fluance Complète/video-1.html'
-  );
-}
-
-main().catch(console.error);
 ```
+
+> ⚠️ **Accès client interdit** : la règle Firestore `protectedContent` refuse
+> toute lecture/écriture côté client (`allow read, write: if false`). Le contenu
+> est servi uniquement par la fonction callable `getProtectedContent` qui
+> vérifie la possession du produit et la progression. Écriture : uniquement
+> via Admin SDK (fonctions/Firebase) ou ce type de script.
 
 ## Bonnes pratiques
 
-1. **Nommage des fichiers** : Utilisez des noms descriptifs et cohérents (`video-1`, `cours-introduction`, etc.)
+1. **Nommage des documents** : Utilisez des identifiants descriptifs et cohérents (`jour-1`, `semaine-2`, `sos-dos-intro`, etc.)
 
 2. **Structure HTML** : Incluez toujours un conteneur principal avec une classe pour le styling
 
 3. **Responsive** : Assurez-vous que les vidéos et le contenu sont responsives
 
-4. **Performance** : Limitez la taille des fichiers HTML (préférez les liens vers les vidéos plutôt que d'embarquer de gros fichiers)
+4. **Performance** : Limitez la taille des champs `content` (1 MiB par document Firestore ; préférez les liens vers les vidéos plutôt que d'embarquer de gros fichiers)
 
-5. **Sécurité** : Ne jamais inclure d'informations sensibles dans les fichiers HTML (tokens, clés API, etc.)
+5. **Sécurité** : Ne jamais inclure d'informations sensibles dans le contenu (tokens, clés API, etc.)
 
 6. **Versioning** : Considérez ajouter un système de versioning si vous modifiez le contenu fréquemment
 
@@ -257,9 +236,9 @@ Pour tester le contenu protégé :
 
 1. Créer un token de test via la fonction `createUserToken`
 2. Créer un compte avec ce token
-3. Uploader un fichier HTML de test dans Storage
+3. Ajouter un document de test dans la collection Firestore `protectedContent` (Admin SDK ou console Firebase)
 4. Afficher le contenu dans une page avec `{% protectedContent "test" %}`
-5. Vérifier que le contenu s'affiche correctement
+5. Vérifier que le contenu s'affiche correctement (connexion requise)
 
 
 
