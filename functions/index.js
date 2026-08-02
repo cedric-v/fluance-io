@@ -1888,32 +1888,23 @@ exports.webhookStripe = onRequest(
     // Vérifier la signature Stripe
       const sig = req.headers['stripe-signature'];
 
-      // Note: Pour utiliser Stripe, installer le package: npm install stripe
-      // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
+      // Vérification de signature STRIPE : obligatoire en production.
+      // ⚠️ Le secret STRIPE_WEBHOOK_SECRET est déclaré dans les secrets de la
+      // fonction : s'il est absent, c'est que l'environnement n'est pas prêt
+      // → on refuse (400) plutôt que d'accepter des événements non vérifiés.
       let event;
+      if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
+        console.error('Webhook signature or STRIPE_WEBHOOK_SECRET missing');
+        return res.status(400).send('Webhook Error: missing signature or secret');
+      }
 
       try {
-      // Si le package Stripe est installé et le secret configuré, vérifier la signature
-        if (process.env.STRIPE_WEBHOOK_SECRET && typeof require !== 'undefined') {
-          try {
-            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || '');
-            event = stripe.webhooks.constructEvent(
-                req.rawBody || JSON.stringify(req.body),
-                sig,
-                process.env.STRIPE_WEBHOOK_SECRET,
-            );
-          } catch {
-          // Si le package Stripe n'est pas installé, accepter l'événement tel quel (développement)
-            console.warn('Stripe package not installed or webhook secret not configured, ' +
-            'accepting event without verification');
-            event = req.body;
-          }
-        } else {
-        // Pour l'instant, on accepte l'événement tel quel (à sécuriser en production)
-          console.warn('STRIPE_WEBHOOK_SECRET not configured, accepting event without verification');
-          event = req.body;
-        }
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || '');
+        event = stripe.webhooks.constructEvent(
+            req.rawBody || JSON.stringify(req.body),
+            sig,
+            process.env.STRIPE_WEBHOOK_SECRET,
+        );
       } catch (err) {
         console.error('Webhook signature verification failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
