@@ -154,14 +154,14 @@ Contenu après la vidéo...
 
 ```html
 <div class="protected-content" data-content-id="video-1"></div>
-<script src="/assets/js/firebase-auth.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs"></script>
 ```
 
 ### Méthode 3 : JavaScript manuel
 
 ```html
 <div id="my-content"></div>
-<script src="/assets/js/firebase-auth.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
   if (window.FluanceAuth.isAuthenticated()) {

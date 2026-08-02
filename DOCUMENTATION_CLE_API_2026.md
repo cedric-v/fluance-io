@@ -12,7 +12,7 @@ Une nouvelle clé API a été générée dans la console Google Cloud / Firebase
 
 ### 2. Correction du Frontend (GitHub Pages)
 Le site étant déployé via GitHub Pages, la clé est injectée lors du build via les secrets GitHub.
-- **Action effectuée** : Mise à jour de la logique dans `src/assets/js/firebase-auth.njk` pour forcer l'utilisation de la Cloud Function pour l'envoi des liens de connexion, garantissant que les emails partent via Mailjet et contiennent le lien corrigé.
+- **Action effectuée** : Mise à jour de la logique dans `src/assets/js/firebase-auth.mjs` pour forcer l'utilisation de la Cloud Function pour l'envoi des liens de connexion, garantissant que les emails partent via Mailjet et contiennent le lien corrigé.
 
 ### 3. Correction du Backend (Cloud Functions)
 L'Admin SDK de Firebase utilisait par défaut une clé interne projet qui pouvait être l'ancienne.

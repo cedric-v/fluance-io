@@ -29,7 +29,7 @@ permalink: /cours-en-ligne/21jours/
   </div>
 </section>
 
-<script src="/assets/js/firebase-auth.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs"></script>
 <script src="/assets/js/protected-content.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const navigationHTML = `
           <div class="border-t pt-6 mt-6">
             <h2 class="text-xl font-semibold mb-4">Navigation des jours</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+            <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide touch-pan-x md:snap-none md:mx-0 md:px-0 md:grid md:grid-cols-4 lg:grid-cols-7 md:gap-2 md:overflow-visible" data-day-rail>
               ${contents.map(content => {
                 const dayLabel = content.day === 0 ? 'Déroulé' : `Jour ${content.day}`;
                 const isCurrent = content.id === currentDayContent?.id;
@@ -158,14 +158,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return `
                   <a href="#" 
                      data-content-id="${content.id}"
-                     class="block p-3 rounded-lg text-center text-sm transition-colors
-                            ${isCurrent ? 'bg-green-600 text-white font-semibold' : ''}
-                            ${isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
-                            ${!isLocked && !isCurrent ? 'hover:bg-gray-200' : ''}"
+                     ${isCurrent ? 'data-current-day="true"' : ''}
+                     class="snap-start shrink-0 w-[7.5rem] md:w-auto block p-3 rounded-lg text-center text-sm transition-colors
+                            ${isCurrent ? 'bg-fluance text-white font-semibold' : isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
                      ${isLocked ? 'onclick="return false;"' : ''}>
-                    <div class="font-semibold">${dayLabel}</div>
-                    <div class="text-xs mt-1">${content.title}</div>
-                    ${isLocked && content.daysRemaining !== null ? `<div class="text-xs mt-1">+${content.daysRemaining}j</div>` : ''}
+                    <div class="font-semibold truncate">${dayLabel}</div>
+                    <div class="text-xs mt-1 truncate">${content.title}</div>
+                    ${isLocked && content.daysRemaining !== null ? `<div class="text-xs mt-1">🔒 +${content.daysRemaining}j</div>` : ''}
                   </a>
                 `;
               }).join('')}
@@ -173,6 +172,16 @@ document.addEventListener('DOMContentLoaded', async function() {
           </div>
         `;
         contentContainer.innerHTML += navigationHTML;
+
+        // Centrer la carte du jour actuel dans le rail (mobile uniquement)
+        if (window.matchMedia('(max-width: 767px)').matches) {
+          const rail = contentContainer.querySelector('[data-day-rail]');
+          const activeCard = rail?.querySelector('a[data-current-day]');
+          if (rail && activeCard) {
+            const target = (activeCard.getBoundingClientRect().left - rail.getBoundingClientRect().left) + rail.scrollLeft - rail.clientWidth / 2 + activeCard.offsetWidth / 2;
+            rail.scrollLeft = Math.max(0, Math.min(target, rail.scrollWidth - rail.clientWidth));
+          }
+        }
 
         // Ajouter les listeners pour la navigation
         contentContainer.querySelectorAll('a[data-content-id]').forEach(link => {
@@ -211,11 +220,25 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             // Mettre à jour la navigation
             contentContainer.querySelectorAll('a[data-content-id]').forEach(l => {
-              l.classList.remove('bg-green-600', 'text-white', 'font-semibold');
-              l.classList.add('bg-gray-100', 'text-gray-700');
+              l.classList.remove('bg-fluance', 'text-white', 'font-semibold');
+              l.removeAttribute('data-current-day');
+              if (!l.classList.contains('bg-gray-200')) {
+                l.classList.add('bg-gray-100', 'text-gray-700');
+              }
             });
-            link.classList.add('bg-green-600', 'text-white', 'font-semibold');
+            link.classList.add('bg-fluance', 'text-white', 'font-semibold');
             link.classList.remove('bg-gray-100', 'text-gray-700');
+            link.setAttribute('data-current-day', 'true');
+
+            // Recentrer le rail sur le jour sélectionné (mobile)
+            if (window.matchMedia('(max-width: 767px)').matches) {
+              const rail = contentContainer.querySelector('[data-day-rail]');
+              const activeCard = rail?.querySelector('a[data-current-day]');
+              if (rail && activeCard) {
+                const target = (activeCard.getBoundingClientRect().left - rail.getBoundingClientRect().left) + rail.scrollLeft - rail.clientWidth / 2 + activeCard.offsetWidth / 2;
+                rail.scrollLeft = Math.max(0, Math.min(target, rail.scrollWidth - rail.clientWidth));
+              }
+            }
           });
         });
       }

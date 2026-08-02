@@ -18,14 +18,14 @@ permalink: /en/member-login/
       <nav class="flex -mb-px">
         <button
           id="tab-password"
-          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-fluance text-fluance"
+          class="flex-1 py-3 px-4 min-h-12 flex items-center justify-center text-center font-medium text-sm border-b-2 border-fluance text-fluance"
           data-tab="password"
         >
           Password
         </button>
         <button
           id="tab-passwordless"
-          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
+          class="flex-1 py-3 px-4 min-h-12 flex items-center justify-center text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
           data-tab="passwordless"
         >
           Email login
@@ -33,7 +33,7 @@ permalink: /en/member-login/
         <!-- Passkey tab temporarily disabled
         <button
           id="tab-passkey"
-          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
+          class="flex-1 py-3 px-4 min-h-12 flex items-center justify-center text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
           data-tab="passkey"
         >
           🔐 Passkey
@@ -161,7 +161,7 @@ permalink: /en/member-login/
 <!-- Bibliothèque browser officielle pour WebAuthn -->
 <!-- Note: Le package @firebase-web-authn/browser n'est peut-être pas disponible via CDN -->
 <!-- On utilise la méthode directe avec l'authentification anonyme -->
-<script src="/assets/js/firebase-auth.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs"></script>
 <script>
 let currentTab = 'password';
 let errorDiv, successDiv; // Global variables for error/success divs

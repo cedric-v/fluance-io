@@ -10,20 +10,20 @@ eleventyExcludeFromCollections: true
 
 <section class="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-16">
   <div class="bg-white rounded-lg shadow-lg p-5 md:p-8 space-y-6 md:space-y-8 overflow-hidden">
-    <header class="relative pt-8">
-      <button
-        id="logout-button"
-        class="hidden absolute top-0 right-0 text-sm text-gray-600 hover:text-fluance transition-colors underline"
-        onclick="handleLogout()"
-      >
-        Se déconnecter
-      </button>
-      <div class="text-center">
-        <h1 class="text-3xl font-bold text-gray-900 mb-4">Bienvenue dans l'espace client de Fluance</h1>
+    <header class="flex flex-col-reverse gap-4 md:flex-row md:items-start md:justify-between md:pt-8">
+      <div class="w-full text-center md:text-left">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Bienvenue dans l'espace client de Fluance</h1>
         <p class="text-gray-600">
           Accédez à votre contenu protégé et suivez votre progression.
         </p>
       </div>
+      <button
+        id="logout-button"
+        class="hidden mx-auto md:mx-0 text-sm text-gray-600 hover:text-fluance transition-colors underline"
+        onclick="handleLogout()"
+      >
+        Se déconnecter
+      </button>
     </header>
 
     <div id="auth-required" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center hidden">
@@ -40,7 +40,7 @@ eleventyExcludeFromCollections: true
   </div>
 </section>
 
-<script src="/assets/js/firebase-auth.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs"></script>
 <script src="/assets/js/protected-content.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="https://chat.whatsapp.com/GAGCKlYTDBGDVlMC0udkvu" 
                    target="_blank"
                    rel="noopener noreferrer"
-                   class="inline-flex items-center gap-3 bg-[#25D366] text-white px-8 py-4 rounded-lg hover:bg-[#20BA5A] transition-colors font-semibold text-lg shadow-lg">
+                   class="flex w-full max-w-full sm:inline-flex sm:w-auto items-center justify-center gap-3 bg-[#25D366] text-white px-4 sm:px-8 py-4 rounded-lg hover:bg-[#20BA5A] transition-colors font-semibold text-base sm:text-lg text-center shadow-lg">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                   </svg>
@@ -427,24 +427,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 <div class="border-t pt-6 mt-6">
                   <h3 class="text-lg font-semibold mb-4">Navigation des jours</h3>
-                  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                    ${userProduct.contents.map(content => {
-                      const dayLabel = content.day === 0 ? 'Déroulé' : `Jour ${content.day}`;
-                      const isLocked = !content.isAccessible;
-                      
-                      return `
-                        <a href="#" 
-                           data-content-id="${content.id}"
-                           data-product="${prod.id}"
-                           class="block p-3 rounded-lg text-center text-sm transition-colors
-                                  ${isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
-                           ${isLocked ? 'onclick="return false;"' : ''}>
-                          <div class="font-semibold">${dayLabel}</div>
-                          <div class="text-xs mt-1">${content.title}</div>
-                          ${isLocked && content.daysRemaining !== null ? `<div class="text-xs mt-1">+${content.daysRemaining}j</div>` : ''}
-                        </a>
-                      `;
-                    }).join('')}
+                  <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none scrollbar-hide touch-pan-x md:grid md:grid-cols-4 lg:grid-cols-7 md:gap-2 md:overflow-visible" data-day-rail>
+                    ${(() => {
+                      // Jour actuel = dernier contenu débloqué
+                      const currentNavContent = userProduct.contents
+                        .filter(c => c.isAccessible)
+                        .sort((a, b) => (b.day || 0) - (a.day || 0))[0];
+                      return userProduct.contents.map(content => {
+                        const dayLabel = content.day === 0 ? 'Déroulé' : `Jour ${content.day}`;
+                        const isLocked = !content.isAccessible;
+                        const isCurrent = content.id === currentNavContent?.id;
+                        
+                        return `
+                          <a href="#" 
+                             data-content-id="${content.id}"
+                             data-product="${prod.id}"
+                             ${isCurrent ? 'data-current-day="true"' : ''}
+                             class="snap-start shrink-0 w-[7.5rem] md:w-auto block p-3 rounded-lg text-center text-sm transition-colors
+                                    ${isCurrent ? 'bg-fluance text-white font-semibold' : isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+                             ${isLocked ? 'onclick="return false;"' : ''}>
+                            <div class="font-semibold truncate">${dayLabel}</div>
+                            <div class="text-xs mt-1 truncate">${content.title}</div>
+                            ${isLocked && content.daysRemaining !== null ? `<div class="text-xs mt-1">🔒 +${content.daysRemaining}j</div>` : ''}
+                          </a>
+                        `;
+                      }).join('');
+                    })()}
                   </div>
                 </div>
               </div>
@@ -514,30 +522,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 <div class="border-t pt-6 mt-6">
                   <h3 class="text-lg font-semibold mb-4">Navigation des semaines</h3>
-                  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                    ${[welcomeContent, ...userProduct.contents.filter(content => content.type !== 'welcome')]
+                  <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none scrollbar-hide touch-pan-x md:grid md:grid-cols-4 lg:grid-cols-5 md:gap-2 md:overflow-visible" data-day-rail>
+                    ${(() => {
+                      // Semaine actuelle = dernière semaine débloquée (hors bienvenue)
+                      const currentNavContent = userProduct.contents
+                        .filter(c => c.isAccessible && c.type !== 'welcome')
+                        .sort((a, b) => (b.week || 0) - (a.week || 0))[0]
+                        || userProduct.contents.find(c => c.type === 'welcome' && c.isAccessible);
+                      return [welcomeContent, ...userProduct.contents.filter(content => content.type !== 'welcome')]
                       .filter(Boolean)
                       .map(content => {
-                      const weekLabel = content.type === 'welcome'
-                        ? 'Bienvenue'
-                        : content.week === 0
-                          ? 'Bonus'
-                          : `Semaine ${content.week}`;
-                      const isLocked = !content.isAccessible;
-                      
-                      return `
-                        <a href="#" 
-                           data-content-id="${content.id}"
-                           data-product="${prod.id}"
-                           class="block p-3 rounded-lg text-center text-sm transition-colors
-                                  ${isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
-                           ${isLocked ? 'onclick="return false;"' : ''}>
-                          <div class="font-semibold">${weekLabel}</div>
-                          <div class="text-xs mt-1">${content.title}</div>
-                          ${isLocked && content.weeksRemaining !== null ? `<div class="text-xs mt-1">+${content.weeksRemaining}s</div>` : ''}
-                        </a>
-                      `;
-                    }).join('')}
+                        const weekLabel = content.type === 'welcome'
+                          ? 'Bienvenue'
+                          : content.week === 0
+                            ? 'Bonus'
+                            : `Semaine ${content.week}`;
+                        const isLocked = !content.isAccessible;
+                        const isCurrent = content.id === currentNavContent?.id;
+                        
+                        return `
+                          <a href="#" 
+                             data-content-id="${content.id}"
+                             data-product="${prod.id}"
+                             ${isCurrent ? 'data-current-day="true"' : ''}
+                             class="snap-start shrink-0 w-[7.5rem] md:w-auto block p-3 rounded-lg text-center text-sm transition-colors
+                                    ${isCurrent ? 'bg-fluance text-white font-semibold' : isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+                             ${isLocked ? 'onclick="return false;"' : ''}>
+                            <div class="font-semibold truncate">${weekLabel}</div>
+                            <div class="text-xs mt-1 truncate">${content.title}</div>
+                            ${isLocked && content.weeksRemaining !== null ? `<div class="text-xs mt-1">🔒 +${content.weeksRemaining}s</div>` : ''}
+                          </a>
+                        `;
+                      }).join('');
+                    })()}
                   </div>
                 </div>
               </div>
@@ -593,6 +610,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Charger les contenus protégés de l'onglet actif uniquement
       setTimeout(() => {
+        // Centrer la carte du jour/semaine actuel dans le rail (mobile)
+        centerActiveDayRail();
+
         const activeTabContent = contentContainer.querySelector(`.product-tab-content[data-product="${activeProductId}"]:not(.hidden)`);
         console.log('[Espace Membre] Onglet actif trouvé:', activeTabContent, 'pour produit:', activeProductId);
         
@@ -701,13 +721,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Mettre à jour la navigation (désactiver tous, activer celui cliqué)
             contentContainer.querySelectorAll(`a[data-product="${productId}"]`).forEach(l => {
-              l.classList.remove('bg-green-600', 'text-white', 'font-semibold');
+              l.classList.remove('bg-fluance', 'text-white', 'font-semibold');
+              l.removeAttribute('data-current-day');
               if (!l.classList.contains('bg-gray-200')) {
                 l.classList.add('bg-gray-100', 'text-gray-700');
               }
             });
-            link.classList.add('bg-green-600', 'text-white', 'font-semibold');
+            link.classList.add('bg-fluance', 'text-white', 'font-semibold');
             link.classList.remove('bg-gray-100', 'text-gray-700');
+            link.setAttribute('data-current-day', 'true');
+
+            // Recentrer le rail sur le jour sélectionné (mobile)
+            centerActiveDayRail();
           });
         });
       }, 100);
@@ -736,6 +761,20 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+// Fonction pour centrer la carte du jour/semaine actuel dans le rail (mobile uniquement)
+function centerActiveDayRail() {
+  if (!window.matchMedia('(max-width: 767px)').matches) return;
+  const activeTabContent = document.querySelector('#content-container .product-tab-content:not(.hidden)');
+  if (!activeTabContent) return;
+  const rail = activeTabContent.querySelector('[data-day-rail]');
+  if (!rail) return;
+  const activeCard = rail.querySelector('a[data-current-day]');
+  if (!activeCard) return;
+  // Position cible calculée relativement au rail (robuste, indépendant de l'offsetParent)
+  const target = (activeCard.getBoundingClientRect().left - rail.getBoundingClientRect().left) + rail.scrollLeft - rail.clientWidth / 2 + activeCard.offsetWidth / 2;
+  rail.scrollLeft = Math.max(0, Math.min(target, rail.scrollWidth - rail.clientWidth));
+}
+
 // Fonction globale pour changer d'onglet produit
 function switchProductTab(productId) {
   const contentContainer = document.getElementById('content-container');
@@ -748,11 +787,11 @@ function switchProductTab(productId) {
   contentContainer.querySelectorAll('button[data-product-id]').forEach(btn => {
     const isActive = btn.getAttribute('data-product-id') === productId;
     if (isActive) {
-      btn.classList.add('border-fluance', 'text-fluance');
-      btn.classList.remove('border-transparent', 'text-gray-500');
+      btn.classList.add('border-fluance', 'text-fluance', 'bg-fluance/5');
+      btn.classList.remove('border-transparent', 'text-gray-500', 'bg-gray-50');
     } else {
-      btn.classList.remove('border-fluance', 'text-fluance');
-      btn.classList.add('border-transparent', 'text-gray-500');
+      btn.classList.remove('border-fluance', 'text-fluance', 'bg-fluance/5');
+      btn.classList.add('border-transparent', 'text-gray-500', 'bg-gray-50');
     }
   });
   
@@ -783,6 +822,9 @@ function switchProductTab(productId) {
       content.classList.add('hidden');
     }
   });
+
+  // Recentrer la carte du jour/semaine actuel dans le rail (mobile)
+  setTimeout(centerActiveDayRail, 50);
 }
 
 // Fonction globale pour gérer la déconnexion

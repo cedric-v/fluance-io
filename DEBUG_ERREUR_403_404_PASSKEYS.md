@@ -21,7 +21,7 @@
 1. Allez sur [Google Cloud Console](https://console.cloud.google.com/)
 2. Sélectionnez le projet : **fluance-protected-content**
 3. Dans le menu de gauche, allez dans **APIs & Services** > **Credentials**
-4. Trouvez votre clé API (celle utilisée dans `firebase-auth.js`)
+4. Trouvez votre clé API (celle utilisée dans `firebase-auth.mjs`)
 5. Cliquez sur le nom de la clé pour l'éditer
 6. Dans la section **Application restrictions**, sélectionnez **HTTP referrers (web sites)**
 7. **Ajoutez** le domaine Firebase :

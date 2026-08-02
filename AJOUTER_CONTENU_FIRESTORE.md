@@ -265,7 +265,7 @@ Ou manuellement :
 
 ```html
 <div class="protected-content" data-content-id="video-1"></div>
-<script src="/assets/js/firebase-auth.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs"></script>
 ```
 
 Le code JavaScript chargera automatiquement le contenu depuis Firestore pour les utilisateurs authentifiés ayant accès au produit correspondant.

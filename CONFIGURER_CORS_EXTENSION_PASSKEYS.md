@@ -79,7 +79,7 @@ Les fonctions doivent accepter les requêtes depuis :
 
 ## Code actuel
 
-Le code dans `firebase-auth.js` essaie automatiquement deux régions :
+Le code dans `firebase-auth.mjs` essaie automatiquement deux régions :
 1. `us-central1` (région par défaut de l'extension)
 2. `europe-west1` (si us-central1 échoue)
 

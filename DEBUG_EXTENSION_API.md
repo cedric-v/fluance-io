@@ -10,7 +10,7 @@
 
 **Solution** :
 1. Vérifiez que l'authentification anonyme est activée dans Firebase Console > Authentication > Sign-in method
-2. Le code doit s'authentifier anonymement avant d'appeler les fonctions de l'extension (déjà implémenté dans `firebase-auth.js`)
+2. Le code doit s'authentifier anonymement avant d'appeler les fonctions de l'extension (déjà implémenté dans `firebase-auth.mjs`)
 
 ### Erreur 404 (Not Found)
 

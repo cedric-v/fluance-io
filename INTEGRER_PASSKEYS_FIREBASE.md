@@ -39,7 +39,7 @@ L'extension nécessite :
 
 #### 3. Mise à jour du code client
 
-Ajouter le support des passkeys dans `firebase-auth.js` :
+Ajouter le support des passkeys dans `firebase-auth.mjs` :
 
 ```javascript
 // Ajouter après les imports Firebase

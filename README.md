@@ -93,6 +93,15 @@ The main pages are:
 - French homepage: `http://localhost:8080/fr/`
 - English homepage: `http://localhost:8080/en/`
 
+> **📋 Fichier `.env` requis** : le build injecte la configuration Firebase/Stripe depuis
+> les variables d'environnement. Pour le développement local, copiez/recréez un fichier
+> `.env` à la racine (voir la section *Environment variables*) — les clés web Firebase et
+> la clé Stripe publishable sont publiques (déjà embarquées dans le site en production).
+>
+> ⚠️ **Test du login en local** : le serveur Eleventy écoute sur le port **8080**.
+> Si Firebase Auth bloque `localhost` (erreur `requests-from-referer...are-blocked`),
+> ajoutez `localhost` dans Firebase Console → Authentication → Settings → Authorized domains.
+
 Stop the dev server with `Ctrl + C`.
 
 ---
@@ -108,6 +117,8 @@ Stop the dev server with `Ctrl + C`.
   - `robots.txt` – robots.txt file (copied to root)
   - `llms.txt` – LLM-friendly site description (copied to root)
   - `assets/css/styles.css` – Tailwind input CSS
+  - `assets/js/firebase-auth.mjs` – module ES d'authentification (Firebase + contenu protégé, chargé en `type="module"`)
+  - `assets/js/booking.js`, `assets/js/protected-content.js`, `assets/js/agent-tools.js` – JS statique copié tel quel
 - `_site/` – generated static site (ignored by git)
   - `sitemap.xml` – automatically generated sitemap
   - `robots.txt` – copied from src/
@@ -151,6 +162,15 @@ From `package.json`:
 
   ```bash
   cross-env ELEVENTY_ENV=prod npm-run-all build:css build:11ty build:cf
+  ```
+
+- **`npm run validate`** (exécuté automatiquement avant chaque `npm run build`)
+
+  Valide le frontmatter de toutes les pages (champs requis, locale fr/en, permalinks uniques,
+  robots, ogImage, layout…) :
+
+  ```bash
+  node scripts/validate-frontmatter.mjs
   ```
 
 - **`npm run build:11ty`**

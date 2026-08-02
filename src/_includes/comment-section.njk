@@ -36,7 +36,7 @@
 </div>
 
 <!-- Firebase App + Firestore (utilise le projet principal fluance-protected-content) -->
-<!-- Les scripts Firebase sont déjà chargés par firebase-auth.js -->
+<!-- Les scripts Firebase sont déjà chargés par firebase-auth.mjs -->
 
 <!-- Fonctions utilitaires -->
 <script>
@@ -68,9 +68,9 @@ function escapeHTML(str) {
 <script>
 (function() {
   // Utiliser le même projet Firebase que le reste du site (fluance-protected-content)
-  // Firebase est déjà initialisé par firebase-auth.js
+  // Firebase est déjà initialisé par firebase-auth.mjs
   if (typeof firebase === 'undefined' || !firebase.apps.length) {
-    console.error('Firebase n\'est pas initialisé. Assurez-vous que firebase-auth.js est chargé avant ce script.');
+    console.error('Firebase n\'est pas initialisé. Assurez-vous que firebase-auth.mjs est chargé avant ce script.');
     return;
   }
   

@@ -71,9 +71,9 @@ Si vous utilisez un bundler (webpack, rollup, etc.), vous pouvez importer direct
 import { createUserWithPasskey, signInWithPasskey } from '@firebase-web-authn/browser';
 ```
 
-### Intégration dans firebase-auth.js
+### Intégration dans firebase-auth.mjs
 
-Remplacez les fonctions `createAccountWithPasskey`, `signInWithPasskey`, et `linkPasskeyToAccount` dans `src/assets/js/firebase-auth.js` pour utiliser la bibliothèque browser.
+Remplacez les fonctions `createAccountWithPasskey`, `signInWithPasskey`, et `linkPasskeyToAccount` dans `src/assets/js/firebase-auth.mjs` pour utiliser la bibliothèque browser.
 
 **Exemple pour `signInWithPasskey`** :
 

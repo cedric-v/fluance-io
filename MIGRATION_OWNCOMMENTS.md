@@ -7,7 +7,7 @@
    - Lecture publique, écriture avec validation
 
 2. **Configuration Firebase migrée**
-   - `src/assets/js/firebase-auth.js` : utilise maintenant `fluance-protected-content`
+   - `src/assets/js/firebase-auth.mjs` : utilise maintenant `fluance-protected-content`
    - `src/_includes/comment-section.njk` : utilise maintenant `fluance-protected-content`
    - Pages `5jours-j1.md` à `5jours-j5.md` : utilisent maintenant `fluance-protected-content`
 

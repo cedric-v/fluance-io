@@ -679,7 +679,15 @@ export default function (eleventyConfig) {
   });
 
   eleventyConfig.addPassthroughCopy({ "src/assets/img": "assets/img" });
-  eleventyConfig.addPassthroughCopy({ "src/assets/js": "assets/js" });
+  // Copie des fichiers JS statiques uniquement (les .njk de src/assets/js sont
+  // déjà rendus par Eleventy : payment.njk → payment.js). Les .mjs sont servis
+  // tels quels (modules ES natifs).
+  eleventyConfig.addPassthroughCopy({
+    "src/assets/js/booking.js": "assets/js/booking.js",
+    "src/assets/js/protected-content.js": "assets/js/protected-content.js",
+    "src/assets/js/agent-tools.js": "assets/js/agent-tools.js",
+    "src/assets/js/firebase-auth.mjs": "assets/js/firebase-auth.mjs"
+  });
   eleventyConfig.addPassthroughCopy("src/robots.txt");
   eleventyConfig.addPassthroughCopy("src/llms.txt");
   eleventyConfig.addPassthroughCopy("src/site.webmanifest");

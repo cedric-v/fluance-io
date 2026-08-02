@@ -154,7 +154,7 @@ Créez une page HTML de test :
   
   <div id="protected-content" data-content-id="test-video-1"></div>
   
-  <script src="/assets/js/firebase-auth.js"></script>
+  <script type="module" src="/assets/js/firebase-auth.mjs"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async function() {
       const container = document.getElementById('protected-content');
@@ -202,7 +202,7 @@ Créez une page HTML de test :
 ### Erreur : "Non authentifié"
 - Vérifiez que vous êtes bien connecté
 - Vérifiez la console du navigateur pour les erreurs Firebase
-- Vérifiez que `firebase-auth.js` est bien chargé
+- Vérifiez que `firebase-auth.mjs` est bien chargé
 
 ### Erreur : "Contenu non trouvé"
 - Vérifiez que le document existe dans `protectedContent`

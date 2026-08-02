@@ -1,22 +1,31 @@
----
-permalink: /assets/js/firebase-auth.js
----
+/**
+ * FluanceAuth — Module ES d'authentification & accès au contenu protégé (Fluance).
+ *
+ * Chargement : <script type="module" src="/assets/js/firebase-auth.mjs"></script>
+ * Prérequis   : window.FLUANCE_FIREBASE_CONFIG injecté par base.njk (shortcode firebaseConfig).
+ *
+ * Le module expose :
+ *   - des exports nommés (signIn, loadProtectedContent, …) pour un usage en ESM ;
+ *   - window.FluanceAuth (compat scripts classiques des pages) ;
+ *   - window.getRememberChoice / window.firebaseConfig (compat).
+ */
+
 /**
  * Firebase Authentication pour Fluance
  * Gère l'authentification et l'accès au contenu protégé
  */
 
-// Configuration Firebase pour fluance-protected-content
-// Injectée via variables d'environnement
-var firebaseConfig = window.FLUANCE_FIREBASE_CONFIG || {
-  apiKey: "{{ env.FIREBASE_API_KEY }}",
-  authDomain: "{{ env.FIREBASE_AUTH_DOMAIN }}",
-  projectId: "{{ env.FIREBASE_PROJECT_ID }}",
-  storageBucket: "{{ env.FIREBASE_STORAGE_BUCKET }}",
-  messagingSenderId: "{{ env.FIREBASE_MESSAGING_SENDER_ID }}",
-  appId: "{{ env.FIREBASE_APP_ID }}",
-  measurementId: "{{ env.FIREBASE_MEASUREMENT_ID }}"
-};
+// Configuration Firebase, injectée globalement par base.njk (shortcode `firebaseConfig`).
+// Plus aucune substitution de template dans ce fichier : c'est un module ES pur.
+const firebaseConfig = window.FLUANCE_FIREBASE_CONFIG || null;
+
+if (!firebaseConfig || !firebaseConfig.apiKey) {
+  console.error(
+    '[FluanceAuth] Configuration Firebase manquante : window.FLUANCE_FIREBASE_CONFIG n\'est pas défini. ' +
+    'Vérifiez que base.njk injecte la configuration (shortcode firebaseConfig).'
+  );
+}
+
 // Stocker globalement pour les prochains chargements éventuels
 window.firebaseConfig = firebaseConfig;
 
@@ -40,7 +49,7 @@ if (typeof firebase === 'undefined') {
       
       script3.onload = () => {
         if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
+          if (firebaseConfig) firebase.initializeApp(firebaseConfig);
         }
         // Attendre un peu pour s'assurer que tous les modules sont prêts
         setTimeout(() => {
@@ -53,7 +62,7 @@ if (typeof firebase === 'undefined') {
   // Vérifier que firebase.auth est disponible
   if (typeof firebase.auth === 'function') {
     if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+      if (firebaseConfig) firebase.initializeApp(firebaseConfig);
     }
     initAuth();
   } else {
@@ -62,7 +71,7 @@ if (typeof firebase === 'undefined') {
       if (typeof firebase.auth === 'function') {
         clearInterval(checkAuth);
         if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
+          if (firebaseConfig) firebase.initializeApp(firebaseConfig);
         }
         initAuth();
       }
@@ -113,6 +122,10 @@ async function applyAuthPersistence(remember) {
 }
 
 function initAuth() {
+  if (!firebaseConfig || !firebase.apps?.length) {
+    console.error('[FluanceAuth] Firebase non initialisé (configuration manquante).');
+    return;
+  }
   // Vérifier que firebase.auth est disponible
   if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function') {
     console.error('Firebase Auth n\'est pas disponible. Réessayez dans quelques instants.');
@@ -279,25 +292,10 @@ async function signIn(email, password, remember = true) {
   }
 }
 
-/**
- * S'assure que le module Firebase Functions est chargé
- */
-async function ensureFunctionsLoaded() {
-  if (typeof firebase.functions === 'function') return;
+// NB: il existait une 1ère définition (async) de ensureFunctionsLoaded,
+// écrasée silencieusement par celle-ci (dernière déclaration gagnante en JS).
+// Elle a été supprimée : seule la version ci-dessous est utilisée.
 
-  console.log('[Firebase Auth] Chargement du script Firebase Functions...');
-  const functionsScript = document.createElement('script');
-  functionsScript.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
-  document.head.appendChild(functionsScript);
-
-  await new Promise((resolve, reject) => {
-    functionsScript.onload = resolve;
-    functionsScript.onerror = () => reject(new Error('Erreur chargement Firebase Functions'));
-  });
-  
-  // Attendre l'initialisation
-  await new Promise(resolve => setTimeout(resolve, 500));
-}
 
 /**
  * Envoie un lien de connexion par email (passwordless)
@@ -2309,8 +2307,12 @@ async function linkPasskeyToAccount() {
   }
 }
 
-// Exporter les fonctions pour utilisation globale
-window.FluanceAuth = {
+
+
+/**
+ * API publique : exports nommés + compat globale (scripts inline classiques).
+ */
+export const FluanceAuth = {
   signIn,
   signOut,
   sendSignInLink,
@@ -2329,3 +2331,29 @@ window.FluanceAuth = {
   signInWithPasskey,
   linkPasskeyToAccount
 };
+
+export {
+  signIn,
+  signOut,
+  sendSignInLink,
+  handleSignInLink,
+  verifyTokenAndCreateAccount,
+  loadProtectedContent,
+  displayProtectedContent,
+  getCurrentUser,
+  isAuthenticated,
+  sendPasswordResetEmail,
+  confirmPasswordReset,
+  verifyPasswordResetCode,
+  isWebAuthnSupported,
+  createAccountWithPasskey,
+  signInWithPasskey,
+  linkPasskeyToAccount,
+  getRememberChoice,
+  saveRememberChoice
+};
+
+// Compat rétro : les pages utilisent window.FluanceAuth et window.getRememberChoice
+// depuis des scripts classiques (non modules). On les expose donc aussi globalement.
+window.FluanceAuth = FluanceAuth;
+window.getRememberChoice = getRememberChoice;

@@ -63,7 +63,7 @@
 - `storage.rules` : Règles de sécurité Storage
 
 ### Code client
-- `src/assets/js/firebase-auth.js` : Authentification et accès au contenu
+- `src/assets/js/firebase-auth.mjs` : Authentification et accès au contenu
 - `src/fr/creer-compte.md` : Page de création de compte
 - `src/fr/connexion-membre.md` : Page de connexion Firebase
 - `src/_includes/protected-content.njk` : Shortcode pour contenu protégé
@@ -163,14 +163,14 @@ Page de connexion Firebase Auth. Accepte le paramètre `?return=/path` pour redi
 
 ```html
 <div class="protected-content" data-content-id="video-1"></div>
-<script src="/assets/js/firebase-auth.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs"></script>
 ```
 
 ### Méthode 3 : JavaScript manuel
 
 ```html
 <div id="my-content"></div>
-<script src="/assets/js/firebase-auth.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs"></script>
 <script>
   window.FluanceAuth.displayProtectedContent('video-1', document.getElementById('my-content'));
 </script>

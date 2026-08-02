@@ -32,9 +32,24 @@ const firebaseConfig = {
 
 Une fois que vous avez obtenu la configuration, mettez à jour les fichiers suivants :
 
-### 1. `src/assets/js/firebase-auth.js`
+### 1. `src/assets/js/firebase-auth.mjs` (module ES d'authentification)
 
-Remplacez la configuration Firebase (lignes 7-14) par votre nouvelle configuration.
+Le module lit la configuration depuis la variable globale `window.FLUANCE_FIREBASE_CONFIG`,
+**injectée par le layout `base.njk`** (shortcode `firebaseConfig` dans `eleventy.config.mjs`),
+qui elle-même provient des variables d'environnement (`.env` en local, secrets GitHub en CI).
+
+→ **Pas de modification du fichier `firebase-auth.mjs`** : mettez plutôt à jour vos
+variables d'environnement (`.env` en local, ou les secrets CI) avec la nouvelle config :
+
+```bash
+FIREBASE_API_KEY=AIzaSy...
+FIREBASE_AUTH_DOMAIN=fluance-protected-content.firebaseapp.com
+FIREBASE_PROJECT_ID=fluance-protected-content
+FIREBASE_STORAGE_BUCKET=fluance-protected-content.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=123456789012
+FIREBASE_APP_ID=1:123456789012:web:abcdef123456
+FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
+```
 
 ### 2. Pages des 5 jours (NON NÉCESSAIRE)
 

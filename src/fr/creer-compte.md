@@ -166,7 +166,7 @@ permalink: /creer-compte/
   </div>
 </div>
 
-<script src="/assets/js/firebase-auth.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Récupérer le token depuis l'URL si présent

@@ -116,7 +116,7 @@ permalink: /en/reset-password/
   </div>
 </div>
 
-<script src="/assets/js/firebase-auth.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
   // Wait for Firebase to initialize

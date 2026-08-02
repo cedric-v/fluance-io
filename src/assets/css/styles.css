@@ -281,3 +281,27 @@ main {
   display: none;
   /* Chrome, Safari and Opera */
 }
+
+/* Safe areas iOS (encoche / barre d'accueil) :
+   viewport-fit=cover est activé dans base.njk. On compense le header fixe
+   et la bannière cookies pour que le contenu ne passe jamais sous l'encoche.
+   env() vaut 0 sur les appareils sans encoche : aucun impact desktop. */
+#main-header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+#cookie-banner {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (max-width: 767px) {
+  main {
+    padding-top: calc(7rem + env(safe-area-inset-top, 0px));
+  }
+}
+
+@media (min-width: 768px) {
+  main {
+    padding-top: calc(7.5rem + env(safe-area-inset-top, 0px));
+  }
+}

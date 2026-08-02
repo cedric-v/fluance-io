@@ -8,7 +8,7 @@
 
 **Solution** :
 1. Vérifiez que l'authentification anonyme est activée dans Firebase Console > Authentication > Sign-in method
-2. Le code doit s'authentifier anonymement avant d'appeler les fonctions de l'extension (déjà implémenté dans `firebase-auth.js` via `ensureAuthenticated()`)
+2. Le code doit s'authentifier anonymement avant d'appeler les fonctions de l'extension (déjà implémenté dans `firebase-auth.mjs` via `ensureAuthenticated()`)
 
 **Vérification** :
 - Firebase Console > Authentication > Sign-in method
@@ -34,7 +34,7 @@
 1. Allez sur [Google Cloud Console](https://console.cloud.google.com/)
 2. Sélectionnez le projet : **fluance-protected-content**
 3. Dans le menu de gauche, allez dans **APIs & Services** > **Credentials**
-4. Trouvez votre clé API (celle utilisée dans `firebase-auth.js`)
+4. Trouvez votre clé API (celle utilisée dans `firebase-auth.mjs`)
 5. Cliquez sur le nom de la clé pour l'éditer
 6. Dans la section **Application restrictions**, sélectionnez **HTTP referrers (web sites)**
 7. **Vérifiez que vous avez** :
@@ -62,7 +62,7 @@ Les fonctions créées par l'extension peuvent avoir des noms différents selon 
 
 ### Solution 3 : Mettre à jour le code si nécessaire
 
-Si les fonctions ont des noms différents, il faut mettre à jour `src/assets/js/firebase-auth.js` pour utiliser les bons noms.
+Si les fonctions ont des noms différents, il faut mettre à jour `src/assets/js/firebase-auth.mjs` pour utiliser les bons noms.
 
 **Option A : Si les fonctions s'appellent `ext-firebase-web-authn-*`**
 
