@@ -37,9 +37,12 @@ const {sendAdminAlert} = require('./services/adminAlerts');
 const blogLeadHub = require('./blogLeadHub');
 
 // Import services nouveaux
-const {mollieService} = require('./services/mollieService');
-const {getAllowedOrigin, getRecurringPaymentMethod, isRecurringProduct} = require('./services/mollieUtils');
 const {bexioService} = require('./services/bexioService');
+
+// ⚠️ TRANSITION MOLLIE : services utilisés uniquement pour traiter les
+// abonnements Mollie encore actifs (plus aucun nouveau paiement Mollie).
+// À supprimer avec la section TRANSITION en fin de fichier.
+const {mollieService} = require('./services/mollieService');
 const {PubSub} = require('@google-cloud/pubsub');
 const {onMessagePublished} = require('firebase-functions/v2/pubsub');
 
@@ -58,6 +61,176 @@ const PRODUCT_PRICES = {
   'sos-dos-cervicales': 1700, // 17 CHF
   'complet': 9700, // 97 CHF
 };
+
+// ============================================================
+// STRIPE — Identifiants et configuration (passerelle unique)
+// ============================================================
+
+// Price IDs hardcodés (produits fluance.io existants)
+const STRIPE_PRICE_IDS = {
+  '21jours': 'price_1SdZ2X2Esx6PN6y1wnkrLfSu',
+  'complet': {
+    'mensuel': 'price_1SdZ4p2Esx6PN6y1bzRGQSC5',
+    'trimestriel': 'price_1SdZ6E2Esx6PN6y11qme0Rde',
+  },
+  'sos-dos-cervicales': STRIPE_PRICE_ID_SOS_DOS_CERVICALES,
+};
+
+// Price IDs configurables via secrets Firebase (produits cedricv.com + pass)
+// Secrets à configurer :
+//   STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE / STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT
+//   STRIPE_PRICE_ID_FOCUS_SOS_UNIQUE / STRIPE_PRICE_ID_FOCUS_SOS_3X
+//   STRIPE_PRICE_ID_SITE_VITRINE_5X
+//   STRIPE_PRICE_ID_SEMESTER_PASS / STRIPE_PRICE_ID_FLOW_PASS
+function getStripePriceId(product, variant = null) {
+  if (product === 'rdv-clarte') {
+    const v = variant || 'unique';
+    return process.env[`STRIPE_PRICE_ID_RDV_CLARTE_${v.toUpperCase()}`] || null;
+  }
+  if (product === 'focus-sos') {
+    const v = variant || 'unique';
+    return process.env[`STRIPE_PRICE_ID_FOCUS_SOS_${v.toUpperCase()}`] || null;
+  }
+  if (product === 'site-vitrine') {
+    return process.env.STRIPE_PRICE_ID_SITE_VITRINE_5X || null;
+  }
+  if (product === 'semester_pass') {
+    return process.env.STRIPE_PRICE_ID_SEMESTER_PASS || null;
+  }
+  if (product === 'flow_pass') {
+    return process.env.STRIPE_PRICE_ID_FLOW_PASS || null;
+  }
+  if (product === 'complet') {
+    if (!variant) return null;
+    return STRIPE_PRICE_IDS.complet[variant] || null;
+  }
+  return STRIPE_PRICE_IDS[product] || null;
+}
+
+// Nombre maximal d'échéances pour les paiements échelonnés Stripe (abonnements à durée limitée)
+function getStripeMaxPayments(product, variant) {
+  if (product === 'focus-sos' && variant === '3x') return 3;
+  if (product === 'site-vitrine' && variant === '5x') return 5;
+  return null;
+}
+
+/**
+ * Crée les écritures comptables Bexio pour un paiement Stripe encaissé.
+ * Logique identique à celle utilisée avec Mollie (Manual Entries), mais avec
+ * le compte caisse Stripe (1023 par défaut) et les frais réels Stripe
+ * (issus du balance_transaction).
+ * @param {Object} opts
+ * @param {string} opts.reference - ID de référence (payment_intent / charge / invoice)
+ * @param {number} opts.amountGross - Montant brut en CHF (unités)
+ * @param {number} opts.amountFee - Frais Stripe en CHF (unités)
+ * @param {string} opts.date - Date YYYY-MM-DD
+ * @param {string} opts.description - Description de la vente
+ * @param {string|null} opts.countryCode - Code pays (CH par défaut)
+ * @returns {Promise<void>}
+ */
+async function recordStripeBexioEntries({reference, amountGross, amountFee, date, description, countryCode = 'CH'}) {
+  const isSwiss = countryCode === 'CH' || countryCode === 'LI';
+
+  // Comptes (Stripe Logic du projet de référence)
+  // Caisse Stripe : 1023
+  const debitAccount = process.env.BEXIO_ACCOUNT_STRIPE ? parseInt(process.env.BEXIO_ACCOUNT_STRIPE) : 1023;
+  const creditAccountCH =
+    process.env.BEXIO_ACCOUNT_SALES_CH ? parseInt(process.env.BEXIO_ACCOUNT_SALES_CH) : 3400;
+  const creditAccountIntl =
+    process.env.BEXIO_ACCOUNT_SALES_INTL ? parseInt(process.env.BEXIO_ACCOUNT_SALES_INTL) : 3410;
+  const creditAccount = isSwiss ? creditAccountCH : creditAccountIntl;
+
+  // TVA : 14 (CH 8.1%) / 4 (Intl 0% CSE) — configurable
+  const taxId = isSwiss ?
+    (process.env.BEXIO_TAX_ID_CH ? parseInt(process.env.BEXIO_TAX_ID_CH) : 14) :
+    (process.env.BEXIO_TAX_ID_INTL ? parseInt(process.env.BEXIO_TAX_ID_INTL) : 4);
+
+  const entryDate = date || new Date().toISOString().split('T')[0];
+
+  // 1. Écriture de vente (montant brut)
+  await bexioService.createManualEntry({
+    date: entryDate,
+    debit_account_id: debitAccount,
+    credit_account_id: creditAccount,
+    amount: amountGross,
+    text: `Stripe Payment ${reference} - ${description}`,
+    reference,
+    tax_id: taxId,
+  });
+
+  // 2. Écriture de frais (commission Stripe) si détectée
+  if (amountFee > 0) {
+    const feeAccount = process.env.BEXIO_ACCOUNT_FEES ? parseInt(process.env.BEXIO_ACCOUNT_FEES) : 6941;
+    await bexioService.createManualEntry({
+      date: entryDate,
+      debit_account_id: feeAccount,
+      credit_account_id: debitAccount, // On déduit du compte Caisse Stripe
+      amount: amountFee,
+      text: `Commission Stripe ${reference} - ${description}`,
+      reference,
+      tax_id: 3, // Sans influence TVA (0%)
+      tax_account_id: feeAccount,
+    });
+  }
+
+  console.log(`📊 Bexio entries created for Stripe payment ${reference} (gross ${amountGross}, fee ${amountFee})`);
+}
+
+/**
+ * Crée les écritures Bexio pour un PaymentIntent Stripe (charge + balance_transaction).
+ * Non bloquant : les erreurs sont loggées sans faire échouer le webhook.
+ * @param {Object} stripe - Instance Stripe
+ * @param {string} paymentIntentId - ID du Payment Intent
+ * @param {string} reference - Référence de l'écriture (généralement l'ID du PI)
+ * @param {string} description - Description de la vente
+ * @param {string} [date] - Date YYYY-MM-DD
+ * @returns {Promise<void>}
+ */
+async function recordBexioForPaymentIntent(stripe, paymentIntentId, reference, description, date) {
+  if (!paymentIntentId || !stripe) return;
+  try {
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ['charges.data.balance_transaction'],
+    });
+    const charge = pi?.charges?.data?.[0] || null;
+    const {fee, country} = getStripeFeeAndCountry(charge);
+    const amountGross = pi.amount ? pi.amount / 100 : 0;
+    if (amountGross > 0) {
+      await recordStripeBexioEntries({
+        reference: reference || paymentIntentId,
+        amountGross,
+        amountFee: fee,
+        date: date || (pi.created ? new Date(pi.created * 1000).toISOString().split('T')[0] : undefined),
+        description,
+        countryCode: country,
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error in Stripe Bexio integration (payment intent):', error.message);
+  }
+}
+
+/**
+ * Calcule la commission Stripe réelle à partir d'une charge (balance_transaction).
+ * @param {Object} charge - Objet charge Stripe (expand balance_transaction)
+ * @returns {{fee: number, country: string}}
+ */
+function getStripeFeeAndCountry(charge) {
+  const balanceTx = charge?.balance_transaction;
+  let fee = 0;
+  if (balanceTx && typeof balanceTx === 'object' && balanceTx.fee) {
+    // fee en centimes dans la devise du compte (CHF) — convertir en unités
+    fee = balanceTx.fee / 100;
+  }
+
+  // Pays de la carte pour la TVA
+  let country = 'CH';
+  const cardCountry = charge?.payment_method_details?.card?.country;
+  if (cardCountry) country = cardCountry;
+  else if (charge?.billing_details?.address?.country) country = charge.billing_details.address.country;
+
+  return {fee, country};
+}
 
 // Configuration Mailjet (via secrets Firebase - méthode moderne)
 // ⚠️ IMPORTANT : Les secrets sont configurés via Firebase CLI :
@@ -1742,7 +1915,14 @@ async function removeProductFromUser(email, productName) {
 exports.webhookStripe = onRequest(
     {
       region: 'europe-west1',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'STRIPE_WEBHOOK_SECRET'],
+      secrets: [
+        'MAILJET_API_KEY',
+        'MAILJET_API_SECRET',
+        'STRIPE_WEBHOOK_SECRET',
+        'STRIPE_SECRET_KEY',
+        'BEXIO_API_TOKEN',
+        'BEXIO_ACCOUNT_FEES',
+      ],
     },
     async (req, res) => {
     // Vérifier la signature Stripe
@@ -1898,6 +2078,21 @@ exports.webhookStripe = onRequest(
                 );
                 console.log('Confirmation result:', result);
 
+                // Comptabilité Bexio pour le paiement de la réservation
+                try {
+                  if (process.env.STRIPE_SECRET_KEY) {
+                    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+                    await recordBexioForPaymentIntent(
+                        stripe,
+                        paymentIntent.id || session.id,
+                        paymentIntent.id || session.id,
+                        `Booking ${bookingId} (${paymentIntent.metadata?.pricingOption || 'single'})`,
+                    );
+                  }
+                } catch (bexioError) {
+                  console.error('❌ Error in Stripe Bexio integration (booking):', bexioError.message);
+                }
+
                 // Envoyer notification admin pour réservation à l'unité
                 try {
                   const bookingDoc = await db.collection('bookings').doc(bookingId).get();
@@ -1931,27 +2126,6 @@ exports.webhookStripe = onRequest(
 
             // Cas 2: Achat d'un Flow Pass ou Pass Semestriel
             if (passType && customerEmail && passService) {
-            // IMPORTANT: Fluance utilise Mollie pour les achats de pass, pas Stripe
-            // Tout paiement Stripe avec passType provient d'un autre système (ex: Instant Académie)
-            // On ignore ces paiements pour éviter les fausses notifications admin
-            // Note: Le code ci-dessous est conservé comme backup en cas de problème avec Mollie
-              console.log(`⏭️ Ignoring Stripe pass purchase (passType: ${passType}) - Fluance uses Mollie for passes`);
-              console.log(`   Email: ${customerEmail}, Payment Intent: ${paymentIntent.id || session.id}`);
-              console.log(`   This is likely from another system (e.g., Instant Académie)`);
-              return res.status(200).json({
-                received: true,
-                ignored: true,
-                reason: 'fluance_uses_mollie_for_passes',
-                note: 'Stripe pass logic preserved as backup payment processor',
-              });
-
-              // ============================================================
-              // CODE CONSERVÉ COMME BACKUP (non exécuté actuellement)
-              // Pour réactiver Stripe comme processeur de paiement backup:
-              // 1. Commenter le return ci-dessus
-              // 2. Vérifier que les sessions Stripe incluent system: 'firebase'
-              // ============================================================
-              /* eslint-disable no-unreachable */
               console.log(`✅ ${passType} purchased for ${customerEmail}`);
               try {
                 const pass = await passService.createUserPass(db, customerEmail, passType, {
@@ -2261,13 +2435,33 @@ exports.webhookStripe = onRequest(
 
         // Déterminer le produit depuis les métadonnées uniquement (pas de fallback)
         const product = session.metadata?.product;
-        if (!product || (product !== '21jours' && product !== 'complet' && product !== 'rdv-clarte')) {
+        const VALID_ONLINE_PRODUCTS = ['21jours', 'complet', 'rdv-clarte', 'focus-sos', 'site-vitrine'];
+        if (!product || !VALID_ONLINE_PRODUCTS.includes(product)) {
           console.error(`Paiement Stripe ignoré - produit invalide: ${product}`);
           return res.status(200).json({received: true, ignored: true});
         }
 
         // Extraire la langue depuis les métadonnées (défaut: 'fr')
         const langue = session.metadata?.locale || session.metadata?.langue || 'fr';
+
+        // ============================================================
+        // COMPTABILITÉ BEXIO (Stripe) — écritures vente + commission
+        // Non bloquant : un échec comptable ne doit pas empêcher le reste
+        // ============================================================
+        try {
+          if (process.env.STRIPE_SECRET_KEY && session.payment_intent) {
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+            await recordBexioForPaymentIntent(
+                stripe,
+                typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id,
+                session.payment_intent || session.id,
+                `${product}${session.metadata?.variant ? ' ' + session.metadata.variant : ''}`,
+                new Date().toISOString().split('T')[0],
+            );
+          }
+        } catch (bexioError) {
+          console.error('❌ Error in Stripe Bexio integration:', bexioError.message);
+        }
 
         // Pour le RDV Clarté (cedricv.com), pas besoin de créer un token ni d'envoyer d'email
         // Le paiement est juste loggé et la redirection se fait via success_url
@@ -2276,6 +2470,57 @@ exports.webhookStripe = onRequest(
           return res.status(200).json({
             received: true,
             product: 'rdv-clarte',
+            message: 'Payment successful, redirecting to confirmation page',
+          });
+        }
+
+        // Focus SOS & Site Vitrine (cedricv.com) : pas d'espace membre, pas de token.
+        // On loggue l'achat (audit + notification admin) pour le suivi.
+        if (product === 'focus-sos' || product === 'site-vitrine') {
+          try {
+            const auditAmount = session.amount_total ? session.amount_total / 100 : 0;
+            await db.collection('audit_payments').add({
+              email: customerEmail.toLowerCase().trim(),
+              products: [product],
+              amount: auditAmount,
+              currency: (session.currency || 'chf').toUpperCase(),
+              stripeSessionId: session.id,
+              stripePaymentIntentId: session.payment_intent || session.id,
+              status: 'success',
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              metadata: session.metadata || {},
+              system: 'firebase',
+              type: 'online_product',
+              gateway: 'stripe',
+            });
+            console.log(`📊 Audit log created for ${product} payment by ${customerEmail}`);
+          } catch (auditError) {
+            console.error('Error creating audit log:', auditError);
+          }
+
+          try {
+            if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+              await sendOnlineProductPurchaseNotificationAdmin(
+                  {
+                    email: customerEmail,
+                    product,
+                    amount: session.amount_total ? session.amount_total / 100 : 0,
+                    customerName: customerName || 'N/A',
+                    phone: customerPhone || '',
+                    stripeSessionId: session.id,
+                  },
+                  process.env.MAILJET_API_KEY,
+                  process.env.MAILJET_API_SECRET,
+              );
+            }
+          } catch (notifError) {
+            console.error('Error sending admin notification:', notifError);
+          }
+
+          console.log(`Paiement ${product} réussi - Email: ${customerEmail}, Session: ${session.id}`);
+          return res.status(200).json({
+            received: true,
+            product,
             message: 'Payment successful, redirecting to confirmation page',
           });
         }
@@ -2638,6 +2883,94 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
         }
       }
 
+      // Gérer les renouvellements d'abonnement des produits en ligne
+      // (complet, rdv-clarte, focus-sos, site-vitrine) : comptabilité Bexio
+      // + annulation automatique des échéances limitées (focus-sos 3x, site-vitrine 5x)
+      if (event.type === 'invoice.paid') {
+        const invoice = event.data.object;
+        const subscriptionId = invoice.subscription;
+
+        if (subscriptionId) {
+          // Récupérer la subscription Stripe pour lire les métadonnées
+          let subscription = null;
+          try {
+            if (process.env.STRIPE_SECRET_KEY && typeof require !== 'undefined') {
+              const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+              subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            }
+          } catch (subError) {
+            console.warn('Error retrieving subscription from Stripe (invoice.paid):', subError.message);
+          }
+
+          const system = subscription?.metadata?.system;
+          const product = subscription?.metadata?.product;
+          const variant = subscription?.metadata?.variant;
+
+          // Seuls les abonnements Firebase (produits en ligne) sont traités ici
+          if (system === 'firebase' && product) {
+            // 1. Comptabilité Bexio pour la facture payée (renouvellement)
+            //    ⚠️ On saute la facture de création (subscription_create) : le premier
+            //    paiement est déjà comptabilisé via checkout.session.completed.
+            if (invoice.billing_reason !== 'subscription_create') {
+              try {
+                if (invoice.payment_intent && process.env.STRIPE_SECRET_KEY) {
+                  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+                  await recordBexioForPaymentIntent(
+                      stripe,
+                      typeof invoice.payment_intent === 'string' ?
+                      invoice.payment_intent :
+                      invoice.payment_intent.id,
+                      invoice.payment_intent || invoice.id,
+                      `Renouvellement ${product}${variant ? ' ' + variant : ''}`,
+                      invoice.created ? new Date(invoice.created * 1000).toISOString().split('T')[0] : undefined,
+                  );
+                }
+              } catch (bexioError) {
+                console.error('❌ Error in Stripe Bexio integration (invoice.paid):', bexioError.message);
+              }
+            }
+
+            // 2. Échéances limitées (focus-sos 3x, site-vitrine 5x) :
+            //    compter les paiements et annuler après le N-ième
+            const maxPayments = getStripeMaxPayments(product, variant);
+            if (maxPayments) {
+              const countRef = db.collection('subscriptionPayments').doc(subscriptionId);
+              const countDoc = await countRef.get();
+              const currentCount = countDoc.exists ? (countDoc.data().paymentCount || 0) : 0;
+              const newCount = currentCount + 1;
+              await countRef.set({
+                subscriptionId,
+                product,
+                variant,
+                paymentCount: newCount,
+                lastInvoice: invoice.id,
+                lastPaymentAt: new Date(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              }, {merge: true});
+              console.log(
+                  `🔢 ${product} (${variant}): paiement ${newCount}/${maxPayments} ` +
+                  `pour la subscription ${subscriptionId}`,
+              );
+
+              if (newCount >= maxPayments) {
+                try {
+                  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+                  await stripe.subscriptions.update(subscriptionId, {
+                    cancel_at_period_end: true,
+                  });
+                  console.log(
+                      `✅ Subscription ${subscriptionId} marquée pour annulation ` +
+                  `(${newCount}/${maxPayments} paiements effectués)`,
+                  );
+                } catch (cancelError) {
+                  console.error('Error scheduling subscription cancellation:', cancelError);
+                }
+              }
+            }
+          }
+        }
+      }
+
       // Gérer les événements de renouvellement d'abonnement (Pass Semestriel)
       if (event.type === 'invoice.paid' && passService) {
         const invoice = event.data.object;
@@ -2694,6 +3027,21 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
               });
               console.log(`✅ Semester Pass created: ${pass.passId}`);
 
+              // Comptabilité Bexio pour le premier paiement du Pass Semestriel
+              try {
+                if (invoice.payment_intent && process.env.STRIPE_SECRET_KEY) {
+                  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+                  await recordBexioForPaymentIntent(
+                      stripe,
+                      typeof invoice.payment_intent === 'string' ? invoice.payment_intent : invoice.payment_intent.id,
+                      invoice.payment_intent,
+                      'Pass Semestriel (premier paiement)',
+                  );
+                }
+              } catch (bexioError) {
+                console.error('❌ Error in Stripe Bexio integration (semester pass):', bexioError.message);
+              }
+
               // Si un courseId est présent dans les métadonnées, créer automatiquement la réservation
               if (courseId && bookingService) {
                 console.log(
@@ -2716,7 +3064,36 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
                         .get();
 
                     if (!existingBooking.empty) {
-                      console.log(`⚠️ User already has a booking for course ${courseId}, skipping automatic booking`);
+                      // La réservation existe déjà (créée par bookCourse avec statut 'pending')
+                      // → la confirmer et la lier au pass
+                      const existing = existingBooking.docs[0];
+                      const existingData = existing.data();
+                      console.log(
+                          `✅ Confirming existing booking ${existing.id} and linking semester pass ${pass.passId}`,
+                      );
+                      await existing.ref.update({
+                        status: 'confirmed',
+                        paymentMethod: 'pass',
+                        pricingOption: 'semester_pass',
+                        passId: pass.passId,
+                        paidAt: new Date(),
+                        updatedAt: new Date(),
+                        notes: 'Pass Semestriel',
+                        ...(existingData.courseId ? {} : {courseId: courseId}),
+                      });
+
+                      // Mettre à jour le compteur de participants seulement si pas déjà compté
+                      if (existingData.status === 'pending') {
+                        const courseRef = db.collection('courses').doc(courseId);
+                        const currentCourse = await courseRef.get();
+                        const currentParticipantCount = currentCourse.data()?.participantCount || 0;
+                        await courseRef.update({
+                          participantCount: currentParticipantCount + 1,
+                        });
+                        console.log(
+                            `✅ Participant count incremented for course ${courseId} (pending → confirmed)`,
+                        );
+                      }
                     } else {
                     // Pass Semestriel est illimité, pas besoin de décompter
                     // Créer la réservation avec le pass
@@ -2910,6 +3287,23 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
             console.log(`✅ Semester Pass renewed for ${customerEmail}`);
             try {
               await passService.renewSemesterPass(db, subscriptionId);
+
+              // Comptabilité Bexio pour le renouvellement
+              try {
+                if (invoice.payment_intent && process.env.STRIPE_SECRET_KEY) {
+                  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+                  await recordBexioForPaymentIntent(
+                      stripe,
+                      typeof invoice.payment_intent === 'string' ?
+                      invoice.payment_intent :
+                      invoice.payment_intent.id,
+                      invoice.payment_intent,
+                      'Pass Semestriel (renouvellement)',
+                  );
+                }
+              } catch (bexioError) {
+                console.error('❌ Error in Stripe Bexio integration (semester pass renewal):', bexioError.message);
+              }
             } catch (renewError) {
               console.error('Error renewing Semester Pass:', renewError);
             }
@@ -3313,88 +3707,97 @@ exports.webhookPayPal = onRequest(
 exports.createStripeCheckoutSession = onCall(
     {
       region: 'europe-west1',
-      secrets: ['STRIPE_SECRET_KEY', 'STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE', 'STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT'],
+      secrets: [
+        'STRIPE_SECRET_KEY',
+        'STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE',
+        'STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT',
+        'STRIPE_PRICE_ID_FOCUS_SOS_UNIQUE',
+        'STRIPE_PRICE_ID_FOCUS_SOS_3X',
+        'STRIPE_PRICE_ID_SITE_VITRINE_5X',
+        'STRIPE_PRICE_ID_FLOW_PASS',
+        'STRIPE_PRICE_ID_SEMESTER_PASS',
+      ],
     },
     async (request) => {
-      const {product, variant, locale = 'fr'} = request.data;
+      const {product, variant, locale = 'fr', includeSosDos = false, email = null, firstName = null, lastName = null} = request.data;
 
       // Valider les paramètres
-      if (!product || (product !== '21jours' && product !== 'complet' && product !== 'rdv-clarte')) {
-        throw new HttpsError('invalid-argument', 'Product must be "21jours", "complet", or "rdv-clarte"');
+      const VALID_PRODUCTS = ['21jours', 'complet', 'rdv-clarte', 'focus-sos', 'site-vitrine', 'flow_pass', 'semester_pass'];
+      if (!product || !VALID_PRODUCTS.includes(product)) {
+        throw new HttpsError('invalid-argument', `Product must be one of: ${VALID_PRODUCTS.join(', ')}`);
       }
 
-      if (product === 'complet' && !variant) {
-        throw new HttpsError('invalid-argument', 'Variant is required for "complet" product (must be "mensuel" or "trimestriel")');
-      }
-
-      if (product === 'complet' && variant !== 'mensuel' && variant !== 'trimestriel') {
-        throw new HttpsError('invalid-argument', 'Variant must be "mensuel" or "trimestriel"');
-      }
-
-      // Pour rdv-clarte, variant est optionnel : 'unique' (paiement unique) ou 'abonnement' (abonnement mensuel)
-      if (product === 'rdv-clarte' && variant && variant !== 'unique' && variant !== 'abonnement') {
-        throw new HttpsError('invalid-argument', 'Variant for "rdv-clarte" must be "unique" or "abonnement"');
-      }
-
-      // Mapping des produits vers les Price IDs Stripe
-      const priceIds = {
-        '21jours': 'price_1SdZ2X2Esx6PN6y1wnkrLfSu',
-        'complet': {
-          'mensuel': 'price_1SdZ4p2Esx6PN6y1bzRGQSC5',
-          'trimestriel': 'price_1SdZ6E2Esx6PN6y11qme0Rde',
-        },
-        'rdv-clarte': {
-        // ⚠️ IMPORTANT : Remplacez 'price_XXXXX' par les vrais Price IDs Stripe
-          'unique': process.env.STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE || 'price_XXXXX', // 100 CHF, paiement unique
-          'abonnement': process.env.STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT || 'price_YYYYY', // 69 CHF/mois, abonnement
-        },
+      // Validations par produit
+      const VALID_VARIANTS = {
+        'complet': ['mensuel', 'trimestriel'],
+        'rdv-clarte': ['unique', 'abonnement'],
+        'focus-sos': ['unique', '3x'],
+        'site-vitrine': ['5x'],
       };
-
-      // Déterminer le Price ID
-      let priceId;
-      if (product === '21jours') {
-        priceId = priceIds['21jours'];
-      } else if (product === 'rdv-clarte') {
-        const rdvVariant = variant || 'unique'; // Par défaut, paiement unique
-        priceId = priceIds['rdv-clarte'][rdvVariant];
-        if (priceId === 'price_XXXXX' || priceId === 'price_YYYYY') {
-          const secretName =
-          `STRIPE_PRICE_ID_RDV_CLARTE_${rdvVariant.toUpperCase()}`;
-          throw new HttpsError(
-              'failed-precondition',
-              `Stripe Price ID for RDV Clarté (${rdvVariant}) not configured. ` +
-          `Set ${secretName} secret.`,
-          );
+      if (VALID_VARIANTS[product]) {
+        const v = variant || (product === 'rdv-clarte' ? 'unique' : null);
+        if (!v || !VALID_VARIANTS[product].includes(v)) {
+          throw new HttpsError('invalid-argument', `Variant for "${product}" must be one of: ${VALID_VARIANTS[product].join(', ')}`);
         }
-      } else {
-        priceId = priceIds['complet'][variant];
+      }
+
+      // Déterminer le Price ID du produit principal
+      const priceId = getStripePriceId(product, variant);
+      if (!priceId) {
+        const secretName = product === '21jours' ?
+          'STRIPE_PRICE_IDS hardcodé manquant' :
+          `STRIPE_PRICE_ID_${product.toUpperCase()}${variant ? '_' + variant.toUpperCase() : ''}`;
+        throw new HttpsError(
+            'failed-precondition',
+            `Stripe Price ID for "${product}${variant ? ' ' + variant : ''}" not configured. ` +
+        `Set the ${secretName} secret in Firebase.`,
+        );
       }
 
       // Déterminer le mode (payment pour one-time, subscription pour abonnements)
-      const mode = (product === '21jours' || (product === 'rdv-clarte' && (!variant || variant === 'unique'))) ?
-      'payment' :
-      'subscription';
+      const isSubscription = product === 'complet' ||
+        (product === 'rdv-clarte' && variant === 'abonnement') ||
+        product === 'semester_pass' ||
+        (product === 'focus-sos' && variant === '3x') ||
+        (product === 'site-vitrine' && variant === '5x');
+      const mode = isSubscription ? 'subscription' : 'payment';
+
+      // Line items : produit principal (+ cross-sell SOS Dos si demandé)
+      const lineItems = [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ];
+
+      // Cross-sell "SOS Dos & Cervicales" (Order Bump) — uniquement pour 21jours et complet
+      if (includeSosDos && (product === '21jours' || product === 'complet')) {
+        lineItems.push({
+          price: STRIPE_PRICE_ID_SOS_DOS_CERVICALES,
+          quantity: 1,
+        });
+      }
 
       // URLs de redirection selon le produit et la locale
+      const langPrefix = locale === 'en' ? '/en' : '';
       let baseUrl; let successUrl; let cancelUrl;
-      if (product === 'rdv-clarte') {
-      // Pour le RDV Clarté, rediriger vers cedricv.com
+      if (product === 'rdv-clarte' || product === 'focus-sos' || product === 'site-vitrine') {
+      // Produits cedricv.com
         baseUrl = 'https://cedricv.com';
-        successUrl = locale === 'en' ?
-        `${baseUrl}/en/confirmation?session_id={CHECKOUT_SESSION_ID}` :
-        `${baseUrl}/confirmation?session_id={CHECKOUT_SESSION_ID}`;
-        cancelUrl = locale === 'en' ?
-        `${baseUrl}/en/rdv/clarte` :
-        `${baseUrl}/rdv/clarte`;
+        if (product === 'site-vitrine') {
+          successUrl = `${baseUrl}/merci-paiement/?session_id={CHECKOUT_SESSION_ID}`;
+          cancelUrl = `${baseUrl}/paiement/site-vitrine/`;
+        } else {
+          successUrl = `${baseUrl}${langPrefix}/confirmation?session_id={CHECKOUT_SESSION_ID}`;
+          cancelUrl = product === 'rdv-clarte' ?
+            `${baseUrl}${langPrefix}/rdv/clarte` :
+            `${baseUrl}${langPrefix}/accompagnement/formules/focus-sos/bdc/3x/`;
+        }
       } else {
-      // Pour les autres produits, rediriger vers fluance.io
+      // Produits fluance.io
         baseUrl = 'https://fluance.io';
-        successUrl = locale === 'en' ?
-        `${baseUrl}/en/success?session_id={CHECKOUT_SESSION_ID}` :
-        `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
-        cancelUrl = locale === 'en' ?
-        `${baseUrl}/en/cancel` :
-        `${baseUrl}/cancel`;
+        successUrl = `${baseUrl}${langPrefix}/success?session_id={CHECKOUT_SESSION_ID}`;
+        cancelUrl = `${baseUrl}${langPrefix}/cancel`;
       }
 
       try {
@@ -3407,52 +3810,53 @@ exports.createStripeCheckoutSession = onCall(
               'Stripe package not installed. Run: npm install stripe in functions/ directory');
         }
 
+        // Métadonnées communes
+        const metadata = {
+          system: 'firebase',
+          product,
+          locale: locale === 'en' ? 'en' : 'fr',
+        };
+        if (variant) metadata.variant = variant;
+        if (includeSosDos) metadata.includeSosDos = 'true';
+        if (email) metadata.email = email;
+        if (firstName) metadata.firstName = firstName;
+        if (lastName) metadata.lastName = lastName;
+
         // Créer la session Checkout
-        const session = await stripe.checkout.sessions.create({
+        const sessionParams = {
           payment_method_types: ['card'],
-          line_items: [
-            {
-              price: priceId,
-              quantity: 1,
-            },
-          ],
+          line_items: lineItems,
           mode: mode,
           success_url: successUrl,
           cancel_url: cancelUrl,
           // Définir la langue de l'interface Stripe Checkout
-          // 'auto' détecte automatiquement la langue du navigateur
-          // 'fr' pour français, 'en' pour anglais
           locale: locale === 'en' ? 'en' : 'fr',
-          metadata: {
-            system: 'firebase',
-            product: product,
-            locale: locale === 'en' ? 'en' : 'fr',
-            // Ajouter le variant pour rdv-clarte si présent
-            ...(product === 'rdv-clarte' && variant ? {variant: variant} : {}),
-          },
-          // Pour les paiements uniques, s'assurer que les métadonnées sont aussi sur le Payment Intent
-          // (nécessaire pour les remboursements qui récupèrent les métadonnées depuis le Payment Intent)
-          payment_intent_data: mode === 'payment' ? {
-            metadata: {
-              system: 'firebase',
-              product: product,
-              locale: locale === 'en' ? 'en' : 'fr',
-              // Ajouter le variant pour rdv-clarte si présent
-              ...(product === 'rdv-clarte' && variant ? {variant: variant} : {}),
-            },
-          } : undefined,
-          // Pour les abonnements, passer les métadonnées aussi dans la subscription
-          subscription_data: mode === 'subscription' ? {
-            metadata: {
-              system: 'firebase',
-              product: product,
-              // Ajouter le variant pour rdv-clarte si présent
-              ...(product === 'rdv-clarte' && variant ? {variant: variant} : {}),
-            },
+          metadata,
+        };
+
+        // Email du client (nécessaire pour les abonnements — envoi des factures)
+        if (email) {
+          sessionParams.customer_email = email;
+        }
+
+        // Pour les paiements uniques : métadonnées aussi sur le Payment Intent
+        // (nécessaire pour les remboursements qui récupèrent les métadonnées depuis le Payment Intent)
+        if (mode === 'payment') {
+          sessionParams.payment_intent_data = {
+            metadata,
+          };
+        }
+
+        // Pour les abonnements : métadonnées aussi dans la subscription
+        if (mode === 'subscription') {
+          sessionParams.subscription_data = {
+            metadata,
             // Période d'essai gratuite de 14 jours pour le produit "complet"
             ...(product === 'complet' ? {trial_period_days: 14} : {}),
-          } : undefined,
-        });
+          };
+        }
+
+        const session = await stripe.checkout.sessions.create(sessionParams);
 
         return {
           success: true,
@@ -3719,6 +4123,14 @@ exports.getStripeCheckoutSession = onCall(
           productName = 'Approche Fluance complète';
         } else if (product === 'rdv-clarte') {
           productName = 'RDV Clarté';
+        } else if (product === 'focus-sos') {
+          productName = 'Focus SOS BDC (3x)';
+        } else if (product === 'site-vitrine') {
+          productName = 'Site web vitrine (5x)';
+        } else if (product === 'flow_pass') {
+          productName = 'Flow Pass';
+        } else if (product === 'semester_pass') {
+          productName = 'Pass Semestriel';
         }
 
         return {
@@ -10698,8 +11110,6 @@ exports.bookCourse = onRequest(
         'MAILJET_API_KEY',
         'MAILJET_API_SECRET',
         'ADMIN_EMAIL',
-        'MOLLIE_API_KEY',
-        'BEXIO_API_TOKEN',
       ],
       cors: true,
     },
@@ -11010,7 +11420,6 @@ exports.bookCourse = onRequest(
           pricingOption,
           partnerCode,
           stripeExists: !!stripe,
-          mollieServiceExists: !!mollieService,
         });
 
         const result = await bookingService.processBooking(
@@ -11021,7 +11430,6 @@ exports.bookCourse = onRequest(
             paymentMethod || 'card',
             pricingOption || 'single',
             partnerCode, // Code partenaire pour remise
-            mollieService, // Inject Mollie Service
             req.body.origin || 'https://fluance.io', // Inject Origin
         );
         console.log('✅ processBooking finished successfully');
@@ -11860,6 +12268,25 @@ exports.getHealthStats = onCall(
     },
 );
 
+
+/**
+ * ============================================================
+ * ⚠️ TRANSITION MOLLIE (à supprimer définitivement plus tard)
+ * ============================================================
+ * Ces fonctions ne servent qu'à traiter les ABONNEMENTS MOLLIE
+ * encore actifs (ex: site-vitrine 5x avec échéances restantes,
+ * abonnements complet / rdv-clarte / focus-sos / semester_pass
+ * créés avant le retour à Stripe). Mollie continue de prélever
+ * automatiquement ces abonnements : ces webhooks assurent la
+ * comptabilité Bexio et les renouvellements de pass pendant la
+ * transition.
+ *
+ * ➜ À supprimer une fois que TOUS les abonnements Mollie
+ *   existants sont terminés (plus aucun prélèvement attendu).
+ *   Aucun NOUVEAU paiement Mollie n'est créé : les boutons de
+ *   paiement du frontend utilisent Stripe (createStripeCheckoutSession).
+ * ============================================================
+ */
 /**
  * Webhook Mollie (v2 HTTP)
  * Reçoit les notifications de Mollie, accuse réception immédiatement (200 OK),
@@ -12092,8 +12519,7 @@ exports.processMolliePayment = onMessagePublished(
             else if (metadata.product === 'focus-sos' && metadata.variant === '3x') {
               interval = '1 month';
               times = 2; // 2 prélèvements restants après le 1er paiement
-            }
-            else if (metadata.product === 'site-vitrine' && metadata.variant === '5x') {
+            } else if (metadata.product === 'site-vitrine' && metadata.variant === '5x') {
               interval = '1 month';
               times = 4; // 4 prélèvements restants après le 1er paiement (= 5 total)
             }
@@ -12392,217 +12818,6 @@ exports.processMolliePayment = onMessagePublished(
             console.error('❌ Error updating processedPayments status:', e);
           }
         }
-      }
-    },
-);
-
-/**
- * Crée une session de paiement Mollie (Hosted Checkout)
- * Remplace createStripeCheckoutSession
- */
-exports.createMollieCheckoutSession = onCall(
-    {
-      region: 'europe-west1',
-      secrets: ['MOLLIE_API_KEY', 'BEXIO_API_TOKEN', 'ADMIN_EMAIL'],
-    },
-    async (request) => {
-      const {product, variant, includeSosDos, email, firstName, lastName, locale = 'fr'} = request.data;
-
-      // Validation
-      if (!product) {
-        throw new HttpsError('invalid-argument', 'Product is required');
-      }
-
-      // Vérifier les infos requises pour les produits critiques (Complet, RDV Clarté)
-      if (product === 'complet' || product === 'rdv-clarte' || product === 'site-vitrine') {
-        if (!email || !firstName || !lastName) {
-          throw new HttpsError('invalid-argument', 'Required info missing (email, firstName, lastName)');
-        }
-      }
-
-      // Prix (CHF)
-      const PRICES = {
-        '21jours': 19.00,
-        'sos-dos-cervicales': 17.00,
-
-        // RDV Clarté
-        'rdv-clarte_unique': 100.00,
-        'rdv-clarte_abonnement': 69.00, // Mensuel
-
-        // Focus SOS
-        'focus-sos_unique': 300.00,
-        'focus-sos_3x': 100.00, // Mensuel (3x total)
-
-        // Site Vitrine
-        'site-vitrine_5x': 200.00, // Mensuel (5x total)
-
-        // Programme Complet
-        'complet_mensuel': 30.00, // Mensuel
-        'complet_trimestriel': 75.00, // Trimestriel (25/mois)
-
-        // Presentiel (pour référence ou usage futur via cette fonction)
-        'single': 25.00,
-        'flow_pass': 210.00,
-        'semester_pass': 340.00,
-      };
-
-      // Déterminer la clé de prix
-      let priceKey = product;
-      if (product === 'rdv-clarte' || product === 'complet' || product === 'focus-sos' || product === 'site-vitrine') {
-        if (!variant) throw new HttpsError('invalid-argument', `Variant required for ${product}`);
-        priceKey = `${product}_${variant}`;
-      }
-
-      let amount = PRICES[priceKey];
-      if (!amount) {
-      // Fallback pour presentiel si passé directement
-        if (PRICES[product]) amount = PRICES[product];
-        else throw new HttpsError('not-found', `Price not found for ${priceKey}`);
-      }
-
-      let description = `${product} ${variant || ''}`;
-
-      // Gestion Cross-Sell "SOS Dos"
-      if (includeSosDos) {
-        amount += PRICES['sos-dos-cervicales'];
-        description += ' + SOS Dos & Cervicales';
-      }
-
-      // Déterminer le type de séquence (First vs One-off)
-      // Abonnements : Complet (mens/trim), RDV Clarté (abo), Semester Pass, Focus SOS (3x)
-      const isSubscription = isRecurringProduct(product, variant);
-
-      const sequenceType = isSubscription ? 'first' : 'oneoff';
-
-      // Création du Customer (Requis pour SequenceType = first, recommandé pour tous)
-      let customerId = null;
-      if (isSubscription && !email) {
-        throw new HttpsError('invalid-argument', 'An email is required for subscriptions');
-      }
-
-      if (email) {
-        try {
-          const customer = await mollieService.createCustomer({
-            name: `${firstName || ''} ${lastName || ''}`.trim() || 'Client Fluance',
-            email: email,
-            metadata: {
-              system: 'firebase',
-              uid: request.auth?.uid || null,
-            },
-          });
-          customerId = customer.id;
-        } catch (e) {
-          console.warn('⚠️ Could not create Mollie customer:', e.message);
-          // On continue sans customerId si erreur, sauf si first payment
-          if (isSubscription) throw new HttpsError('internal', 'Failed to create customer for subscription: ' + e.message);
-        }
-      }
-
-      // URLs de redirection (allowlist)
-      const DEFAULT_BASE_URL = (product === 'rdv-clarte' || product === 'focus-sos' || product === 'site-vitrine') ? 'https://cedricv.com' : 'https://fluance.io';
-      const baseUrl = getAllowedOrigin(request.data.origin, DEFAULT_BASE_URL);
-      const langPrefix = (locale === 'en') ? '/en' : '';
-
-      let redirectUrl;
-      const gatewayParams = `?utm_nooverride=1&gateway=mollie&product=${product}&variant=${variant || ''}`;
-      if (product === 'site-vitrine') {
-        redirectUrl = `${baseUrl}${langPrefix}/merci-paiement/${gatewayParams}`;
-      } else if (product === 'rdv-clarte' || product === 'focus-sos') {
-        redirectUrl = `${baseUrl}${langPrefix}/confirmation/${gatewayParams}`;
-      } else if (product === 'presentiel' || product === 'single' || product === 'flow_pass' || product === 'semester_pass') {
-        redirectUrl = `${baseUrl}${langPrefix}/presentiel/reservation-confirmee/${gatewayParams}`;
-      } else {
-        redirectUrl = `${baseUrl}${langPrefix}/success/${gatewayParams}`;
-      }
-
-      // Paramètres URL (pour le frontend)
-      // Note: Mollie ajoute ?id={paymentId} mais on peut ajouter nos paramètres
-      // On ne peut pas facilement ajouter session_id={CHECKOUT_SESSION_ID} comme Stripe
-      // Mais on peut utiliser l'ID Mollie au retour
-
-
-      try {
-        const recurringPaymentMethod = getRecurringPaymentMethod(product, variant);
-        const paymentPayload = {
-          amount: {
-            currency: 'CHF',
-            value: amount.toFixed(2), // Mollie requiert 2 décimales string "10.00"
-          },
-          description: description,
-          redirectUrl: redirectUrl,
-          webhookUrl: `https://europe-west1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/webhookMollie`,
-          metadata: {
-            system: 'firebase',
-            product: product,
-            variant: variant || null,
-            includeSosDos: !!includeSosDos,
-            email: email,
-            firstName: firstName,
-            lastName: lastName,
-            locale: locale,
-            type: isSubscription ? 'subscription_first' : 'order',
-          },
-        };
-
-        if (customerId) {
-          paymentPayload.customerId = customerId;
-        }
-        if (sequenceType === 'first') {
-          paymentPayload.sequenceType = 'first';
-        }
-        if (recurringPaymentMethod) {
-          paymentPayload.method = recurringPaymentMethod;
-          paymentPayload.metadata.recurringPaymentMethod = recurringPaymentMethod;
-        }
-
-        const payment = await mollieService.createPayment(paymentPayload);
-
-        return {
-          success: true,
-          url: payment.getCheckoutUrl(),
-          paymentId: payment.id,
-        };
-      } catch (error) {
-        console.error('Error creating Mollie payment:', error);
-        throw new HttpsError('internal', error.message);
-      }
-    },
-);
-
-exports.cancelMollieSubscription = onCall(
-    {
-      region: 'europe-west1',
-      secrets: ['MOLLIE_API_KEY'],
-    },
-    async (request) => {
-      const {customerId, subscriptionId} = request.data;
-
-      if (!customerId) {
-        throw new HttpsError('invalid-argument', 'customerId is required');
-      }
-      if (!subscriptionId) {
-        throw new HttpsError('invalid-argument', 'subscriptionId is required');
-      }
-
-      // Seuls les admins authentifiés ou les requêtes internes peuvent annuler
-      if (!request.auth && !request.data._internal) {
-        throw new HttpsError('unauthenticated', 'Authentication required to cancel subscriptions');
-      }
-
-      try {
-        const subscription = await mollieService.cancelSubscription(customerId, subscriptionId);
-
-        console.log(`✅ Abonnement Mollie annulé: ${subscriptionId} (client: ${customerId})`);
-
-        return {
-          success: true,
-          subscriptionId: subscriptionId,
-          customerId: customerId,
-          status: subscription.status,
-        };
-      } catch (error) {
-        console.error(`❌ Erreur annulation abonnement Mollie ${subscriptionId}:`, error);
-        throw new HttpsError('internal', `Failed to cancel subscription: ${error.message}`);
       }
     },
 );

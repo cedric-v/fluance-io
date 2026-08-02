@@ -198,7 +198,7 @@ function calculatePriceWithDiscount(originalAmount, pricingOption, partnerCode =
  * @param {string} partnerCode - Code partenaire (optionnel)
  * @returns {Promise<Object>} - Résultat de la réservation
  */
-async function processBooking(db, stripe, courseId, userData, paymentMethod, pricingOption = 'single', partnerCode = null, mollieService = null, origin = 'https://fluance.io') {
+async function processBooking(db, stripe, courseId, userData, paymentMethod, pricingOption = 'single', partnerCode = null, _origin = 'https://fluance.io') {
   console.log(`🚀 processBooking started for course ${courseId}, email ${userData.email}`);
   const bookingId = db.collection('bookings').doc().id;
 
@@ -333,75 +333,9 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
         };
       }
 
-      // 8. Pour les paiements en ligne
-      if (amount > 0 && mollieService) {
-        // MOLLIE INTEGRATION (Priorité au nouveau système)
-        // Create Customer (Always helpful, required for subscriptions)
-        let customerId = null;
-        try {
-          const customer = await mollieService.createCustomer({
-            name: `${userData.firstName} ${userData.lastName}`.trim(),
-            email: userData.email,
-            metadata: {
-              bookingId: bookingId,
-              uid: userData.uid || null,
-            },
-          });
-          customerId = customer.id;
-        } catch (e) {
-          console.warn('Mollie Create Customer failed', e);
-          // Fail if subscription because Mandate is needed
-          if (pricingOption === 'semester_pass') throw new Error('Failed to create customer for subscription');
-        }
-
-        const isSubscription = pricingOption === 'semester_pass';
-        const description = `Booking: ${course.title} (${pricingOption})`;
-
-        // Redirect URL logic
-        const redirectUrl = `${origin}/presentiel/reservation-confirmee?booking_id=${bookingId}`;
-        const webhookUrl = `https://europe-west1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/webhookMollie`;
-
-        const paymentPayload = {
-          amount: {currency: 'CHF', value: (amount / 100).toFixed(2)}, // cents to units
-          description: description,
-          redirectUrl: redirectUrl,
-          webhookUrl: webhookUrl,
-          metadata: {
-            system: 'firebase',
-            bookingId: bookingId,
-            courseId: courseId,
-            email: userData.email,
-            type: isSubscription ? 'semester_pass' : 'course_booking',
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            // Add passType for Flow Pass
-            ...(pricingOption === 'flow_pass' ? {passType: 'flow_pass'} : {}),
-          },
-        };
-
-        if (customerId) paymentPayload.customerId = customerId;
-        if (isSubscription) paymentPayload.sequenceType = 'first';
-
-        const payment = await mollieService.createPayment(paymentPayload);
-
-        bookingData.molliePaymentId = payment.id;
-        if (customerId) bookingData.mollieCustomerId = customerId;
-        bookingData.paymentGateway = 'mollie'; // Track gateway
-        bookingData.status = BOOKING_STATUS.PENDING;
-
-        const bookingRef = db.collection('bookings').doc(bookingId);
-        transaction.set(bookingRef, bookingData);
-
-        return {
-          success: true,
-          status: 'pending_payment',
-          bookingId: bookingId,
-          requiresPayment: true,
-          redirectUrl: payment.getCheckoutUrl(),
-          message: 'Veuillez procéder au paiement pour confirmer votre réservation.',
-        };
-      } else if (amount > 0 && stripe) {
-        // STRIPE LOGIC (Fallback / Legacy)
+      // 8. Pour les paiements en ligne — tout passe par Stripe
+      if (amount > 0 && stripe) {
+        // STRIPE LOGIC (Passerelle de paiement unique)
         // 8a. Pass Semestriel : Créer une Subscription Stripe (abonnement récurrent)
         if (pricingOption === 'semester_pass') {
           // Créer ou récupérer le customer Stripe

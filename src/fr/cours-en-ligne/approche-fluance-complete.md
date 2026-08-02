@@ -167,7 +167,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
             </label>
           </div>
 
-          <button onclick="window.FluancePayment.redirectToMollie('complet', 'mensuel', 'fr', event, document.getElementById('cross-sell-sos-dos-1').checked)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block w-full">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'fr', event, document.getElementById('cross-sell-sos-dos-1').checked)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block w-full">
             <span>S'abonner mensuellement</span>
             <span>→</span>
           </button>
@@ -202,7 +202,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
             </label>
           </div>
 
-          <button onclick="window.FluancePayment.redirectToMollie('complet', 'trimestriel', 'fr', event, document.getElementById('cross-sell-sos-dos-2').checked)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block w-full">
+          <button onclick="window.FluancePayment.redirectToStripe('complet', 'trimestriel', 'fr', event, document.getElementById('cross-sell-sos-dos-2').checked)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mb-6 mx-auto block w-full">
             <span>S'abonner trimestriellement</span>
             <span>→</span>
           </button>

@@ -1,5 +1,17 @@
 # Plan de Migration : Stripe vers Mollie
 
+> ⚠️ **STATUT : ANNULE / REVERT** (août 2026)
+> Cette migration a été **annulée**. Tous les **nouveaux** paiements passent via **Stripe**
+> (frais en CHF moins élevés qu'avec Mollie). `createMollieCheckoutSession` et
+> `cancelMollieSubscription` ont été supprimés.
+>
+> ⚠️ **Exceptions conservées (TRANSITION)** : `webhookMollie` + `processMolliePayment`
+> restent actifs pour traiter les **abonnements Mollie encore en cours**
+> (comptabilité Bexio, renouvellements). Ils seront supprimés quand tous les abonnements
+> Mollie existants seront terminés. Ce document est conservé à titre historique.
+
+---
+
 Cette documentation détaille la stratégie technique pour remplacer Stripe (Elements & Checkout) par Mollie sans perdre de fonctionnalités clés (Cross-sells, Abonnements, Réservations).
 
 ---

@@ -2,9 +2,10 @@
 
 ## 📋 Vue d'ensemble
 
-Les webhooks Stripe et PayPal gèrent maintenant automatiquement :
-- ✅ Les annulations d'abonnement → Retire l'accès au produit "complet"
-- ✅ Les échecs de paiement → Log de l'événement (accès conservé jusqu'à annulation finale)
+Les webhooks Stripe et PayPal gèrent les annulations et échecs de paiement :
+- ✅ **Stripe** : Annulations `complet` → Retire l'accès dans Firestore ; Pass Semestriel → pass annulé
+- ✅ **PayPal** : Annulations `complet` → Retire l'accès dans Firestore
+- ✅ **Stripe** : Annulations produits cedricv.com (RDV Clarté, Focus SOS, Site Vitrine) → Log, pas d'espace membre à gérer
 
 ## 🔵 Événements Stripe gérés
 
@@ -73,6 +74,46 @@ Les webhooks Stripe et PayPal gèrent maintenant automatiquement :
 
 **Action** : Même traitement que l'échec de paiement → Log uniquement
 
+## 🟣 Abonnements Stripe (produits en ligne et pass)
+
+### Produits concernés
+
+- **RDV Clarté** (abonnement 69 CHF/mois) — `product: 'rdv-clarte'`, `variant: 'abonnement'`
+- **Focus SOS** (3x 100 CHF/mois) — `product: 'focus-sos'`, `variant: '3x'`
+- **Site Vitrine** (5x 200 CHF/mois) — `product: 'site-vitrine'`, `variant: '5x'`
+- **Programme Complet** (mensuel/trimestriel) — `product: 'complet'`
+- **Pass Semestriel** (340 CHF / 6 mois) — `type: 'semester_pass'`
+
+> ⚠️ **Abonnements Mollie encore actifs (transition)** : les abonnements créés avant le
+> retour à Stripe (ex: site-vitrine 5x en cours de paiement) continuent d'être prélevés par
+> Mollie. Ils sont gérés depuis le dashboard Mollie (https://my.mollie.com/dashboard/) et
+> leur comptabilité passe par les webhooks transitoires `webhookMollie`/`processMolliePayment`
+> (section « TRANSITION MOLLIE » de `functions/index.js`).
+
+### Fonctionnement
+
+1. Les abonnements sont créés **directement** via Stripe Checkout (`mode: 'subscription'`)
+2. Stripe gère seul les prélèvements suivants
+3. Le webhook `invoice.paid` gère la comptabilité Bexio et les échéances limitées
+4. Les abonnements à durée limitée (Focus SOS 3x, Site Vitrine 5x) sont **automatiquement annulés** après le N-ième paiement (`cancel_at_period_end: true`) — compteur stocké dans Firestore (`subscriptionPayments`)
+
+### Annulation depuis le dashboard Stripe
+
+1. https://dashboard.stripe.com/ → **Subscriptions**
+2. Chercher l'abonnement par email ou ID (`sub_xxxxx`)
+3. Cliquer sur l'abonnement → **Cancel**
+
+### Annulation par le client via le Customer Portal
+
+Le client peut gérer lui-même son abonnement via le portail Stripe :
+https://billing.stripe.com/p/login/4gM3coe0tgPp3Qcd608k800
+
+### Échéances limitées (Focus SOS 3x, Site Vitrine 5x)
+
+Le webhook `invoice.paid` compte les paiements dans la collection Firestore `subscriptionPayments`
+(document par `subscriptionId`). Dès que le compteur atteint le maximum (3 ou 5),
+l'abonnement est marqué pour annulation automatique — aucune action manuelle requise.
+
 ## 🔧 Fonction `removeProductFromUser`
 
 Cette fonction retire un produit du tableau `products` d'un utilisateur dans Firestore :
@@ -99,6 +140,9 @@ async function removeProductFromUser(email, productName)
 ### Stripe
 
 Dans Stripe Dashboard → Webhooks, ajoutez ces événements :
+- ✅ `checkout.session.completed` (paiement réussi — produits et abonnements)
+- ✅ `payment_intent.succeeded` (paiement de réservation présentiel)
+- ✅ `invoice.paid` (renouvellements + échéances limitées + Pass Semestriel)
 - ✅ `customer.subscription.deleted` (annulation)
 - ✅ `invoice.payment_failed` (échec de paiement)
 
@@ -120,6 +164,12 @@ Dans PayPal Dashboard → Webhooks, ajoutez ces événements :
 
 4. **Email de notification** : Actuellement, aucun email n'est envoyé en cas d'échec de paiement. C'est une amélioration à prévoir.
 
+5. **RDV Clarté** : Pas d'espace membre. L'annulation via Stripe (dashboard ou Customer Portal) suffit à stopper les prélèvements. Aucune action supplémentaire dans Firestore n'est nécessaire.
+
+6. **Focus SOS / Site Vitrine** : Abonnements à durée limitée (3x / 5x). L'annulation est **automatique** après le dernier paiement (compteur `subscriptionPayments` dans Firestore). Une annulation manuelle n'est nécessaire que pour arrêter avant la fin.
+
+7. **Pass Semestriel** : `customer.subscription.deleted` annule le pass (`status: 'cancelled'`) via `passService.cancelSemesterPass`.
+
 ## 🧪 Test
 
 Pour tester les annulations :
@@ -133,6 +183,15 @@ Pour tester les annulations :
    - Créez un abonnement de test
    - Annulez-le dans PayPal Dashboard
    - Vérifiez dans Firestore que le produit "complet" a été retiré du tableau `products`
+
+3. **Stripe (produits en ligne / abonnements)** :
+   - Créez un abonnement de test (ex: complet mensuel)
+   - Annulez-le dans Stripe Dashboard
+   - Vérifiez dans Firestore que le produit "complet" a été retiré du tableau `products`
+4. **Stripe (Pass Semestriel)** :
+   - Créez une souscription Pass Semestriel via la réservation présentiel
+   - Annulez-la dans Stripe Dashboard
+   - Vérifiez dans Firestore que le pass a le statut `cancelled`
 
 ## 🔗 Voir aussi
 

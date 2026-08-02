@@ -1,5 +1,21 @@
 # Documentation : Intégration Mollie & Bexio (Février 2026)
 
+> ⚠️ **STATUT : TRANSITION** (août 2026)
+> La passerelle de paiement principale est **à nouveau Stripe** (frais en CHF moins élevés).
+> La comptabilité Bexio pour les paiements Stripe est générée dans `webhookStripe`
+> (fonctions `recordStripeBexioEntries` / `recordBexioForPaymentIntent` dans
+> `functions/index.js`), avec le compte caisse Stripe **1023** par défaut
+> (secret `BEXIO_ACCOUNT_STRIPE`).
+>
+> ⚠️ **Webhooks Mollie conservés en mode TRANSITION** : les abonnements Mollie encore
+> actifs (ex: site-vitrine 5x, complet, rdv-clarte, focus-sos, semester_pass) continuent
+> d'être prélevés par Mollie. `webhookMollie` + `processMolliePayment` sont donc conservés
+> (section « TRANSITION MOLLIE » en fin de `functions/index.js`) pour la comptabilité Bexio
+> et les renouvellements de pass. **Aucun nouveau paiement Mollie n'est créé** — les boutons
+> de paiement utilisent Stripe. À supprimer quand tous les abonnements Mollie sont terminés.
+
+---
+
 ## Objectif
 Cette intégration permet de traiter les paiements reçus via Mollie et de générer automatiquement les écritures comptables correspondantes dans Bexio sous forme de **Manual Entries** (Journaux), sans créer de fiches contacts individuelles.
 

@@ -42,31 +42,8 @@ robots: noindex, nofollow
 document.addEventListener('DOMContentLoaded', async function() {
   const urlParams = new URLSearchParams(window.location.search);
   const sessionId = urlParams.get('session_id');
-  const gateway = urlParams.get('gateway');
-  const product = urlParams.get('product');
-  const variant = urlParams.get('variant');
-  
-  // Si c'est un retour Mollie ou que nous avons les infos minimales
-  if (gateway === 'mollie' || (product && !sessionId)) {
-    console.log('Mollie payment return detected');
-    document.getElementById('loading')?.classList.add('hidden');
-    document.getElementById('success-content')?.classList.remove('hidden');
-    
-    // Tracking minimal pour Mollie (les détails complets sont traités par le webhook côté serveur)
-    if (window.dataLayer && product) {
-      window.dataLayer.push({
-        event: 'purchase_mollie_landing',
-        product: product,
-        variant: variant
-      });
-    }
-    return;
-  }
 
   if (!sessionId) {
-    if (gateway !== 'mollie') {
-      console.warn('No session_id found in URL');
-    }
     // Au lieu de bloquer, on affiche quand même le contenu après 2 secondes si rien n'est trouvé
     // pour éviter de laisser l'utilisateur sur un message d'erreur s'il a payé.
     setTimeout(() => {

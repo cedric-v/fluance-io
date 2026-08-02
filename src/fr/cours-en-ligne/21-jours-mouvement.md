@@ -320,7 +320,7 @@ ogImage: assets/img/bienvenue-21-jour-bandeau.jpg
             <strong>Offre spéciale :</strong> Ajouter "SOS Dos & Cervicales" pour seulement <span class="line-through text-gray-400">47 CHF</span> <strong>17 CHF</strong> ?
           </label>
         </div>
-        <button onclick="window.FluancePayment.redirectToMollie('21jours', null, 'fr', event, document.getElementById('cross-sell-sos-dos-3').checked)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] flex flex-col items-center text-center">
+        <button onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr', event, document.getElementById('cross-sell-sos-dos-3').checked)" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] flex flex-col items-center text-center">
           <span>Je rejoins ce challenge vers un chemin vers un corps libre de tensions</span>
           <span class="text-sm font-normal opacity-90">19 CHF / équivalent €</span>
         </button>

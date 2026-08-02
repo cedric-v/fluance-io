@@ -92,7 +92,6 @@ test('confirmBookingPayment is idempotent when already confirmed', async () => {
         courseId: 'course_1',
         status: 'confirmed',
         stripePaymentIntentId: paymentId,
-        molliePaymentId: null,
       },
     },
     courses: {

@@ -66,12 +66,53 @@ Ajoutez les variables suivantes une par une :
 - **Nom** : `MAILJET_API_SECRET`  
   **Valeur** : Votre secret API Mailjet
 
-#### Variables Stripe (si vous utilisez Stripe)
+#### Variables Stripe (obligatoires — passerelle de paiement unique)
 - **Nom** : `STRIPE_SECRET_KEY`  
   **Valeur** : Votre clé secrète Stripe (commence par `sk_`)
 
 - **Nom** : `STRIPE_WEBHOOK_SECRET`  
   **Valeur** : Le secret de signature de votre webhook Stripe (commence par `whsec_`)
+
+#### Price IDs Stripe (produits cedricv.com et pass)
+Ces secrets contiennent les Price IDs des produits qui ne sont pas hardcodés :
+
+- **Nom** : `STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE`  
+  **Valeur** : Price ID du RDV Clarté unique (100 CHF)
+
+- **Nom** : `STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT`  
+  **Valeur** : Price ID du RDV Clarté abonnement (69 CHF/mois)
+
+- **Nom** : `STRIPE_PRICE_ID_FOCUS_SOS_UNIQUE`  
+  **Valeur** : Price ID Focus SOS unique (300 CHF)
+
+- **Nom** : `STRIPE_PRICE_ID_FOCUS_SOS_3X`  
+  **Valeur** : Price ID Focus SOS 3x (100 CHF/mois, 3 échéances)
+
+- **Nom** : `STRIPE_PRICE_ID_SITE_VITRINE_5X`  
+  **Valeur** : Price ID Site Vitrine 5x (200 CHF/mois, 5 échéances)
+
+- **Nom** : `STRIPE_PRICE_ID_SEMESTER_PASS`  
+  **Valeur** : Price ID Pass Semestriel (340 CHF / 6 mois, abonnement)
+
+- **Nom** : `STRIPE_PRICE_ID_FLOW_PASS`  
+  **Valeur** : Price ID Flow Pass (210 CHF, paiement unique)
+
+#### Variables Bexio (comptabilité automatique)
+- **Nom** : `BEXIO_API_TOKEN`  
+  **Valeur** : Votre token API Bexio (déclaré dans `webhookStripe` — actif)
+
+- **Nom** : `BEXIO_ACCOUNT_FEES`  
+  **Valeur** : Compte frais Stripe (défaut : **6941**) — déclaré dans `webhookStripe` — actif
+
+> ⚠️ **Comptes par défaut (hardcodés, non surchargeables sans déclaration)** :
+> - Caisse Stripe : **1023** (secret `BEXIO_ACCOUNT_STRIPE`, non déclaré → défaut utilisé)
+> - Ventes Suisse : **3400** (`BEXIO_ACCOUNT_SALES_CH`)
+> - Ventes International : **3410** (`BEXIO_ACCOUNT_SALES_INTL`)
+> - TVA : **14** (CH 8.1%) / **4** (Intl 0%) (`BEXIO_TAX_ID_CH` / `BEXIO_TAX_ID_INTL`)
+>
+> Pour personnaliser un compte, créez le secret puis ajoutez-le à la liste `secrets` de
+> `webhookStripe` dans `functions/index.js` (⚠️ un secret déclaré mais inexistant fait
+> échouer le déploiement).
 
 #### Variables PayPal (si vous utilisez PayPal)
 - **Nom** : `PAYPAL_CLIENT_ID`  

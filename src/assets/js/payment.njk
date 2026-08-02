@@ -59,14 +59,14 @@ function loadFirebase() {
 }
 
 /**
- * Crée une session de paiement Mollie et redirige l'utilisateur
- * @param {string} product - '21jours' ou 'complet'
- * @param {string|null} variant - 'mensuel', 'trimestriel', 'unique', 'abonnement'
+ * Crée une session Stripe Checkout et redirige l'utilisateur
+ * @param {string} product - '21jours', 'complet', 'rdv-clarte', 'focus-sos', 'site-vitrine'
+ * @param {string|null} variant - 'mensuel', 'trimestriel', 'unique', 'abonnement', '3x', '5x'
  * @param {string} locale - 'fr' ou 'en' (défaut: 'fr')
  * @param {Event} event - Événement de clic (optionnel, pour désactiver le bouton)
  * @param {boolean} includeSosDos - Si true, ajoute le produit cross-sell (Order Bump)
  */
-async function redirectToMollieCheckout(product, variant = null, locale = 'fr', event = null, includeSosDos = false) {
+async function redirectToStripeCheckout(product, variant = null, locale = 'fr', event = null, includeSosDos = false) {
   // Récupérer le bouton depuis l'événement ou depuis window.event (fallback)
   const button = event?.target || window.event?.target || null;
   const originalText = button ? button.textContent : null;
@@ -84,13 +84,13 @@ async function redirectToMollieCheckout(product, variant = null, locale = 'fr', 
     // Obtenir l'instance Firebase Functions
     const app = firebase.app();
     const functions = app.functions('europe-west1');
-    const createMollieCheckoutSession = functions.httpsCallable('createMollieCheckoutSession');
+    const createStripeCheckoutSession = functions.httpsCallable('createStripeCheckoutSession');
 
     // Préparer les données
     // Récupérer les infos utilisateur depuis le localStorage s'ils existent (Lead magnet)
     /* 
        Note: Nous pourrions demander l'email avant le paiement pour mieux tracker,
-       mais pour l'instant nous laissons Mollie gérer ou nous passons null.
+       mais pour l'instant nous laissons Stripe gérer ou nous passons null.
        Si vous avez un système de Lead Capture avant, passez les infos ici.
     */
     const storedEmail = localStorage.getItem('user_email');
@@ -142,16 +142,16 @@ async function redirectToMollieCheckout(product, variant = null, locale = 'fr', 
     }
 
     // Appeler la fonction Firebase
-    const result = await createMollieCheckoutSession(data);
+    const result = await createStripeCheckoutSession(data);
 
     if (result.data && result.data.success && result.data.url) {
-      // Rediriger vers la page de paiement Mollie
+      // Rediriger vers la page de paiement Stripe Checkout
       window.location.href = result.data.url;
     } else {
       throw new Error('Erreur lors de la création de la session de paiement');
     }
   } catch (error) {
-    console.error('Erreur lors de la création de la session Mollie:', error);
+    console.error('Erreur lors de la création de la session Stripe:', error);
     const errMsg = error.message || 'Une erreur est survenue. Veuillez réessayer.';
     alert(errMsg);
     
@@ -313,10 +313,10 @@ function showEmailCaptureModal(locale = 'fr') {
 
 // Exposer les fonctions globalement pour utilisation dans les pages
 window.FluancePayment = {
-  redirectToStripe: redirectToMollieCheckout, // Alias pour compatibilité existante
-  redirectToMollie: redirectToMollieCheckout,
+  redirectToStripe: redirectToStripeCheckout,
+  redirectToMollie: redirectToStripeCheckout, // Alias de compatibilité (Stripe est la passerelle)
 };
 
 // Fonctions de compatibilité (pour utilisation directe dans onclick)
-window.redirectToStripeCheckout = redirectToMollieCheckout;
+window.redirectToStripeCheckout = redirectToStripeCheckout;
 
