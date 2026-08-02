@@ -38,6 +38,7 @@ const blogLeadHub = require('./blogLeadHub');
 
 // Import services nouveaux
 const {bexioService} = require('./services/bexioService');
+const {ensureStripePrice} = require('./services/stripePrices');
 
 // ⚠️ TRANSITION MOLLIE : services utilisés uniquement pour traiter les
 // abonnements Mollie encore actifs (plus aucun nouveau paiement Mollie).
@@ -65,47 +66,6 @@ const PRODUCT_PRICES = {
 // ============================================================
 // STRIPE — Identifiants et configuration (passerelle unique)
 // ============================================================
-
-// Price IDs hardcodés (produits fluance.io existants)
-const STRIPE_PRICE_IDS = {
-  '21jours': 'price_1SdZ2X2Esx6PN6y1wnkrLfSu',
-  'complet': {
-    'mensuel': 'price_1SdZ4p2Esx6PN6y1bzRGQSC5',
-    'trimestriel': 'price_1SdZ6E2Esx6PN6y11qme0Rde',
-  },
-  'sos-dos-cervicales': STRIPE_PRICE_ID_SOS_DOS_CERVICALES,
-};
-
-// Price IDs configurables via secrets Firebase (produits cedricv.com + pass)
-// Secrets à configurer :
-//   STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE / STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT
-//   STRIPE_PRICE_ID_FOCUS_SOS_UNIQUE / STRIPE_PRICE_ID_FOCUS_SOS_3X
-//   STRIPE_PRICE_ID_SITE_VITRINE_5X
-//   STRIPE_PRICE_ID_SEMESTER_PASS / STRIPE_PRICE_ID_FLOW_PASS
-function getStripePriceId(product, variant = null) {
-  if (product === 'rdv-clarte') {
-    const v = variant || 'unique';
-    return process.env[`STRIPE_PRICE_ID_RDV_CLARTE_${v.toUpperCase()}`] || null;
-  }
-  if (product === 'focus-sos') {
-    const v = variant || 'unique';
-    return process.env[`STRIPE_PRICE_ID_FOCUS_SOS_${v.toUpperCase()}`] || null;
-  }
-  if (product === 'site-vitrine') {
-    return process.env.STRIPE_PRICE_ID_SITE_VITRINE_5X || null;
-  }
-  if (product === 'semester_pass') {
-    return process.env.STRIPE_PRICE_ID_SEMESTER_PASS || null;
-  }
-  if (product === 'flow_pass') {
-    return process.env.STRIPE_PRICE_ID_FLOW_PASS || null;
-  }
-  if (product === 'complet') {
-    if (!variant) return null;
-    return STRIPE_PRICE_IDS.complet[variant] || null;
-  }
-  return STRIPE_PRICE_IDS[product] || null;
-}
 
 // Nombre maximal d'échéances pour les paiements échelonnés Stripe (abonnements à durée limitée)
 function getStripeMaxPayments(product, variant) {
@@ -3709,13 +3669,11 @@ exports.createStripeCheckoutSession = onCall(
       region: 'europe-west1',
       secrets: [
         'STRIPE_SECRET_KEY',
+        // Secrets optionnels (si configurés, ils sont prioritaires).
+        // Sinon, le prix est créé automatiquement dans Stripe à la première
+        // demande (auto-provisioning, voir services/stripePrices.js).
         'STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE',
         'STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT',
-        'STRIPE_PRICE_ID_FOCUS_SOS_UNIQUE',
-        'STRIPE_PRICE_ID_FOCUS_SOS_3X',
-        'STRIPE_PRICE_ID_SITE_VITRINE_5X',
-        'STRIPE_PRICE_ID_FLOW_PASS',
-        'STRIPE_PRICE_ID_SEMESTER_PASS',
       ],
     },
     async (request) => {
@@ -3741,18 +3699,18 @@ exports.createStripeCheckoutSession = onCall(
         }
       }
 
-      // Déterminer le Price ID du produit principal
-      const priceId = getStripePriceId(product, variant);
-      if (!priceId) {
-        const secretName = product === '21jours' ?
-          'STRIPE_PRICE_IDS hardcodé manquant' :
-          `STRIPE_PRICE_ID_${product.toUpperCase()}${variant ? '_' + variant.toUpperCase() : ''}`;
-        throw new HttpsError(
-            'failed-precondition',
-            `Stripe Price ID for "${product}${variant ? ' ' + variant : ''}" not configured. ` +
-        `Set the ${secretName} secret in Firebase.`,
-        );
+      // Instancier Stripe (nécessaire pour l'auto-provisioning des prix)
+      let stripe;
+      try {
+        stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+      } catch {
+        throw new HttpsError('failed-precondition',
+            'Stripe package not installed. Run: npm install stripe in functions/ directory');
       }
+
+      // Déterminer le Price ID du produit principal
+      // (auto-provisioning : créé automatiquement dans Stripe si nécessaire)
+      const priceId = await ensureStripePrice(stripe, db, product, variant);
 
       // Déterminer le mode (payment pour one-time, subscription pour abonnements)
       const isSubscription = product === 'complet' ||
@@ -3801,15 +3759,6 @@ exports.createStripeCheckoutSession = onCall(
       }
 
       try {
-      // Vérifier si le package Stripe est installé
-        let stripe;
-        try {
-          stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-        } catch {
-          throw new HttpsError('failed-precondition',
-              'Stripe package not installed. Run: npm install stripe in functions/ directory');
-        }
-
         // Métadonnées communes
         const metadata = {
           system: 'firebase',
@@ -12614,6 +12563,63 @@ exports.processMolliePayment = onMessagePublished(
               console.error('❌ Error recording Mollie subscription issue:', alertError);
             }
             // On continue car le paiement a réussi, mais l'abo a échoué (à monitorer)
+          }
+        }
+
+        // 3c. Échéances limitées — annulation explicite de sécurité (site-vitrine 5x, focus-sos 3x)
+        // ⚠️ Mollie dispose normalement d'un arrêt automatique via le paramètre `times`
+        // (le subscription a été créé avec times: 4 pour site-vitrine / times: 2 pour focus-sos).
+        // Ce bloc est un filet de sécurité : quand le dernier renouvellement attendu est
+        // encaissé, on annule explicitement l'abonnement côté Mollie pour être certain
+        // qu'aucun prélèvement supplémentaire n'aura lieu.
+        if (metadata.type === 'subscription_renewal' &&
+            (metadata.product === 'site-vitrine' || metadata.product === 'focus-sos') &&
+            payment.subscriptionId) {
+          try {
+            // Nombre total de paiements (1er paiement + renouvellements)
+            const maxPayments = metadata.product === 'site-vitrine' ? 5 : 3;
+            // Renouvellements attendus via l'abonnement (le 1er paiement a déjà eu lieu)
+            const maxRenewals = maxPayments - 1;
+
+            const countRef = db.collection('subscriptionPayments').doc(`mollie_${payment.subscriptionId}`);
+            const countDoc = await countRef.get();
+            const currentCount = countDoc.exists ? (countDoc.data().paymentCount || 0) : 0;
+            const newCount = currentCount + 1;
+
+            await countRef.set({
+              gateway: 'mollie',
+              subscriptionId: payment.subscriptionId,
+              product: metadata.product,
+              variant: metadata.variant || null,
+              paymentCount: newCount,
+              maxPayments,
+              lastPayment: paymentId,
+              lastPaymentAt: new Date(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, {merge: true});
+
+            console.log(
+                `🔢 Mollie ${metadata.product} (${metadata.variant || '?'}): renouvellement ` +
+            `${newCount}/${maxRenewals} pour la subscription ${payment.subscriptionId}`,
+            );
+
+            if (newCount >= maxRenewals) {
+              try {
+                await mollieService.cancelSubscription(payment.customerId, payment.subscriptionId);
+                console.log(
+                    `✅ Abonnement Mollie ${payment.subscriptionId} annulé après ` +
+                `${newCount} renouvellement(s) (${maxPayments} paiements au total)`,
+                );
+              } catch (cancelError) {
+                // 404 = déjà annulé automatiquement par Mollie (times atteint) → OK
+                console.warn(
+                    `⚠️ Annulation explicite Mollie ${payment.subscriptionId} impossible ` +
+                `(déjà arrêté par Mollie ?): ${cancelError.message}`,
+                );
+              }
+            }
+          } catch (countError) {
+            console.error('❌ Error counting Mollie renewal:', countError);
           }
         }
 

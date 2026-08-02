@@ -89,6 +89,13 @@ Les webhooks Stripe et PayPal gèrent les annulations et échecs de paiement :
 > Mollie. Ils sont gérés depuis le dashboard Mollie (https://my.mollie.com/dashboard/) et
 > leur comptabilité passe par les webhooks transitoires `webhookMollie`/`processMolliePayment`
 > (section « TRANSITION MOLLIE » de `functions/index.js`).
+>
+> **Arrêt des abonnements Mollie à durée limitée** : le paramètre `times` de Mollie
+> (4 pour site-vitrine 5x, 2 pour focus-sos 3x) limite normalement les prélèvements et
+> Mollie arrête l'abonnement tout seul. Un **filet de sécurité** a été ajouté dans
+> `processMolliePayment` : dès que le dernier renouvellement attendu est encaissé,
+> l'abonnement est annulé explicitement via l'API Mollie (compteur Firestore
+> `subscriptionPayments`).
 
 ### Fonctionnement
 

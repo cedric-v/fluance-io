@@ -11,6 +11,7 @@
  */
 
 const {googleService} = require('./googleService');
+const {ensureStripePrice} = require('./stripePrices');
 const crypto = require('crypto');
 
 /**
@@ -358,12 +359,10 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
             });
           }
 
-          // Récupérer le Price ID du Pass Semestriel (à configurer dans Stripe)
-          const semesterPassPriceId = process.env.STRIPE_PRICE_ID_SEMESTER_PASS;
-
-          if (!semesterPassPriceId) {
-            throw new Error('STRIPE_PRICE_ID_SEMESTER_PASS not configured. Please create a recurring price in Stripe for the Semester Pass.');
-          }
+          // Récupérer le Price ID du Pass Semestriel
+          // (auto-provisioning : créé automatiquement dans Stripe si nécessaire,
+          //  ou réutilise le secret STRIPE_PRICE_ID_SEMESTER_PASS s'il est configuré)
+          const semesterPassPriceId = await ensureStripePrice(stripe, db, 'semester_pass', null);
 
           // Déterminer les méthodes de paiement acceptées
           // Pour les abonnements : Carte uniquement (TWINT ne supporte pas les abonnements récurrents)

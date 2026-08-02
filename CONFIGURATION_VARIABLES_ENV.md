@@ -73,29 +73,25 @@ Ajoutez les variables suivantes une par une :
 - **Nom** : `STRIPE_WEBHOOK_SECRET`  
   **Valeur** : Le secret de signature de votre webhook Stripe (commence par `whsec_`)
 
-#### Price IDs Stripe (produits cedricv.com et pass)
-Ces secrets contiennent les Price IDs des produits qui ne sont pas hardcodés :
+#### Price IDs Stripe (auto-provisioning — aucune création manuelle requise)
 
-- **Nom** : `STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE`  
-  **Valeur** : Price ID du RDV Clarté unique (100 CHF)
+Les produits et prix sont **créés automatiquement dans Stripe à la première demande**
+(service `functions/services/stripePrices.js`) : produit avec ID personnalisé
+`fluance_<clé>` + prix avec clé d'idempotence, puis mise en cache dans Firestore
+(collection `stripePrices`). Aucun secret de Price ID à configurer.
 
-- **Nom** : `STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT`  
-  **Valeur** : Price ID du RDV Clarté abonnement (69 CHF/mois)
+Secrets **optionnels** (si configurés, ils restent prioritaires pour réutiliser un
+prix existant) :
 
-- **Nom** : `STRIPE_PRICE_ID_FOCUS_SOS_UNIQUE`  
-  **Valeur** : Price ID Focus SOS unique (300 CHF)
-
-- **Nom** : `STRIPE_PRICE_ID_FOCUS_SOS_3X`  
-  **Valeur** : Price ID Focus SOS 3x (100 CHF/mois, 3 échéances)
-
-- **Nom** : `STRIPE_PRICE_ID_SITE_VITRINE_5X`  
-  **Valeur** : Price ID Site Vitrine 5x (200 CHF/mois, 5 échéances)
+- **Nom** : `STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE` / `STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT`  
+  (déjà configurés — conservés pour ne pas dupliquer les prix RDV Clarté existants)
 
 - **Nom** : `STRIPE_PRICE_ID_SEMESTER_PASS`  
-  **Valeur** : Price ID Pass Semestriel (340 CHF / 6 mois, abonnement)
+  (déjà configuré — utilisé par la réservation présentiel)
 
-- **Nom** : `STRIPE_PRICE_ID_FLOW_PASS`  
-  **Valeur** : Price ID Flow Pass (210 CHF, paiement unique)
+> ⚠️ Ne déclarez un nouveau secret de Price ID que s'il existe réellement dans
+> Secret Manager : un secret déclaré mais inexistant fait **échouer le déploiement**.
+> Par défaut, laissez l'auto-provisioning gérer les prix.
 
 #### Variables Bexio (comptabilité automatique)
 - **Nom** : `BEXIO_API_TOKEN`  
