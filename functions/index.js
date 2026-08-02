@@ -54,6 +54,16 @@ const pubSubClient = new PubSub();
 // lier le token au domaine de rendu du widget, en plus de la clé secrète).
 const ALLOWED_TURNSTILE_HOSTNAMES = ['fluance.io', 'www.fluance.io', 'localhost', '127.0.0.1'];
 
+// Origines web autorisées pour les endpoints de réservation (CORS).
+// Limiter les origines empêche les sites tiers de lire les réponses API
+// depuis le navigateur de la victime (exfiltration cross-site).
+const ALLOWED_WEB_ORIGINS = [
+  'https://fluance.io',
+  'https://www.fluance.io',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+];
+
 // ============================================================
 // Helpers sécurité communs (auth, rate limiting, IP)
 // ============================================================
@@ -3912,7 +3922,7 @@ exports.createStripeCheckoutSession = onCall(
 exports.validatePartnerCode = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       const code = req.query.code;
@@ -3979,13 +3989,19 @@ exports.checkPaymentStatus = onRequest(
     {
       region: 'europe-west1',
       secrets: ['STRIPE_SECRET_KEY'],
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       const paymentIntentId = req.query.payment_intent;
 
       if (!paymentIntentId) {
         return res.status(400).json({error: 'payment_intent is required'});
+      }
+
+      // 🔒 Rate limiting par IP (anti-énumération des Payment Intents)
+      const ipLimit = await checkRateLimit(`ip:${getClientIp(req)}`, 'checkPaymentStatus', 30, 3600);
+      if (ipLimit.limited) {
+        return res.status(429).json({error: 'Rate limited', message: 'Trop de requêtes. Réessayez plus tard.'});
       }
 
       try {
@@ -4141,6 +4157,12 @@ exports.getStripeCheckoutSession = onCall(
         throw new HttpsError('invalid-argument', 'sessionId is required');
       }
 
+      // 🔒 Rate limiting par IP (anti-énumération des sessions de paiement)
+      const ipLimit = await checkRateLimit(`ip:${getClientIp(request.rawRequest)}`, 'getStripeCheckoutSession', 30, 3600);
+      if (ipLimit.limited) {
+        throw new HttpsError('resource-exhausted', 'Trop de requêtes. Réessayez plus tard.');
+      }
+
       try {
         const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
         const session = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -4199,6 +4221,12 @@ exports.getBookingDetails = onCall(
 
       let finalBookingId = bookingId;
       let paymentIntent = null;
+
+      // 🔒 Rate limiting par IP (anti-énumération des réservations/paiements)
+      const ipLimit = await checkRateLimit(`ip:${getClientIp(request.rawRequest)}`, 'getBookingDetails', 30, 3600);
+      if (ipLimit.limited) {
+        throw new HttpsError('resource-exhausted', 'Trop de requêtes. Réessayez plus tard.');
+      }
 
       // Si on a un paymentIntentId, récupérer le bookingId depuis Stripe
       if (paymentIntentId) {
@@ -11339,7 +11367,7 @@ exports.syncPlanningManual = onRequest(
 exports.getCourseStatus = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       if (!bookingService) {
@@ -11368,7 +11396,7 @@ exports.getCourseStatus = onRequest(
 exports.getAvailableCourses = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       try {
@@ -11425,7 +11453,7 @@ exports.getAvailableCourses = onRequest(
 exports.apiStatus = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       return res.json({
@@ -11449,7 +11477,7 @@ exports.apiStatus = onRequest(
 exports.checkUserPass = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       if (!passService) {
@@ -11499,7 +11527,7 @@ exports.bookCourse = onRequest(
         'MAILJET_API_SECRET',
         'ADMIN_EMAIL',
       ],
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       try {
@@ -12336,7 +12364,7 @@ exports.cancelCourseBooking = onRequest(
     {
       region: 'europe-west1',
       secrets: ['STRIPE_SECRET_KEY'],
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       if (!bookingService) {
@@ -12398,7 +12426,7 @@ exports.cancelCourseBooking = onRequest(
 exports.getUserBookings = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       const email = req.query.email || req.body.email;
@@ -12448,7 +12476,7 @@ exports.getUserBookings = onRequest(
 exports.getWaitlistPosition = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       if (!bookingService) {
@@ -12484,7 +12512,7 @@ exports.getWaitlistPosition = onRequest(
 exports.removeFromWaitlist = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       if (!bookingService) {
@@ -12527,7 +12555,7 @@ exports.removeFromWaitlist = onRequest(
 exports.transferCourseBooking = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       if (!bookingService) {
@@ -12561,7 +12589,7 @@ exports.transferCourseBooking = onRequest(
 exports.cancelBookingByToken = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       if (!bookingService) {
@@ -12630,7 +12658,7 @@ exports.cancelBookingByToken = onRequest(
 exports.getTransferBooking = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       const token = req.query.token || req.body.token;
@@ -12682,7 +12710,7 @@ exports.getTransferBooking = onRequest(
 exports.transferCourseBookingByToken = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       if (req.method !== 'POST') {
@@ -12732,7 +12760,7 @@ exports.transferCourseBookingByToken = onRequest(
 exports.getAvailableCoursesForTransfer = onRequest(
     {
       region: 'europe-west1',
-      cors: true,
+      cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
       try {

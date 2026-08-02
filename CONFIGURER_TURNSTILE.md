@@ -125,7 +125,22 @@ Cette erreur signifie que le domaine utilisé n'est pas autorisé pour la clé T
 
 ### Le formulaire fonctionne sans Turnstile
 
-Si `TURNSTILE_SECRET_KEY` n'est pas configuré, la validation Turnstile est ignorée (avec un avertissement dans les logs). C'est utile pour le développement, mais **ne pas utiliser en production**.
+**Ce comportement est supprimé** : si `TURNSTILE_SECRET_KEY` n'est pas configuré, la fonction refuse la demande (fail-closed, HTTP 500) au lieu d'ignorer la vérification. La vérification anti-bot est **obligatoire** en production. (Les anciens paramètres client `isLocalhost` / `turnstileSkipped` permettant de contourner la protection ont été supprimés : le statut localhost est désormais déterminé côté serveur par l'IP.)
+
+## 🔒 Bonnes pratiques Turnstile (2026) — implémentées
+
+- **Vérification serveur obligatoire** : `siteverify` appelé avec la Secret Key à chaque soumission (jamais de confiance au client).
+- **`data-action` par formulaire** : chaque widget déclare une action (`newsletter-subscribe`, `newsletter-5jours`, `stages-waitlist`), vérifiée côté serveur (`turnstileResult.action`). Un token généré pour un formulaire ne peut pas être réutilisé sur un autre.
+- **Vérification du `hostname`** : le serveur vérifie que le challenge a été résolu sur `fluance.io` (ou un hostname autorisé) — anti-rejeu cross-site.
+- **Fail-closed** : secret manquant, action ou hostname incohérent → la demande est refusée (403/500), jamais acceptée silencieusement.
+- **Cycle de vie du widget** : `data-retry="auto"` et `data-refresh-expired="auto"` ; `turnstile.reset()` après chaque soumission.
+- **Clés séparées test / production** : clé de test Cloudflare (`0x4AAAAAAABkMYinukE8K9X0`) en local, clé de production (`0x4AAAAAACF5HWhHHcGA5yJk`) sur fluance.io.
+- **Rate limiting** : en plus de Turnstile, les fonctions d'inscription limitent le volume par IP et par email (anti-spam de second niveau).
+
+> ⚠️ Si vous ajoutez un nouveau formulaire avec un widget Turnstile :
+> 1. Ajoutez `data-action="mon-action"` sur le widget,
+> 2. Vérifiez `turnstileResult.action === 'mon-action'` dans la fonction (comme dans `subscribeToNewsletter`),
+> 3. Déployez ensemble (page + fonction) : un widget sans `data-action` sera refusé par le serveur.
 
 ## 📚 Ressources
 
