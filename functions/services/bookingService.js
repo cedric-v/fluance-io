@@ -1166,6 +1166,74 @@ async function markCancellationTokenAsUsed(db, token) {
   });
 }
 
+/**
+ * Crée un token de transfert à usage unique pour choisir un nouveau cours
+ * après désinscription. Remplace le passage de bookingId + email dans l'URL
+ * (empêche l'IDOR : le token est non devinable et le serveur dérive
+ * bookingId/email depuis le token).
+ * @param {Object} db - Instance Firestore
+ * @param {string} bookingId - ID de la réservation annulée
+ * @param {string} email - Email du titulaire de la réservation
+ * @param {number} expirationHours - Durée de validité (défaut: 24h)
+ * @returns {Promise<string>} token
+ */
+async function createTransferToken(db, bookingId, email, expirationHours = 24) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + expirationHours * 60 * 60 * 1000);
+  await db.collection('transferTokens').doc(token).set({
+    bookingId: bookingId,
+    email: email.toLowerCase().trim(),
+    expiresAt: expiresAt,
+    used: false,
+    createdAt: new Date(),
+  });
+  return token;
+}
+
+/**
+ * Valide un token de transfert : existe, non utilisé, non expiré.
+ * @param {Object} db - Instance Firestore
+ * @param {string} token
+ * @returns {Promise<{success: boolean, error?: string, bookingId?: string, email?: string}>}
+ */
+async function validateTransferToken(db, token) {
+  if (!token) {
+    return {success: false, error: 'TOKEN_REQUIRED'};
+  }
+  const tokenDoc = await db.collection('transferTokens').doc(token).get();
+  if (!tokenDoc.exists) {
+    return {success: false, error: 'TOKEN_NOT_FOUND'};
+  }
+  const data = tokenDoc.data();
+  if (data.used) {
+    return {success: false, error: 'TOKEN_ALREADY_USED'};
+  }
+  const expiresAt = data.expiresAt && typeof data.expiresAt.toDate === 'function' ?
+    data.expiresAt.toDate() :
+    new Date(data.expiresAt);
+  if (expiresAt < new Date()) {
+    return {success: false, error: 'TOKEN_EXPIRED'};
+  }
+  return {
+    success: true,
+    bookingId: data.bookingId,
+    email: data.email,
+  };
+}
+
+/**
+ * Marque un token de transfert comme utilisé (usage unique).
+ * @param {Object} db - Instance Firestore
+ * @param {string} token
+ * @returns {Promise<void>}
+ */
+async function markTransferTokenAsUsed(db, token) {
+  await db.collection('transferTokens').doc(token).update({
+    used: true,
+    usedAt: new Date(),
+  });
+}
+
 module.exports = {
   PRICING,
   PAYMENT_METHODS,
@@ -1182,4 +1250,7 @@ module.exports = {
   queueBookingConfirmationEmail,
   validateCancellationToken,
   markCancellationTokenAsUsed,
+  createTransferToken,
+  validateTransferToken,
+  markTransferTokenAsUsed,
 };

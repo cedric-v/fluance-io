@@ -50,6 +50,10 @@ const {onMessagePublished} = require('firebase-functions/v2/pubsub');
 // PubSub client for publishing messages from HTTP function
 const pubSubClient = new PubSub();
 
+// Hostnames autorisés pour la vérification Turnstile (bonnes pratiques 2026 :
+// lier le token au domaine de rendu du widget, en plus de la clé secrète).
+const ALLOWED_TURNSTILE_HOSTNAMES = ['fluance.io', 'www.fluance.io', 'localhost', '127.0.0.1'];
+
 // ============================================================
 // Helpers sécurité communs (auth, rate limiting, IP)
 // ============================================================
@@ -5187,6 +5191,18 @@ exports.subscribeToNewsletter = onCall(
             console.error('Turnstile verification failed:', turnstileResult);
             throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
           }
+
+          // 🔒 Bonnes pratiques 2026 : vérifier l'action (lier le token au
+          // formulaire) et le hostname (domaine de rendu du widget).
+          if (turnstileResult.action !== 'newsletter-subscribe') {
+            console.error('Turnstile action mismatch:', turnstileResult.action);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+          const verifiedHostname = String(turnstileResult.hostname || '').toLowerCase();
+          if (!ALLOWED_TURNSTILE_HOSTNAMES.includes(verifiedHostname)) {
+            console.error('Turnstile hostname mismatch:', verifiedHostname);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
         } catch (error) {
           if (error instanceof HttpsError) {
             throw error;
@@ -5519,6 +5535,17 @@ exports.subscribeToStagesWaitingList = onCall(
 
           if (!turnstileResult.success) {
             console.error('Turnstile verification failed:', turnstileResult);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+
+          // 🔒 Bonnes pratiques 2026 : vérifier l'action et le hostname.
+          if (turnstileResult.action !== 'stages-waitlist') {
+            console.error('Turnstile action mismatch:', turnstileResult.action);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+          const verifiedHostname = String(turnstileResult.hostname || '').toLowerCase();
+          if (!ALLOWED_TURNSTILE_HOSTNAMES.includes(verifiedHostname)) {
+            console.error('Turnstile hostname mismatch:', verifiedHostname);
             throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
           }
         } catch (error) {
@@ -6255,6 +6282,17 @@ exports.subscribeTo5Days = onCall(
 
           if (!turnstileResult.success) {
             console.error('Turnstile verification failed:', turnstileResult);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+
+          // 🔒 Bonnes pratiques 2026 : vérifier l'action et le hostname.
+          if (turnstileResult.action !== 'newsletter-5jours') {
+            console.error('Turnstile action mismatch:', turnstileResult.action);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+          const verifiedHostname = String(turnstileResult.hostname || '').toLowerCase();
+          if (!ALLOWED_TURNSTILE_HOSTNAMES.includes(verifiedHostname)) {
+            console.error('Turnstile hostname mismatch:', verifiedHostname);
             throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
           }
         } catch (error) {
@@ -12564,11 +12602,126 @@ exports.cancelBookingByToken = onRequest(
         // Marquer le token comme utilisé
         await bookingService.markCancellationTokenAsUsed(db, token);
 
-        // Rediriger vers la page de choix de nouveau cours avec le bookingId et l'email
-        return res.redirect(`https://fluance.io/presentiel/choisir-cours?bookingId=${tokenValidation.bookingId}&email=${encodeURIComponent(tokenValidation.email)}&cancelled=true`);
+        // 🔒 Créer un token de transfert à usage unique (24h) : l'URL ne
+        // contient plus bookingId + email (IDOR), le serveur dérive
+        // la réservation et l'email depuis le token.
+        const transferToken = await bookingService.createTransferToken(
+            db,
+            tokenValidation.bookingId,
+            tokenValidation.email,
+            24,
+        );
+
+        // Rediriger vers la page de choix de nouveau cours avec le token
+        return res.redirect(`https://fluance.io/presentiel/choisir-cours?token=${transferToken}&cancelled=true`);
       } catch (error) {
         console.error('Error cancelling booking by token:', error);
         return res.redirect(`https://fluance.io/presentiel/desinscription?error=${encodeURIComponent('Une erreur est survenue lors de la désinscription.')}`);
+      }
+    },
+);
+
+/**
+ * Récupère la réservation annulée associée à un token de transfert
+ * (usage unique, émis après désinscription). Remplace la recherche par
+ * email + bookingId (anti-IDOR) : l'email et le bookingId sont dérivés
+ * du token côté serveur.
+ */
+exports.getTransferBooking = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      const token = req.query.token || req.body.token;
+      if (!token) {
+        return res.status(400).json({success: false, error: 'TOKEN_REQUIRED'});
+      }
+
+      // 🔒 Rate limiting par IP
+      const ipLimit = await checkRateLimit(`ip:${getClientIp(req)}`, 'getTransferBooking', 20, 3600);
+      if (ipLimit.limited) {
+        return res.status(429).json({success: false, error: 'RATE_LIMITED'});
+      }
+
+      try {
+        const validation = await bookingService.validateTransferToken(db, token);
+        if (!validation.success) {
+          return res.status(403).json({success: false, error: validation.error});
+        }
+
+        const bookingDoc = await db.collection('bookings').doc(validation.bookingId).get();
+        if (!bookingDoc.exists) {
+          return res.status(404).json({success: false, error: 'BOOKING_NOT_FOUND'});
+        }
+
+        const booking = bookingDoc.data();
+        return res.json({
+          success: true,
+          booking: {
+            bookingId: validation.bookingId,
+            email: validation.email,
+            courseId: booking.courseId || null,
+            courseName: booking.courseName || 'Cours Fluance',
+            courseDate: booking.courseDate || '',
+            courseTime: booking.courseTime || '',
+            location: booking.courseLocation || '',
+          },
+        });
+      } catch (error) {
+        console.error('Error getting transfer booking:', error);
+        return res.status(500).json({success: false, error: error.message});
+      }
+    },
+);
+
+/**
+ * Transfère une réservation vers un autre cours à partir d'un token de
+ * transfert à usage unique (anti-IDOR : bookingId et email dérivés du token).
+ */
+exports.transferCourseBookingByToken = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      if (req.method !== 'POST') {
+        return res.status(405).json({error: 'Method not allowed'});
+      }
+
+      const {token, newCourseId} = req.body;
+      if (!token || !newCourseId) {
+        return res.status(400).json({success: false, error: 'token and newCourseId are required'});
+      }
+
+      // 🔒 Rate limiting par IP
+      const ipLimit = await checkRateLimit(`ip:${getClientIp(req)}`, 'transferBookingToken', 20, 3600);
+      if (ipLimit.limited) {
+        return res.status(429).json({success: false, error: 'RATE_LIMITED'});
+      }
+
+      try {
+        const validation = await bookingService.validateTransferToken(db, token);
+        if (!validation.success) {
+          return res.status(403).json({success: false, error: validation.error});
+        }
+
+        const result = await bookingService.transferBooking(
+            db,
+            validation.bookingId,
+            newCourseId,
+            validation.email,
+        );
+
+        if (result.success) {
+          // Usage unique : le token ne peut être réutilisé qu'une seule fois
+          await bookingService.markTransferTokenAsUsed(db, token);
+        }
+
+        return res.json(result);
+      } catch (error) {
+        console.error('Error transferring booking by token:', error);
+        return res.status(500).json({success: false, error: error.message});
       }
     },
 );

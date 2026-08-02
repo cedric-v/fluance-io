@@ -55,11 +55,10 @@ eleventyExcludeFromCollections: true
 <script>
   (function() {
     const urlParams = new URLSearchParams(window.location.search);
-    const bookingId = urlParams.get('bookingId');
-    const email = urlParams.get('email');
+    const transferToken = urlParams.get('token');
     const cancelled = urlParams.get('cancelled');
 
-    if (!bookingId || !email || cancelled !== 'true') {
+    if (!transferToken || cancelled !== 'true') {
       document.getElementById('loading').classList.add('hidden');
       document.getElementById('error').classList.remove('hidden');
       const errorMsg = currentLocale === 'en' 
@@ -254,18 +253,27 @@ eleventyExcludeFromCollections: true
     // Charger les cours disponibles
     async function loadCourses() {
       try {
-        // Récupérer le courseId de l'ancienne réservation
+        // Récupérer le courseId de l'ancienne réservation via le token de transfert
+        // (🔒 anti-IDOR : l'email et le bookingId sont dérivés du token côté serveur)
         let excludeCourseId = null;
         try {
           const bookingResponse = await fetch(
-            `https://europe-west1-fluance-protected-content.cloudfunctions.net/getUserBookings?email=${encodeURIComponent(email)}`
+            `https://europe-west1-fluance-protected-content.cloudfunctions.net/getTransferBooking?token=${encodeURIComponent(transferToken)}`
           );
           const bookingData = await bookingResponse.json();
-          if (bookingData.success && bookingData.bookings) {
-            const oldBooking = bookingData.bookings.find(b => b.bookingId === bookingId || b.id === bookingId);
-            if (oldBooking && oldBooking.courseId) {
-              excludeCourseId = oldBooking.courseId;
-            }
+          if (bookingData.success && bookingData.booking && bookingData.booking.courseId) {
+            excludeCourseId = bookingData.booking.courseId;
+          } else if (bookingData.error) {
+            // Token invalide, expiré ou déjà utilisé
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.remove('hidden');
+            const errMap = {
+              TOKEN_NOT_FOUND: currentLocale === 'en' ? 'This transfer link is invalid or has expired.' : 'Ce lien de transfert est invalide ou a expiré.',
+              TOKEN_ALREADY_USED: currentLocale === 'en' ? 'This transfer link has already been used.' : 'Ce lien de transfert a déjà été utilisé.',
+              TOKEN_EXPIRED: currentLocale === 'en' ? 'This transfer link has expired.' : 'Ce lien de transfert a expiré.'
+            };
+            document.getElementById('error-message').textContent = errMap[bookingData.error] || bookingData.error;
+            return;
           }
         } catch (e) {
           console.error('Error fetching booking:', e);
@@ -322,7 +330,7 @@ eleventyExcludeFromCollections: true
               <span class="text-lg font-semibold text-fluance">${course.price} CHF</span>
             </div>
             <button 
-              onclick="transferToCourse('${bookingId}', '${course.id}')"
+              onclick="transferToCourse('${course.id}')"
               class="w-full btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] px-4 py-2 rounded-full font-semibold ${course.isFull ? 'opacity-50 cursor-not-allowed' : ''}"
               ${course.isFull ? 'disabled' : ''}>
               ${buttonText}
@@ -341,8 +349,8 @@ eleventyExcludeFromCollections: true
       }
     }
 
-    window.transferToCourse = async function(oldBookingId, newCourseId) {
-      if (!oldBookingId || !newCourseId) {
+    window.transferToCourse = async function(newCourseId) {
+      if (!newCourseId) {
         const msg = currentLocale === 'en' 
           ? 'Error: missing information.'
           : 'Erreur : informations manquantes.';
@@ -350,24 +358,15 @@ eleventyExcludeFromCollections: true
         return;
       }
 
-      const email = urlParams.get('email');
-      if (!email) {
-        const msg = currentLocale === 'en'
-          ? 'Error: email missing. Please try again from the unsubscribe link.'
-          : 'Erreur : email manquant. Veuillez réessayer depuis le lien de désinscription.';
-        alert(msg);
-        return;
-      }
-
+      try {
         const response = await fetch(
-          'https://europe-west1-fluance-protected-content.cloudfunctions.net/transferCourseBooking',
+          'https://europe-west1-fluance-protected-content.cloudfunctions.net/transferCourseBookingByToken',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              bookingId: oldBookingId,
-              newCourseId: newCourseId,
-              email: email
+              token: transferToken,
+              newCourseId: newCourseId
             })
           }
         );

@@ -824,6 +824,29 @@ exports.captureLead = onRequest(
           }, 403, corsHeaders);
         }
 
+        // 🔒 Bonnes pratiques Turnstile : vérifier que le challenge a été
+        // résolu sur le hostname du site concerné (anti-rejeu cross-site).
+        if (!hostnameMatchesSite(turnstileResult.hostname || '', site)) {
+          console.warn('⚠️ [blogLeadHub] Turnstile hostname mismatch for opt-in', {
+            siteId: site.siteId,
+            blogSource: site.blogSource,
+            email,
+            hostname: turnstileResult.hostname || '',
+          });
+          await logLeadEvent('turnstile_failed_hostname_optin', {
+            site_source: site.siteId,
+            blog_source: site.blogSource,
+            formulaire_source: formName,
+            email,
+            hostname: turnstileResult.hostname || '',
+          });
+
+          return sendJson(response, {
+            success: false,
+            error: 'Échec de la vérification de sécurité. Veuillez réessayer.',
+          }, 403, corsHeaders);
+        }
+
         const mailjetApiKey = process.env.MAILJET_API_KEY;
         const mailjetApiSecret = process.env.MAILJET_API_SECRET;
         const listId = parseInt(process.env.MAILJET_LIST_ID || `${DEFAULT_LIST_ID}`, 10);
