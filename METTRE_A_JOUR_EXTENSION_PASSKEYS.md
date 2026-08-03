@@ -1,8 +1,8 @@
-# Mettre à jour l'extension Firebase WebAuthn vers la version 10.4.4+
+# Mettre à jour l'extension Firebase WebAuthn
 
-## ✅ Problème résolu
+## ✅ Version actuelle
 
-La version **10.4.4** de l'extension Firebase WebAuthn supporte maintenant **Node.js 20** et résout le problème de déploiement.
+La version **10.4.5** (dernière version disponible) est installée sur `fluance-protected-content`. Elle supporte **Node.js 20** et résout le problème de déploiement (les versions antérieures à 10.4.4 utilisaient Node.js 18, décommissionné).
 
 ## Mise à jour de l'extension
 
@@ -19,7 +19,7 @@ firebase use fluance-protected-content
 firebase ext:update firebase-web-authn
 ```
 
-Lors des prompts, sélectionnez la version **10.4.4** ou plus récente.
+Lors des prompts, sélectionnez la version **10.4.5** (ou la dernière disponible).
 
 ### Option 2 : Via Firebase Console
 
@@ -28,7 +28,7 @@ Lors des prompts, sélectionnez la version **10.4.4** ou plus récente.
 3. Allez dans **Extensions**
 4. Trouvez l'extension **Firebase WebAuthn**
 5. Cliquez sur **Update** ou **Mettre à jour**
-6. Sélectionnez la version **10.4.4** ou plus récente
+6. Sélectionnez la version **10.4.5** (ou la dernière disponible)
 7. Suivez les étapes de mise à jour
 
 ### Option 3 : Mettre à jour firebase.json
@@ -38,7 +38,7 @@ Si vous préférez spécifier la version explicitement, éditez `firebase.json` 
 ```json
 {
   "extensions": {
-    "firebase-web-authn": "gavinsawyer/firebase-web-authn@10.4.4"
+    "firebase-web-authn-fu06": "gavinsawyer/firebase-web-authn@10.4.5"
   }
 }
 ```
@@ -81,7 +81,7 @@ Si vous rencontrez des erreurs lors de la mise à jour :
    firebase ext:uninstall firebase-web-authn
    firebase ext:install gavinsawyer/firebase-web-authn
    ```
-   Lors de l'installation, sélectionnez la version **10.4.4** ou plus récente.
+   Lors de l'installation, sélectionnez la version **10.4.5** (ou la dernière disponible).
 
 2. **Vérifier les logs** dans Firebase Console > Extensions > Firebase WebAuthn > Logs
 
@@ -91,7 +91,23 @@ Si vous rencontrez des erreurs lors de la mise à jour :
 
 - ⏳ La mise à jour peut prendre 5-10 minutes
 - ✅ L'onglet "Clé d'accès" est maintenant activé dans l'interface
-- ✅ Toutes les fonctionnalités passkeys sont disponibles avec la version 10.4.4+
+- ✅ Toutes les fonctionnalités passkeys sont disponibles avec la version 10.4.5
+
+## ⚠️ Dépréciation du service Firebase Extensions
+
+Google a annoncé la **dépréciation du service Firebase Extensions** (mail reçu le 3 août 2026).
+
+**Dates clés :**
+- **Septembre 2026** : publication de la documentation, des outils et des options de migration (vers des fonctions auto-gérées avec comportement équivalent).
+- **31 mars 2027** : dernière date pour installer de nouvelles extensions ou redéployer/mettre à jour des instances existantes.
+- **Après le 31 mars 2027** : les instances déjà installées **continuent de fonctionner**, mais plus aucune modification de configuration, mise à jour ou patch de sécurité ne sera possible via le service. La désinstallation devra se faire manuellement (suppression des ressources Cloud associées : fonctions, secrets, comptes de service).
+
+**Action requise :**
+1. Garder l'extension à jour (dernière version : **10.4.5**) jusqu'au 31 mars 2027.
+2. **Septembre 2026** : suivre la documentation de migration de Google et prévoir la migration vers des fonctions auto-gérées.
+3. Avant la migration, **récupérer la configuration** de l'instance (`firebase ext:info firebase-web-authn-fu06` / console) qui servira de base.
+
+**Voir aussi :** [FAQ officielle Firebase Extensions Deprecation](https://firebase.google.com/support/faq#extensions)
 
 ## Support
 

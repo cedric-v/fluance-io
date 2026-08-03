@@ -8,7 +8,9 @@
 
 ## ⚠️ Important : Version de l'extension
 
-**Utilisez la version 10.4.4 ou plus récente** - Cette version supporte Node.js 20 (les versions antérieures utilisaient Node.js 18 qui est décommissioné).
+**Utilisez la version 10.4.5 ou plus récente** (dernière version disponible) - Cette version supporte Node.js 20 (les versions antérieures à 10.4.4 utilisaient Node.js 18 qui est décommissioné).
+
+> **⚠️ Dépréciation du service Firebase Extensions** : Google a annoncé la fin du service (décommission le 31 mars 2027). L'extension déjà installée continuera de fonctionner, mais plus aucune mise à jour/config modification ne sera possible après cette date. La documentation de migration (vers des fonctions auto-gérées) sera publiée en septembre 2026. Gardez l'extension à jour jusqu'au 31 mars 2027 et planifiez la migration. Voir [METTRE_A_JOUR_EXTENSION_PASSKEYS.md](./METTRE_A_JOUR_EXTENSION_PASSKEYS.md).
 
 **Régions disponibles :**
 - ✅ **us-central1** (Iowa, USA) - Région par défaut, bonne compatibilité
