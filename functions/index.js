@@ -3870,8 +3870,9 @@ exports.createStripeCheckoutSession = onCall(
         if (lastName) metadata.lastName = lastName;
 
         // Créer la session Checkout
+        // NOTE : pas de payment_method_types → Stripe utilise la configuration de
+        // méthodes de paiement par défaut du Dashboard (carte + Klarna, etc.).
         const sessionParams = {
-          payment_method_types: ['card'],
           line_items: lineItems,
           mode: mode,
           success_url: successUrl,
