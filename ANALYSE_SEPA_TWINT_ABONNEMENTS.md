@@ -48,6 +48,36 @@
 
 ---
 
+### 3. Klarna pour les Abonnements
+
+**❌ NON compatible avec les abonnements via Stripe Checkout**
+
+**Raisons :**
+- Klarna ne supporte **pas Checkout en mode abonnement** (`mode=subscription`) — docs Stripe : *« Not supported when Checkout is used in subscription mode »*
+- Sur les abonnements Stripe, Klarna ne fonctionne qu'avec la collecte **`send_invoice`** (facturation manuelle), pas avec le prélèvement automatique (`charge_automatically`)
+- Le modèle Fluance (prélèvement automatique + 14 jours offerts) est donc **incompatible**
+- Un client qui choisit Klarna sur un abonnement risque un **échec de paiement** ou des **renouvellements impossibles**
+
+**Recommandation :**
+- ❌ **Exclure Klarna** des abonnements
+- ✅ **Conserver Klarna** pour les paiements uniques (21 jours, RDV Clarté unique, Focus SOS unique) où il est pleinement supporté
+
+**Implémentation** (dans `functions/index.js`, `createStripeCheckoutSession`) :
+
+```javascript
+if (mode === 'subscription') {
+  sessionParams.payment_method_types = ['card', 'link', 'paypal', 'amazon_pay'];
+}
+```
+
+Les paiements uniques gardent la configuration par défaut du Dashboard (carte, Klarna, Billie, PayPal…).
+
+**Ressources :**
+- [Stripe Payment Methods for Subscriptions](https://stripe.com/docs/billing/subscriptions/payment-methods)
+- [Klarna (docs Stripe)](https://stripe.com/docs/payments/klarna)
+
+---
+
 ## 🔧 Modifications Nécessaires
 
 ### Problème Actuel

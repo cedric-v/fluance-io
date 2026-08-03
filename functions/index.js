@@ -3870,8 +3870,12 @@ exports.createStripeCheckoutSession = onCall(
         if (lastName) metadata.lastName = lastName;
 
         // Créer la session Checkout
-        // NOTE : pas de payment_method_types → Stripe utilise la configuration de
-        // méthodes de paiement par défaut du Dashboard (carte + Klarna, etc.).
+        // NOTE : pour les paiements uniques, pas de payment_method_types → Stripe
+        // utilise la configuration par défaut du Dashboard (carte, Klarna, PayPal...).
+        // Pour les ABONNEMENTS, on restreint explicitement les méthodes : Klarna
+        // (et les autres BNPL) ne supporte PAS Checkout en mode abonnement et ne
+        // fonctionne avec les abonnements qu'en facturation manuelle (send_invoice),
+        // donc incompatible avec notre prélèvement automatique (charge_automatically).
         const sessionParams = {
           line_items: lineItems,
           mode: mode,
@@ -3881,6 +3885,14 @@ exports.createStripeCheckoutSession = onCall(
           locale: locale === 'en' ? 'en' : 'fr',
           metadata,
         };
+
+        // Abonnements : méthodes de paiement compatibles avec les paiements
+        // récurrents automatiques (card, Link, PayPal, Amazon Pay supportent les
+        // abonnements ; Klarna non). SEPA exclu ici car l'abonnement est facturé
+        // en CHF et SEPA ne supporte que l'EUR.
+        if (mode === 'subscription') {
+          sessionParams.payment_method_types = ['card', 'link', 'paypal', 'amazon_pay'];
+        }
 
         // Email du client (nécessaire pour les abonnements — envoi des factures)
         if (email) {

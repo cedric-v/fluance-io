@@ -57,6 +57,35 @@ firebase deploy --only functions:createStripeCheckoutSession,functions:webhookSt
 firebase functions:log --only createStripeCheckoutSession,webhookStripe
 ```
 
+## 💳 Méthodes de paiement selon le type de produit
+
+Le comportement de `createStripeCheckoutSession` diffère entre **abonnements** et **paiements uniques** :
+
+| Type de produit | Mode Checkout | Méthodes proposées |
+| --- | --- | --- |
+| **Abonnement** (`complet` mensuel/trimestriel, `rdv-clarte` abonnement, `focus-sos` 3×, `site-vitrine` 5×, `semester_pass`) | `subscription` | `card`, `link`, `paypal`, `amazon_pay` (liste fixée en dur) |
+| **Paiement unique** (`21jours`, `rdv-clarte` unique, `focus-sos` unique) | `payment` | Configuration par défaut du Dashboard (carte, Klarna, Billie, PayPal, Amazon Pay, Link…) |
+
+### Pourquoi Klarna est exclu des abonnements
+
+Klarna **ne supporte pas** Stripe Checkout en mode abonnement, et ne fonctionne avec les abonnements Stripe qu'en **facturation manuelle** (`send_invoice`), pas en prélèvement automatique (`charge_automatically`). Or Fluance prélève automatiquement (avec 14 jours offerts) → proposer Klarna sur les abonnements provoquerait des échecs de paiement ou des renouvellements impossibles.
+
+👉 Klarna reste disponible sur les **paiements uniques**, où il est pleinement supporté.
+
+### Modifier les méthodes proposées sur les abonnements
+
+La liste est fixée dans `functions/index.js` (`createStripeCheckoutSession`) :
+
+```javascript
+if (mode === 'subscription') {
+  sessionParams.payment_method_types = ['card', 'link', 'paypal', 'amazon_pay'];
+}
+```
+
+⚠️ **SEPA** (`sepa_debit`) est exclu car l'abonnement est facturé en **CHF** et SEPA ne supporte que l'**EUR**.
+⚠️ **TWINT** est exclu car TWINT est un paiement unique instantané, sans prélèvement automatique possible.
+⚠️ Les **BNPL** (Klarna, Billie, etc.) sont exclues des abonnements pour la même raison que Klarna.
+
 ## 📝 Fichiers modifiés
 
 ### Fonctions Firebase
