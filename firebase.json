@@ -211,6 +211,6 @@
     }
   ],
   "extensions": {
-    "firebase-web-authn-fu06": "gavinsawyer/firebase-web-authn@10.4.4"
+    "firebase-web-authn-fu06": "gavinsawyer/firebase-web-authn@10.4.5"
   }
 }
