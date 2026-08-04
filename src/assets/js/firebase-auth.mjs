@@ -32,31 +32,47 @@ window.firebaseConfig = firebaseConfig;
 
 // Initialiser Firebase (compat mode pour compatibilité avec l'existant)
 if (typeof firebase === 'undefined') {
-  // Charger Firebase SDK si pas déjà chargé
+  // Charger Firebase SDK si pas déjà chargé.
+  // Optimisation : firebase-app d'abord, puis auth + firestore EN PARALLÈLE
+  // (au lieu d'un chargement séquentiel) pour restaurer la session plus vite.
   const script1 = document.createElement('script');
   script1.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js';
   document.head.appendChild(script1);
-  
+
   script1.onload = () => {
-    const script2 = document.createElement('script');
-    script2.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth-compat.js';
-    document.head.appendChild(script2);
-    
-    script2.onload = () => {
-      const script3 = document.createElement('script');
-      script3.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore-compat.js';
-      document.head.appendChild(script3);
-      
-      script3.onload = () => {
-        if (!firebase.apps.length) {
-          if (firebaseConfig) firebase.initializeApp(firebaseConfig);
-        }
-        // Attendre un peu pour s'assurer que tous les modules sont prêts
-        setTimeout(() => {
-          initAuth();
-        }, 100);
-      };
+    // L'app peut être initialisée dès que le module de base est chargé
+    if (!firebase.apps.length && firebaseConfig) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    let remaining = 2;
+    const onServiceReady = () => {
+      remaining -= 1;
+      if (remaining === 0) {
+        // Petit délai pour s'assurer que tous les modules sont enregistrés
+        setTimeout(() => initAuth(), 50);
+      }
     };
+    const loadCompat = (src) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = onServiceReady;
+      // En cas d'échec réseau, on laisse initAuth réessayer/échouer proprement
+      s.onerror = () => {
+        console.error('Erreur de chargement Firebase SDK:', src);
+        onServiceReady();
+      };
+      document.head.appendChild(s);
+      return s;
+    };
+
+    // auth et firestore en parallèle
+    loadCompat('https://www.gstatic.com/firebasejs/12.8.0/firebase-auth-compat.js');
+    loadCompat('https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore-compat.js');
+  };
+
+  script1.onerror = () => {
+    console.error('Erreur de chargement de firebase-app-compat.js');
   };
 } else {
   // Vérifier que firebase.auth est disponible

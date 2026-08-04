@@ -53,9 +53,24 @@ document.addEventListener('DOMContentLoaded', async function() {
     const contentId = element.getAttribute('data-content-id');
     console.log('[Protected Content] Loading content for element:', contentId);
     
+    // Fonction utilitaire : le SDK Firebase est-il chargé ?
+    function sdkReady() {
+      return typeof window.FluanceAuth !== 'undefined' &&
+             typeof firebase !== 'undefined' &&
+             typeof firebase.auth === 'function';
+    }
+    
     // Fonction pour vérifier et charger le contenu
     function checkAuthAndLoad() {
       console.log('[Protected Content] checkAuthAndLoad called for:', contentId);
+      
+      // SDK pas encore chargé : garder le placeholder de chargement et réessayer
+      // (on n'affiche JAMAIS « veuillez vous connecter » avant d'avoir confirmé l'état)
+      if (!sdkReady()) {
+        console.log('[Protected Content] SDK pas encore prêt, nouvel essai dans 250ms');
+        setTimeout(checkAuthAndLoad, 250);
+        return;
+      }
       
       // Vérifier l'authentification avec plusieurs méthodes
       let isAuth = false;
@@ -108,36 +123,27 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
     }
     
-    // Vérifier immédiatement si un utilisateur est déjà connecté
-    if (typeof firebase !== 'undefined' && firebase.auth) {
-      const currentUser = firebase.auth().currentUser;
-      console.log('[Protected Content] Immediate check - currentUser:', currentUser ? currentUser.email : 'null');
-      if (currentUser) {
-        console.log('[Protected Content] User already authenticated, loading content immediately');
-        checkAuthAndLoad();
+    // Attendre que le SDK soit chargé, puis s'abonner à onAuthStateChanged :
+    // son premier appel correspond à l'état CONFIRMÉ par Firebase (évite le flash
+    // « veuillez vous connecter » pendant la restauration de session)
+    function waitForSdk() {
+      if (!sdkReady()) {
+        console.log('[Protected Content] SDK pas encore prêt, nouvelle attente dans 250ms');
+        setTimeout(waitForSdk, 250);
         return;
       }
-    }
-    
-    // Sinon, écouter les changements d'état d'authentification
-    if (typeof firebase !== 'undefined' && firebase.auth) {
-      console.log('[Protected Content] Setting up onAuthStateChanged listener');
-      const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
-        console.log('[Protected Content] Auth state changed:', user ? user.email : 'null');
+      console.log('[Protected Content] SDK prêt, abonnement à onAuthStateChanged');
+      firebase.auth().onAuthStateChanged(() => {
+        console.log('[Protected Content] Auth state changed (confirmé)');
         checkAuthAndLoad();
-        // Ne pas se désabonner, pour gérer les changements futurs (déconnexion, etc.)
       });
-      
-      // Vérifier aussi après un court délai au cas où onAuthStateChanged ne se déclenche pas
+      // Filet de sécurité si l'événement ne se déclenche pas
       setTimeout(() => {
-        console.log('[Protected Content] Fallback check after 500ms');
+        console.log('[Protected Content] Fallback check après 1500ms');
         checkAuthAndLoad();
-      }, 500);
-    } else {
-      console.log('[Protected Content] Firebase not available, checking after 1s');
-      // Si Firebase n'est pas disponible, vérifier quand même
-      setTimeout(checkAuthAndLoad, 1000);
+      }, 1500);
     }
+    waitForSdk();
   }
   
   // Charger le contenu pour chaque élément

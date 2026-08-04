@@ -34,6 +34,16 @@ eleventyExcludeFromCollections: true
       </a>
     </div>
 
+    <div id="auth-pending" class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center hidden">
+      <div class="inline-flex items-center gap-3 text-gray-500">
+        <svg class="animate-spin h-5 w-5 text-fluance" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-sm font-medium">Chargement de votre espace client…</span>
+      </div>
+    </div>
+
     <div id="content-container" class="hidden">
       <!-- Le contenu sera chargé dynamiquement ici -->
     </div>
@@ -45,31 +55,76 @@ eleventyExcludeFromCollections: true
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const authRequired = document.getElementById('auth-required');
+  const authPending = document.getElementById('auth-pending');
   const contentContainer = document.getElementById('content-container');
   const logoutButton = document.getElementById('logout-button');
-  
-  function checkAuthAndLoad() {
-    if (typeof window.FluanceAuth !== 'undefined') {
-      const isAuth = window.FluanceAuth.isAuthenticated();
-      const user = window.FluanceAuth.getCurrentUser();
-      
-      if (isAuth && user) {
-        // Afficher le bouton de déconnexion
-        if (logoutButton) {
-          logoutButton.classList.remove('hidden');
-        }
-        // Charger le contenu disponible
-        loadUserContent();
-      } else {
-        // Cacher le bouton de déconnexion
-        if (logoutButton) {
-          logoutButton.classList.add('hidden');
-        }
-        authRequired.classList.remove('hidden');
-        contentContainer.classList.add('hidden');
-      }
+
+  // Le message « veuillez vous connecter » n'est affiché que lorsque Firebase a
+  // CONFIRMÉ l'état d'authentification. Pendant le chargement du SDK et la
+  // restauration de session, on affiche un simple état de chargement (pas de flash).
+  let contentLoaded = false;
+
+  function showAuthPending() {
+    if (authPending) authPending.classList.remove('hidden');
+    if (authRequired) authRequired.classList.add('hidden');
+    if (contentContainer) contentContainer.classList.add('hidden');
+    if (logoutButton) logoutButton.classList.add('hidden');
+  }
+
+  function showLoginPrompt() {
+    if (authPending) authPending.classList.add('hidden');
+    if (authRequired) authRequired.classList.remove('hidden');
+    if (contentContainer) contentContainer.classList.add('hidden');
+    if (logoutButton) logoutButton.classList.add('hidden');
+  }
+
+  function showMemberContent() {
+    if (authPending) authPending.classList.add('hidden');
+    if (authRequired) authRequired.classList.add('hidden');
+    if (logoutButton) logoutButton.classList.remove('hidden');
+    if (contentContainer) contentContainer.classList.remove('hidden');
+    if (!contentLoaded) {
+      contentLoaded = true;
+      loadUserContent();
     }
   }
+
+  // Source de vérité : le premier appel de onAuthStateChanged = état confirmé
+  function handleAuthStateChange(user) {
+    if (user) showMemberContent();
+    else showLoginPrompt();
+  }
+
+  // État initial : chargement en cours (jamais le prompt de connexion)
+  showAuthPending();
+
+  // Attendre que FluanceAuth + le SDK Firebase soient prêts (chargés dynamiquement)
+  let sdkAttempts = 0;
+  const sdkTimer = setInterval(() => {
+    sdkAttempts++;
+    const sdkReady = typeof window.FluanceAuth !== 'undefined' &&
+                     typeof firebase !== 'undefined' &&
+                     typeof firebase.auth === 'function';
+    if (sdkReady) {
+      clearInterval(sdkTimer);
+      // S'abonner aux changements d'état d'authentification (connexion/déconnexion)
+      firebase.auth().onAuthStateChanged(handleAuthStateChange);
+      // Session déjà restaurée ? Charger immédiatement, sans attendre l'événement
+      if (window.FluanceAuth.getCurrentUser()) {
+        showMemberContent();
+      }
+      return;
+    }
+    // Filet de sécurité : après ~10 s, décider avec ce qu'on a
+    if (sdkAttempts >= 40) {
+      clearInterval(sdkTimer);
+      if (typeof window.FluanceAuth !== 'undefined' && window.FluanceAuth.getCurrentUser()) {
+        showMemberContent();
+      } else {
+        showLoginPrompt();
+      }
+    }
+  }, 250);
   
   async function loadUserContent() {
     if (!window.FluanceAuth || !window.FluanceAuth.isAuthenticated()) {
@@ -768,19 +823,6 @@ document.addEventListener('DOMContentLoaded', function() {
       `;
       contentContainer.classList.remove('hidden');
     }
-  }
-  
-  // Vérifier l'authentification immédiatement
-  checkAuthAndLoad();
-  
-  // Vérifier après un délai (au cas où le script se charge plus tard)
-  setTimeout(checkAuthAndLoad, 1000);
-  
-  // Écouter les changements d'authentification
-  if (typeof firebase !== 'undefined' && firebase.auth) {
-    firebase.auth().onAuthStateChanged(() => {
-      checkAuthAndLoad();
-    });
   }
   
   // Suivre la hauteur du header fixe (qui se compacte au scroll) pour la sous-navigation sticky
