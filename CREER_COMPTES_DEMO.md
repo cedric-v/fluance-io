@@ -13,11 +13,15 @@ Ce guide explique comment créer des comptes de démonstration avec accès à **
 Utilisez le script `scripts/create-demo-accounts.js` :
 
 ```bash
-node scripts/create-demo-accounts.js <email1> <password1> <email2> <password2>
+node scripts/create-demo-accounts.js <email1> <password1> [<email2> <password2> ...]
 ```
 
 Exemple :
 ```bash
+# Un compte
+node scripts/create-demo-accounts.js "b.palmilha@gmail.com" "DemoFluanceMonMdp1"
+
+# Deux comptes
 node scripts/create-demo-accounts.js "nathalie@oxadi.ch" "DemoFluance7#kL9" "Luc@oxadi.ch" "DemoFluance3#mN2"
 ```
 
@@ -44,6 +48,7 @@ Les autres e-mails transactionnels ne sont pas impactés.
 
 | Email | Mot de passe | Produits |
 |-------|-------------|----------|
+| b.palmilha@gmail.com | Voir 1Password / note sécurisée | 21jours, complet, sos-dos-cervicales |
 | nathalie@oxadi.ch | Voir 1Password / note sécurisée | 21jours, complet, sos-dos-cervicales |
 | Luc@oxadi.ch | Voir 1Password / note sécurisée | 21jours, complet, sos-dos-cervicales |
 

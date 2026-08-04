@@ -90,13 +90,17 @@ async function createDemoAccount(email, password) {
 }
 
 async function main() {
-  const accounts = [
-    { email: process.argv[2], password: process.argv[3] },
-    { email: process.argv[4], password: process.argv[5] },
-  ];
+  const args = process.argv.slice(2);
 
-  if (!accounts[0].email || !accounts[1].email) {
-    console.error('Usage: node scripts/create-demo-accounts.js <email1> <password1> <email2> <password2>');
+  // Paires email/mot de passe : au moins une paire obligatoire
+  const accounts = [];
+  for (let i = 0; i < args.length; i += 2) {
+    if (!args[i]) break;
+    accounts.push({ email: args[i], password: args[i + 1] });
+  }
+
+  if (accounts.length === 0 || accounts.some(a => !a.email || !a.password)) {
+    console.error('Usage: node scripts/create-demo-accounts.js <email1> <password1> [<email2> <password2> ...]');
     process.exit(1);
   }
 
