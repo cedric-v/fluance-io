@@ -161,7 +161,7 @@ permalink: /en/member-login/
 <!-- Bibliothèque browser officielle pour WebAuthn -->
 <!-- Note: Le package @firebase-web-authn/browser n'est peut-être pas disponible via CDN -->
 <!-- On utilise la méthode directe avec l'authentification anonyme -->
-<script type="module" src="/assets/js/firebase-auth.mjs"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs?v={{ version }}"></script>
 <script>
 let currentTab = 'password';
 let errorDiv, successDiv; // Global variables for error/success divs

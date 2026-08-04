@@ -166,7 +166,7 @@ permalink: /en/create-account/
   </div>
 </div>
 
-<script type="module" src="/assets/js/firebase-auth.mjs"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs?v={{ version }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Get token from URL if present

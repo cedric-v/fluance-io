@@ -50,8 +50,8 @@ eleventyExcludeFromCollections: true
   </div>
 </section>
 
-<script type="module" src="/assets/js/firebase-auth.mjs"></script>
-<script src="/assets/js/protected-content.js"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs?v={{ version }}"></script>
+<script src="/assets/js/protected-content.js?v={{ version }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const authRequired = document.getElementById('auth-required');

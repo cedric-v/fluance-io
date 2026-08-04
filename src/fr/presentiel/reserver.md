@@ -81,4 +81,4 @@ markdownAlternate: /agent/presentiel-reserver-fr.md
 <!-- Script de réservation -->
 {% stripeConfig %}
 <script src="https://js.stripe.com/v3/"></script>
-<script src="{{ '/assets/js/booking.js' | relativeUrl }}"></script>
+<script src="{{ '/assets/js/booking.js' | relativeUrl }}?v={{ version }}"></script>

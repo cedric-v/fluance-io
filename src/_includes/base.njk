@@ -320,8 +320,8 @@
     </style>
     
     <!-- Chargement CSS optimisé : preload asynchrone avec fallback synchrone robuste -->
-    <link rel="preload" href="{{ '/assets/css/styles.css' | relativeUrl }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="{{ '/assets/css/styles.css' | relativeUrl }}"></noscript>
+    <link rel="preload" href="{{ '/assets/css/styles.css' | relativeUrl }}?v={{ version }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ '/assets/css/styles.css' | relativeUrl }}?v={{ version }}"></noscript>
     <!-- Fallback synchrone si le preload échoue (plus robuste que l'ancien système) -->
     <script>
       (function() {
@@ -454,7 +454,7 @@
       }
     </script>
     <!-- Fin des scripts de suivi -->
-    <script src="{{ '/assets/js/agent-tools.js' | relativeUrl }}" defer></script>
+    <script src="{{ '/assets/js/agent-tools.js' | relativeUrl }}?v={{ version }}" defer></script>
 </head>
 <body class="bg-[#fdfaf6] text-[#1f1f1f] antialiased">
     <!-- Google Tag Manager (noscript) -->
@@ -702,7 +702,7 @@
   page.url.includes('/cours-en-ligne/approche-fluance-complete/') or
   page.url.includes('/en/cours-en-ligne/approche-fluance-complete/')
 ) %}
-<script src="/assets/js/payment.js"></script>
+<script src="/assets/js/payment.js?v={{ version }}"></script>
 {% endif %}
 </body>
 </html>

@@ -116,7 +116,7 @@ permalink: /reinitialiser-mot-de-passe/
   </div>
 </div>
 
-<script type="module" src="/assets/js/firebase-auth.mjs"></script>
+<script type="module" src="/assets/js/firebase-auth.mjs?v={{ version }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
   // Attendre que Firebase soit initialisé
