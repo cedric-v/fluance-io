@@ -414,9 +414,10 @@ main {
   box-shadow: 0 10px 24px -12px rgba(15, 23, 42, 0.28);
 }
 
-@media (max-width: 767px) {
-  /* Sur mobile, la sous-navigation jours/semaines n'est PAS sticky :
-     le header fixe suffit comme menu collé, on garde l'espace pour la vidéo */
+@media (max-width: 1023px) {
+  /* Sur mobile/tablette compacte, la sous-navigation jours/semaines n'est PAS sticky :
+     le header fixe suffit comme menu collé, on garde l'espace pour la vidéo.
+     (couvre aussi les téléphones en paysage : largeurs 768-1023px) */
   .sticky-nav {
     position: static;
     padding-top: 0.5rem;
