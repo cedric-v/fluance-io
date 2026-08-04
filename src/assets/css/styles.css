@@ -415,8 +415,10 @@ main {
 }
 
 @media (max-width: 767px) {
-  /* Léger padding pour aérer le rail collé sous le header */
+  /* Sur mobile, la sous-navigation jours/semaines n'est PAS sticky :
+     le header fixe suffit comme menu collé, on garde l'espace pour la vidéo */
   .sticky-nav {
+    position: static;
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
   }

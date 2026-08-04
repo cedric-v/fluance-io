@@ -805,8 +805,10 @@ document.addEventListener('DOMContentLoaded', function() {
               setTimeout(() => {
                 const header = document.getElementById('main-header');
                 const headerH = header ? header.getBoundingClientRect().height : 0;
+                const isMobile = window.matchMedia('(max-width: 767px)').matches;
                 const stickyNav = contentContainer.querySelector('.product-tab-content:not(.hidden) [data-sticky-nav]');
-                const stickyH = stickyNav ? stickyNav.getBoundingClientRect().height : 0;
+                // Sur mobile la sous-navigation n'est plus sticky : ne rien réserver (la vidéo se place sous le header)
+                const stickyH = (!isMobile && stickyNav) ? stickyNav.getBoundingClientRect().height : 0;
                 const headerOffset = headerH + stickyH + 16;
                 const elementPosition = contentSection.getBoundingClientRect().top;
                 const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
@@ -972,6 +974,8 @@ function updateStickyOffset() {
 }
 
 function updateStuckNav() {
+  // Sur mobile la sous-navigation n'est pas sticky : état « collé » inutile
+  if (window.matchMedia('(max-width: 767px)').matches) return;
   const offset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-nav-offset')) || 120;
   const nav = document.querySelector('#content-container .product-tab-content:not(.hidden) [data-sticky-nav]');
   if (!nav) {
