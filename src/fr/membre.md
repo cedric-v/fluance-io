@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <!-- Navigation des jours : juste sous le menu de sélection, sticky sur mobile -->
                 <div class="sticky-nav" data-sticky-nav>
                   <div class="scroll-rail-wrap">
-                    <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none scrollbar-hide touch-pan-x md:grid md:grid-cols-4 lg:grid-cols-7 md:gap-2 md:overflow-visible" data-day-rail data-rail>
+                    <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none scrollbar-hide touch-pan-x" data-day-rail data-rail>
                       ${(() => {
                         // Jour actuel = dernier contenu débloqué
                         const currentNavContent = userProduct.contents
@@ -409,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                data-content-id="${content.id}"
                                data-product="${prod.id}"
                                ${isCurrent ? 'data-current-day="true"' : ''}
-                               class="snap-start shrink-0 w-[7.5rem] md:w-auto block p-3 rounded-lg text-center text-sm transition-colors
+                               class="snap-start shrink-0 w-[7.5rem] md:w-40 block p-3 rounded-lg text-center text-sm transition-colors
                                       ${isCurrent ? 'bg-fluance text-white font-semibold' : isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
                                ${isLocked ? 'onclick="return false;"' : ''}>
                               <div class="font-semibold truncate">${dayLabel}</div>
@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <!-- Navigation des semaines : juste sous le menu de sélection, sticky sur mobile -->
                 <div class="sticky-nav" data-sticky-nav>
                   <div class="scroll-rail-wrap">
-                    <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none scrollbar-hide touch-pan-x md:grid md:grid-cols-4 lg:grid-cols-5 md:gap-2 md:overflow-visible" data-day-rail data-rail>
+                    <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none scrollbar-hide touch-pan-x" data-day-rail data-rail>
                       ${(() => {
                         // Semaine actuelle = dernière semaine débloquée (hors bienvenue)
                         const currentNavContent = userProduct.contents
@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                data-content-id="${content.id}"
                                data-product="${prod.id}"
                                ${isCurrent ? 'data-current-day="true"' : ''}
-                               class="snap-start shrink-0 w-[7.5rem] md:w-auto block p-3 rounded-lg text-center text-sm transition-colors
+                               class="snap-start shrink-0 w-[7.5rem] md:w-40 block p-3 rounded-lg text-center text-sm transition-colors
                                       ${isCurrent ? 'bg-fluance text-white font-semibold' : isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
                                ${isLocked ? 'onclick="return false;"' : ''}>
                               <div class="font-semibold truncate">${weekLabel}</div>
@@ -798,9 +798,8 @@ document.addEventListener('DOMContentLoaded', function() {
   window.addEventListener('resize', onMemberScroll, { passive: true });
 });
 
-// Fonction pour centrer la carte du jour/semaine actuel dans le rail (mobile uniquement)
+// Fonction pour centrer la carte du jour/semaine actuel dans le rail (mobile et desktop)
 function centerActiveDayRail() {
-  if (!window.matchMedia('(max-width: 767px)').matches) return;
   const activeTabContent = document.querySelector('#content-container .product-tab-content:not(.hidden)');
   if (!activeTabContent) return;
   const rail = activeTabContent.querySelector('[data-day-rail]');
@@ -812,26 +811,56 @@ function centerActiveDayRail() {
   rail.scrollLeft = Math.max(0, Math.min(target, rail.scrollWidth - rail.clientWidth));
 }
 
-// Affordances de scroll horizontal : fades de bordure + indice « Glissez »
+// Affordances de scroll horizontal : fades de bordure + indice « Glissez » + chevrons
 function updateRailEdges(rail) {
   const wrap = rail.closest('.scroll-rail-wrap');
   if (!wrap) return;
   const leftEdge = wrap.querySelector('.scroll-rail-edge.left');
   const rightEdge = wrap.querySelector('.scroll-rail-edge.right');
-  if (!leftEdge || !rightEdge) return;
+  const leftBtn = wrap.querySelector('.rail-nav-btn.left');
+  const rightBtn = wrap.querySelector('.rail-nav-btn.right');
 
   const hasOverflow = rail.scrollWidth > rail.clientWidth + 1;
   if (!hasOverflow) {
-    leftEdge.classList.remove('visible');
-    rightEdge.classList.remove('visible');
+    if (leftEdge) leftEdge.classList.remove('visible');
+    if (rightEdge) rightEdge.classList.remove('visible');
+    if (leftBtn) leftBtn.classList.add('is-hidden');
+    if (rightBtn) rightBtn.classList.add('is-hidden');
     return;
   }
 
-  // Fade visible uniquement côté où il reste du contenu à dévoiler
+  // Fade/chevron visible uniquement côté où il reste du contenu à dévoiler
   const atStart = rail.scrollLeft <= 2;
   const atEnd = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
-  leftEdge.classList.toggle('visible', !atStart);
-  rightEdge.classList.toggle('visible', !atEnd);
+  if (leftEdge) leftEdge.classList.toggle('visible', !atStart);
+  if (rightEdge) rightEdge.classList.toggle('visible', !atEnd);
+  if (leftBtn) leftBtn.classList.toggle('is-hidden', atStart);
+  if (rightBtn) rightBtn.classList.toggle('is-hidden', atEnd);
+}
+
+// Boutons chevron (desktop) : injectés une fois par rail, scrollent d'une page
+function injectRailNavButtons(rail) {
+  const wrap = rail.closest('.scroll-rail-wrap');
+  if (!wrap || wrap.querySelector('.rail-nav-btn')) return;
+
+  const makeBtn = (dir, label) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rail-nav-btn ' + dir;
+    btn.setAttribute('aria-label', label);
+    btn.innerHTML = dir === 'left'
+      ? '<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>'
+      : '<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>';
+    btn.addEventListener('click', () => {
+      const sign = dir === 'left' ? -1 : 1;
+      rail.scrollBy({ left: sign * rail.clientWidth * 0.85, behavior: 'smooth' });
+    });
+    wrap.appendChild(btn);
+    return btn;
+  };
+
+  makeBtn('left', 'Faire défiler vers la gauche');
+  makeBtn('right', 'Faire défiler vers la droite');
 }
 
 function initScrollRails(scope) {
@@ -848,15 +877,19 @@ function initScrollRails(scope) {
 
     const wrap = rail.closest('.scroll-rail-wrap');
     const hint = wrap ? wrap.querySelector('[data-swipe-hint]') : null;
+    const isDesktop = window.matchMedia('(min-width: 768px)').matches;
 
-    // Pas de défilement possible (ex. grille desktop) : masquer l'indice tout de suite
-    if (hint && rail.scrollWidth <= rail.clientWidth + 1) {
+    // Indice « Glissez » : uniquement mobile ET si le rail déborde réellement
+    if (hint && (isDesktop || rail.scrollWidth <= rail.clientWidth + 1)) {
       hint.classList.add('is-hidden');
     }
 
+    // Chevrons de navigation (desktop)
+    injectRailNavButtons(rail);
+
     rail.addEventListener('scroll', () => {
       updateRailEdges(rail);
-      if (hint) hint.classList.add('is-hidden');
+      if (hint && !isDesktop) hint.classList.add('is-hidden');
     }, { passive: true });
 
     window.addEventListener('resize', () => updateRailEdges(rail), { passive: true });
@@ -873,16 +906,15 @@ function updateStickyOffset() {
 
 function updateStuckNav() {
   const offset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-nav-offset')) || 120;
-  const isMobile = window.matchMedia('(max-width: 767px)').matches;
   const nav = document.querySelector('#content-container .product-tab-content:not(.hidden) [data-sticky-nav]');
   if (!nav) {
     // Aucune sous-navigation visible (onglet sans rail) : retirer l'état « collé »
     document.querySelectorAll('#content-container [data-sticky-nav]').forEach(n => n.classList.remove('is-stuck'));
     return;
   }
-  // « Collé » quand le haut de l'élément atteint l'offset sticky (mobile uniquement)
+  // « Collé » quand le haut de l'élément atteint l'offset sticky
   const rect = nav.getBoundingClientRect();
-  nav.classList.toggle('is-stuck', isMobile && rect.top <= offset + 2);
+  nav.classList.toggle('is-stuck', rect.top <= offset + 2);
 }
 
 // Fonction globale pour changer d'onglet produit

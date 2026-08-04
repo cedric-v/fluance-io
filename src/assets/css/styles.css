@@ -386,15 +386,11 @@ main {
   display: none !important;
 }
 
-/* Sur desktop les rails ne défilent pas (grille) : on masque l'indice */
+/* Sur desktop l'indice « Glissez » (geste tactile) n'a pas de sens :
+   on lui préfère les boutons chevron .rail-nav-btn */
 @media (min-width: 768px) {
   .swipe-hint-overlay {
     display: none !important;
-  }
-
-  /* La sous-navigation jours/semaines n'est sticky que sur mobile */
-  .sticky-nav {
-    position: static;
   }
 }
 
@@ -418,6 +414,51 @@ main {
   100% {
     opacity: 0;
     visibility: hidden;
+  }
+}
+
+/* Boutons chevron (desktop) : affordance souris pour faire défiler les rails.
+   Injectés par JS, visibles uniquement à partir de 768px et seulement quand
+   le rail déborde (classe .is-hidden pilotée en JS). */
+.rail-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 25;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid rgba(122, 31, 61, 0.15);
+  color: var(--fluance-bordeaux);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+  cursor: pointer;
+  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.rail-nav-btn:hover {
+  background: var(--fluance-bordeaux);
+  color: #ffffff;
+}
+
+.rail-nav-btn.left {
+  left: 0.35rem;
+}
+
+.rail-nav-btn.right {
+  right: 0.35rem;
+}
+
+.rail-nav-btn.is-hidden {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .rail-nav-btn {
+    display: flex;
   }
 }
 
