@@ -516,19 +516,17 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                 </div>
 
-                ${isFinalDay ? `
-                  <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6 mb-6 mt-6">
-                    <p class="text-green-800 font-semibold text-lg mb-2">${congratsTitle}</p>
-                    <p class="text-green-700 text-sm mb-4">${continueText}</p>
-                    ${!ownsComplet ? `
-                      <a href="${completUrl}" class="inline-block bg-fluance text-white px-6 py-3 rounded-lg hover:bg-fluance/90 transition-colors font-semibold">
-                        ${ctaText}
-                      </a>
-                    ` : `
-                      <p class="text-green-700 text-sm">${ownedText}</p>
-                    `}
-                  </div>
-                ` : ''}
+                <div id="completion-panel-${prod.id}" class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6 mb-6 mt-6 ${isFinalDay ? '' : 'hidden'}">
+                  <p class="text-green-800 font-semibold text-lg mb-2">${congratsTitle}</p>
+                  <p class="text-green-700 text-sm mb-4">${continueText}</p>
+                  ${!ownsComplet ? `
+                    <a href="${completUrl}" class="inline-block bg-fluance text-white px-6 py-3 rounded-lg hover:bg-fluance/90 transition-colors font-semibold">
+                      ${ctaText}
+                    </a>
+                  ` : `
+                    <p class="text-green-700 text-sm">${ownedText}</p>
+                  `}
+                </div>
 
                 ${currentDayContent ? `
                   <div class="mb-6 ${isFinalDay ? '' : 'mt-6'}" id="current-day-content-${prod.id}">
@@ -815,6 +813,17 @@ document.addEventListener('DOMContentLoaded', function() {
                   behavior: 'smooth'
                 });
               }, 100);
+            }
+
+            // Panneau de félicitations (21 jours) : visible uniquement sur les jours 21 et 22,
+            // quel que soit le jour affiché (cliqué dans la navigation)
+            if (productId === '21jours') {
+              const panel = contentContainer.querySelector(`#completion-panel-${productId}`);
+              const isFinal = content.day === 21 || content.day === 22;
+              if (panel) {
+                panel.classList.toggle('hidden', !isFinal);
+                if (contentSection) contentSection.classList.toggle('mt-6', !isFinal);
+              }
             }
 
             // Mettre à jour la navigation (désactiver tous, activer celui cliqué)
