@@ -436,12 +436,50 @@ document.addEventListener('DOMContentLoaded', function() {
           } else if (prod.id === '21jours') {
             // Pour 21jours, afficher avec navigation par jour
             const daysSinceStart = userProduct.daysSinceStart || 0;
-            
-            // Calculer le nombre total de jours (incluant le bonus jour 22)
-            const maxDay = Math.max(...userProduct.contents.map(c => c.day || 0), 21);
-            const totalDays = maxDay >= 22 ? 23 : 22; // 23 si bonus jour 22 existe, sinon 22
-            const currentDay = Math.min(daysSinceStart + 1, totalDays);
-            
+
+            // Contenu du jour courant (numérotation cohérente avec la navigation :
+            // 0 = Déroulé, 1-21 = jours du défi, 22 = bonus)
+            const dayContents = userProduct.contents;
+            let currentDayContent = null;
+            if (daysSinceStart === 0) {
+              currentDayContent = dayContents.find(c => c.day === 0);
+            } else if (daysSinceStart <= 22) {
+              currentDayContent = dayContents.find(c => c.day === daysSinceStart);
+            }
+            if (!currentDayContent) {
+              // Repli : dernier contenu débloqué
+              currentDayContent = dayContents
+                .filter(c => c.isAccessible)
+                .sort((a, b) => (b.day || 0) - (a.day || 0))[0];
+            }
+
+            // Jour courant affiché (même numérotation que la navigation)
+            const currentNavDay = currentDayContent ? (currentDayContent.day || 0) : null;
+            // Dernier jour du cours (21, ou 22 si le bonus est publié)
+            const lastCourseDay = Math.max(...dayContents.map(c => c.day || 0), 0);
+            // Sur le dernier jour ? → célébration + CTA vers l'approche complète
+            const isLastDay = currentNavDay !== null && currentNavDay >= 21 && currentNavDay === lastCourseDay;
+            // L'utilisateur possède-t-il déjà l'approche complète ?
+            const ownsComplet = products.some(p => (typeof p === 'string' ? p : p.name) === 'complet');
+            // CTA dans la langue de la page
+            const pageLang = ((document.documentElement.getAttribute('lang') || 'fr').toLowerCase().startsWith('en')) ? 'en' : 'fr';
+            const isEn = pageLang === 'en';
+            const completUrl = isEn
+              ? 'https://fluance.io/en/cours-en-ligne/approche-fluance-complete/'
+              : 'https://fluance.io/cours-en-ligne/approche-fluance-complete/';
+            const congratsTitle = isEn
+              ? '🎉 Congratulations! You have completed the 21-Day Challenge.'
+              : '🎉 Félicitations ! Vous avez terminé le Défi 21 jours.';
+            const continueText = isEn
+              ? 'Keep your momentum and continue taking care of your body and your sensations.'
+              : 'Continuez votre parcours vers la détente et la mobilité.';
+            const ctaText = isEn
+              ? 'Discover the Fluance Complete Approach →'
+              : "Découvrir l'approche Fluance Complète →";
+            const ownedText = isEn
+              ? 'Find the rest of your practice in the <strong>Fluance Complete Approach</strong> tab.'
+              : "Retrouvez la suite de votre pratique dans l'onglet <strong>Approche Fluance Complète</strong>.";
+
             contentHTML += `
               <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
                 <!-- Navigation des jours : juste sous le menu de sélection, sticky sur mobile -->
@@ -479,44 +517,35 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                 </div>
 
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 mt-6">
-                  <p class="text-blue-800 font-semibold">Vous êtes au jour ${currentDay} sur ${totalDays}</p>
-                  <p class="text-blue-700 text-sm mt-1">Continuez votre parcours vers la détente et la mobilité.</p>
-                </div>
+                ${isLastDay ? `
+                  <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6 mb-6 mt-6">
+                    <p class="text-green-800 font-semibold text-lg mb-2">${congratsTitle}</p>
+                    <p class="text-green-700 text-sm mb-4">${continueText}</p>
+                    ${!ownsComplet ? `
+                      <a href="${completUrl}" class="inline-block bg-fluance text-white px-6 py-3 rounded-lg hover:bg-fluance/90 transition-colors font-semibold">
+                        ${ctaText}
+                      </a>
+                    ` : `
+                      <p class="text-green-700 text-sm">${ownedText}</p>
+                    `}
+                  </div>
+                ` : ''}
 
-                ${(() => {
-                  // Trouver le contenu du jour actuel
-                  let currentDayContent = null;
-                  if (currentDay === 1) {
-                    currentDayContent = userProduct.contents.find(c => c.day === 0);
-                  } else if (currentDay <= 22) {
-                    currentDayContent = userProduct.contents.find(c => c.day === currentDay - 1);
-                  } else if (currentDay === 23) {
-                    currentDayContent = userProduct.contents.find(c => c.day === 22);
-                  }
-                  
-                  if (!currentDayContent) {
-                    currentDayContent = userProduct.contents
-                      .filter(c => c.isAccessible)
-                      .sort((a, b) => (b.day || 0) - (a.day || 0))[0];
-                  }
-                  
-                  return currentDayContent ? `
-                    <div class="mb-6" id="current-day-content-${prod.id}">
-                      <div class="protected-content" data-content-id="${currentDayContent.id}">
-                        <div class="bg-gray-100 rounded-lg p-8 text-center">
-                          <div class="inline-flex items-center gap-2 text-gray-500 mb-4">
-                            <svg class="animate-spin h-4 w-4 text-fluance" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>Chargement du contenu…</span>
-                          </div>
+                ${currentDayContent ? `
+                  <div class="mb-6 ${isLastDay ? '' : 'mt-6'}" id="current-day-content-${prod.id}">
+                    <div class="protected-content" data-content-id="${currentDayContent.id}">
+                      <div class="bg-gray-100 rounded-lg p-8 text-center">
+                        <div class="inline-flex items-center gap-2 text-gray-500 mb-4">
+                          <svg class="animate-spin h-4 w-4 text-fluance" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Chargement du contenu…</span>
                         </div>
                       </div>
                     </div>
-                  ` : '';
-                })()}
+                  </div>
+                ` : ''}
               </div>
             `;
           } else if (prod.id === 'complet') {
