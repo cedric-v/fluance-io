@@ -9,7 +9,7 @@ eleventyExcludeFromCollections: true
 ---
 
 <section class="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-16">
-  <div class="bg-white rounded-lg shadow-lg p-5 md:p-8 space-y-6 md:space-y-8 overflow-hidden">
+  <div class="bg-white rounded-lg shadow-lg p-5 md:p-8 space-y-6 md:space-y-8">
     <header class="flex flex-col-reverse gap-4 md:flex-row md:items-start md:justify-between md:pt-8">
       <div class="w-full text-center md:text-left">
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Bienvenue dans l'espace client de Fluance</h1>
@@ -236,8 +236,8 @@ document.addEventListener('DOMContentLoaded', function() {
       localStorage.setItem('fluance-active-product-tab', activeProductId);
       
       // Créer les onglets
-      let tabsHTML = '<div class="border-b border-gray-200 mb-6 w-full overflow-hidden">';
-      tabsHTML += '<nav class="flex space-x-4 overflow-x-auto flex-nowrap pb-3 scrollbar-hide touch-pan-x" role="tablist">';
+      let tabsHTML = '<div class="border-b border-gray-200 mb-6 w-full overflow-hidden scroll-rail-wrap" data-rail-wrap="tabs">';
+      tabsHTML += '<nav class="flex space-x-4 overflow-x-auto flex-nowrap pb-3 scrollbar-hide touch-pan-x scroll-rail" role="tablist" data-rail>';
       
       allProducts.forEach((prod, index) => {
         // Pour l'onglet communauté, toujours accessible
@@ -289,7 +289,11 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
       });
       
-      tabsHTML += '</nav></div>';
+      tabsHTML += '</nav>';
+      tabsHTML += '<div class="scroll-rail-edge left" data-rail-edge="left"></div>';
+      tabsHTML += '<div class="scroll-rail-edge right" data-rail-edge="right"></div>';
+      tabsHTML += '<div class="swipe-hint-overlay" data-swipe-hint>Glissez <span class="swipe-chev">›</span></div>';
+      tabsHTML += '</div>';
       
       // Créer le contenu pour chaque produit
       let contentHTML = tabsHTML + '<div class="space-y-6" id="product-content">';
@@ -386,7 +390,43 @@ document.addEventListener('DOMContentLoaded', function() {
             
             contentHTML += `
               <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <!-- Navigation des jours : juste sous le menu de sélection, sticky sur mobile -->
+                <div class="sticky-nav" data-sticky-nav>
+                  <div class="scroll-rail-wrap">
+                    <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none scrollbar-hide touch-pan-x md:grid md:grid-cols-4 lg:grid-cols-7 md:gap-2 md:overflow-visible" data-day-rail data-rail>
+                      ${(() => {
+                        // Jour actuel = dernier contenu débloqué
+                        const currentNavContent = userProduct.contents
+                          .filter(c => c.isAccessible)
+                          .sort((a, b) => (b.day || 0) - (a.day || 0))[0];
+                        return userProduct.contents.map(content => {
+                          const dayLabel = content.day === 0 ? 'Déroulé' : `Jour ${content.day}`;
+                          const isLocked = !content.isAccessible;
+                          const isCurrent = content.id === currentNavContent?.id;
+                          
+                          return `
+                            <a href="#" 
+                               data-content-id="${content.id}"
+                               data-product="${prod.id}"
+                               ${isCurrent ? 'data-current-day="true"' : ''}
+                               class="snap-start shrink-0 w-[7.5rem] md:w-auto block p-3 rounded-lg text-center text-sm transition-colors
+                                      ${isCurrent ? 'bg-fluance text-white font-semibold' : isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+                               ${isLocked ? 'onclick="return false;"' : ''}>
+                              <div class="font-semibold truncate">${dayLabel}</div>
+                              <div class="text-xs mt-1 truncate">${content.title}</div>
+                              ${isLocked && content.daysRemaining !== null ? `<div class="text-xs mt-1">🔒 +${content.daysRemaining}j</div>` : ''}
+                            </a>
+                          `;
+                        }).join('');
+                      })()}
+                    </div>
+                    <div class="scroll-rail-edge left" data-rail-edge="left"></div>
+                    <div class="scroll-rail-edge right" data-rail-edge="right"></div>
+                    <div class="swipe-hint-overlay" data-swipe-hint>Glissez <span class="swipe-chev">›</span></div>
+                  </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 mt-6">
                   <p class="text-blue-800 font-semibold">Vous êtes au jour ${currentDay} sur ${totalDays}</p>
                   <p class="text-blue-700 text-sm mt-1">Continuez votre parcours vers la détente et la mobilité.</p>
                 </div>
@@ -424,37 +464,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                   ` : '';
                 })()}
-
-                <div class="border-t pt-6 mt-6">
-                  <h3 class="text-lg font-semibold mb-4">Navigation des jours</h3>
-                  <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none scrollbar-hide touch-pan-x md:grid md:grid-cols-4 lg:grid-cols-7 md:gap-2 md:overflow-visible" data-day-rail>
-                    ${(() => {
-                      // Jour actuel = dernier contenu débloqué
-                      const currentNavContent = userProduct.contents
-                        .filter(c => c.isAccessible)
-                        .sort((a, b) => (b.day || 0) - (a.day || 0))[0];
-                      return userProduct.contents.map(content => {
-                        const dayLabel = content.day === 0 ? 'Déroulé' : `Jour ${content.day}`;
-                        const isLocked = !content.isAccessible;
-                        const isCurrent = content.id === currentNavContent?.id;
-                        
-                        return `
-                          <a href="#" 
-                             data-content-id="${content.id}"
-                             data-product="${prod.id}"
-                             ${isCurrent ? 'data-current-day="true"' : ''}
-                             class="snap-start shrink-0 w-[7.5rem] md:w-auto block p-3 rounded-lg text-center text-sm transition-colors
-                                    ${isCurrent ? 'bg-fluance text-white font-semibold' : isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
-                             ${isLocked ? 'onclick="return false;"' : ''}>
-                            <div class="font-semibold truncate">${dayLabel}</div>
-                            <div class="text-xs mt-1 truncate">${content.title}</div>
-                            ${isLocked && content.daysRemaining !== null ? `<div class="text-xs mt-1">🔒 +${content.daysRemaining}j</div>` : ''}
-                          </a>
-                        `;
-                      }).join('');
-                    })()}
-                  </div>
-                </div>
               </div>
             `;
           } else if (prod.id === 'complet') {
@@ -474,7 +483,50 @@ document.addEventListener('DOMContentLoaded', function() {
 
             contentHTML += `
               <div class="product-tab-content ${isActive ? '' : 'hidden'}" data-product="${prod.id}">
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <!-- Navigation des semaines : juste sous le menu de sélection, sticky sur mobile -->
+                <div class="sticky-nav" data-sticky-nav>
+                  <div class="scroll-rail-wrap">
+                    <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none scrollbar-hide touch-pan-x md:grid md:grid-cols-4 lg:grid-cols-5 md:gap-2 md:overflow-visible" data-day-rail data-rail>
+                      ${(() => {
+                        // Semaine actuelle = dernière semaine débloquée (hors bienvenue)
+                        const currentNavContent = userProduct.contents
+                          .filter(c => c.isAccessible && c.type !== 'welcome')
+                          .sort((a, b) => (b.week || 0) - (a.week || 0))[0]
+                          || userProduct.contents.find(c => c.type === 'welcome' && c.isAccessible);
+                        return [welcomeContent, ...userProduct.contents.filter(content => content.type !== 'welcome')]
+                        .filter(Boolean)
+                        .map(content => {
+                          const weekLabel = content.type === 'welcome'
+                            ? 'Bienvenue'
+                            : content.week === 0
+                              ? 'Bonus'
+                              : `Semaine ${content.week}`;
+                          const isLocked = !content.isAccessible;
+                          const isCurrent = content.id === currentNavContent?.id;
+                          
+                          return `
+                            <a href="#" 
+                               data-content-id="${content.id}"
+                               data-product="${prod.id}"
+                               ${isCurrent ? 'data-current-day="true"' : ''}
+                               class="snap-start shrink-0 w-[7.5rem] md:w-auto block p-3 rounded-lg text-center text-sm transition-colors
+                                      ${isCurrent ? 'bg-fluance text-white font-semibold' : isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+                               ${isLocked ? 'onclick="return false;"' : ''}>
+                              <div class="font-semibold truncate">${weekLabel}</div>
+                              <div class="text-xs mt-1 truncate">${content.title}</div>
+                              ${isLocked && content.weeksRemaining !== null ? `<div class="text-xs mt-1">🔒 +${content.weeksRemaining}s</div>` : ''}
+                            </a>
+                          `;
+                        }).join('');
+                      })()}
+                    </div>
+                    <div class="scroll-rail-edge left" data-rail-edge="left"></div>
+                    <div class="scroll-rail-edge right" data-rail-edge="right"></div>
+                    <div class="swipe-hint-overlay" data-swipe-hint>Glissez <span class="swipe-chev">›</span></div>
+                  </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 mt-6">
                   <p class="text-blue-800 font-semibold">Vous êtes à la semaine ${currentWeek}</p>
                   <p class="text-blue-700 text-sm mt-1">Un nouveau contenu se débloque chaque semaine.</p>
                 </div>
@@ -519,44 +571,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                   ` : '';
                 })()}
-
-                <div class="border-t pt-6 mt-6">
-                  <h3 class="text-lg font-semibold mb-4">Navigation des semaines</h3>
-                  <div class="flex overflow-x-auto gap-2 pb-3 -mx-1 px-1 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none scrollbar-hide touch-pan-x md:grid md:grid-cols-4 lg:grid-cols-5 md:gap-2 md:overflow-visible" data-day-rail>
-                    ${(() => {
-                      // Semaine actuelle = dernière semaine débloquée (hors bienvenue)
-                      const currentNavContent = userProduct.contents
-                        .filter(c => c.isAccessible && c.type !== 'welcome')
-                        .sort((a, b) => (b.week || 0) - (a.week || 0))[0]
-                        || userProduct.contents.find(c => c.type === 'welcome' && c.isAccessible);
-                      return [welcomeContent, ...userProduct.contents.filter(content => content.type !== 'welcome')]
-                      .filter(Boolean)
-                      .map(content => {
-                        const weekLabel = content.type === 'welcome'
-                          ? 'Bienvenue'
-                          : content.week === 0
-                            ? 'Bonus'
-                            : `Semaine ${content.week}`;
-                        const isLocked = !content.isAccessible;
-                        const isCurrent = content.id === currentNavContent?.id;
-                        
-                        return `
-                          <a href="#" 
-                             data-content-id="${content.id}"
-                             data-product="${prod.id}"
-                             ${isCurrent ? 'data-current-day="true"' : ''}
-                             class="snap-start shrink-0 w-[7.5rem] md:w-auto block p-3 rounded-lg text-center text-sm transition-colors
-                                    ${isCurrent ? 'bg-fluance text-white font-semibold' : isLocked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
-                             ${isLocked ? 'onclick="return false;"' : ''}>
-                            <div class="font-semibold truncate">${weekLabel}</div>
-                            <div class="text-xs mt-1 truncate">${content.title}</div>
-                            ${isLocked && content.weeksRemaining !== null ? `<div class="text-xs mt-1">🔒 +${content.weeksRemaining}s</div>` : ''}
-                          </a>
-                        `;
-                      }).join('');
-                    })()}
-                  </div>
-                </div>
               </div>
             `;
           } else {
@@ -610,6 +624,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Charger les contenus protégés de l'onglet actif uniquement
       setTimeout(() => {
+        // Initialiser les affordances de scroll horizontal (fades + indices)
+        initScrollRails();
+        updateStickyOffset();
+        updateStuckNav();
+
         // Centrer la carte du jour/semaine actuel dans le rail (mobile)
         centerActiveDayRail();
 
@@ -706,9 +725,13 @@ document.addEventListener('DOMContentLoaded', function() {
               }
               
               // Scroller vers le contenu affiché après un court délai pour laisser le DOM se mettre à jour
-              // Prendre en compte la hauteur du header fixe (environ 112px = pt-28)
+              // Prendre en compte la hauteur du header fixe + la sous-navigation sticky si collée
               setTimeout(() => {
-                const headerOffset = 120; // Hauteur approximative du header (pt-28 = 7rem = 112px + marge)
+                const header = document.getElementById('main-header');
+                const headerH = header ? header.getBoundingClientRect().height : 112;
+                const stickyNav = contentContainer.querySelector('.product-tab-content:not(.hidden) [data-sticky-nav]');
+                const stickyH = (stickyNav && stickyNav.classList.contains('is-stuck')) ? stickyNav.getBoundingClientRect().height : 0;
+                const headerOffset = headerH + stickyH + 12;
                 const elementPosition = contentSection.getBoundingClientRect().top;
                 const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                 
@@ -759,6 +782,20 @@ document.addEventListener('DOMContentLoaded', function() {
       checkAuthAndLoad();
     });
   }
+  
+  // Suivre la hauteur du header fixe (qui se compacte au scroll) pour la sous-navigation sticky
+  let stickyTicking = false;
+  function onMemberScroll() {
+    if (stickyTicking) return;
+    stickyTicking = true;
+    window.requestAnimationFrame(() => {
+      updateStickyOffset();
+      updateStuckNav();
+      stickyTicking = false;
+    });
+  }
+  window.addEventListener('scroll', onMemberScroll, { passive: true });
+  window.addEventListener('resize', onMemberScroll, { passive: true });
 });
 
 // Fonction pour centrer la carte du jour/semaine actuel dans le rail (mobile uniquement)
@@ -773,6 +810,79 @@ function centerActiveDayRail() {
   // Position cible calculée relativement au rail (robuste, indépendant de l'offsetParent)
   const target = (activeCard.getBoundingClientRect().left - rail.getBoundingClientRect().left) + rail.scrollLeft - rail.clientWidth / 2 + activeCard.offsetWidth / 2;
   rail.scrollLeft = Math.max(0, Math.min(target, rail.scrollWidth - rail.clientWidth));
+}
+
+// Affordances de scroll horizontal : fades de bordure + indice « Glissez »
+function updateRailEdges(rail) {
+  const wrap = rail.closest('.scroll-rail-wrap');
+  if (!wrap) return;
+  const leftEdge = wrap.querySelector('.scroll-rail-edge.left');
+  const rightEdge = wrap.querySelector('.scroll-rail-edge.right');
+  if (!leftEdge || !rightEdge) return;
+
+  const hasOverflow = rail.scrollWidth > rail.clientWidth + 1;
+  if (!hasOverflow) {
+    leftEdge.classList.remove('visible');
+    rightEdge.classList.remove('visible');
+    return;
+  }
+
+  // Fade visible uniquement côté où il reste du contenu à dévoiler
+  const atStart = rail.scrollLeft <= 2;
+  const atEnd = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
+  leftEdge.classList.toggle('visible', !atStart);
+  rightEdge.classList.toggle('visible', !atEnd);
+}
+
+function initScrollRails(scope) {
+  const container = scope || document.getElementById('content-container');
+  if (!container) return;
+
+  container.querySelectorAll('[data-rail]').forEach((rail) => {
+    if (rail.__fluanceRailInit) return;
+    // Ne pas initialiser un rail dans un onglet masqué : ses dimensions sont inexactes
+    // (il sera initialisé lors de l'activation de l'onglet via switchProductTab)
+    const tab = rail.closest('.product-tab-content');
+    if (tab && tab.classList.contains('hidden')) return;
+    rail.__fluanceRailInit = true;
+
+    const wrap = rail.closest('.scroll-rail-wrap');
+    const hint = wrap ? wrap.querySelector('[data-swipe-hint]') : null;
+
+    // Pas de défilement possible (ex. grille desktop) : masquer l'indice tout de suite
+    if (hint && rail.scrollWidth <= rail.clientWidth + 1) {
+      hint.classList.add('is-hidden');
+    }
+
+    rail.addEventListener('scroll', () => {
+      updateRailEdges(rail);
+      if (hint) hint.classList.add('is-hidden');
+    }, { passive: true });
+
+    window.addEventListener('resize', () => updateRailEdges(rail), { passive: true });
+    updateRailEdges(rail);
+  });
+}
+
+// Sous-navigation sticky : offset dynamique sous le header fixe (qui se compacte au scroll)
+function updateStickyOffset() {
+  const header = document.getElementById('main-header');
+  const offset = header ? header.getBoundingClientRect().height + 8 : 120;
+  document.documentElement.style.setProperty('--sticky-nav-offset', offset + 'px');
+}
+
+function updateStuckNav() {
+  const offset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-nav-offset')) || 120;
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  const nav = document.querySelector('#content-container .product-tab-content:not(.hidden) [data-sticky-nav]');
+  if (!nav) {
+    // Aucune sous-navigation visible (onglet sans rail) : retirer l'état « collé »
+    document.querySelectorAll('#content-container [data-sticky-nav]').forEach(n => n.classList.remove('is-stuck'));
+    return;
+  }
+  // « Collé » quand le haut de l'élément atteint l'offset sticky (mobile uniquement)
+  const rect = nav.getBoundingClientRect();
+  nav.classList.toggle('is-stuck', isMobile && rect.top <= offset + 2);
 }
 
 // Fonction globale pour changer d'onglet produit
@@ -822,6 +932,11 @@ function switchProductTab(productId) {
       content.classList.add('hidden');
     }
   });
+
+  // Réinitialiser les affordances de scroll + offset sticky
+  initScrollRails();
+  updateStickyOffset();
+  updateStuckNav();
 
   // Recentrer la carte du jour/semaine actuel dans le rail (mobile)
   setTimeout(centerActiveDayRail, 50);
