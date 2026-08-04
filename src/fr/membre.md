@@ -347,7 +347,6 @@ document.addEventListener('DOMContentLoaded', function() {
       tabsHTML += '</nav>';
       tabsHTML += '<div class="scroll-rail-edge left" data-rail-edge="left"></div>';
       tabsHTML += '<div class="scroll-rail-edge right" data-rail-edge="right"></div>';
-      tabsHTML += '<div class="swipe-hint-overlay" data-swipe-hint>Glissez <span class="swipe-chev">›</span></div>';
       tabsHTML += '</div>';
       
       // Créer le contenu pour chaque produit
@@ -477,7 +476,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="scroll-rail-edge left" data-rail-edge="left"></div>
                     <div class="scroll-rail-edge right" data-rail-edge="right"></div>
-                    <div class="swipe-hint-overlay" data-swipe-hint>Glissez <span class="swipe-chev">›</span></div>
                   </div>
                 </div>
 
@@ -577,7 +575,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="scroll-rail-edge left" data-rail-edge="left"></div>
                     <div class="scroll-rail-edge right" data-rail-edge="right"></div>
-                    <div class="swipe-hint-overlay" data-swipe-hint>Glissez <span class="swipe-chev">›</span></div>
                   </div>
                 </div>
 
@@ -853,7 +850,7 @@ function centerActiveDayRail() {
   rail.scrollLeft = Math.max(0, Math.min(target, rail.scrollWidth - rail.clientWidth));
 }
 
-// Affordances de scroll horizontal : fades de bordure + indice « Glissez » + chevrons
+// Affordances de scroll horizontal : fades de bordure + boutons chevron
 function updateRailEdges(rail) {
   const wrap = rail.closest('.scroll-rail-wrap');
   if (!wrap) return;
@@ -871,16 +868,19 @@ function updateRailEdges(rail) {
     return;
   }
 
-  // Fade/chevron visible uniquement côté où il reste du contenu à dévoiler
-  const atStart = rail.scrollLeft <= 2;
-  const atEnd = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
+  // Fade/chevron visible uniquement côté où il reste du contenu à dévoiler.
+  // Tolérance généreuse : certains navigateurs rapportent un léger scrollLeft
+  // résiduel (sous-pixel / ancrage de scroll) même au repos.
+  const tolerance = 8;
+  const atStart = rail.scrollLeft <= tolerance;
+  const atEnd = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - tolerance;
   if (leftEdge) leftEdge.classList.toggle('visible', !atStart);
   if (rightEdge) rightEdge.classList.toggle('visible', !atEnd);
   if (leftBtn) leftBtn.classList.toggle('is-hidden', atStart);
   if (rightBtn) rightBtn.classList.toggle('is-hidden', atEnd);
 }
 
-// Boutons chevron (desktop) : injectés une fois par rail, scrollent d'une page
+// Boutons chevron (mobile et desktop) : injectés une fois par rail, scrollent d'une page
 function injectRailNavButtons(rail) {
   const wrap = rail.closest('.scroll-rail-wrap');
   if (!wrap || wrap.querySelector('.rail-nav-btn')) return;
@@ -917,21 +917,11 @@ function initScrollRails(scope) {
     if (tab && tab.classList.contains('hidden')) return;
     rail.__fluanceRailInit = true;
 
-    const wrap = rail.closest('.scroll-rail-wrap');
-    const hint = wrap ? wrap.querySelector('[data-swipe-hint]') : null;
-    const isDesktop = window.matchMedia('(min-width: 768px)').matches;
-
-    // Indice « Glissez » : uniquement mobile ET si le rail déborde réellement
-    if (hint && (isDesktop || rail.scrollWidth <= rail.clientWidth + 1)) {
-      hint.classList.add('is-hidden');
-    }
-
-    // Chevrons de navigation (desktop)
+    // Boutons chevron + fades de bordure (mobile et desktop)
     injectRailNavButtons(rail);
 
     rail.addEventListener('scroll', () => {
       updateRailEdges(rail);
-      if (hint && !isDesktop) hint.classList.add('is-hidden');
     }, { passive: true });
 
     window.addEventListener('resize', () => updateRailEdges(rail), { passive: true });
