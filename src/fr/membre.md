@@ -797,22 +797,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
               }
               
-              // Scroller vers le contenu affiché après un court délai pour laisser le DOM se mettre à jour
-              // Prendre en compte la hauteur du header fixe + la sous-navigation sticky si collée
+              // Scroller vers le contenu affiché après un court délai pour laisser le DOM
+              // se mettre à jour (remplacement spinner → vidéo, panneau de félicitations).
+              // On réserve TOUJOURS la hauteur de la sous-navigation sticky : elle sera
+              // collée sous le header après le défilement, quelle que soit sa position au
+              // moment du clic → la vidéo se retrouve entièrement visible en dessous.
               setTimeout(() => {
                 const header = document.getElementById('main-header');
-                const headerH = header ? header.getBoundingClientRect().height : 112;
+                const headerH = header ? header.getBoundingClientRect().height : 0;
                 const stickyNav = contentContainer.querySelector('.product-tab-content:not(.hidden) [data-sticky-nav]');
-                const stickyH = (stickyNav && stickyNav.classList.contains('is-stuck')) ? stickyNav.getBoundingClientRect().height : 0;
-                const headerOffset = headerH + stickyH + 12;
+                const stickyH = stickyNav ? stickyNav.getBoundingClientRect().height : 0;
+                const headerOffset = headerH + stickyH + 16;
                 const elementPosition = contentSection.getBoundingClientRect().top;
                 const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                 
                 window.scrollTo({
-                  top: offsetPosition,
+                  top: Math.max(0, offsetPosition),
                   behavior: 'smooth'
                 });
-              }, 100);
+              }, 150);
             }
 
             // Panneau de félicitations (21 jours) : visible uniquement sur les jours 21 et 22,
