@@ -455,10 +455,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Jour courant affiché (même numérotation que la navigation)
             const currentNavDay = currentDayContent ? (currentDayContent.day || 0) : null;
-            // Dernier jour du cours (21, ou 22 si le bonus est publié)
-            const lastCourseDay = Math.max(...dayContents.map(c => c.day || 0), 0);
-            // Sur le dernier jour ? → célébration + CTA vers l'approche complète
-            const isLastDay = currentNavDay !== null && currentNavDay >= 21 && currentNavDay === lastCourseDay;
+            // Jours de fin de parcours (21 = dernier jour du défi, 22 = bonus)
+            // → célébration + CTA vers l'approche complète
+            const isFinalDay = currentNavDay === 21 || currentNavDay === 22;
             // L'utilisateur possède-t-il déjà l'approche complète ?
             const ownsComplet = products.some(p => (typeof p === 'string' ? p : p.name) === 'complet');
             // CTA dans la langue de la page
@@ -517,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                 </div>
 
-                ${isLastDay ? `
+                ${isFinalDay ? `
                   <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6 mb-6 mt-6">
                     <p class="text-green-800 font-semibold text-lg mb-2">${congratsTitle}</p>
                     <p class="text-green-700 text-sm mb-4">${continueText}</p>
@@ -532,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ` : ''}
 
                 ${currentDayContent ? `
-                  <div class="mb-6 ${isLastDay ? '' : 'mt-6'}" id="current-day-content-${prod.id}">
+                  <div class="mb-6 ${isFinalDay ? '' : 'mt-6'}" id="current-day-content-${prod.id}">
                     <div class="protected-content" data-content-id="${currentDayContent.id}">
                       <div class="bg-gray-100 rounded-lg p-8 text-center">
                         <div class="inline-flex items-center gap-2 text-gray-500 mb-4">
@@ -607,11 +606,6 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                 </div>
 
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 mt-6">
-                  <p class="text-blue-800 font-semibold">Vous êtes à la semaine ${currentWeek}</p>
-                  <p class="text-blue-700 text-sm mt-1">Un nouveau contenu se débloque chaque semaine.</p>
-                </div>
-
                 ${(() => {
                   // Filtrer les contenus de type \"semaine\" (exclure le contenu de bienvenue)
                   const weeklyContents = userProduct.contents.filter(c => c.type !== 'welcome');
@@ -637,7 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   }
                   
                   return currentWeekContent ? `
-                    <div class="mb-6" id="current-week-content-${prod.id}">
+                    <div class="mb-6 mt-6" id="current-week-content-${prod.id}">
                       <div class="protected-content" data-content-id="${currentWeekContent.id}">
                         <div class="bg-gray-100 rounded-lg p-8 text-center">
                           <div class="inline-flex items-center gap-2 text-gray-500 mb-4">
