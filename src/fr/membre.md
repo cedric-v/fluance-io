@@ -135,6 +135,33 @@ document.addEventListener('DOMContentLoaded', function() {
     authRequired.classList.add('hidden');
     contentContainer.classList.remove('hidden');
 
+    // ⚠️ UX : pendant le chargement des formations (appel serveur), afficher un
+    // squelette de chargement (skeleton) — jamais de conteneur vide sans retour
+    // visuel. Accessibilité : aria-busy + région de statut pour les lecteurs d'écran.
+    contentContainer.setAttribute('aria-busy', 'true');
+    contentContainer.innerHTML = `
+      <div class="sr-only" role="status" aria-live="polite">Chargement de vos formations…</div>
+      <div class="space-y-6" aria-hidden="true">
+        <div class="border-b border-gray-200 mb-6">
+          <div class="flex gap-3 pb-3">
+            <div class="skeleton h-10 w-28"></div>
+            <div class="skeleton h-10 w-36"></div>
+            <div class="skeleton h-10 w-24"></div>
+          </div>
+        </div>
+        <div class="flex gap-2 pb-3">
+          <div class="skeleton h-16 w-40"></div>
+          <div class="skeleton h-16 w-40"></div>
+          <div class="skeleton h-16 w-40"></div>
+        </div>
+        <div class="skeleton h-64 md:h-96 w-full"></div>
+        <div class="space-y-2">
+          <div class="skeleton h-4 w-3/4"></div>
+          <div class="skeleton h-4 w-1/2"></div>
+        </div>
+      </div>
+    `;
+
     try {
       const result = await window.FluanceAuth.loadProtectedContent();
       
@@ -180,6 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         contentContainer.innerHTML = errorHTML;
         contentContainer.classList.remove('hidden');
+        contentContainer.removeAttribute('aria-busy');
         return;
       }
 
@@ -686,6 +714,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('[Espace Membre] Produit actif:', activeProductId);
       contentContainer.innerHTML = contentHTML;
       contentContainer.classList.remove('hidden');
+      contentContainer.removeAttribute('aria-busy');
       
       // Vérifier que le HTML a bien été inséré
       const insertedTab = contentContainer.querySelector(`.product-tab-content[data-product="${activeProductId}"]`);
@@ -857,6 +886,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       `;
       contentContainer.classList.remove('hidden');
+      contentContainer.removeAttribute('aria-busy');
     }
   }
   

@@ -424,3 +424,38 @@ main {
     padding-bottom: 0.5rem;
   }
 }
+
+/* ============================================================
+   Squelettes de chargement (skeleton screens)
+   Affiche la structure de la zone à venir pendant le chargement
+   (espace membre : onglets, jours, zone vidéo, texte).
+   ============================================================ */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+/* Balayage lumineux (shimmer) */
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Respecter la préférence « réduire les animations » des utilisateurs */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
