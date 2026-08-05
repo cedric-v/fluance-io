@@ -11,7 +11,8 @@
     "validate": "node scripts/validate-frontmatter.mjs",
     "build:11ty": "eleventy",
     "build:cf": "node scripts/generate-cf-config.mjs",
-    "build:css": "npx postcss ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --minify"
+    "build:css": "npx postcss ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --minify",
+    "build:email-templates": "node scripts/build-email-templates.js"
   },
   "keywords": [],
   "author": "Instants Zen Sàrl / Fluance",

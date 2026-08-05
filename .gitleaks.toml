@@ -1,0 +1,37 @@
+# Gitleaks — configuration du scan de secrets
+# https://github.com/gitleaks/gitleaks
+#
+# ⚠️ IMPORTANT : ce fichier n'autorise QUE des valeurs PUBLIQUES par conception
+# (clés web Firebase embarquées dans le client, clé publique Turnstile) et des
+# EXEMPLES/placeholders documentaires. Aucun secret réel ne doit y être ajouté.
+# Toute nouvelle vraie fuite (token, clé API, clé privée, donnée personnelle…)
+# doit être purgée de l'historique, pas simplement autorisée ici.
+
+title = "Fluance gitleaks config"
+
+[allowlist]
+description = "Clés publiques par conception + placeholders/exemples documentaires"
+
+regexes = [
+  # ── Clés API web Firebase (PUBLIQUES par conception : embarquées dans le
+  #    client, mêmes valeurs dans .env et README). Elles doivent rester
+  #    dans le dépôt pour que le site fonctionne. ──
+  '''AIzaSyDJ-VlDMC5PUEMeILLZ8OmdYIhvhxIfhdM''',
+  '''AIzaSyDF7lpMAEaZxOajdiHFWft-Hary1RtQM2c''',
+
+  # ── Cloudflare Turnstile : clé SITE publique (comme le sitekey reCAPTCHA) ──
+  '''6Lc44DArAAAAADGQxzkPBZs4rR_jH5WVgWMD9Q-4''',
+
+  # ── Placeholders / exemples documentaires (fichiers .md de procédures) ──
+  '''VOTRE_API_KEY''',
+  '''VOTRE_API_SECRET''',
+  '''sk_live_XXXXX''',
+  '''abc123def456''',
+  '''a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6''',
+  '''fluance-presentiel-2024''',
+  # Clé privée d'EXEMPLE tronquée dans un template de doc (CORRIGER_SECRET_...md)
+  '''MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSj''',
+
+  # ── ID d'instance d'extension Firebase (.firebaserc) : hash technique, pas un secret ──
+  '''68b59835b53c2a745b847eb0c0789009fc0801077204cc7552980a9b11b14929''',
+]

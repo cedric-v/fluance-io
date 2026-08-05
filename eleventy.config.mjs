@@ -706,7 +706,11 @@ export default function (eleventyConfig) {
   eleventyConfig.addExtension("mjml", {
     outputFileExtension: "html",
     compile: async (inputContent, inputPath) => {
-      const mjmlResult = mjml(inputContent, {
+      // ⚠️ mjml >= 5 renvoie une Promise : il faut l'attendre.
+      // Sans `await`, mjmlResult.html est undefined et aucun template
+      // n'est généré dans functions/emails/ → les emails transactionnels
+      // (création de compte, opt-in, etc.) échouent en production.
+      const mjmlResult = await mjml(inputContent, {
         minify: false,
         validationLevel: 'soft',
       });

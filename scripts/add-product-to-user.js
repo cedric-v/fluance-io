@@ -98,6 +98,9 @@ async function addProductToUser(email, productName) {
       name: productName,
       startDate: now,
       purchasedAt: now,
+      // Ajout manuel explicite → défi démarré (évite que le premier accès
+      // réinitialise le décompte 21 jours).
+      started: true,
     });
 
     console.log(`   Nouveaux produits: ${products.map(p => p.name).join(', ')}`);

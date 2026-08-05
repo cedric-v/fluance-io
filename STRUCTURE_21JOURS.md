@@ -87,13 +87,21 @@ users/
 
 ## Logique d'accès progressif
 
-1. **Jour 0 (Déroulé)** : Accessible immédiatement après achat
-2. **Jours 1-21** : Accessible à partir du jour correspondant depuis la date d'inscription
-   - Jour 1 : accessible à partir du jour 1 après l'inscription
-   - Jour 2 : accessible à partir du jour 2 après l'inscription
+> 🚀 **Départ au premier accès** : le décompte du défi démarre au **premier accès**
+> à la formation (et non à la date d'achat), pour une meilleure expérience.
+> Un produit `21jours` est créé avec `started: false` et `startDate: null` ; au
+> premier accès, `getProtectedContent` fixe `startDate = maintenant` et
+> `started = true` dans une transaction (une seule fois, même en cas
+> d'onglets simultanés). Les utilisateurs existants (sans champ `started`)
+> gardent leur progression en cours (pas de remise à zéro).
+
+1. **Jour 0 (Déroulé)** : Accessible immédiatement dès le premier accès
+2. **Jours 1-21** : Accessible à partir du jour correspondant depuis le premier accès
+   - Jour 1 : accessible dès le premier accès (jour 1 = jour du premier accès)
+   - Jour 2 : accessible le lendemain du premier accès
    - ...
-   - Jour 21 : accessible à partir du jour 21 après l'inscription
-3. **Jour 22 (Bonus)** : Accessible au jour 22 après l'inscription (21 jours après l'inscription)
+   - Jour 21 : accessible 20 jours après le premier accès
+3. **Jour 22 (Bonus)** : Accessible au jour 22 (21 jours après le premier accès)
 
 ## Création des documents dans Firestore
 
@@ -204,22 +212,33 @@ createContent().catch(console.error);
 
 ## Mise à jour des documents utilisateur
 
-Lors de la création d'un compte pour le produit "21jours", le champ `registrationDate` doit être défini :
+Lors de la création d'un compte pour le produit "21jours", le produit est créé
+avec `started: false` et `startDate: null` : le défi démarre au premier accès
+(`getProtectedContent` initialise alors `startDate` et `started: true`).
 
 ```javascript
-// Dans functions/index.js, lors de la création du compte
+// Dans functions/index.js (verifyToken / repairUserDocument), lors de la création du compte
 await db.collection('users').doc(userId).set({
   email: userEmail,
   product: '21jours',
-  registrationDate: admin.firestore.FieldValue.serverTimestamp(), // ← Important !
+  products: [{
+    name: '21jours',
+    startDate: null,               // ← fixé au premier accès à la formation
+    purchasedAt: serverTimestamp(),
+    started: false,                // ← défi non commencé
+  }],
+  registrationDate: admin.firestore.FieldValue.serverTimestamp(), // référence achat (compatibilité)
   createdAt: admin.firestore.FieldValue.serverTimestamp(),
   updatedAt: admin.firestore.FieldValue.serverTimestamp()
 });
 ```
 
+> ⚠️ Ne pas remettre `started` à `false` pour un défi déjà commencé : cela
+> réinitialiserait le décompte au prochain accès.
+
 ## Pages du site
 
 Une page dédiée sera créée pour afficher le contenu du jour :
 - `/cours-en-ligne/21jours/` - Page principale avec navigation jour par jour
-- Le contenu du jour actuel s'affiche automatiquement selon la date d'inscription
+- Le contenu du jour actuel s'affiche automatiquement selon le premier accès à la formation
 

@@ -93,12 +93,16 @@ async function grantFullAccess(db, auth, email) {
     if (productIndex >= 0) {
       // Mettre à jour la date de démarrage du produit existant
       products[productIndex].startDate = startDateTimestamp;
+      // ⚠️ Défi démarré : sinon le premier accès réinitialiserait le décompte
+      // (nouvelle règle « démarrage au premier accès »).
+      products[productIndex].started = true;
     } else {
       // Ajouter le produit "21jours" avec la date de démarrage
       products.push({
         name: '21jours',
         startDate: startDateTimestamp,
         purchasedAt: admin.firestore.Timestamp.now(),
+        started: true,
       });
     }
 

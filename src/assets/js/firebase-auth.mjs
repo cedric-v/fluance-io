@@ -994,6 +994,17 @@ async function loadProtectedContent(contentId = null) {
         });
       });
 
+      // Rafraîchir le cache des produits avec les données serveur : le serveur
+      // initialise startDate au PREMIER accès au défi 21 jours, il faut donc
+      // utiliser sa valeur pour calculer correctement le jour courant.
+      _cachedUserProducts = (productsData || []).map((prod) => ({
+        name: prod.name,
+        startDate: { toDate: () => new Date(prod.startDate) },
+        purchasedAt: { toDate: () => new Date(prod.startDate) },
+        started: prod.started !== undefined ? prod.started : true,
+      }));
+      _cachedUserUid = user.uid;
+
       // Retourner tous les produits avec leurs contenus
       // Garder aussi product et daysSinceRegistration pour compatibilité rétroactive
       return {

@@ -104,6 +104,8 @@ async function createUserWithProduct(email, productName, startDateString, passwo
       // Mettre à jour la date de démarrage
       const productIndex = products.findIndex(p => p.name === productName);
       products[productIndex].startDate = admin.firestore.Timestamp.fromDate(startDate);
+      // Date de démarrage fixée explicitement → défi démarré
+      products[productIndex].started = true;
     } else {
       // Ajouter le nouveau produit avec la date spécifiée
       const startTimestamp = admin.firestore.Timestamp.fromDate(startDate);
@@ -113,6 +115,7 @@ async function createUserWithProduct(email, productName, startDateString, passwo
         name: productName,
         startDate: startTimestamp,
         purchasedAt: purchasedTimestamp,
+        started: true,
       });
     }
 

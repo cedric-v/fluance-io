@@ -107,11 +107,14 @@ async function addProductToUserWithDate(email, productName, startDateString) {
     // Ajouter le nouveau produit avec la date spécifiée
     const startTimestamp = admin.firestore.Timestamp.fromDate(startDate);
     const purchasedTimestamp = admin.firestore.Timestamp.now();
-    
+
     products.push({
       name: productName,
       startDate: startTimestamp,
       purchasedAt: purchasedTimestamp,
+      // Date de démarrage fixée explicitement → défi déjà commencé (évite que
+      // le premier accès réinitialise le décompte 21 jours).
+      started: true,
     });
 
     console.log(`   Nouveaux produits: ${products.map(p => p.name).join(', ')}`);

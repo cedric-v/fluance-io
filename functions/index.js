@@ -1279,6 +1279,33 @@ async function sendMailjetEmail(to, subject, htmlContent, textContent = null, ap
 }
 
 /**
+ * Email d'activation de secours (HTML minimal) utilisé si un template
+ * est indisponible. Garantit qu'un client payant reçoit TOUJOURS son
+ * lien de création de compte.
+ */
+function buildFallbackActivationEmail(registrationUrl, productLabel, expirationDays) {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #7A1F3D;">Créez votre compte Fluance</h2>
+      <p>Bonjour,</p>
+      <p>Merci pour votre achat (${productLabel}). Pour accéder à votre espace et à votre
+        contenu, créez votre compte en cliquant sur le lien ci-dessous :</p>
+      <p style="text-align: center; margin: 30px 0;">
+        <a href="${registrationUrl}" style="background-color: #7A1F3D; color: #ffffff;
+        padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+          Créer mon compte
+        </a>
+      </p>
+      <p>Ce lien est valable ${expirationDays} jours.</p>
+      <p>Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur :<br/>
+        <a href="${registrationUrl}">${registrationUrl}</a>
+      </p>
+      <p>À très vite,<br/>L'équipe Fluance</p>
+    </div>
+  `;
+}
+
+/**
  * Crée un token dans Firestore et envoie l'email
  * Met également à jour les contact properties MailJet pour les achats
  * @param {string} email - Email du client
@@ -1319,11 +1346,21 @@ async function createTokenAndSendEmail(
 
   // Contenu de l'email
   const emailSubject = 'Créez votre compte Fluance';
-  const emailHtml = loadEmailTemplate('creation-compte', {
-    product: product,
-    registrationUrl: registrationUrl,
-    expirationDays: expirationDays.toString(),
-  });
+  let emailHtml;
+  try {
+    emailHtml = loadEmailTemplate('creation-compte', {
+      product: product,
+      registrationUrl: registrationUrl,
+      expirationDays: expirationDays.toString(),
+    });
+  } catch (templateError) {
+    // ⚠️ Fallback : ne JAMAIS bloquer l'email d'activation d'un client payant
+    // si le template est manquant. On loggue et on envoie un HTML minimal.
+    console.error(
+        `❌ Template 'creation-compte' indisponible, utilisation du fallback: ${templateError.message}`,
+    );
+    emailHtml = buildFallbackActivationEmail(registrationUrl, product, expirationDays);
+  }
 
   // Envoyer l'email
   await sendMailjetEmail(email, emailSubject, emailHtml, null, mailjetApiKey, mailjetApiSecret);
@@ -1503,11 +1540,21 @@ async function createTokenForMultipleProductsAndSendEmail(
 
   // Contenu de l'email
   const emailSubject = 'Créez votre compte Fluance';
-  const emailHtml = loadEmailTemplate('creation-compte-multiple', {
-    productList: productList,
-    registrationUrl: registrationUrl,
-    expirationDays: expirationDays.toString(),
-  });
+  let emailHtml;
+  try {
+    emailHtml = loadEmailTemplate('creation-compte-multiple', {
+      productList: productList,
+      registrationUrl: registrationUrl,
+      expirationDays: expirationDays.toString(),
+    });
+  } catch (templateError) {
+    // ⚠️ Fallback : ne JAMAIS bloquer l'email d'activation d'un client payant
+    // si le template est manquant. On loggue et on envoie un HTML minimal.
+    console.error(
+        `❌ Template 'creation-compte-multiple' indisponible, utilisation du fallback: ${templateError.message}`,
+    );
+    emailHtml = buildFallbackActivationEmail(registrationUrl, productList, expirationDays);
+  }
 
   // Envoyer l'email
   await sendMailjetEmail(email, emailSubject, emailHtml, null, mailjetApiKey, mailjetApiSecret);
@@ -2937,6 +2984,57 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
           return res.status(200).json({received: true});
         } catch (error) {
           console.error('Error creating token:', error);
+
+          // ⚠️ ALERTE ADMIN + AUDIT : un échec ici laisse un client payant
+          // sans accès. On alerte immédiatement pour éviter les pertes silencieuses.
+          try {
+            await db.collection('audit_payments').add({
+              email: (customerEmail || '').toLowerCase().trim(),
+              products: [product],
+              amount: (session.amount_total || 0) / 100,
+              currency: 'CHF',
+              stripeSessionId: session.id,
+              stripePaymentIntentId: session.payment_intent || session.id,
+              status: 'error',
+              error: error.message,
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              metadata: session.metadata || {},
+              system: 'firebase',
+              type: 'online_product',
+              gateway: 'stripe',
+            });
+          } catch (auditError) {
+            console.error('Error logging Stripe audit error:', auditError.message);
+          }
+
+          try {
+            if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+              await sendAdminAlert(
+                  {
+                    subject: '🔴 Paiement Stripe accepté mais accès non livré',
+                    message: `Un paiement Stripe a réussi mais le traitement du produit en ligne a échoué.
+
+Email client: ${customerEmail || 'N/A'}
+Produit: ${product}
+Session: ${session.id}
+
+⚠️ ACTION REQUISE : vérifiez l'accès du client (token / document Firestore) et envoyez-lui le lien d'activation.`,
+                    severity: 'high',
+                    metadata: {
+                      customerEmail,
+                      sessionId: session.id,
+                      product,
+                      error: error.message,
+                    },
+                  },
+                  process.env.MAILJET_API_KEY,
+                  process.env.MAILJET_API_SECRET,
+              );
+            }
+          } catch (alertError) {
+            console.error('❌ Erreur lors de l\'envoi de l\'alerte admin:', alertError.message);
+          }
+
           return res.status(500).send('Error processing payment');
         }
       }
@@ -3692,6 +3790,57 @@ exports.webhookPayPal = onRequest(
           return res.status(200).json({received: true});
         } catch (error) {
           console.error('Error creating token:', error);
+
+          // ⚠️ ALERTE ADMIN + AUDIT : un échec ici laisse un client payant
+          // sans accès. On alerte immédiatement pour éviter les pertes silencieuses.
+          try {
+            await db.collection('audit_payments').add({
+              email: (customerEmail || '').toLowerCase().trim(),
+              products: [product],
+              amount: parseFloat(resource.purchase_units?.[0]?.amount?.value) || 0,
+              currency: 'CHF',
+              stripeSessionId: resource.custom_id || '',
+              stripePaymentIntentId: resource.id || '',
+              status: 'error',
+              error: error.message,
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              metadata: resource,
+              system: 'firebase',
+              type: 'online_product',
+              gateway: 'paypal',
+            });
+          } catch (auditError) {
+            console.error('Error logging PayPal audit error:', auditError.message);
+          }
+
+          try {
+            if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+              await sendAdminAlert(
+                  {
+                    subject: '🔴 Paiement PayPal accepté mais accès non livré',
+                    message: `Un paiement PayPal a réussi mais le traitement du produit en ligne a échoué.
+
+Email client: ${customerEmail || 'N/A'}
+Produit: ${product}
+Custom ID: ${resource.custom_id || 'N/A'}
+
+⚠️ ACTION REQUISE : vérifiez l'accès du client (token / document Firestore) et envoyez-lui le lien d'activation.`,
+                    severity: 'high',
+                    metadata: {
+                      customerEmail,
+                      product,
+                      customId: resource.custom_id,
+                      error: error.message,
+                    },
+                  },
+                  process.env.MAILJET_API_KEY,
+                  process.env.MAILJET_API_SECRET,
+              );
+            }
+          } catch (alertError) {
+            console.error('❌ Erreur lors de l\'envoi de l\'alerte admin:', alertError.message);
+          }
+
           return res.status(500).send('Error processing payment');
         }
       }
@@ -4550,11 +4699,23 @@ exports.verifyToken = onCall(
         for (const productName of tokenProducts) {
           const productExists = products.some((p) => p.name === productName);
           if (!productExists) {
-            products.push({
-              name: productName,
-              startDate: now,
-              purchasedAt: now,
-            });
+            // 🚀 Défi 21 jours : le décompte démarre au PREMIER accès à la
+            // formation (started: false → getProtectedContent fixe startDate
+            // au premier accès). Les autres produits démarrent dès la création.
+            if (productName === '21jours') {
+              products.push({
+                name: productName,
+                startDate: null,
+                purchasedAt: now,
+                started: false,
+              });
+            } else {
+              products.push({
+                name: productName,
+                startDate: now,
+                purchasedAt: now,
+              });
+            }
           }
         }
 
@@ -4646,6 +4807,49 @@ exports.getProtectedContent = onCall(
 
       if (userProducts.length === 0) {
         throw new HttpsError('failed-precondition', 'Votre compte n\'a pas de produit associé. Veuillez contacter le support.');
+      }
+
+      // 🚀 Défi 21 jours : le décompte démarre au PREMIER accès à la formation.
+      // Si un produit 21jours est marqué `started: false`, on fixe startDate = maintenant
+      // dans une transaction (une seule fois, même en cas d'onglets simultanés).
+      if (userProducts.some((p) => p && p.name === '21jours' && p.started === false)) {
+        const userRef = db.collection('users').doc(uid);
+        try {
+          await db.runTransaction(async (tx) => {
+            const freshDoc = await tx.get(userRef);
+            const freshData = freshDoc.data();
+            const freshProducts = (freshData && freshData.products) || [];
+            let changed = false;
+            freshProducts.forEach((p) => {
+              if (p && p.name === '21jours' && p.started === false) {
+                p.started = true;
+                p.startDate = new Date();
+                p.firstAccessAt = new Date();
+                changed = true;
+              }
+            });
+            if (changed) {
+              tx.update(userRef, {
+                products: freshProducts,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            }
+          });
+        } catch (initError) {
+          // Ne pas bloquer l'accès : on loggue et on continue avec les données actuelles
+          console.error('Error initializing 21jours start date:', initError);
+        }
+        // Recharger le document pour utiliser les valeurs fraîches
+        const freshUserDoc = await userDoc.ref.get();
+        const freshUserData = freshUserDoc.data() || {};
+        userProducts = freshUserData.products || [];
+        if (userProducts.length === 0 && freshUserData.product) {
+          userProducts = [{
+            name: freshUserData.product,
+            startDate: freshUserData.registrationDate || freshUserData.createdAt || new Date(),
+            purchasedAt: freshUserData.createdAt || new Date(),
+          }];
+        }
       }
 
       const userProduct = userProducts[0].name;
@@ -4991,11 +5195,13 @@ exports.repairUserDocument = onCall(
 
         // Créer le document Firestore avec products[]
         const now = admin.firestore.FieldValue.serverTimestamp();
-        const productsArray = detectedProducts.map((prod) => ({
-          name: prod,
-          startDate: now,
-          purchasedAt: now,
-        }));
+        const productsArray = detectedProducts.map((prod) => {
+          // 🚀 Défi 21 jours : démarre au premier accès à la formation
+          if (prod === '21jours') {
+            return {name: prod, startDate: null, purchasedAt: now, started: false};
+          }
+          return {name: prod, startDate: now, purchasedAt: now};
+        });
 
         const userData = {
           email: normalizedEmail,
@@ -13395,6 +13601,59 @@ exports.processMolliePayment = onMessagePublished(
               console.log(`📊 Audit log created for Mollie payment by ${customerEmail}`);
             } catch (onlineError) {
               console.error('❌ Error processing online product for Mollie:', onlineError);
+
+              // ⚠️ ALERTE ADMIN + AUDIT : un échec ici laisse un client payant
+              // sans accès (ex. template email manquant). Il ne doit JAMAIS
+              // rester silencieux : on alerte l'équipe et on trace l'erreur.
+              try {
+                await db.collection('audit_payments').add({
+                  email: (metadata.email || '').toLowerCase().trim(),
+                  products: [metadata.product],
+                  amount: parseFloat(payment.amount ? payment.amount.value : 0) || 0,
+                  currency: 'CHF',
+                  stripeSessionId: paymentId,
+                  stripePaymentIntentId: paymentId,
+                  status: 'error',
+                  error: onlineError.message,
+                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                  metadata: metadata,
+                  system: 'firebase',
+                  type: 'online_product',
+                  gateway: 'mollie',
+                });
+                console.log(`📊 Audit error log created for Mollie payment by ${metadata.email || 'N/A'}`);
+              } catch (auditError) {
+                console.error('❌ Error logging Mollie audit error:', auditError.message);
+              }
+
+              try {
+                if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
+                  await sendAdminAlert(
+                      {
+                        subject: '🔴 Paiement Mollie accepté mais accès non livré',
+                        message: `Un paiement Mollie a réussi mais le traitement du produit en ligne a échoué.
+
+Email client: ${metadata.email || 'N/A'}
+Produit: ${metadata.product || 'N/A'}
+Montant: ${payment.amount ? payment.amount.value : '?'} ${payment.amount ? payment.amount.currency : ''}
+Paiement Mollie: ${paymentId}
+
+⚠️ ACTION REQUISE : vérifiez l'accès du client (token / document Firestore) et envoyez-lui le lien d'activation.`,
+                        severity: 'high',
+                        metadata: {
+                          customerEmail: metadata.email,
+                          paymentId,
+                          product: metadata.product,
+                          error: onlineError.message,
+                        },
+                      },
+                      process.env.MAILJET_API_KEY,
+                      process.env.MAILJET_API_SECRET,
+                  );
+                }
+              } catch (alertError) {
+                console.error('❌ Erreur lors de l\'envoi de l\'alerte admin:', alertError.message);
+              }
             }
           }
         }
