@@ -3,3 +3,11 @@ repos:
     rev: v8.30.1
     hooks:
       - id: gitleaks
+  - repo: local
+    hooks:
+      - id: no-client-pii
+        name: Vérifier l'absence de données personnelles (RGPD)
+        description: Bloque les emails clients et noms de fichiers suspects dans les fichiers stagés
+        entry: bash scripts/check-no-pii.sh
+        language: system
+        stages: [pre-commit]
