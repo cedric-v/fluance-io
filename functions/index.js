@@ -11670,6 +11670,9 @@ exports.getAvailableCourses = onRequest(
 
         // Compter les participants en une passe groupée (max 30 IDs par requête
         // Firestore) au lieu d'une requête par cours (problème N+1).
+        // Un seul filtre `in` sur courseId : la combinaison de deux filtres
+        // `in` (courseId x statut) dépasserait la limite Firestore de 30
+        // disjonctions. Le filtre de statut est appliqué en mémoire.
         const participantCounts = new Map(courseIds.map((id) => [id, 0]));
         const ACTIVE_BOOKING_STATUSES = ['confirmed', 'pending_cash'];
         for (let i = 0; i < courseIds.length; i += 30) {
@@ -11677,11 +11680,11 @@ exports.getAvailableCourses = onRequest(
           if (chunk.length === 0) continue;
           const bookingsSnapshot = await db.collection('bookings')
               .where('courseId', 'in', chunk)
-              .where('status', 'in', ACTIVE_BOOKING_STATUSES)
               .get();
           bookingsSnapshot.docs.forEach((bookingDoc) => {
             const booking = bookingDoc.data();
-            if (booking.courseId && participantCounts.has(booking.courseId)) {
+            if (booking.courseId && participantCounts.has(booking.courseId) &&
+                ACTIVE_BOOKING_STATUSES.includes(booking.status)) {
               participantCounts.set(booking.courseId,
                   participantCounts.get(booking.courseId) + 1);
             }
@@ -13060,6 +13063,9 @@ exports.getAvailableCoursesForTransfer = onRequest(
         const courseIds = courseDocs.map((doc) => doc.id);
 
         // Compter les participants en une passe groupée (max 30 IDs par requête)
+        // Un seul filtre `in` sur courseId : la combinaison de deux filtres
+        // `in` (courseId x statut) dépasserait la limite Firestore de 30
+        // disjonctions. Le filtre de statut est appliqué en mémoire.
         const participantCounts = new Map(courseIds.map((id) => [id, 0]));
         const ACTIVE_BOOKING_STATUSES = ['confirmed', 'pending_cash'];
         for (let i = 0; i < courseIds.length; i += 30) {
@@ -13067,11 +13073,11 @@ exports.getAvailableCoursesForTransfer = onRequest(
           if (chunk.length === 0) continue;
           const bookingsSnapshot = await db.collection('bookings')
               .where('courseId', 'in', chunk)
-              .where('status', 'in', ACTIVE_BOOKING_STATUSES)
               .get();
           bookingsSnapshot.docs.forEach((bookingDoc) => {
             const booking = bookingDoc.data();
-            if (booking.courseId && participantCounts.has(booking.courseId)) {
+            if (booking.courseId && participantCounts.has(booking.courseId) &&
+                ACTIVE_BOOKING_STATUSES.includes(booking.status)) {
               participantCounts.set(booking.courseId,
                   participantCounts.get(booking.courseId) + 1);
             }
