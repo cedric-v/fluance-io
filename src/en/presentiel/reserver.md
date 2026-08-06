@@ -7,6 +7,12 @@ permalink: /en/presentiel/reserver/
 markdownAlternate: /agent/presentiel-reserver-en.md
 ---
 
+<!-- Preconnect to third-party origins used by this page: the booking API
+(course list) and Stripe. Reduces loading latency (DNS + TLS) before
+booking.js fetches the courses. -->
+<link rel="preconnect" href="https://europe-west1-fluance-protected-content.cloudfunctions.net" crossorigin>
+<link rel="preconnect" href="https://js.stripe.com">
+
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16">
   <header class="text-center mb-12">
     <h1 class="text-4xl font-semibold text-[#3E3A35] mb-4">Book a Class</h1>
@@ -80,5 +86,5 @@ markdownAlternate: /agent/presentiel-reserver-en.md
 
 <!-- Booking script -->
 {% stripeConfig %}
-<script src="https://js.stripe.com/v3/"></script>
+<script src="https://js.stripe.com/v3/" async></script>
 <script src="{{ '/assets/js/booking.js' | relativeUrl }}?v={{ version }}"></script>

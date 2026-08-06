@@ -119,7 +119,7 @@
     en: {
       step1Title: 'Enter your email',
       emailLabel: 'Email *',
-      emailPlaceholder: 'your@email.com',
+      emailPlaceholder: 'user@example.com',
       continue: 'Continue',
       checking: 'Checking...',
       firstName: 'First name *',
@@ -180,9 +180,93 @@
   let currentCourseData = null;
   let userPassStatus = null;
   let currentStep = 1; // 1: email, 2: pass/pricing, 3: infos, 4: payment
-  let storedFirstName = ''; // Prénom stocké pour pré-remplir les formulaires
-  let storedLastName = ''; // Nom stocké pour pré-remplir les formulaires
+  // Prénom / nom mémorisés (localStorage) pour pré-remplir les formulaires
+  let storedFirstName = getSavedFirstName();
+  let storedLastName = getSavedLastName();
   let hasOpenedPreselectedCourse = false;
+
+  // ============================================================
+  // Mémoire locale : identité utilisateur + cache des cours
+  // L'email saisi lors d'une réservation est mémorisé sur l'appareil
+  // (localStorage) pour ne plus jamais être redemandé (bonne pratique UX
+  // 2026 : zéro ressaisie pour les réservations suivantes).
+  // ============================================================
+  const EMAIL_STORAGE_KEY = 'fluance_booking_email';
+  const FIRST_NAME_STORAGE_KEY = 'fluance_booking_firstname';
+  const LAST_NAME_STORAGE_KEY = 'fluance_booking_lastname';
+  const COURSES_CACHE_KEY = 'fluance_courses_cache_v1';
+  // Le cache sert uniquement à l'affichage instantané (stale-while-revalidate),
+  // il est toujours rafraîchi en arrière-plan au chargement de la page.
+  const COURSES_CACHE_MAX_AGE_MS = 30 * 60 * 1000; // 30 min
+
+  function getSavedEmail() {
+    try {
+      return localStorage.getItem(EMAIL_STORAGE_KEY) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function getSavedFirstName() {
+    try {
+      return localStorage.getItem(FIRST_NAME_STORAGE_KEY) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function getSavedLastName() {
+    try {
+      return localStorage.getItem(LAST_NAME_STORAGE_KEY) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /**
+   * Mémorise l'identité (email obligatoire) pour les prochaines réservations.
+   * Les données restent sur l'appareil de l'utilisateur.
+   */
+  function saveUserIdentity(email, firstName, lastName) {
+    if (!email) return;
+    try {
+      localStorage.setItem(EMAIL_STORAGE_KEY, email.toLowerCase().trim());
+      if (firstName) localStorage.setItem(FIRST_NAME_STORAGE_KEY, firstName);
+      if (lastName) localStorage.setItem(LAST_NAME_STORAGE_KEY, lastName);
+    } catch (e) {
+      // localStorage indisponible (mode privé, quota...) : on ignore
+    }
+  }
+
+  /**
+   * Cache local des cours (stale-while-revalidate) : la liste s'affiche
+   * instantanément au retour sur la page, puis est rafraîchie en arrière-plan.
+   */
+  function readCoursesCache() {
+    try {
+      const raw = localStorage.getItem(COURSES_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.courses)) return null;
+      if (!parsed.savedAt || Date.now() - parsed.savedAt > COURSES_CACHE_MAX_AGE_MS) {
+        return null;
+      }
+      return parsed.courses;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writeCoursesCache(courses) {
+    try {
+      localStorage.setItem(COURSES_CACHE_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        courses: courses,
+      }));
+    } catch (e) {
+      // Ignorer (quota ou mode privé)
+    }
+  }
 
   // État pour la navigation par mois
   let coursesByMonth = {};
@@ -235,12 +319,10 @@
    * Initialise le système de réservation
    */
   function init() {
-    // Initialiser Stripe si la clé est configurée
-    if (CONFIG.STRIPE_PUBLISHABLE_KEY) {
-      stripe = Stripe(CONFIG.STRIPE_PUBLISHABLE_KEY);
-    }
+    // Initialiser Stripe si la clé est configurée (non bloquant)
+    initStripe();
 
-    // Charger les cours disponibles
+    // Charger les cours disponibles (cache local affiché instantanément)
     loadAvailableCourses();
 
     // Mettre à jour périodiquement
@@ -251,17 +333,49 @@
   }
 
   /**
-   * Charge et affiche tous les cours disponibles
+   * Initialise Stripe de manière non bloquante.
+   * Stripe.js est chargé en async : si le script n'est pas encore prêt au
+   * démarrage, on réessaie au chargement complet de la page (le paiement
+   * n'est de toute façon atteignable qu'après plusieurs étapes du formulaire).
+   */
+  function initStripe() {
+    if (stripe || !CONFIG.STRIPE_PUBLISHABLE_KEY) return;
+    if (typeof Stripe === 'undefined') {
+      window.addEventListener('load', initStripe, {once: true});
+      return;
+    }
+    stripe = Stripe(CONFIG.STRIPE_PUBLISHABLE_KEY);
+  }
+
+  /**
+   * Charge et affiche tous les cours disponibles.
+   * Affiche d'abord le cache local (instantané), puis rafraîchit en arrière-plan.
    */
   async function loadAvailableCourses() {
     const container = document.getElementById('courses-list');
     if (!container) return;
 
+    // 1. Affichage immédiat du cache local (stale-while-revalidate)
+    const hasRenderedCourses = container.querySelector('[data-course-id], [data-month-pill]') !== null;
+    if (!hasRenderedCourses) {
+      const cachedCourses = readCoursesCache();
+      if (cachedCourses && cachedCourses.length) {
+        applyCoursesData(cachedCourses);
+        renderCoursesView(container);
+        maybeOpenPreselectedCourse(cachedCourses);
+      }
+    }
+
+    // 2. Rafraîchissement en arrière-plan
     try {
       const response = await fetch(`${CONFIG.API_BASE_URL}/getAvailableCourses`);
       const data = await response.json();
 
       if (!data.success || !data.courses.length) {
+        // Ne pas écraser une liste déjà affichée par un message vide
+        if (hasRenderedCourses || container.querySelector('[data-course-id], [data-month-pill]')) {
+          return;
+        }
         const noCoursesText = currentLocale === 'en'
           ? 'No classes available at the moment.'
           : 'Aucun cours disponible pour le moment.';
@@ -277,73 +391,19 @@
         return;
       }
 
-      // Grouper les cours par mois (plus de limite à 6)
-      coursesByMonth = groupCoursesByMonth(data.courses);
-      monthKeys = Object.keys(coursesByMonth).sort();
+      // Mettre à jour le cache local pour le prochain affichage instantané
+      writeCoursesCache(data.courses);
 
-      // Créer la liste plate triée pour la vue "6 prochains cours"
-      allCoursesSorted = [...data.courses].sort((a, b) => {
-        const [aD, aM, aY] = a.date.split('/');
-        const [bD, bM, bY] = b.date.split('/');
-        return new Date(aY, aM - 1, aD) - new Date(bY, bM - 1, bD);
-      });
-
-      // Vue par défaut: les 6 prochains cours
-      if (!selectedMonthKey || !coursesByMonth[selectedMonthKey]) {
-        const preselectedId = getPreselectedCourseId();
-        if (preselectedId) {
-          const preselectedCourse = data.courses.find(c => c.id === preselectedId);
-          if (preselectedCourse) {
-            const [d, m, y] = preselectedCourse.date.split('/');
-            selectedMonthKey = `${y}-${m}`;
-            viewMode = 'month';
-          } else {
-            viewMode = 'upcoming';
-            selectedMonthKey = null;
-          }
-        } else {
-          viewMode = 'upcoming';
-          selectedMonthKey = null;
-        }
-      }
-
-      // Rendre les pills de navigation + les cartes
-      const pillsHtml = renderMonthPills(monthKeys, viewMode === 'upcoming' ? null : selectedMonthKey);
-      let coursesHtml;
-      if (viewMode === 'upcoming') {
-        coursesHtml = allCoursesSorted.slice(0, 6).map(course => renderCourseCard(course)).join('');
-      } else {
-        coursesHtml = coursesByMonth[selectedMonthKey].map(course => renderCourseCard(course)).join('');
-      }
-      container.innerHTML = pillsHtml + coursesHtml;
-
-      // Attacher les événements sur les pills de mois
-      document.querySelectorAll('[data-month-pill]').forEach(pill => {
-        pill.addEventListener('click', () => {
-          const monthKey = pill.dataset.monthPill;
-          switchToMonth(monthKey);
-        });
-      });
-
-      // Attacher l'événement sur le pill "6 prochains cours"
-      document.querySelectorAll('[data-upcoming-pill]').forEach(pill => {
-        pill.addEventListener('click', () => {
-          switchToUpcoming();
-        });
-      });
-
-      // Attacher les événements de clic sur les cartes
-      container.querySelectorAll('[data-course-id]').forEach(card => {
-        card.addEventListener('click', () => {
-          const courseId = card.dataset.courseId;
-          openBookingModal(courseId, card.dataset);
-        });
-      });
-
+      applyCoursesData(data.courses);
+      renderCoursesView(container);
       maybeOpenPreselectedCourse(data.courses);
 
     } catch (error) {
       console.error('Error loading courses:', error);
+      // Ne pas écraser une liste déjà affichée
+      if (container.querySelector('[data-course-id], [data-month-pill]')) {
+        return;
+      }
       const errorText = currentLocale === 'en'
         ? 'Error loading classes.'
         : 'Erreur lors du chargement des cours.';
@@ -359,6 +419,80 @@
         </div>
       `;
     }
+  }
+
+  /**
+   * Applique les données de cours aux structures internes (groupement, tri, vue)
+   * @param {Array} courses - Liste des cours depuis l'API ou le cache
+   */
+  function applyCoursesData(courses) {
+    // Grouper les cours par mois
+    coursesByMonth = groupCoursesByMonth(courses);
+    monthKeys = Object.keys(coursesByMonth).sort();
+
+    // Créer la liste plate triée pour la vue "6 prochains cours"
+    allCoursesSorted = [...courses].sort((a, b) => {
+      const [aD, aM, aY] = a.date.split('/');
+      const [bD, bM, bY] = b.date.split('/');
+      return new Date(aY, aM - 1, aD) - new Date(bY, bM - 1, bD);
+    });
+
+    // Vue par défaut : les 6 prochains cours
+    if (!selectedMonthKey || !coursesByMonth[selectedMonthKey]) {
+      const preselectedId = getPreselectedCourseId();
+      if (preselectedId) {
+        const preselectedCourse = courses.find(c => c.id === preselectedId);
+        if (preselectedCourse) {
+          const [d, m, y] = preselectedCourse.date.split('/');
+          selectedMonthKey = `${y}-${m}`;
+          viewMode = 'month';
+        } else {
+          viewMode = 'upcoming';
+          selectedMonthKey = null;
+        }
+      } else {
+        viewMode = 'upcoming';
+        selectedMonthKey = null;
+      }
+    }
+  }
+
+  /**
+   * Rend les pills de navigation + les cartes de cours et attache les événements
+   * @param {HTMLElement} container - Élément #courses-list
+   */
+  function renderCoursesView(container) {
+    const pillsHtml = renderMonthPills(monthKeys, viewMode === 'upcoming' ? null : selectedMonthKey);
+    let coursesHtml;
+    if (viewMode === 'upcoming') {
+      coursesHtml = allCoursesSorted.slice(0, 6).map(course => renderCourseCard(course)).join('');
+    } else {
+      coursesHtml = coursesByMonth[selectedMonthKey].map(course => renderCourseCard(course)).join('');
+    }
+    container.innerHTML = pillsHtml + coursesHtml;
+
+    // Attacher les événements sur les pills de mois
+    document.querySelectorAll('[data-month-pill]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const monthKey = pill.dataset.monthPill;
+        switchToMonth(monthKey);
+      });
+    });
+
+    // Attacher l'événement sur le pill "6 prochains cours"
+    document.querySelectorAll('[data-upcoming-pill]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        switchToUpcoming();
+      });
+    });
+
+    // Attacher les événements de clic sur les cartes
+    container.querySelectorAll('[data-course-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        const courseId = card.dataset.courseId;
+        openBookingModal(courseId, card.dataset);
+      });
+    });
   }
 
   function getPreselectedCourseId() {
@@ -753,6 +887,25 @@
   function openBookingModal(courseId, courseData) {
     currentCourseId = courseId;
 
+    // Normaliser les champs selon la source : carte HTML (data-course-*) ou
+    // objet API/cache (title/date/time/location).
+    if (!courseData.courseTitle && courseData.title) {
+      courseData.courseTitle = courseData.title;
+    }
+    if (!courseData.courseDateRaw && courseData.date) {
+      courseData.courseDateRaw = courseData.date;
+      courseData.courseDate = formatDateFromDDMMYYYY(courseData.date);
+    }
+    if (!courseData.courseTime && courseData.time) {
+      courseData.courseTime = courseData.time;
+    }
+    if (!courseData.courseLocation && courseData.location) {
+      courseData.courseLocation = courseData.location;
+    }
+    if (!courseData.coursePrice && courseData.price !== undefined) {
+      courseData.coursePrice = courseData.price;
+    }
+
     // S'assurer que la date est correctement formatée
     // Si courseDate est "Invalid Date" ou invalide, reformater depuis la date originale
     if (courseData.courseDateRaw &&
@@ -775,23 +928,73 @@
       return;
     }
 
-    // Afficher l'étape 1 : vérification email
-    renderStep1EmailCheck();
-
     // Afficher la modal
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
+
+    // Étape 1 : si un email a déjà été utilisé pour réserver (mémorisé sur
+    // cet appareil), on saute la ressaisie et on vérifie le compte
+    // automatiquement (l'utilisateur peut toujours en choisir un autre).
+    const savedEmail = getSavedEmail();
+    if (savedEmail) {
+      renderEmailCheckLoading(savedEmail);
+      checkUserEmail(savedEmail);
+    } else {
+      renderStep1EmailCheck();
+    }
+  }
+
+  /**
+   * État transitoire affiché pendant la vérification automatique de l'email
+   * mémorisé (l'utilisateur ne doit pas ressaisir son email).
+   * @param {string} email - Email mémorisé en cours de vérification
+   */
+  function renderEmailCheckLoading(email) {
+    const modal = document.getElementById('booking-modal');
+    const content = modal.querySelector('.modal-content') || modal.querySelector('> div > div');
+    if (!content) return;
+
+    content.innerHTML = `
+      <div class="p-6">
+        <div class="flex justify-between items-start mb-6">
+          <div>
+            <h3 class="text-xl font-semibold text-[#3E3A35]">${currentCourseData.courseTitle}</h3>
+            <p class="text-[#3E3A35]/70 mt-1">
+              📅 ${currentCourseData.courseDate} à ${currentCourseData.courseTime}
+            </p>
+          </div>
+          <button data-close-modal class="text-[#3E3A35]/40 hover:text-[#3E3A35] transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="flex items-center gap-3 p-4 bg-fluance/5 border border-fluance/20 rounded-lg">
+          <div class="animate-spin w-5 h-5 border-2 border-fluance border-t-transparent rounded-full flex-shrink-0"></div>
+          <p class="text-[#3E3A35]/70 text-sm">
+            ${currentLocale === 'en'
+              ? `Checking your account <strong>${email}</strong>...`
+              : `Vérification de votre compte <strong>${email}</strong>...`}
+          </p>
+        </div>
+      </div>
+    `;
+
+    setupStepListeners();
   }
 
   /**
    * Étape 1 : Vérification de l'email
+   * @param {string} [prefillEmail] - Email à pré-remplir (sinon, email mémorisé)
    */
-  function renderStep1EmailCheck() {
+  function renderStep1EmailCheck(prefillEmail) {
     const modal = document.getElementById('booking-modal');
     const content = modal.querySelector('.modal-content') || modal.querySelector('> div > div');
 
     if (!content) return;
+
+    const emailValue = (prefillEmail || getSavedEmail() || '');
 
     content.innerHTML = `
       <div class="p-6">
@@ -822,6 +1025,8 @@
             <div>
               <label for="check-email" class="block text-sm font-medium text-[#3E3A35] mb-1">Email *</label>
               <input type="email" id="check-email" name="email" required
+                     value="${emailValue}"
+                     autocomplete="email"
                      placeholder="votre@email.com"
                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-lg">
             </div>
@@ -869,14 +1074,20 @@
 
   /**
    * Vérifie le pass de l'utilisateur par email
+   * Fonctionne aussi quand l'étape 1 n'est pas affichée (vérification
+   * automatique de l'email mémorisé).
    */
   async function checkUserEmail(email) {
     const btn = document.getElementById('check-email-btn');
     const errorContainer = document.getElementById('email-check-error');
 
-    btn.disabled = true;
-    btn.textContent = t.checking;
-    errorContainer.classList.add('hidden');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = t.checking;
+    }
+    if (errorContainer) {
+      errorContainer.classList.add('hidden');
+    }
 
     // Stocker l'email actuel
     currentUserEmail = email.toLowerCase().trim();
@@ -899,6 +1110,9 @@
         storedLastName = data.lastName;
       }
 
+      // Mémoriser l'identité pour la prochaine réservation (pas de ressaisie)
+      saveUserIdentity(email, data.firstName, data.lastName);
+
       if (data.hasActivePass) {
         // L'utilisateur a un pass actif
         renderStep2WithPass(email, data);
@@ -912,11 +1126,25 @@
 
     } catch (error) {
       console.error('Error checking email:', error);
-      errorContainer.textContent = t.bookingError;
-      errorContainer.classList.remove('hidden');
+      // Si l'étape 1 n'était pas affichée (vérification automatique), la
+      // réafficher pré-remplie avec le message d'erreur.
+      if (!document.getElementById('check-email')) {
+        renderStep1EmailCheck(email);
+        const retryError = document.getElementById('email-check-error');
+        if (retryError) {
+          retryError.textContent = t.bookingError;
+          retryError.classList.remove('hidden');
+        }
+      } else if (errorContainer) {
+        errorContainer.textContent = t.bookingError;
+        errorContainer.classList.remove('hidden');
+      }
     } finally {
-      btn.disabled = false;
-      btn.textContent = t.continue;
+      const finalBtn = document.getElementById('check-email-btn');
+      if (finalBtn) {
+        finalBtn.disabled = false;
+        finalBtn.textContent = t.continue;
+      }
     }
   }
 
@@ -1706,6 +1934,8 @@
         if (acceptCGV && acceptCGV.checked && email) {
           markCGVAccepted(email);
         }
+        // Mémoriser l'identité pour la prochaine réservation
+        saveUserIdentity(email, formData.get('firstName'), formData.get('lastName'));
         showSuccessMessage(
           'Réservation confirmée !',
           result.message || 'Vous recevrez un email de confirmation.'
@@ -1793,6 +2023,8 @@
         if (acceptCGV && acceptCGV.checked && email) {
           markCGVAccepted(email);
         }
+        // Mémoriser l'identité pour la prochaine réservation
+        saveUserIdentity(email, formData.get('firstName'), formData.get('lastName'));
 
         if (result.status === 'waitlisted') {
           const waitlistTitle = currentLocale === 'en' ? 'Added to waitlist' : 'Ajouté à la liste d\'attente';

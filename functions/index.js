@@ -11610,6 +11610,38 @@ exports.getCourseStatus = onRequest(
 );
 
 /**
+ * Cache mémoire court pour les listes de cours disponibles.
+ * Le frontend interroge getAvailableCourses toutes les 30 s ; la disponibilité
+ * change rarement en deçà de cette fenêtre. Ce cache évite de re-solliciter
+ * Firestore à chaque requête (et limite l'impact des démarrages à froid).
+ */
+const COURSES_CACHE_TTL_MS = 20 * 1000;
+const coursesCache = new Map(); // clé -> {expiresAt, payload}
+
+function readCoursesCache(key) {
+  const entry = coursesCache.get(key);
+  if (entry && entry.expiresAt > Date.now()) {
+    return entry.payload;
+  }
+  return null;
+}
+
+function writeCoursesCache(key, payload) {
+  coursesCache.set(key, {
+    expiresAt: Date.now() + COURSES_CACHE_TTL_MS,
+    payload: payload,
+  });
+  // Nettoyage simple : éviter une croissance illimitée de la Map
+  if (coursesCache.size > 20) {
+    for (const [k, v] of coursesCache) {
+      if (v.expiresAt <= Date.now()) {
+        coursesCache.delete(k);
+      }
+    }
+  }
+}
+
+/**
  * Liste tous les cours disponibles
  */
 exports.getAvailableCourses = onRequest(
@@ -11619,6 +11651,11 @@ exports.getAvailableCourses = onRequest(
     },
     async (req, res) => {
       try {
+        const cached = readCoursesCache('getAvailableCourses');
+        if (cached) {
+          return res.json(cached);
+        }
+
         const now = admin.firestore.Timestamp.now();
 
         const coursesSnapshot = await db.collection('courses')
@@ -11628,21 +11665,35 @@ exports.getAvailableCourses = onRequest(
             .limit(100)
             .get();
 
-        const courses = [];
+        const courseDocs = coursesSnapshot.docs;
+        const courseIds = courseDocs.map((doc) => doc.id);
 
-        for (const doc of coursesSnapshot.docs) {
-          const course = doc.data();
-
-          // Compter les participants
+        // Compter les participants en une passe groupée (max 30 IDs par requête
+        // Firestore) au lieu d'une requête par cours (problème N+1).
+        const participantCounts = new Map(courseIds.map((id) => [id, 0]));
+        const ACTIVE_BOOKING_STATUSES = ['confirmed', 'pending_cash'];
+        for (let i = 0; i < courseIds.length; i += 30) {
+          const chunk = courseIds.slice(i, i + 30);
+          if (chunk.length === 0) continue;
           const bookingsSnapshot = await db.collection('bookings')
-              .where('courseId', '==', doc.id)
-              .where('status', 'in', ['confirmed', 'pending_cash'])
+              .where('courseId', 'in', chunk)
+              .where('status', 'in', ACTIVE_BOOKING_STATUSES)
               .get();
+          bookingsSnapshot.docs.forEach((bookingDoc) => {
+            const booking = bookingDoc.data();
+            if (booking.courseId && participantCounts.has(booking.courseId)) {
+              participantCounts.set(booking.courseId,
+                  participantCounts.get(booking.courseId) + 1);
+            }
+          });
+        }
 
-          const participantCount = bookingsSnapshot.size;
+        const courses = courseDocs.map((doc) => {
+          const course = doc.data();
+          const participantCount = participantCounts.get(doc.id) || 0;
           const spotsRemaining = course.maxCapacity - participantCount;
 
-          courses.push({
+          return {
             id: doc.id,
             title: course.title,
             date: course.date,
@@ -11652,13 +11703,16 @@ exports.getAvailableCourses = onRequest(
             spotsRemaining: spotsRemaining,
             isFull: spotsRemaining <= 0,
             price: course.price || 25,
-          });
-        }
+          };
+        });
 
-        return res.json({
+        const payload = {
           success: true,
           courses: courses,
-        });
+        };
+        writeCoursesCache('getAvailableCourses', payload);
+
+        return res.json(payload);
       } catch (error) {
         console.error('Error getting courses:', error);
         return res.status(500).json({error: error.message});
@@ -12983,8 +13037,15 @@ exports.getAvailableCoursesForTransfer = onRequest(
     },
     async (req, res) => {
       try {
-        const now = admin.firestore.Timestamp.now();
         const excludeCourseId = req.query.excludeCourseId || req.body.excludeCourseId;
+
+        const cacheKey = `getAvailableCoursesForTransfer:${excludeCourseId || 'all'}`;
+        const cached = readCoursesCache(cacheKey);
+        if (cached) {
+          return res.json(cached);
+        }
+
+        const now = admin.firestore.Timestamp.now();
 
         const query = db.collection('courses')
             .where('startTime', '>=', now)
@@ -12994,26 +13055,35 @@ exports.getAvailableCoursesForTransfer = onRequest(
 
         const coursesSnapshot = await query.get();
 
-        const courses = [];
+        const courseDocs = coursesSnapshot.docs
+            .filter((doc) => !(excludeCourseId && doc.id === excludeCourseId));
+        const courseIds = courseDocs.map((doc) => doc.id);
 
-        for (const doc of coursesSnapshot.docs) {
-        // Exclure le cours d'origine si spécifié
-          if (excludeCourseId && doc.id === excludeCourseId) {
-            continue;
-          }
-
-          const course = doc.data();
-
-          // Compter les participants
+        // Compter les participants en une passe groupée (max 30 IDs par requête)
+        const participantCounts = new Map(courseIds.map((id) => [id, 0]));
+        const ACTIVE_BOOKING_STATUSES = ['confirmed', 'pending_cash'];
+        for (let i = 0; i < courseIds.length; i += 30) {
+          const chunk = courseIds.slice(i, i + 30);
+          if (chunk.length === 0) continue;
           const bookingsSnapshot = await db.collection('bookings')
-              .where('courseId', '==', doc.id)
-              .where('status', 'in', ['confirmed', 'pending_cash'])
+              .where('courseId', 'in', chunk)
+              .where('status', 'in', ACTIVE_BOOKING_STATUSES)
               .get();
+          bookingsSnapshot.docs.forEach((bookingDoc) => {
+            const booking = bookingDoc.data();
+            if (booking.courseId && participantCounts.has(booking.courseId)) {
+              participantCounts.set(booking.courseId,
+                  participantCounts.get(booking.courseId) + 1);
+            }
+          });
+        }
 
-          const participantCount = bookingsSnapshot.size;
+        const courses = courseDocs.map((doc) => {
+          const course = doc.data();
+          const participantCount = participantCounts.get(doc.id) || 0;
           const spotsRemaining = course.maxCapacity - participantCount;
 
-          courses.push({
+          return {
             id: doc.id,
             title: course.title,
             date: course.date,
@@ -13023,13 +13093,16 @@ exports.getAvailableCoursesForTransfer = onRequest(
             spotsRemaining: spotsRemaining,
             isFull: spotsRemaining <= 0,
             price: course.price || 25,
-          });
-        }
+          };
+        });
 
-        return res.json({
+        const payload = {
           success: true,
           courses: courses,
-        });
+        };
+        writeCoursesCache(cacheKey, payload);
+
+        return res.json(payload);
       } catch (error) {
         console.error('Error getting courses for transfer:', error);
         return res.status(500).json({error: error.message});

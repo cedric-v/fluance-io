@@ -202,6 +202,17 @@ class GoogleService {
       return null;
     }
 
+    // 🔒 Seuls les événements d'agenda publics doivent être listés sur le site.
+    // Les événements marqués "privé" ou "confidentiel" dans Google Calendar
+    // sont exclus de la synchronisation : ils ne sont pas écrits dans Firestore
+    // et (grâce au nettoyage des orphelins dans syncCalendarToFirestore) sont
+    // supprimés de Firestore s'ils avaient été synchronisés auparavant.
+    const visibility = event.visibility || 'default';
+    if (visibility === 'private' || visibility === 'confidential') {
+      console.log(`🔒 Skipping non-public event (${visibility}): ${event.summary} (${event.id})`);
+      return null;
+    }
+
     const startDateTime = event.start.dateTime || event.start.date;
     const endDateTime = event.end?.dateTime || event.end?.date;
     const timeZone = event.start.timeZone || 'Europe/Zurich'; // Fuseau horaire du calendrier
