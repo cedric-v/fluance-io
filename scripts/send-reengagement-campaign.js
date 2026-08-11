@@ -132,6 +132,24 @@ async function mailjetRetry(method, pathUrl, body) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Vérifie/crée les propriétés Mailjet utilisées par la campagne
+ * (Mailjet refuse d'écrire une propriété non déclarée : erreur 400
+ * « Invalid key name »). Idempotent.
+ */
+async function ensureReengagementProperties() {
+  for (const name of ['reengagement_sent', 'reengagement_wave']) {
+    const r = await mailjetRetry('POST', '/v3/REST/contactmetadata', {Name: name, Datatype: 'str'});
+    if (r.status === 200 || r.status === 201) {
+      console.log(`✅ Propriété Mailjet prête : ${name}`);
+    } else if (r.status === 400 && r.raw.includes('already exists')) {
+      console.log(`ℹ️ Propriété Mailjet déjà existante : ${name}`);
+    } else {
+      console.error(`❌ Création propriété ${name}: ${r.status} ${r.raw.slice(0, 150)}`);
+    }
+  }
+}
+
 /** Récupère tous les contacts Mailjet (paginé) avec leurs propriétés. */
 async function fetchMailjetContacts() {
   const contacts = [];
@@ -379,6 +397,7 @@ async function sendCampaign(db, plan) {
 // ---------------------------------------------------------------- main
 async function main() {
   const db = await initDb();
+  await ensureReengagementProperties();
   const mailjetContacts = await fetchMailjetContacts();
   console.log(`📇 ${mailjetContacts.length} contacts Mailjet chargés`);
 
