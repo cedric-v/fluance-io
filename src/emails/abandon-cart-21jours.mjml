@@ -1,0 +1,58 @@
+---
+layout: false
+permalink: /emails/abandon-cart-21jours.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+      <mj-button background-color="#E6B84A" color="#0f172a" font-weight="bold" border-radius="5px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold" padding="10px">
+          21 jours pour remettre du mouvement
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Vous aviez commencé la commande du parcours <strong>"21 jours pour remettre du mouvement"</strong>…
+        </mj-text>
+        <mj-text>
+          Si vous hésitiez encore, sachez que :<br>
+          ✅ les pratiques ne durent que <strong>2 à 5 minutes par jour</strong>,<br>
+          ✅ tout se passe <strong>depuis chez vous, à votre rythme</strong>,<br>
+          ✅ pas besoin d'être souple, sportif·ve ou motivé·e : c'est votre corps qui guide.
+        </mj-text>
+        <mj-text>
+          Il vous suffit de reprendre là où vous vous êtes arrêté·e :
+        </mj-text>
+        <mj-button href="{{ctaUrl}}" align="center" padding="20px">
+          Reprendre ma commande
+        </mj-button>
+        <mj-text>
+          Avec joie de vous retrouver dans cet élan,
+        </mj-text>
+        <mj-text>
+          Cédric
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666" padding="0">
+          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

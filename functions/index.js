@@ -573,6 +573,97 @@ async function ensureMailjetContactProperties(apiKey, apiSecret) {
  * @param {object} variables - Objet avec les variables à remplacer
  * @returns {string} HTML avec variables remplacées
  */
+/**
+ * Convertit une valeur (Timestamp Firestore, Date, string ISO, nombre, epoch ms)
+ * en objet Date JavaScript.
+ * Retourne null si aucune conversion n'est possible.
+ *
+ * Utile notamment avant admin.firestore.Timestamp.fromDate(), qui exige une
+ * vraie Date (et plante avec « date.getTime is not a function » si on lui passe
+ * un Timestamp Firestore).
+ *
+ * @param {*} value - Valeur à convertir
+ * @returns {Date|null}
+ */
+function toJsDate(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate(); // Firestore Timestamp
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+/**
+ * Parse une date de série « 5 jours » stockée en propriété Mailjet.
+ * Gère les formats ISO (2026-04-09T15:39:00Z), « YYYY-MM-DD HH:MM AM/PM »
+ * et l'ancien format « JJ/MM/AAAA ».
+ *
+ * @param {*} value - Valeur à parser
+ * @returns {Date|null}
+ */
+function parseSerieDate(value) {
+  if (!value) return null;
+  const str = String(value).trim();
+  if (str.includes('/')) {
+    const [day, month, year] = str.split('/').map((p) => parseInt(p, 10));
+    if (day && month && year) {
+      const d = new Date(year, month - 1, day);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+  }
+  return toJsDate(str);
+}
+
+/**
+ * Calcule les propriétés Mailjet à appliquer pour la série « 5 jours ».
+ *
+ * La série peut être suivie plusieurs fois, mais jamais en chevauchement :
+ * - pas de série existante → on démarre une nouvelle série (debut = maintenant) ;
+ * - série existante encore en cours (jours 1 à 5) → on ne réinitialise pas,
+ *   la série courante se termine naturellement ;
+ * - série existante terminée (au-delà du jour 5) → on relance une nouvelle série
+ *   (debut = maintenant), ce qui permet au contact de refaire le parcours et à
+ *   la séquence marketing 5jours→21jours de repartir depuis le début.
+ *
+ * @param {Object} currentProperties - Propriétés Mailjet actuelles du contact
+ * @param {string} dateStr - Date ISO de départ de la (nouvelle) série
+ * @returns {Object} Propriétés à appliquer (éventuellement vide)
+ */
+function computeSerie5joursProperties(currentProperties, dateStr) {
+  const existingDebut = currentProperties['serie_5jours_debut'];
+  if (!existingDebut) {
+    // Pas de série existante → nouvelle série.
+    return {
+      'serie_5jours_debut': dateStr,
+      'serie_5jours_status': 'started',
+    };
+  }
+
+  // Série existante : vérifier si elle est terminée (jours 1 à 5 = en cours).
+  const debutDate = parseSerieDate(existingDebut);
+  if (debutDate) {
+    const daysSince = Math.floor((Date.now() - debutDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSince >= 5) {
+      // Série terminée → nouvelle série (le parcours peut être suivi à nouveau).
+      return {
+        'serie_5jours_debut': dateStr,
+        'serie_5jours_status': 'started',
+      };
+    }
+  }
+
+  // Série en cours → ne pas réinitialiser, garantir simplement le statut démarré.
+  const currentStatus = currentProperties['serie_5jours_status'];
+  if (!currentStatus || currentStatus === 'cancelled') {
+    return {'serie_5jours_status': 'started'};
+  }
+  return {};
+}
+
 function loadEmailTemplate(templateName, variables = {}) {
   const templatePath = path.join(__dirname, 'emails', `${templateName}.html`);
 
@@ -1051,6 +1142,72 @@ async function sendCartAbandonmentEmail(
     console.log(`✅ Cart abandonment email sent to ${email} (reason: ${reason})`);
   } catch (error) {
     console.error('Error sending cart abandonment email:', error.message);
+  }
+}
+
+/**
+ * Envoie un email de relance panier abandonné pour les produits en ligne (21 jours).
+ * Relance 1 : ~2h après la création de la session checkout.
+ * Relance 2 : ~20h après (avant l'expiration Stripe à ~24h).
+ *
+ * @param {string} email - Email du client
+ * @param {string} firstName - Prénom du client
+ * @param {string} product - Produit concerné (ex: '21jours')
+ * @param {number} reminderNumber - Numéro de la relance (1 ou 2)
+ * @param {string} apiKey - Clé API Mailjet
+ * @param {string} apiSecret - Secret API Mailjet
+ */
+async function sendOnlineCartAbandonmentEmail(
+    email,
+    firstName,
+    product,
+    reminderNumber,
+    apiKey,
+    apiSecret,
+) {
+  try {
+    if (!apiKey || !apiSecret) {
+      console.warn('⚠️ Mailjet API keys not available, skipping online cart abandonment email');
+      return;
+    }
+
+    // URL de reprise : page produit (la session Stripe expire ~24h, on ne peut
+    // donc pas y renvoyer directement après ce délai).
+    const productUrl = 'https://fluance.io/cours-en-ligne/21-jours-mouvement/';
+
+    const subjects = {
+      1: 'Vous étiez à 2 minutes de démarrer votre défi 21 jours ?',
+      2: 'On garde une place pour vous ? (21 jours pour remettre du mouvement)',
+    };
+    const subject = subjects[reminderNumber] || subjects[1];
+
+    const emailHtml = loadEmailTemplate('abandon-cart-21jours', {
+      firstName: firstName || '',
+      reminderNumber: String(reminderNumber || 1),
+      ctaUrl: productUrl,
+    });
+
+    const textContent = `Bonjour${firstName ? ' ' + firstName : ''},\n\n` +
+      `Vous aviez commencé la commande du défi 21 jours pour remettre du mouvement ` +
+      `(2 à 5 minutes par jour, depuis chez vous).\n\n` +
+      `Si c'est toujours le bon moment pour vous, vous pouvez reprendre ` +
+      `votre commande ici : ${productUrl}\n\n` +
+      `À très vite,\nCédric - Fluance`;
+
+    await sendMailjetEmail(
+        email,
+        subject,
+        emailHtml,
+        textContent,
+        apiKey,
+        apiSecret,
+        'fluance@actu.fluance.io',
+        'Cédric de Fluance',
+    );
+    console.log(`✅ Online cart abandonment email (${reminderNumber}) sent to ${email} for ${product}`);
+  } catch (error) {
+    console.error('Error sending online cart abandonment email:', error.message);
+    throw error;
   }
 }
 
@@ -2126,6 +2283,27 @@ exports.webhookStripe = onRequest(
         }
       }
 
+      // Session de checkout expirée (non payée sous ~24h) : clôturer le suivi
+      // panier abandonné pour ne plus relancer un lien mort.
+      if (event.type === 'checkout.session.expired') {
+        const expiredSession = event.data.object;
+        try {
+          const abandonDoc = await db.collection('abandonedCheckouts')
+              .doc(expiredSession.id).get();
+          if (abandonDoc.exists) {
+            await abandonDoc.ref.update({
+              status: 'expired',
+              expiredAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`🛒 Abandoned checkout marked expired: ${expiredSession.id}`);
+          }
+        } catch (abandonError) {
+          console.error('❌ Error marking abandoned checkout expired:', abandonError.message);
+        }
+        return res.status(200).json({received: true, handled: 'checkout.session.expired'});
+      }
+
       // Gérer les événements de paiement réussi
       if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
         const session = event.data.object;
@@ -2548,6 +2726,22 @@ exports.webhookStripe = onRequest(
 
         // Extraire la langue depuis les métadonnées (défaut: 'fr')
         const langue = session.metadata?.locale || session.metadata?.langue || 'fr';
+
+        // 🛒 Panier abandonné : le paiement est finalisé, on clôture le suivi.
+        try {
+          const abandonDoc = await db.collection('abandonedCheckouts')
+              .doc(session.id).get();
+          if (abandonDoc.exists) {
+            await abandonDoc.ref.update({
+              status: 'completed',
+              completedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`🛒 Abandoned checkout marked completed: ${session.id}`);
+          }
+        } catch (abandonError) {
+          console.error('❌ Error marking abandoned checkout completed:', abandonError.message);
+        }
 
         // ============================================================
         // COMPTABILITÉ BEXIO (Stripe) — écritures vente + commission
@@ -4067,6 +4261,31 @@ exports.createStripeCheckoutSession = onCall(
 
         const session = await stripe.checkout.sessions.create(sessionParams);
 
+        // 🛒 Suivi panier abandonné pour le produit 21 jours : on enregistre la
+        // session dès sa création pour pouvoir relancer l'email si le paiement
+        // n'est pas finalisé (relances à +2h et +20h, avant expiration Stripe ~24h).
+        if (product === '21jours' && email) {
+          try {
+            await db.collection('abandonedCheckouts').doc(session.id).set({
+              sessionId: session.id,
+              email: email.toLowerCase().trim(),
+              firstName: firstName || '',
+              product,
+              variant: variant || null,
+              status: 'pending',
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              expiresAt: admin.firestore.Timestamp.fromDate(
+                  new Date(Date.now() + 24 * 60 * 60 * 1000)),
+              remindersSent: 0,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`🛒 Abandoned checkout tracked: ${session.id} (${email}, ${product})`);
+          } catch (abandonError) {
+            // Ne jamais bloquer le checkout si le suivi panier échoue.
+            console.error('❌ Error tracking abandoned checkout:', abandonError.message);
+          }
+        }
+
         return {
           success: true,
           sessionId: session.id,
@@ -4140,6 +4359,118 @@ exports.validatePartnerCode = onRequest(
         description: partnerCode.description,
         message: `Remise de ${partnerCode.discountPercent}% appliquée !`,
       });
+    },
+);
+
+/**
+ * Lien de reprise « 5 jours » (ré-engagement) — endpoint public signé.
+ *
+ * GET /reengage-5jours?email=...&sig=...
+ *
+ * - `sig` = HMAC-SHA256(REENGAGEMENT_SIGNING_SECRET, email) : permet au script
+ *   d'envoi de générer des liens uniques, et évite qu'un tiers réinitialise la
+ *   série d'un autre contact (anti-abus).
+ * - Contact avec double opt-in confirmé → redémarre la série 5 jours (si
+ *   terminée, sans chevauchement) puis redirige directement vers le jour 1.
+ * - Contact sans confirmation (ex: les 113 DOI non confirmés) → redirige vers
+ *   le formulaire d'inscription 5 jours avec l'email pré-rempli, pour obtenir
+ *   un consentement frais (nouveau token DOI + relances existantes).
+ */
+exports.reengage5jours = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['REENGAGEMENT_SIGNING_SECRET', 'MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+    },
+    async (req, res) => {
+      try {
+        const email = String(req.query.email || '').toLowerCase().trim();
+        const sig = String(req.query.sig || '');
+
+        if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !sig) {
+          return res.redirect(302, 'https://fluance.io/cours-en-ligne/5jours/inscription/');
+        }
+
+        // Vérifier la signature HMAC (anti-abus)
+        const secret = process.env.REENGAGEMENT_SIGNING_SECRET;
+        const expected = crypto.createHmac('sha256', secret).update(email).digest('hex');
+        if (sig !== expected) {
+          console.warn(`⚠️ Invalid re-engagement signature for ${email}`);
+          return res.redirect(302, 'https://fluance.io/cours-en-ligne/5jours/inscription/');
+        }
+
+        // Récupérer (au mieux) les propriétés Mailjet : prénom pour le pré-remplissage
+        // du formulaire, et propriétés de série pour le redémarrage.
+        const currentProperties = {};
+        let firstname = '';
+        try {
+          const auth = Buffer.from(
+              `${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`).toString('base64');
+          const propsResp = await fetch(
+              `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email)}`,
+              {headers: {Authorization: `Basic ${auth}`}},
+          );
+          if (propsResp.ok) {
+            const propsData = await propsResp.json();
+            if (propsData.Data && propsData.Data.length && propsData.Data[0].Data) {
+              propsData.Data[0].Data.forEach((item) => {
+                if (item.Name) currentProperties[item.Name] = item.Value;
+              });
+            }
+          }
+          firstname = String(currentProperties.firstname || currentProperties.prenom || '').trim();
+        } catch (propsError) {
+          console.error(`❌ Erreur récupération propriétés Mailjet pour ${email}:`, propsError.message);
+        }
+
+        // URL du formulaire 5 jours, pré-rempli (email + prénom si connu)
+        const inscriptionParams = new URLSearchParams({email});
+        if (firstname) inscriptionParams.set('firstname', firstname);
+        inscriptionParams.set('utm_source', 'reengagement');
+        inscriptionParams.set('utm_medium', 'email');
+        const inscriptionUrl = 'https://fluance.io/cours-en-ligne/5jours/inscription/?' +
+          inscriptionParams.toString();
+
+        // Vérifier le consentement : un token DOI confirmé existe pour cet email ?
+        const confirmQuery = await db.collection('newsletterConfirmations')
+            .where('email', '==', email)
+            .limit(50)
+            .get();
+        const hasConsent = confirmQuery.docs.some((d) => d.data().confirmed === true);
+
+        if (!hasConsent) {
+          console.log(`ℹ️ ${email} sans DOI confirmé → redirection formulaire (pré-rempli)`);
+          return res.redirect(302, inscriptionUrl);
+        }
+
+        // Contact confirmé : redémarrer la série 5 jours (si la précédente est terminée)
+        try {
+          const serieUpdate = computeSerie5joursProperties(
+              currentProperties,
+              new Date().toISOString(),
+          );
+          if (Object.keys(serieUpdate).length > 0) {
+            await updateMailjetContactProperties(
+                email,
+                serieUpdate,
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+            console.log(`🔄 Série 5 jours redémarrée pour ${email}:`, serieUpdate);
+          } else {
+            console.log(`ℹ️ Série 5 jours déjà en cours pour ${email}, pas de réinitialisation`);
+          }
+        } catch (serieError) {
+          console.error(`❌ Erreur redémarrage série pour ${email}:`, serieError.message);
+        }
+
+        return res.redirect(
+            302,
+            'https://fluance.io/cours-en-ligne/5jours/j1/?utm_source=reengagement&utm_medium=email',
+        );
+      } catch (error) {
+        console.error('❌ Error in reengage5jours:', error);
+        return res.redirect(302, 'https://fluance.io/cours-en-ligne/5jours/inscription/');
+      }
     },
 );
 
@@ -6252,22 +6583,22 @@ exports.confirmNewsletterOptIn = onCall(
         // Si c'est une confirmation pour les 5 jours, mettre à jour le statut de la série
         if (tokenData.sourceOptin === '5joursofferts') {
           try {
-            const properties = {
-              'serie_5jours_status': 'started', // Série démarrée après confirmation
-            };
-
-            // Si serie_5jours_debut n'existe pas, l'ajouter maintenant
-            if (!currentProperties['serie_5jours_debut']) {
-              properties['serie_5jours_debut'] = dateStr;
+            // Nouvelle série si aucune n'est en cours : on réinitialise
+            // serie_5jours_debut uniquement quand la précédente est terminée
+            // (jours 1 à 5), pour permettre de suivre le parcours plusieurs fois
+            // sans chevauchement.
+            const serieUpdate = computeSerie5joursProperties(currentProperties, dateStr);
+            if (Object.keys(serieUpdate).length > 0) {
+              await updateMailjetContactProperties(
+                  email.toLowerCase().trim(),
+                  serieUpdate,
+                  process.env.MAILJET_API_KEY,
+                  process.env.MAILJET_API_SECRET,
+              );
+              console.log(`Updated serie_5jours properties for ${email}:`, serieUpdate);
+            } else {
+              console.log(`Serie 5jours déjà en cours pour ${email}, pas de réinitialisation`);
             }
-
-            await updateMailjetContactProperties(
-                email.toLowerCase().trim(),
-                properties,
-                process.env.MAILJET_API_KEY,
-                process.env.MAILJET_API_SECRET,
-            );
-            console.log(`Updated serie_5jours_status to 'started' for ${email}`);
           } catch (error) {
             console.error('Error updating 5jours series status:', error);
           // Ne pas faire échouer la confirmation si la mise à jour du statut échoue
@@ -6759,17 +7090,9 @@ exports.subscribeTo5Days = onCall(
         }
 
         // Gérer les propriétés de la série des 5 jours
-        // Ne définir serie_5jours_debut que si elle n'existe pas déjà (pour ne pas réinitialiser une série en cours)
-        if (!currentProperties['serie_5jours_debut']) {
-          properties['serie_5jours_debut'] = dateStr;
-          properties['serie_5jours_status'] = 'started'; // Statut initial : série démarrée (redirection immédiate vers jour 1)
-        } else {
-        // Si la série a déjà commencé, ne pas réinitialiser
-        // Mais mettre à jour le statut si nécessaire
-          if (!currentProperties['serie_5jours_status'] || currentProperties['serie_5jours_status'] === 'cancelled') {
-            properties['serie_5jours_status'] = 'started';
-          }
-        }
+        // Une nouvelle série ne démarre que si la précédente est terminée
+        // (jours 1 à 5 = en cours → pas de réinitialisation, pas de chevauchement).
+        Object.assign(properties, computeSerie5joursProperties(currentProperties, dateStr));
 
         console.log('📋 Updating MailJet contact properties with:', JSON.stringify(properties));
         await updateMailjetContactProperties(
@@ -7633,16 +7956,32 @@ exports.sendNewContentEmails = onSchedule(
 
           // Si products est vide mais product existe (ancien format), migrer
           if (products.length === 0 && userData.product) {
-            console.log(`🔄 Migrating user ${userId} from old format`);
-            const startDate = userData.registrationDate ||
-            userData.createdAt?.toDate() ||
-            new Date();
-            products.push({
-              name: userData.product,
-              startDate: admin.firestore.Timestamp.fromDate(startDate),
-              purchasedAt: userData.createdAt ||
-              admin.firestore.Timestamp.fromDate(new Date()),
-            });
+            try {
+              console.log(`🔄 Migrating user ${userId} from old format`);
+              // ⚠️ Ne PAS passer un Timestamp Firestore directement à
+              // admin.firestore.Timestamp.fromDate() : cela plante avec
+              // « date.getTime is not a function » et faisait échouer toute la
+              // fonction quotidienne (bug 2025-12 → 2026-08).
+              const startDate = toJsDate(userData.registrationDate) ||
+                toJsDate(userData.createdAt) ||
+                new Date();
+              const purchasedAt = toJsDate(userData.createdAt) || startDate;
+              products.push({
+                name: userData.product,
+                startDate: admin.firestore.Timestamp.fromDate(startDate),
+                purchasedAt: admin.firestore.Timestamp.fromDate(purchasedAt),
+              });
+              // Persister la migration (idempotent) pour ne plus repasser par ce chemin.
+              await userDoc.ref.update({
+                products,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              });
+              console.log(`✅ User ${userId} migrated from old format and persisted`);
+            } catch (migrationError) {
+              // Un utilisateur corrompu ne doit jamais bloquer toute la séquence.
+              console.error(`❌ Migration error for user ${userId}:`, migrationError);
+              errors++;
+            }
           }
 
           // Traiter chaque produit de l'utilisateur
@@ -7653,7 +7992,13 @@ exports.sendNewContentEmails = onSchedule(
             }
 
             const productName = product.name;
-            const startDate = product.startDate.toDate();
+            const startDate = typeof product.startDate.toDate === 'function' ?
+              product.startDate.toDate() :
+              toJsDate(product.startDate);
+            if (!startDate || isNaN(startDate.getTime())) {
+              console.warn(`⚠️ User ${userId} product ${productName} has invalid startDate, skipping`);
+              continue;
+            }
             const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
             const weeksSinceStart = Math.floor(daysSinceStart / 7);
 
@@ -9035,6 +9380,32 @@ exports.sendNewContentEmails = onSchedule(
         `${marketingEmailsSent} sent (marketing), ` +
         `${socialEmailsSent} sent (social networks), ` +
         `${emailsSkipped + marketingEmailsSkipped} skipped, ${errors} errors`);
+
+        // Alerte admin en cas d'erreurs (ex: un utilisateur corrompu) pour ne
+        // plus laisser une séquence silencieusement cassée pendant des mois.
+        if (errors > 0) {
+          try {
+            await sendAdminAlert(
+                {
+                  subject: 'Séquence emails Fluance : erreurs lors de l\'exécution',
+                  message: `La séquence quotidienne s'est terminée avec des erreurs.\n\n` +
+                    `Emails envoyés (clients) : ${emailsSent}\n` +
+                    `Emails marketing : ${marketingEmailsSent}\n` +
+                    `Emails réseaux sociaux : ${socialEmailsSent}\n` +
+                    `Emails ignorés : ${emailsSkipped + marketingEmailsSkipped}\n` +
+                    `Erreurs : ${errors}\n\n` +
+                    `Consultez les logs Cloud Functions pour le détail.`,
+                  severity: 'high',
+                  metadata: {emailsSent, marketingEmailsSent, socialEmailsSent, errors},
+                },
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+          } catch (alertError) {
+            console.error('❌ Erreur lors de l\'envoi de l\'alerte admin:', alertError.message);
+          }
+        }
+
         return {
           success: true,
           emailsSent,
@@ -9046,6 +9417,25 @@ exports.sendNewContentEmails = onSchedule(
         };
       } catch (error) {
         console.error('❌ Error in sendNewContentEmails:', error);
+
+        // Alerte admin critique : la séquence ne doit plus jamais échouer en silence.
+        try {
+          await sendAdminAlert(
+              {
+                subject: '🚨 Échec critique : séquence emails Fluance',
+                message: `La fonction sendNewContentEmails a échoué.\n\n` +
+                  `Erreur : ${error.message}\n\n` +
+                  `Consultez les logs Cloud Functions.`,
+                severity: 'critical',
+                metadata: {error: error.message, stack: error.stack},
+              },
+              process.env.MAILJET_API_KEY,
+              process.env.MAILJET_API_SECRET,
+          );
+        } catch (alertError) {
+          console.error('❌ Erreur lors de l\'envoi de l\'alerte admin:', alertError.message);
+        }
+
         throw error;
       }
     });
@@ -11084,6 +11474,69 @@ exports.sendCartAbandonmentEmails = onSchedule(
           } catch (error) {
             errors++;
             console.error(`❌ Error sending cart abandonment email for failed payment ${booking.bookingId}:`, error);
+          }
+        }
+
+        // 3. Paniers abandonnés produits en ligne (21 jours)
+        // Relance 1 : ~2h après création de la session · Relance 2 : ~20h
+        // (avant expiration de la session Stripe à ~24h).
+        const abandonedCheckouts = await db.collection('abandonedCheckouts')
+            .where('status', '==', 'pending')
+            .get();
+
+        for (const doc of abandonedCheckouts.docs) {
+          const record = doc.data();
+          const createdAt = record.createdAt?.toDate ?
+            record.createdAt.toDate() :
+            new Date(record.createdAt);
+
+          const hoursSinceCreation = (now - createdAt) / (1000 * 60 * 60);
+          if (hoursSinceCreation > 24) {
+            // Session Stripe expirée (ou record orphelin) : on clôture.
+            try {
+              await doc.ref.update({
+                status: 'expired',
+                expiredAt: new Date(),
+                updatedAt: new Date(),
+              });
+            } catch (expireError) {
+              console.error(`❌ Error expiring abandoned checkout ${doc.id}:`, expireError.message);
+            }
+            continue;
+          }
+
+          const remindersSent = record.remindersSent || 0;
+          let shouldSend = false;
+          if (remindersSent === 0 && hoursSinceCreation >= 2) {
+            shouldSend = true;
+          } else if (remindersSent === 1 && hoursSinceCreation >= 20) {
+            shouldSend = true;
+          }
+          if (!shouldSend) continue;
+
+          try {
+            await sendOnlineCartAbandonmentEmail(
+                record.email,
+                record.firstName || '',
+                record.product || '21jours',
+                remindersSent + 1,
+                process.env.MAILJET_API_KEY,
+                process.env.MAILJET_API_SECRET,
+            );
+
+            await doc.ref.update({
+              remindersSent: remindersSent + 1,
+              lastReminderAt: new Date(),
+              updatedAt: new Date(),
+            });
+
+            emailsSent++;
+            console.log(
+                `✅ Cart abandonment email sent for online product ${record.product} ` +
+                `to ${record.email} (relance ${remindersSent + 1})`);
+          } catch (error) {
+            errors++;
+            console.error(`❌ Error sending cart abandonment email for online checkout ${doc.id}:`, error);
           }
         }
 

@@ -65,6 +65,10 @@
         {
           "source": "/api/send-contact-email",
           "function": "sendContactEmail"
+        },
+        {
+          "source": "/reengage-5jours",
+          "function": "reengage5jours"
         }
       ],
       "headers": [

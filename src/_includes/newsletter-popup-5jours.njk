@@ -187,6 +187,18 @@
     function openPopup() {
       popup.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
+      // Pré-remplir email + prénom depuis l'URL (lien de ré-engagement /reprise)
+      const params = new URLSearchParams(window.location.search);
+      const emailParam = params.get('email');
+      const firstnameParam = params.get('firstname');
+      const emailInput = document.getElementById('newsletter-email-5jours');
+      const nameInput = document.getElementById('newsletter-name-5jours');
+      if (emailParam && emailInput && !emailInput.value) {
+        emailInput.value = emailParam;
+      }
+      if (firstnameParam && nameInput && !nameInput.value) {
+        nameInput.value = firstnameParam;
+      }
       // Réinitialiser Turnstile
       if (turnstileWidget && typeof turnstile !== 'undefined') {
         try {
@@ -329,6 +341,14 @@
       messageDiv.textContent = message;
       messageDiv.className = `text-sm ${type === 'error' ? 'text-red-600' : 'text-green-600'}`;
       messageDiv.classList.remove('hidden');
+    }
+
+    // Ouverture automatique du popup quand on arrive via un lien de
+    // ré-engagement (paramètre email présent dans l'URL) : le formulaire
+    // s'affiche directement, pré-rempli, sans clic supplémentaire.
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('email')) {
+      setTimeout(openPopup, 300);
     }
   });
 </script>
