@@ -27,6 +27,12 @@
 >   n'a plus qu'à valider le formulaire.
 > - **Emails ré-engagement** (préviews) : `scripts/send-reengagement-preview.js`
 >   (segment A : 5 jours offerts · segment B : cadeau + confirmation).
+> - **Script d'envoi segmenté** : `scripts/send-reengagement-campaign.js`
+>   (dry-run par défaut, `--apply` pour envoyer, `--limit`/`--delay` pour
+>   échelonner, `--sunset` pour la purge 30 j). Contenu partagé dans
+>   `scripts/reengagement-content.js`. Marquage `reengagement_sent` (Mailjet) +
+>   log Firestore `reengagementSends` → jamais re-ciblé deux fois. Exclusions :
+>   clients, comptes internes/test, opt-ins < 30 j (funnel normal).
 
 ---
 

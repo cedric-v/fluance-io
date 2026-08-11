@@ -40,3 +40,5 @@ functions/emails/*.html
 # Documents de travail non versionnés
 COUPON_ABONNEMENT_DUPLEX.md
 CODES_PARTENAIRES_ABONNEMENTS.md
+# Ré-engagement — exports contenant des emails (PII)
+reengagement_*.csv

@@ -9,7 +9,8 @@
  */
 
 const https = require('https');
-const crypto = require('crypto');
+
+const {buildReengageUrl, buildEmailA, buildEmailB} = require('./reengagement-content');
 
 const RECIPIENT = process.argv[2] || 'cedric@fluance.io';
 const NAME = 'Cédric'; // Prénom d'exemple pour la prévisualisation
@@ -19,22 +20,6 @@ const API_SECRET = process.env.MAILJET_API_SECRET;
 if (!API_KEY || !API_SECRET) {
   console.error('❌ MAILJET_API_KEY et MAILJET_API_SECRET requis');
   process.exit(1);
-}
-
-// Lien signé « reprise 5 jours » : l'endpoint vérifie le consentement puis
-// redirige vers le jour 1 (DOI confirmé) ou le formulaire pré-rempli (sinon).
-// Le prénom est passé en paramètre d'URL (pré-remplissage côté formulaire).
-function buildReengageUrl(email, firstname) {
-  const secret = process.env.REENGAGEMENT_SIGNING_SECRET;
-  if (!secret) {
-    console.error('❌ REENGAGEMENT_SIGNING_SECRET requis pour générer le lien signé');
-    process.exit(1);
-  }
-  const normalized = email.toLowerCase().trim();
-  const sig = crypto.createHmac('sha256', secret).update(normalized).digest('hex');
-  const params = new URLSearchParams({email: normalized, sig});
-  if (firstname) params.set('firstname', firstname);
-  return `https://api.fluance.io/reengage-5jours?${params.toString()}`;
 }
 
 const CTA_A = buildReengageUrl(RECIPIENT, NAME);
@@ -67,57 +52,12 @@ function wrap(title, body) {
 </html>`;
 }
 
-const emailA = {
-  Subject: `${NAME}, vos 5 jours offerts vous attendent toujours`,
-  TextPart: `Bonjour ${NAME},
+function toMailjetShape(m) {
+  return {Subject: m.subject, TextPart: m.text, HTMLPart: m.html};
+}
 
-Il y a quelques semaines, vous vous êtes inscrit·e pour recevoir les 5 jours de pratiques Fluance : 5 minutes par jour pour relâcher les tensions, libérer le dos et retrouver un calme intérieur.
-
-Avec la rentrée qui approche, c'est le moment idéal pour poser une habitude simple, sans pression, sans matériel, depuis chez vous. Et bonne nouvelle : votre place est toujours là.
-
-Recevoir mes 5 jours offerts : ${CTA_A}
-
-Pas besoin d'être souple ni sportif·ve. Juste l'envie de vous offrir quelques minutes pour vous.
-
-À très vite,
-Cédric
-Fluance : le mouvement qui éveille et apaise`,
-  HTMLPart: wrap(
-      '5 jours pour libérer les tensions',
-      `<p>Bonjour ${NAME},</p>
-      <p>Il y a quelques semaines, vous vous êtes inscrit·e pour recevoir les <strong>5 jours de pratiques Fluance</strong> : <strong>5 minutes par jour pour relâcher les tensions, libérer le dos et retrouver un calme intérieur.</strong></p>
-      <p>Avec la rentrée qui approche, c'est le moment idéal pour poser une habitude simple, sans pression, sans matériel, depuis chez vous. Et bonne nouvelle : <strong>votre place est toujours là.</strong></p>
-      ${button(CTA_A, 'Recevoir mes 5 jours offerts')}
-      <p>Pas besoin d'être souple ni sportif·ve. Juste l'envie de vous offrir quelques minutes pour vous.</p>
-      <p>À très vite,<br>Cédric</p>`,
-  ),
-};
-
-const emailB = {
-  Subject: `${NAME}, votre cadeau vous attend. Il reste une confirmation`,
-  TextPart: `Bonjour ${NAME},
-
-Vous vous étiez inscrit·e pour recevoir les 5 jours de pratiques Fluance offerts, et votre cadeau est prêt.
-
-5 minutes par jour, pendant 5 jours, pour libérer les tensions de votre dos et apaiser votre mental.
-
-Pour le recevoir, il ne reste qu'une petite étape : confirmer votre adresse email. C'est ce qui garantit que le cadeau arrive bien entre vos mains.
-
-Confirmer et recevoir mon cadeau : ${CTA_B}
-
-À très vite,
-Cédric
-Fluance : le mouvement qui éveille et apaise`,
-  HTMLPart: wrap(
-      'Votre cadeau vous attend',
-      `<p>Bonjour ${NAME},</p>
-      <p>Vous vous étiez inscrit·e pour recevoir les <strong>5 jours de pratiques Fluance offerts</strong>, et votre cadeau est prêt.</p>
-      <p><strong>5 minutes par jour, pendant 5 jours, pour libérer les tensions de votre dos et apaiser votre mental.</strong></p>
-      <p>Pour le recevoir, il ne reste qu'une petite étape : <strong>confirmer votre adresse email</strong>. C'est ce qui garantit que le cadeau arrive bien entre vos mains.</p>
-      ${button(CTA_B, 'Confirmer et recevoir mon cadeau')}
-      <p>À très vite,<br>Cédric</p>`,
-  ),
-};
+const emailA = toMailjetShape(buildEmailA(NAME, CTA_A));
+const emailB = toMailjetShape(buildEmailB(NAME, CTA_B));
 
 function sendMail(emailData, label) {
   return new Promise((resolve, reject) => {
