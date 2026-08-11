@@ -4385,6 +4385,9 @@ exports.reengage5jours = onRequest(
       try {
         const email = String(req.query.email || '').toLowerCase().trim();
         const sig = String(req.query.sig || '');
+        // Prénom fourni par le script d'envoi (pré-remplissage) — purement
+        // cosmétique, aucune donnée sensible : pas besoin d'être signé.
+        const queryFirstname = String(req.query.firstname || '').trim().slice(0, 60);
 
         if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !sig) {
           return res.redirect(302, 'https://fluance.io/cours-en-ligne/5jours/inscription/');
@@ -4421,6 +4424,7 @@ exports.reengage5jours = onRequest(
         } catch (propsError) {
           console.error(`❌ Erreur récupération propriétés Mailjet pour ${email}:`, propsError.message);
         }
+        if (queryFirstname) firstname = queryFirstname;
 
         // URL du formulaire 5 jours, pré-rempli (email + prénom si connu)
         const inscriptionParams = new URLSearchParams({email});

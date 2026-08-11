@@ -23,17 +23,21 @@ if (!API_KEY || !API_SECRET) {
 
 // Lien signé « reprise 5 jours » : l'endpoint vérifie le consentement puis
 // redirige vers le jour 1 (DOI confirmé) ou le formulaire pré-rempli (sinon).
-function buildReengageUrl(email) {
+// Le prénom est passé en paramètre d'URL (pré-remplissage côté formulaire).
+function buildReengageUrl(email, firstname) {
   const secret = process.env.REENGAGEMENT_SIGNING_SECRET;
   if (!secret) {
     console.error('❌ REENGAGEMENT_SIGNING_SECRET requis pour générer le lien signé');
     process.exit(1);
   }
-  const sig = crypto.createHmac('sha256', secret).update(email.toLowerCase().trim()).digest('hex');
-  return `https://api.fluance.io/reengage-5jours?email=${encodeURIComponent(email.toLowerCase().trim())}&sig=${sig}`;
+  const normalized = email.toLowerCase().trim();
+  const sig = crypto.createHmac('sha256', secret).update(normalized).digest('hex');
+  const params = new URLSearchParams({email: normalized, sig});
+  if (firstname) params.set('firstname', firstname);
+  return `https://api.fluance.io/reengage-5jours?${params.toString()}`;
 }
 
-const CTA_A = buildReengageUrl(RECIPIENT);
+const CTA_A = buildReengageUrl(RECIPIENT, NAME);
 const CTA_B = CTA_A; // Même lien : l'endpoint aiguille selon le consentement
 
 function button(link, label) {
