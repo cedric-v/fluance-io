@@ -4441,6 +4441,19 @@ exports.reengage5jours = onRequest(
             .get();
         const hasConsent = confirmQuery.docs.some((d) => d.data().confirmed === true);
 
+        // Journaliser le clic (ré-engagement) — sert à cibler les relances
+        // « non-cliqueurs » (wave suivante) et à mesurer la campagne.
+        try {
+          await db.collection('reengagementClicks').add({
+            email,
+            clickedAt: admin.firestore.FieldValue.serverTimestamp(),
+            target: hasConsent ? 'jour1' : 'formulaire',
+          });
+          console.log(`🖱️ Ré-engagement clic journalisé pour ${email} (${hasConsent ? 'jour1' : 'formulaire'})`);
+        } catch (clickError) {
+          console.error(`❌ Erreur journalisation clic ${email}:`, clickError.message);
+        }
+
         if (!hasConsent) {
           console.log(`ℹ️ ${email} sans DOI confirmé → redirection formulaire (pré-rempli)`);
           return res.redirect(302, inscriptionUrl);

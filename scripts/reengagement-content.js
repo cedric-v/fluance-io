@@ -124,4 +124,34 @@ Fluance : le mouvement qui éveille et apaise`,
   };
 }
 
-module.exports = {buildReengageUrl, buildEmailA, buildEmailB};
+/**
+ * Email C — relance J+14 pour les non-cliqueurs (segment A).
+ * Angle : rappel doux, la place est toujours là, angle rentrée.
+ */
+function buildEmailC(firstName, ctaUrl) {
+  const name = firstName || '';
+  return {
+    subject: `${name}, on garde une place pour vous ? (5 jours offerts)`,
+    text: `Bonjour ${name},
+
+Il y a deux semaines, je vous proposais de recevoir les 5 jours de pratiques Fluance offerts : 5 minutes par jour, pendant 5 jours, pour libérer les tensions de votre dos et apaiser votre mental.
+
+Si vous n'avez pas encore eu le moment d'y jeter un œil, sachez que votre place est toujours là. Et avec la rentrée qui approche, c'est une excellente occasion de commencer en douceur.
+
+Recevoir mes 5 jours offerts : ${ctaUrl}
+
+À très vite,
+Cédric
+Fluance : le mouvement qui éveille et apaise`,
+    html: wrapHtml(
+        'Toujours une place pour vous',
+        `<p>Bonjour ${name},</p>
+      <p>Il y a deux semaines, je vous proposais de recevoir les <strong>5 jours de pratiques Fluance offerts</strong> : <strong>5 minutes par jour, pendant 5 jours, pour libérer les tensions de votre dos et apaiser votre mental.</strong></p>
+      <p>Si vous n'avez pas encore eu le moment d'y jeter un œil, sachez que <strong>votre place est toujours là</strong>. Et avec la rentrée qui approche, c'est une excellente occasion de commencer en douceur.</p>
+      ${button(ctaUrl, 'Recevoir mes 5 jours offerts')}
+      <p>À très vite,<br>Cédric</p>`,
+    ),
+  };
+}
+
+module.exports = {buildReengageUrl, buildEmailA, buildEmailB, buildEmailC};

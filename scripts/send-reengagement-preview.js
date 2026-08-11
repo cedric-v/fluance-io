@@ -10,9 +10,10 @@
 
 const https = require('https');
 
-const {buildReengageUrl, buildEmailA, buildEmailB} = require('./reengagement-content');
+const {buildReengageUrl, buildEmailA, buildEmailB, buildEmailC} = require('./reengagement-content');
 
-const RECIPIENT = process.argv[2] || 'cedric@fluance.io';
+const RECIPIENT = process.argv.slice(2).find((a) => !a.startsWith('--')) || 'cedric@fluance.io';
+const RELANCE = process.argv.includes('--relance');
 const NAME = 'Cédric'; // Prénom d'exemple pour la prévisualisation
 
 const API_KEY = process.env.MAILJET_API_KEY;
@@ -100,8 +101,14 @@ function sendMail(emailData, label) {
 }
 
 (async () => {
-  await sendMail(emailA, 'Email A (ré-engagement 227 confirmés)');
-  await sendMail(emailB, 'Email B (cadeau + confirmation 113 non confirmés)');
+  if (RELANCE) {
+    const emailC = toMailjetShape(buildEmailC(NAME, CTA_A));
+    await sendMail(emailC, 'Email C (relance J+14 non-cliqueurs)');
+    console.log('\nVérifie ta boîte mail : l\'email de relance est en route.');
+    return;
+  }
+  await sendMail(emailA, 'Email A (ré-engagement DOI confirmé)');
+  await sendMail(emailB, 'Email B (cadeau + confirmation sans DOI)');
   console.log('\nVérifie ta boîte mail : les 2 emails de validation sont en route.');
 })().catch((e) => {
   console.error('Erreur fatale :', e.message);

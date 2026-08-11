@@ -1,48 +1,77 @@
 #!/usr/bin/env node
 
 /**
- * Campagne de ré-engagement « 5 jours » — envoi segmenté.
+ * Campagne de ré-engagement « 5 jours » — envoi segmenté, multi-vagues.
  *
- * Segments :
- *  - A : contacts avec double opt-in CONFIRMÉ   → email « vos 5 jours offerts » (1 clic → jour 1)
- *  - B : contacts SANS confirmation (tokens expirés) → email « cadeau + confirmation » (nouveau DOI)
+ * Vague 1 (--wave=1, défaut) :
+ *  - Segment A : contacts avec double opt-in CONFIRMÉ   → email « vos 5 jours offerts »
+ *  - Segment B : contacts SANS confirmation (tokens expirés) → email « cadeau + confirmation »
+ *
+ * Vagues suivantes (--wave=2, …) :
+ *  - Relance ciblée sur les contacts de la vague précédente qui n'ont PAS cliqué
+ *    (log `reengagementClicks` de l'endpoint reengage5jours).
+ *  - Segment par défaut : A (email de relance). Délai minimal entre vagues :
+ *    --days-after (défaut 14 jours).
+ *
+ * Pas de sunset automatique : les contacts peuvent être relancés plusieurs fois
+ * si la campagne ne convertit pas assez (décision éditoriale).
  *
  * Exclusions automatiques : clients (produits achetés), comptes internes/test,
- * contacts déjà ré-engagés (propriété `reengagement_sent`), opt-ins récents (< 30 j,
- * encore dans le funnel normal).
+ * opt-ins récents (< 30 j, encore dans le funnel normal) — uniquement vague 1.
  *
- * Marquage après envoi : propriété Mailjet `reengagement_sent` + log Firestore
- * (collection `reengagementSends`), pour ne jamais re-cibler deux fois.
+ * Marquage après envoi : propriétés Mailjet `reengagement_sent` + `reengagement_wave`
+ * + log Firestore (`reengagementSends`) → permet de cibler précisément les vagues
+ * suivantes sans re-cibler ceux qui ont déjà été contactés dans cette vague.
  *
- * Sunset (RGPD + hygiène de liste) : contacts ré-engagés il y a ≥ 30 jours sans
- * action → suppression Mailjet + tokens Firestore.
+ * ⚠️ Rythme d'envoi (plan gratuit Mailjet : ~200 emails/jour) : le script compte
+ * les envois du jour (Firestore `reengagementSends`) et bride chaque run au
+ * budget restant (--daily-cap, défaut 200). Prévoir une marge pour les autres
+ * envois du compte (contenu 21 jours, confirmations, relances…) : ex.
+ * --daily-cap=150. Le délai entre envois (--delay, défaut 250 ms) limite le
+ * débit instantané.
  *
  * Usage :
  *   export MAILJET_API_KEY="..." MAILJET_API_SECRET="..." REENGAGEMENT_SIGNING_SECRET="..."
- *   node scripts/send-reengagement-campaign.js                 # dry-run (plan)
- *   node scripts/send-reengagement-campaign.js --apply         # envoi réel
- *   node scripts/send-reengagement-campaign.js --apply --limit=100 --delay=200
- *   node scripts/send-reengagement-campaign.js --sunset        # dry-run sunset
- *   node scripts/send-reengagement-campaign.js --sunset --apply
+ *   node scripts/send-reengagement-campaign.js                       # dry-run vague 1
+ *   node scripts/send-reengagement-campaign.js --apply               # vague 1 réelle
+ *   node scripts/send-reengagement-campaign.js --apply --daily-cap=150 --delay=250
+ *   node scripts/send-reengagement-campaign.js --wave=2 --days-after=14   # dry-run relance J+14
+ *   node scripts/send-reengagement-campaign.js --wave=2 --apply
+ *
+ * Vague 1 sur 428 contacts : 2-3 jours d'envoi à 150-200/jour (relancer le
+ * script chaque jour, il reprend où il en est grâce au marquage).
  */
 
 const https = require('https');
-const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
 
-const {buildReengageUrl, buildEmailA, buildEmailB} = require('./reengagement-content');
+const {buildReengageUrl, buildEmailA, buildEmailB, buildEmailC} = require('./reengagement-content');
 
 // ---------------------------------------------------------------- arguments
 const APPLY = process.argv.includes('--apply');
-const SUNSET = process.argv.includes('--sunset');
+const WAVE = parseInt(
+    (process.argv.find((a) => a.startsWith('--wave=')) || '').split('=')[1] || '1', 10);
+const DAYS_AFTER = parseInt(
+    (process.argv.find((a) => a.startsWith('--days-after=')) || '').split('=')[1] || '14', 10);
+const SEGMENT = ((process.argv.find((a) => a.startsWith('--segment=')) || '').split('=')[1] || 'ALL').toUpperCase();
 const LIMIT = parseInt(
     (process.argv.find((a) => a.startsWith('--limit=')) || '').split('=')[1] || '0', 10);
+const DAILY_CAP = parseInt(
+    (process.argv.find((a) => a.startsWith('--daily-cap=')) || '').split('=')[1] || '200', 10);
 const DELAY_MS = parseInt(
-    (process.argv.find((a) => a.startsWith('--delay=')) || '').split('=')[1] || '150', 10);
-const SUNSET_DAYS = 30;
-const FRESH_OPTIN_DAYS = 30; // opt-ins de moins de 30 j : laissés au funnel normal
+    (process.argv.find((a) => a.startsWith('--delay=')) || '').split('=')[1] || '250', 10);
+const FRESH_OPTIN_DAYS = 30; // vague 1 : opt-ins de moins de 30 j laissés au funnel normal
+
+if (WAVE < 1 || !['A', 'B', 'ALL'].includes(SEGMENT)) {
+  console.error('❌ Arguments invalides : --wave>=1, --segment=A|B|ALL');
+  process.exit(1);
+}
+if (WAVE >= 2 && SEGMENT === 'B') {
+  console.error('❌ La relance (vague >= 2) n\'a pour l\'instant d\'email que pour le segment A.');
+  process.exit(1);
+}
 
 const API_KEY = process.env.MAILJET_API_KEY;
 const API_SECRET = process.env.MAILJET_API_SECRET;
@@ -84,6 +113,23 @@ function mailjet(method, pathUrl, body) {
   });
 }
 
+/** Appel Mailjet avec 3 tentatives (réseau instable). */
+async function mailjetRetry(method, pathUrl, body) {
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await mailjet(method, pathUrl, body);
+    } catch (e) {
+      lastError = e;
+      if (attempt < 3) {
+        console.warn(`⚠️ Tentative ${attempt}/3 échouée (${e.code || e.message}), nouvel essai…`);
+        await sleep(800 * attempt);
+      }
+    }
+  }
+  throw lastError;
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Récupère tous les contacts Mailjet (paginé) avec leurs propriétés. */
@@ -91,7 +137,7 @@ async function fetchMailjetContacts() {
   const contacts = [];
   let offset = 0;
   while (true) {
-    const r = await mailjet('GET', `/v3/REST/contact?Limit=100&Offset=${offset}`);
+    const r = await mailjetRetry('GET', `/v3/REST/contact?Limit=100&Offset=${offset}`);
     const data = (r.json && r.json.Data) || [];
     contacts.push(...data);
     if (data.length < 100) break;
@@ -101,7 +147,7 @@ async function fetchMailjetContacts() {
   const enriched = [];
   for (const c of contacts) {
     const props = {};
-    const r = await mailjet('GET', `/v3/REST/contactdata/${encodeURIComponent(c.Email)}`);
+    const r = await mailjetRetry('GET', `/v3/REST/contactdata/${encodeURIComponent(c.Email)}`);
     if (r.status === 200 && r.json && r.json.Data && r.json.Data.length && r.json.Data[0].Data) {
       r.json.Data[0].Data.forEach((i) => { if (i.Name) props[i.Name] = i.Value; });
     }
@@ -109,11 +155,10 @@ async function fetchMailjetContacts() {
       email: c.Email.toLowerCase(),
       firstname: String(props.firstname || props.prenom || '').trim(),
       reengagementSent: props.reengagement_sent || null,
+      reengagementWave: parseInt(props.reengagement_wave || '0', 10) || 0,
       estClient: props.est_client === 'True' || props.est_client === true,
-      serie5joursDebut: props.serie_5jours_debut || null,
-      sourceOptin: props.source_optin || '',
     });
-    await sleep(40);
+    await sleep(150); // limite de débit API Mailjet
   }
   return enriched;
 }
@@ -121,13 +166,13 @@ async function fetchMailjetContacts() {
 /** Met à jour (fusion) les propriétés Mailjet d'un contact. */
 async function updateMailjetProperties(email, properties) {
   const existing = {};
-  const r = await mailjet('GET', `/v3/REST/contactdata/${encodeURIComponent(email)}`);
+  const r = await mailjetRetry('GET', `/v3/REST/contactdata/${encodeURIComponent(email)}`);
   if (r.status === 200 && r.json && r.json.Data && r.json.Data.length && r.json.Data[0].Data) {
     r.json.Data[0].Data.forEach((i) => { if (i.Name) existing[i.Name] = i.Value; });
   }
   const merged = {...existing, ...properties};
   const dataArray = Object.entries(merged).map(([k, v]) => ({Name: k, Value: String(v)}));
-  const up = await mailjet('PUT', `/v3/REST/contactdata/${encodeURIComponent(email)}`, {Data: dataArray});
+  const up = await mailjetRetry('PUT', `/v3/REST/contactdata/${encodeURIComponent(email)}`, {Data: dataArray});
   if (up.status !== 200) {
     throw new Error(`Mailjet contactdata ${up.status}: ${up.raw.slice(0, 200)}`);
   }
@@ -144,7 +189,7 @@ async function sendMailjetEmail(to, subject, html, text) {
       HTMLPart: html,
     }],
   };
-  const r = await mailjet('POST', '/v3.1/send', payload);
+  const r = await mailjetRetry('POST', '/v3.1/send', payload);
   if (r.status !== 200) {
     throw new Error(`Mailjet send ${r.status}: ${r.raw.slice(0, 200)}`);
   }
@@ -172,7 +217,7 @@ async function initDb() {
   return admin.firestore();
 }
 
-// ---------------------------------------------------------------- plan d'envoi
+// ---------------------------------------------------------------- plan
 async function buildPlan(db, mailjetContacts) {
   // Tokens de confirmation (Firestore) groupés par email
   const tokensByEmail = {};
@@ -191,7 +236,7 @@ async function buildPlan(db, mailjetContacts) {
     }
   });
 
-  // Clients (produits achetés) → ne jamais ré-engager ni supprimer
+  // Clients (produits achetés) → jamais ré-engagés
   const clientEmails = new Set();
   const usersSnap = await db.collection('users').get();
   usersSnap.forEach((d) => {
@@ -200,6 +245,16 @@ async function buildPlan(db, mailjetContacts) {
     if (!email) return;
     const products = data.products || (data.product ? [{name: data.product}] : []);
     if (products.length > 0) clientEmails.add(email);
+  });
+
+  // Clics de ré-engagement (endpoint reengage5jours) → dernier clic par email
+  const lastClickByEmail = new Map();
+  const clicksSnap = await db.collection('reengagementClicks').get();
+  clicksSnap.forEach((d) => {
+    const data = d.data();
+    const email = (data.email || '').toLowerCase();
+    const ts = (data.clickedAt?._seconds || 0) * 1000;
+    if (email && ts && ts > (lastClickByEmail.get(email) || 0)) lastClickByEmail.set(email, ts);
   });
 
   const byEmail = new Map(mailjetContacts.map((c) => [c.email, c]));
@@ -212,19 +267,29 @@ async function buildPlan(db, mailjetContacts) {
     if (clientEmails.has(email)) continue;
 
     const mc = byEmail.get(email);
-    if (mc && mc.reengagementSent) continue;        // déjà contacté
-    if (mc && mc.estClient) continue;               // client côté Mailjet
+    if (mc && mc.estClient) continue;
 
-    // Opt-ins récents (< 30 j) : laissés au funnel normal (séquence automatique)
-    const lastOptin = tok.lastConfirmedAt * 1000;
-    if (lastOptin && (now - lastOptin) < FRESH_OPTIN_DAYS * 86400000) continue;
+    const segment = tok.hasConfirmed ? 'A' : (tok.hasPending ? 'B' : null);
+    if (!segment) continue;
+    if (SEGMENT !== 'ALL' && SEGMENT !== segment) continue;
+
+    if (WAVE === 1) {
+      // Vague 1 : jamais contacté + opt-in de plus de 30 jours (funnel normal sinon)
+      if (mc && mc.reengagementWave >= 1) continue;
+      const lastOptin = tok.lastConfirmedAt * 1000;
+      if (lastOptin && (now - lastOptin) < FRESH_OPTIN_DAYS * 86400000) continue;
+    } else {
+      // Vagues suivantes : contacté à la vague précédente, délai écoulé, sans clic
+      if (!mc || mc.reengagementWave !== WAVE - 1) continue;
+      const sentTs = mc.reengagementSent ? new Date(mc.reengagementSent).getTime() : 0;
+      if (isNaN(sentTs) || (now - sentTs) < DAYS_AFTER * 86400000) continue;
+      const lastClick = lastClickByEmail.get(email) || 0;
+      if (lastClick > sentTs) continue; // a déjà cliqué → pas de relance
+    }
 
     const firstname = (mc && mc.firstname) || '';
-    if (tok.hasConfirmed) {
-      segmentA.push({email, firstname});
-    } else if (tok.hasPending) {
-      segmentB.push({email, firstname});
-    }
+    if (segment === 'A') segmentA.push({email, firstname});
+    else segmentB.push({email, firstname});
   }
 
   return {segmentA, segmentB};
@@ -236,123 +301,79 @@ async function sendCampaign(db, plan) {
   const total = segmentA.length + segmentB.length;
   let sent = 0;
   let errors = 0;
-  const csvRows = ['email,segment,firstname,statut,detail'];
+  const csvRows = ['email,segment,wave,firstname,statut,detail'];
 
-  const limit = LIMIT > 0 ? LIMIT : total;
+  // ── Cap journalier (plan gratuit Mailjet : 200 envois/jour) ──────────────
+  // Compte les envois de ré-engagement d'aujourd'hui (Firestore) et bride la
+  // taille de ce run au budget restant. Penser à réserver une marge pour les
+  // autres envois du compte (emails de contenu, confirmations, relances…).
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const todaySends = await db.collection('reengagementSends')
+      .where('sentAt', '>=', admin.firestore.Timestamp.fromDate(startOfDay))
+      .count()
+      .get();
+  const alreadyToday = todaySends.data().count;
+  const remaining = Math.max(0, DAILY_CAP - alreadyToday);
+
+  if (remaining <= 0) {
+    console.log(`\n⛔ Cap journalier atteint : ${alreadyToday}/${DAILY_CAP} envoyés aujourd'hui.`);
+    console.log('   Relancez le script demain pour la suite.');
+    return;
+  }
+
+  const limit = LIMIT > 0 ? Math.min(LIMIT, remaining) : remaining;
   const all = [
     ...segmentA.map((r) => ({...r, segment: 'A'})),
     ...segmentB.map((r) => ({...r, segment: 'B'})),
   ].slice(0, limit);
 
-  console.log(`\n📤 Envoi de ${all.length}/${total} email(s)` +
-    ` (A=${segmentA.length}, B=${segmentB.length}, limit=${limit}, délai=${DELAY_MS}ms)\n`);
+  const label = WAVE === 1 ? 'email initial (A/B)' : `relance (email C, J+${DAYS_AFTER})`;
+  console.log(`\n📤 Vague ${WAVE} — envoi de ${all.length}/${total} email(s) ` +
+    `(A=${segmentA.length}, B=${segmentB.length}, ${label})`);
+  console.log(`   📅 Cap journalier : ${alreadyToday}/${DAILY_CAP} déjà envoyés aujourd'hui` +
+    ` → budget ce run : ${limit}`);
+  if (total > limit) {
+    console.log(`   ℹ️  ${total - limit} restant(s) à envoyer demain (ou via --limit/--daily-cap).`);
+  }
+  console.log('');
 
   for (const rec of all) {
     try {
       const cta = buildReengageUrl(rec.email, rec.firstname);
-      const mail = rec.segment === 'A' ? buildEmailA(rec.firstname, cta) : buildEmailB(rec.firstname, cta);
+      const mail = WAVE === 1
+        ? (rec.segment === 'A' ? buildEmailA(rec.firstname, cta) : buildEmailB(rec.firstname, cta))
+        : buildEmailC(rec.firstname, cta);
       await sendMailjetEmail(rec.email, mail.subject, mail.html, mail.text);
 
-      // Marquage (ne jamais re-cibler deux fois)
-      await updateMailjetProperties(rec.email, {reengagement_sent: new Date().toISOString()});
+      // Marquage vague (jamais re-ciblé deux fois dans la même vague)
+      await updateMailjetProperties(rec.email, {
+        reengagement_sent: new Date().toISOString(),
+        reengagement_wave: String(WAVE),
+      });
       await db.collection('reengagementSends').add({
         email: rec.email,
         segment: rec.segment,
+        wave: WAVE,
         sentAt: admin.firestore.FieldValue.serverTimestamp(),
         link: cta,
       });
 
       sent++;
-      console.log(`✅ [${rec.segment}] ${rec.email} — ${mail.subject.slice(0, 55)}`);
-      csvRows.push(`${rec.email},${rec.segment},${rec.firstname},envoyé,ok`);
+      console.log(`✅ [${rec.segment}/v${WAVE}] ${rec.email} — ${mail.subject.slice(0, 50)}`);
+      csvRows.push(`${rec.email},${rec.segment},${WAVE},${rec.firstname},envoyé,ok`);
     } catch (e) {
       errors++;
-      console.error(`❌ [${rec.segment}] ${rec.email}: ${e.message}`);
-      csvRows.push(`${rec.email},${rec.segment},${rec.firstname},erreur,${e.message.slice(0, 80)}`);
+      console.error(`❌ [${rec.segment}/v${WAVE}] ${rec.email}: ${e.message}`);
+      csvRows.push(`${rec.email},${rec.segment},${WAVE},${rec.firstname},erreur,${e.message.slice(0, 80)}`);
     }
     await sleep(DELAY_MS);
   }
 
-  const file = path.join(__dirname, `reengagement_plan_${new Date().toISOString().slice(0, 10)}.csv`);
+  const file = path.join(__dirname, `reengagement_wave${WAVE}_${new Date().toISOString().slice(0, 10)}.csv`);
   fs.writeFileSync(file, csvRows.join('\n') + '\n');
   console.log(`\n📄 Rapport : ${file}`);
   console.log(`✅ ${sent} envoyé(s), ${errors} erreur(s)`);
-}
-
-// ---------------------------------------------------------------- sunset
-async function sunset(db, mailjetContacts) {
-  const now = Date.now();
-  const cutoff = now - SUNSET_DAYS * 86400000;
-
-  // Clients → jamais supprimés
-  const clientEmails = new Set();
-  const usersSnap = await db.collection('users').get();
-  usersSnap.forEach((d) => {
-    const data = d.data();
-    if (data.email) clientEmails.add(data.email.toLowerCase());
-  });
-
-  // Ré-optins depuis la date de ré-engagement
-  const reOptinAfter = new Map();
-  const snap = await db.collection('newsletterConfirmations').get();
-  snap.forEach((d) => {
-    const data = d.data();
-    const email = (data.email || '').toLowerCase();
-    const ts = (data.confirmedAt?._seconds || 0) * 1000;
-    if (email && ts && ts > (reOptinAfter.get(email) || 0)) reOptinAfter.set(email, ts);
-  });
-
-  const candidates = mailjetContacts.filter((c) => {
-    if (!c.reengagementSent) return false;
-    const sentTs = new Date(c.reengagementSent).getTime();
-    if (isNaN(sentTs) || sentTs > cutoff) return false;   // pas encore 30 jours
-    if (clientEmails.has(c.email)) return false;          // client
-    if (c.estClient) return false;                        // client (Mailjet)
-    if (reOptinAfter.get(c.email) > sentTs) return false; // a ré-opté depuis
-    const serieTs = c.serie5joursDebut ? new Date(c.serie5joursDebut).getTime() : 0;
-    if (!isNaN(serieTs) && serieTs > sentTs) return false; // série redémarrée depuis
-    return true;
-  });
-
-  console.log(`\n🧹 Sunset (${SUNSET_DAYS} j sans action) : ${candidates.length} contact(s)`);
-  if (!APPLY) {
-    candidates.slice(0, 30).forEach((c) =>
-      console.log(`  - ${c.email} (ré-engagé le ${c.reengagementSent.slice(0, 10)})`));
-    if (candidates.length > 30) console.log(`  … et ${candidates.length - 30} autres`);
-    console.log('\nDry-run : rien supprimé. Relancez avec --apply pour supprimer.');
-    return;
-  }
-
-  let deleted = 0;
-  let errors = 0;
-  for (const c of candidates) {
-    try {
-      // Suppression du contact Mailjet
-      const del = await mailjet('DELETE', `/v3/REST/contact/${encodeURIComponent(c.email)}`);
-      if (del.status !== 200 && del.status !== 204 && del.status !== 404) {
-        throw new Error(`DELETE ${del.status}: ${del.raw.slice(0, 150)}`);
-      }
-      // Suppression des tokens de confirmation associés
-      const tokens = await db.collection('newsletterConfirmations')
-          .where('email', '==', c.email).get();
-      const delPromises = [];
-      tokens.forEach((d) => delPromises.push(d.ref.delete()));
-      await Promise.all(delPromises);
-      // Trace
-      await db.collection('reengagementSends').add({
-        email: c.email,
-        action: 'sunset',
-        sunsetAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      deleted++;
-      console.log(`✅ supprimé : ${c.email}`);
-    } catch (e) {
-      errors++;
-      console.error(`❌ ${c.email}: ${e.message}`);
-    }
-    await sleep(80);
-  }
-  console.log(`\n✅ ${deleted} contact(s) supprimé(s), ${errors} erreur(s)`);
 }
 
 // ---------------------------------------------------------------- main
@@ -361,22 +382,18 @@ async function main() {
   const mailjetContacts = await fetchMailjetContacts();
   console.log(`📇 ${mailjetContacts.length} contacts Mailjet chargés`);
 
-  if (SUNSET) {
-    await sunset(db, mailjetContacts);
-    return;
-  }
-
   const plan = await buildPlan(db, mailjetContacts);
-  console.log(`\n📊 Plan de ré-engagement :`);
-  console.log(`  Segment A (DOI confirmé)   : ${plan.segmentA.length}`);
-  console.log(`  Segment B (sans DOI)       : ${plan.segmentB.length}`);
-  console.log(`  Total                      : ${plan.segmentA.length + plan.segmentB.length}`);
+  const total = plan.segmentA.length + plan.segmentB.length;
+  console.log(`\n📊 Vague ${WAVE}${WAVE === 1 ? '' : ` (J+${DAYS_AFTER}, non-cliqueurs de la vague ${WAVE - 1})`} :`);
+  console.log(`  Segment A (DOI confirmé) : ${plan.segmentA.length}`);
+  console.log(`  Segment B (sans DOI)     : ${plan.segmentB.length}`);
+  console.log(`  Total                    : ${total}`);
 
   if (!APPLY) {
-    console.log('\n— Aperçu segment A (5 premiers) —');
-    plan.segmentA.slice(0, 5).forEach((r) => console.log(`  A | ${r.email} | ${r.firstname || '(sans prénom)'}`));
-    console.log('— Aperçu segment B (5 premiers) —');
-    plan.segmentB.slice(0, 5).forEach((r) => console.log(`  B | ${r.email} | ${r.firstname || '(sans prénom)'}`));
+    console.log('\n— Aperçu (5 premiers) —');
+    [...plan.segmentA.slice(0, 5).map((r) => `  A | ${r.email} | ${r.firstname || '(sans prénom)'}`),
+      ...plan.segmentB.slice(0, 5).map((r) => `  B | ${r.email} | ${r.firstname || '(sans prénom)'}`)]
+        .forEach((l) => console.log(l));
     console.log('\nDry-run : rien envoyé. Relancez avec --apply pour envoyer.');
     return;
   }

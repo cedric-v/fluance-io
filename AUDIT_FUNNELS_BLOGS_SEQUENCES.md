@@ -27,12 +27,19 @@
 >   n'a plus qu'à valider le formulaire.
 > - **Emails ré-engagement** (préviews) : `scripts/send-reengagement-preview.js`
 >   (segment A : 5 jours offerts · segment B : cadeau + confirmation).
-> - **Script d'envoi segmenté** : `scripts/send-reengagement-campaign.js`
->   (dry-run par défaut, `--apply` pour envoyer, `--limit`/`--delay` pour
->   échelonner, `--sunset` pour la purge 30 j). Contenu partagé dans
->   `scripts/reengagement-content.js`. Marquage `reengagement_sent` (Mailjet) +
->   log Firestore `reengagementSends` → jamais re-ciblé deux fois. Exclusions :
->   clients, comptes internes/test, opt-ins < 30 j (funnel normal).
+> - **Script d'envoi segmenté multi-vagues** : `scripts/send-reengagement-campaign.js`
+>   (dry-run par défaut, `--apply` pour envoyer). Vague 1 : segments A/B
+>   (email initial). Vagues suivantes (`--wave=N`, `--days-after`, défaut 14 j) :
+>   relance ciblée sur les non-cliqueurs de la vague précédente, grâce à la
+>   journalisation des clics (`reengagementClicks`) de l'endpoint `reengage5jours`.
+>   Email de relance (`buildEmailC`). Contenu partagé dans
+>   `scripts/reengagement-content.js`. Marquage `reengagement_sent` +
+>   `reengagement_wave` (Mailjet) + log Firestore `reengagementSends`.
+>   Exclusions : clients, comptes internes/test, opt-ins < 30 j (vague 1).
+>   **Pas de sunset automatique** (décision : relancer plusieurs fois si besoin).
+>   **Rythme Mailjet respecté** : cap journalier `--daily-cap` (défaut 200,
+>   plan gratuit), budget calculé depuis `reengagementSends` du jour, délai
+>   `--delay` (défaut 250 ms), retries API.
 
 ---
 
