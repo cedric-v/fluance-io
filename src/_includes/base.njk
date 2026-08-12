@@ -37,7 +37,19 @@
     <link rel="alternate" href="https://fluance.io/llms.txt" type="text/plain" title="LLMs.txt">
 
     {% if redirectTo %}
-    <meta http-equiv="refresh" content="0; url={{ redirectTo | relativeUrl }}">
+    <script>
+      // Redirection avec préservation du fragment (#ancre) : ex. /#reseaux-sociaux
+      (function () {
+        var target = '{{ redirectTo | relativeUrl }}';
+        if (window.location.hash) {
+          target = target.split('#')[0] + window.location.hash;
+        }
+        window.location.replace(target);
+      })();
+    </script>
+    <noscript>
+      <meta http-equiv="refresh" content="0; url={{ redirectTo | relativeUrl }}">
+    </noscript>
     {% endif %}
     
     {# Si la page redirige, le canonical doit pointer vers la destination de la redirection #}
