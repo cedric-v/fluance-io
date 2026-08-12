@@ -9171,7 +9171,7 @@ exports.sendNewContentEmails = onSchedule(
                   '<p>Fluance est aussi <a href="https://www.youtube.com/@fluanceio">YouTube</a> ' +
                   'et <a href="https://www.instagram.com/fluanceio/">Instagram</a>.</p>' +
                   '<p>Les liens des autres reseaux sont au pied de ' +
-                  '<a href="https://fluance.io/">cette page</a>.</p>' +
+                  '<a href="https://fluance.io/#reseaux-sociaux">cette page</a>.</p>' +
                   '<p>Une bonne pratique et a bientot,<br>Cedric</p>';
 
                   const emailText = [
@@ -9330,7 +9330,7 @@ exports.sendNewContentEmails = onSchedule(
                       '<p>Fluance est aussi <a href="https://www.youtube.com/@fluanceio">YouTube</a> ' +
                       'et <a href="https://www.instagram.com/fluanceio/">Instagram</a>.</p>' +
                       '<p>Les liens des autres reseaux sont au pied de ' +
-                      '<a href="https://fluance.io/">cette page</a>.</p>' +
+                      '<a href="https://fluance.io/#reseaux-sociaux">cette page</a>.</p>' +
                       '<p>Une bonne pratique et a bientot,<br>Cedric</p>';
 
                       const emailText = [
