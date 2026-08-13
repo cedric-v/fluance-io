@@ -35,12 +35,12 @@ if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
 // Initialiser Firebase Admin
 const serviceAccount = require(SERVICE_ACCOUNT_PATH);
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.cert(serviceAccount),
 });
 
 console.log('✅ Firebase Admin initialisé avec service account');
 
-const db = admin.firestore();
+const db = getFirestore();
 
 // Contenu des jours 19, 20 et 21
 const daysContent = [
@@ -99,7 +99,7 @@ async function addDaysToFirestore() {
         day: dayData.day,
         title: dayData.title,
         content: dayData.content,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       };
       
       // Ajouter commentText si présent (pour le jour 21)
@@ -115,7 +115,7 @@ async function addDaysToFirestore() {
         console.log(`✅ Document ${docId} mis à jour avec succès`);
       } else {
         // Créer le nouveau document (avec createdAt)
-        documentData.createdAt = admin.firestore.FieldValue.serverTimestamp();
+        documentData.createdAt = FieldValue.serverTimestamp();
         await docRef.set(documentData);
         console.log(`✅ Document ${docId} créé avec succès`);
       }

@@ -1,13 +1,14 @@
 /**
  * Script pour vérifier une réservation dans Firestore
- * Usage: node check-booking.js cedricjourney+testres@gmail.com
+ * Usage: node check-booking.js test-user-4@example.com
  */
 
 const admin = require('firebase-admin');
+const {getFirestore} = require('firebase-admin/firestore');
 
 // Initialiser Firebase Admin
 try {
-  if (!admin.apps.length) {
+  if (!admin.getApps().length) {
     admin.initializeApp({
       projectId: 'fluance-protected-content',
     });
@@ -20,7 +21,7 @@ try {
   process.exit(1);
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 async function checkBooking(email) {
   const normalizedEmail = email.toLowerCase().trim();

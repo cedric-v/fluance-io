@@ -10,6 +10,7 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore} = require('firebase-admin/firestore');
 
 const GOOGLE_APPLICATION_CREDENTIALS = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 const GCLOUD_PROJECT = process.env.GCLOUD_PROJECT;
@@ -30,7 +31,7 @@ if (emails.length === 0) {
 try {
   const serviceAccount = require(GOOGLE_APPLICATION_CREDENTIALS);
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.cert(serviceAccount),
     projectId: GCLOUD_PROJECT,
   });
 } catch (error) {
@@ -38,7 +39,7 @@ try {
   process.exit(1);
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 async function checkEmailStatus(email) {
   console.log(`\n📧 Vérification de ${email}...`);

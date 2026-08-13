@@ -16,6 +16,8 @@ const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {setGlobalOptions} = require('firebase-functions/v2');
 const {HttpsError} = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
+const {getFirestore, Timestamp, FieldValue} = require('firebase-admin/firestore');
+const {getAuth} = require('firebase-admin/auth');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -28,8 +30,8 @@ setGlobalOptions({
 
 admin.initializeApp();
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore();
+const auth = getAuth();
 
 // Import du service d'alertes admin
 // Import du service d'alertes admin
@@ -81,7 +83,7 @@ async function verifyIdToken(req) {
     return null;
   }
   try {
-    return await admin.auth().verifyIdToken(authHeader.slice(7).trim());
+    return await getAuth().verifyIdToken(authHeader.slice(7).trim());
   } catch (error) {
     console.warn('Invalid Firebase ID token:', error.message);
     return null;
@@ -578,7 +580,7 @@ async function ensureMailjetContactProperties(apiKey, apiSecret) {
  * en objet Date JavaScript.
  * Retourne null si aucune conversion n'est possible.
  *
- * Utile notamment avant admin.firestore.Timestamp.fromDate(), qui exige une
+ * Utile notamment avant Timestamp.fromDate(), qui exige une
  * vraie Date (et plante avec « date.getTime is not a function » si on lui passe
  * un Timestamp Firestore).
  *
@@ -1492,7 +1494,7 @@ async function createTokenAndSendEmail(
   await db.collection('registrationTokens').doc(token).set({
     email: email.toLowerCase().trim(),
     product: product,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     expiresAt: expirationDate,
     used: false,
   });
@@ -1677,7 +1679,7 @@ async function createTokenForMultipleProductsAndSendEmail(
   await db.collection('registrationTokens').doc(token).set({
     email: email.toLowerCase().trim(),
     products: products, // Tableau de produits
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     expiresAt: expirationDate,
     used: false,
   });
@@ -1876,14 +1878,14 @@ async function handlePaymentFailure(invoice, subscription, customerEmail, apiKey
     if (failureDoc.exists) {
       failureData = failureDoc.data();
       failureData.attemptCount = (failureData.attemptCount || 0) + 1;
-      failureData.lastFailureAt = admin.firestore.FieldValue.serverTimestamp();
+      failureData.lastFailureAt = FieldValue.serverTimestamp();
       failureData.failureReasons = failureData.failureReasons || [];
       failureData.failureReasons.push({
         invoiceId: invoiceId,
         reason: invoice.last_payment_error?.message || 'Unknown error',
         amount: amount,
         currency: currency,
-        failedAt: admin.firestore.FieldValue.serverTimestamp(),
+        failedAt: FieldValue.serverTimestamp(),
       });
     } else {
       failureData = {
@@ -1894,15 +1896,15 @@ async function handlePaymentFailure(invoice, subscription, customerEmail, apiKey
         amount: amount,
         currency: currency,
         attemptCount: 1,
-        firstFailureAt: admin.firestore.FieldValue.serverTimestamp(),
-        lastFailureAt: admin.firestore.FieldValue.serverTimestamp(),
+        firstFailureAt: FieldValue.serverTimestamp(),
+        lastFailureAt: FieldValue.serverTimestamp(),
         isFirstPayment: isFirstPayment,
         failureReasons: [{
           invoiceId: invoiceId,
           reason: invoice.last_payment_error?.message || 'Unknown error',
           amount: amount,
           currency: currency,
-          failedAt: admin.firestore.FieldValue.serverTimestamp(),
+          failedAt: FieldValue.serverTimestamp(),
         }],
         emailsSent: [],
         status: 'active', // active, suspended, resolved
@@ -2045,7 +2047,7 @@ async function handlePaymentFailure(invoice, subscription, customerEmail, apiKey
       failureData.emailsSent = failureData.emailsSent || [];
       failureData.emailsSent.push({
         template: emailTemplate,
-        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+        sentAt: FieldValue.serverTimestamp(),
         attemptNumber: failureData.attemptCount,
       });
       await failureDocRef.update({emailsSent: failureData.emailsSent});
@@ -2066,7 +2068,7 @@ async function handlePaymentFailure(invoice, subscription, customerEmail, apiKey
 
       await failureDocRef.update({
         status: 'pending_suspension',
-        suspendAt: admin.firestore.Timestamp.fromDate(suspendAt),
+        suspendAt: Timestamp.fromDate(suspendAt),
       });
 
       console.log(`⚠️ Subscription ${subscriptionId} will be suspended on ${suspendAt.toISOString()}`);
@@ -2293,8 +2295,8 @@ exports.webhookStripe = onRequest(
           if (abandonDoc.exists) {
             await abandonDoc.ref.update({
               status: 'expired',
-              expiredAt: admin.firestore.FieldValue.serverTimestamp(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              expiredAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
             });
             console.log(`🛒 Abandoned checkout marked expired: ${expiredSession.id}`);
           }
@@ -2734,8 +2736,8 @@ exports.webhookStripe = onRequest(
           if (abandonDoc.exists) {
             await abandonDoc.ref.update({
               status: 'completed',
-              completedAt: admin.firestore.FieldValue.serverTimestamp(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              completedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
             });
             console.log(`🛒 Abandoned checkout marked completed: ${session.id}`);
           }
@@ -2786,7 +2788,7 @@ exports.webhookStripe = onRequest(
               stripeSessionId: session.id,
               stripePaymentIntentId: session.payment_intent || session.id,
               status: 'success',
-              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              timestamp: FieldValue.serverTimestamp(),
               metadata: session.metadata || {},
               system: 'firebase',
               type: 'online_product',
@@ -3051,7 +3053,7 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
                   status: 'error',
                   alert: true,
                   alertType: 'amount_mismatch',
-                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                  timestamp: FieldValue.serverTimestamp(),
                   metadata: session.metadata || {},
                   system: 'firebase',
                   type: 'online_product',
@@ -3165,7 +3167,7 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
               stripeSessionId: session.id,
               stripePaymentIntentId: session.payment_intent || session.id,
               status: 'success',
-              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              timestamp: FieldValue.serverTimestamp(),
               metadata: session.metadata || {},
               system: 'firebase',
               type: 'online_product',
@@ -3191,7 +3193,7 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
               stripePaymentIntentId: session.payment_intent || session.id,
               status: 'error',
               error: error.message,
-              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              timestamp: FieldValue.serverTimestamp(),
               metadata: session.metadata || {},
               system: 'firebase',
               type: 'online_product',
@@ -3295,7 +3297,7 @@ Session: ${session.id}
                 paymentCount: newCount,
                 lastInvoice: invoice.id,
                 lastPaymentAt: new Date(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
               }, {merge: true});
               console.log(
                   `🔢 ${product} (${variant}): paiement ${newCount}/${maxPayments} ` +
@@ -3997,7 +3999,7 @@ exports.webhookPayPal = onRequest(
               stripePaymentIntentId: resource.id || '',
               status: 'error',
               error: error.message,
-              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              timestamp: FieldValue.serverTimestamp(),
               metadata: resource,
               system: 'firebase',
               type: 'online_product',
@@ -4273,11 +4275,11 @@ exports.createStripeCheckoutSession = onCall(
               product,
               variant: variant || null,
               status: 'pending',
-              createdAt: admin.firestore.FieldValue.serverTimestamp(),
-              expiresAt: admin.firestore.Timestamp.fromDate(
+              createdAt: FieldValue.serverTimestamp(),
+              expiresAt: Timestamp.fromDate(
                   new Date(Date.now() + 24 * 60 * 60 * 1000)),
               remindersSent: 0,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
             });
             console.log(`🛒 Abandoned checkout tracked: ${session.id} (${email}, ${product})`);
           } catch (abandonError) {
@@ -4446,7 +4448,7 @@ exports.reengage5jours = onRequest(
         try {
           await db.collection('reengagementClicks').add({
             email,
-            clickedAt: admin.firestore.FieldValue.serverTimestamp(),
+            clickedAt: FieldValue.serverTimestamp(),
             target: hasConsent ? 'jour1' : 'formulaire',
           });
           console.log(`🖱️ Ré-engagement clic journalisé pour ${email} (${hasConsent ? 'jour1' : 'formulaire'})`);
@@ -4889,7 +4891,7 @@ exports.onBookingCreated = onDocumentCreated(
           // Marquer que la notification a été envoyée pour éviter les doublons
           await db.collection('bookings').doc(bookingId).update({
             adminNotificationSent: true,
-            adminNotificationSentAt: admin.firestore.FieldValue.serverTimestamp(),
+            adminNotificationSentAt: FieldValue.serverTimestamp(),
           });
 
           console.log(`✅ Notification admin envoyée pour la réservation ${bookingId}`);
@@ -5029,9 +5031,9 @@ exports.verifyToken = onCall(
             name: existingUserData.product,
             startDate: existingUserData.registrationDate ||
             existingUserData.createdAt ||
-            admin.firestore.FieldValue.serverTimestamp(),
+            FieldValue.serverTimestamp(),
             purchasedAt: existingUserData.createdAt ||
-            admin.firestore.FieldValue.serverTimestamp(),
+            FieldValue.serverTimestamp(),
           }];
         }
 
@@ -5043,7 +5045,7 @@ exports.verifyToken = onCall(
         }
 
         // Ajouter tous les produits du token qui n'existent pas déjà
-        const now = admin.firestore.FieldValue.serverTimestamp();
+        const now = FieldValue.serverTimestamp();
         for (const productName of tokenProducts) {
           const productExists = products.some((p) => p.name === productName);
           if (!productExists) {
@@ -5074,13 +5076,13 @@ exports.verifyToken = onCall(
           email: email,
           products: products,
           product: tokenProducts[0], // Garder pour compatibilité rétroactive (premier produit)
-          createdAt: existingUserData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: existingUserData.createdAt || FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         };
 
         // Pour le produit "21jours", ajouter aussi registrationDate pour compatibilité
         if (tokenProducts.includes('21jours') && !existingUserData.registrationDate) {
-          userData.registrationDate = admin.firestore.FieldValue.serverTimestamp();
+          userData.registrationDate = FieldValue.serverTimestamp();
         }
 
         // Créer ou mettre à jour le document Firestore
@@ -5097,7 +5099,7 @@ exports.verifyToken = onCall(
         // Marquer le token comme utilisé UNIQUEMENT après avoir créé le document Firestore
         await db.collection('registrationTokens').doc(token).update({
           used: true,
-          usedAt: admin.firestore.FieldValue.serverTimestamp(),
+          usedAt: FieldValue.serverTimestamp(),
           userId: userRecord.uid,
         });
 
@@ -5148,8 +5150,8 @@ exports.getProtectedContent = onCall(
       if (userProducts.length === 0 && userData.product) {
         userProducts = [{
           name: userData.product,
-          startDate: userData.registrationDate || userData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
-          purchasedAt: userData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
+          startDate: userData.registrationDate || userData.createdAt || FieldValue.serverTimestamp(),
+          purchasedAt: userData.createdAt || FieldValue.serverTimestamp(),
         }];
       }
 
@@ -5179,7 +5181,7 @@ exports.getProtectedContent = onCall(
             if (changed) {
               tx.update(userRef, {
                 products: freshProducts,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
               });
             }
           });
@@ -5441,7 +5443,7 @@ exports.repairUserDocument = onCall(
         }
         const isAdmin = !!(request.auth.token && request.auth.token.admin);
 
-        const adminAuth = admin.auth();
+        const adminAuth = getAuth();
 
         // Vérifier que l'utilisateur existe dans Firebase Auth
         let userRecord;
@@ -5542,7 +5544,7 @@ exports.repairUserDocument = onCall(
         }
 
         // Créer le document Firestore avec products[]
-        const now = admin.firestore.FieldValue.serverTimestamp();
+        const now = FieldValue.serverTimestamp();
         const productsArray = detectedProducts.map((prod) => {
           // 🚀 Défi 21 jours : démarre au premier accès à la formation
           if (prod === '21jours') {
@@ -5819,7 +5821,7 @@ exports.subscribeToNewsletter = onCall(
         await db.collection('newsletterConfirmations').doc(confirmationToken).set({
           email: email.toLowerCase().trim(),
           name: name || '',
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
           expiresAt: expirationDate,
           confirmed: false,
           reminderSent: false,
@@ -6265,7 +6267,7 @@ exports.subscribeToStagesWaitingList = onCall(
         await db.collection('newsletterConfirmations').doc(confirmationToken).set({
           email: email.toLowerCase().trim(),
           name: name || '',
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
           expiresAt: expirationDate,
           confirmed: false,
           reminderSent: false,
@@ -6452,7 +6454,7 @@ exports.confirmNewsletterOptIn = onCall(
         // Marquer le token comme confirmé dans Firestore
         await db.collection('newsletterConfirmations').doc(token).update({
           confirmed: true,
-          confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
+          confirmedAt: FieldValue.serverTimestamp(),
         });
 
         if (tokenData.siteSource || tokenData.blogSource || tokenData.formulaireSource) {
@@ -6911,7 +6913,7 @@ exports.subscribeTo5Days = onCall(
         await db.collection('newsletterConfirmations').doc(confirmationToken).set({
           email: email.toLowerCase().trim(),
           name: name || '',
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
           expiresAt: expirationDate,
           confirmed: false,
           reminderSent: false,
@@ -7223,7 +7225,7 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
 
       try {
         const normalizedEmail = email.toLowerCase().trim();
-        const adminAuth = admin.auth();
+        const adminAuth = getAuth();
 
         // Vérifier si l'utilisateur est client (a des produits dans Firestore)
         let isClient = false;
@@ -7359,7 +7361,7 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
         // Stocker le token dans Firestore
         await db.collection('passwordResetTokens').doc(token).set({
           email: normalizedEmail,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
           expiresAt: expirationDate,
           used: false,
         });
@@ -7500,14 +7502,14 @@ exports.verifyPasswordResetToken = onCall(
         const email = tokenData.email;
 
         // Réinitialiser le mot de passe via Firebase Admin SDK
-        const adminAuth = admin.auth();
+        const adminAuth = getAuth();
         const userRecord = await adminAuth.getUserByEmail(email);
         await adminAuth.updateUser(userRecord.uid, {password: newPassword});
 
         // Marquer le token comme utilisé
         await db.collection('passwordResetTokens').doc(token).update({
           used: true,
-          usedAt: admin.firestore.FieldValue.serverTimestamp(),
+          usedAt: FieldValue.serverTimestamp(),
         });
 
         console.log(`Password reset successful for ${email}`);
@@ -7595,8 +7597,8 @@ exports.sendSignInLinkViaMailjet = onCall(
       const normalizedEmail = email.toLowerCase().trim();
 
       try {
-      // Utiliser admin.auth() directement pour éviter les problèmes d'initialisation
-        const adminAuth = admin.auth();
+      // Utiliser getAuth() directement pour éviter les problèmes d'initialisation
+        const adminAuth = getAuth();
 
         // Vérifier si l'utilisateur est client (a des produits dans Firestore)
         let isClient = false;
@@ -7976,7 +7978,7 @@ exports.sendNewContentEmails = onSchedule(
             try {
               console.log(`🔄 Migrating user ${userId} from old format`);
               // ⚠️ Ne PAS passer un Timestamp Firestore directement à
-              // admin.firestore.Timestamp.fromDate() : cela plante avec
+              // Timestamp.fromDate() : cela plante avec
               // « date.getTime is not a function » et faisait échouer toute la
               // fonction quotidienne (bug 2025-12 → 2026-08).
               const startDate = toJsDate(userData.registrationDate) ||
@@ -7985,13 +7987,13 @@ exports.sendNewContentEmails = onSchedule(
               const purchasedAt = toJsDate(userData.createdAt) || startDate;
               products.push({
                 name: userData.product,
-                startDate: admin.firestore.Timestamp.fromDate(startDate),
-                purchasedAt: admin.firestore.Timestamp.fromDate(purchasedAt),
+                startDate: Timestamp.fromDate(startDate),
+                purchasedAt: Timestamp.fromDate(purchasedAt),
               });
               // Persister la migration (idempotent) pour ne plus repasser par ce chemin.
               await userDoc.ref.update({
                 products,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp(),
               });
               console.log(`✅ User ${userId} migrated from old format and persisted`);
             } catch (migrationError) {
@@ -8122,7 +8124,7 @@ exports.sendNewContentEmails = onSchedule(
                     email: email,
                     product: '21jours',
                     day: currentDay,
-                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                    sentAt: FieldValue.serverTimestamp(),
                   });
 
                   console.log(`✅ Email sent to ${email} for 21jours day ${currentDay}`);
@@ -8356,7 +8358,7 @@ exports.sendNewContentEmails = onSchedule(
                         email: email,
                         type: 'marketing_21jours_to_complet',
                         day: daysAfterEnd,
-                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                        sentAt: FieldValue.serverTimestamp(),
                       });
 
                       console.log(`✅ Post-21jours email (J+${daysAfterEnd}) sent to ${email} for approche complète`);
@@ -8425,7 +8427,7 @@ exports.sendNewContentEmails = onSchedule(
                     email: email,
                     product: 'complet',
                     week: currentWeek,
-                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                    sentAt: FieldValue.serverTimestamp(),
                   });
 
                   console.log(`✅ Email sent to ${email} for complet week ${currentWeek}`);
@@ -8598,7 +8600,7 @@ exports.sendNewContentEmails = onSchedule(
                       email: email,
                       type: 'marketing_2pratiques_to_5jours',
                       day: currentDay,
-                      sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                      sentAt: FieldValue.serverTimestamp(),
                     });
 
                     console.log(`✅ Marketing email sent to ${email} for 2pratiques→5jours`);
@@ -8667,7 +8669,7 @@ exports.sendNewContentEmails = onSchedule(
                         email: email,
                         type: 'marketing_5jours_to_21jours',
                         day: joursApres5jours,
-                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                        sentAt: FieldValue.serverTimestamp(),
                       });
 
                       console.log(`✅ Marketing email sent to ${email} for 5jours→21jours day ${joursApres5jours}`);
@@ -8718,7 +8720,7 @@ exports.sendNewContentEmails = onSchedule(
                           email: email,
                           type: 'marketing_relance_5jours',
                           day: currentDay,
-                          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                          sentAt: FieldValue.serverTimestamp(),
                         });
 
                         console.log(`✅ Relance email sent to ${email} for 5jours`);
@@ -8781,7 +8783,7 @@ exports.sendNewContentEmails = onSchedule(
                         email: email,
                         type: 'marketing_2pratiques_to_21jours',
                         day: currentDay,
-                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                        sentAt: FieldValue.serverTimestamp(),
                       });
 
                       console.log(`✅ Marketing email sent to ${email} for 2pratiques→21jours day ${currentDay}`);
@@ -9085,7 +9087,7 @@ exports.sendNewContentEmails = onSchedule(
                           email: email,
                           type: 'marketing_prospect_to_complet',
                           day: dayForId,
-                          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                          sentAt: FieldValue.serverTimestamp(),
                         });
 
                         console.log(`✅ Marketing email sent to ${email} for prospect→complet day ${dayForId}`);
@@ -9211,7 +9213,7 @@ exports.sendNewContentEmails = onSchedule(
                     email: email,
                     type: 'social_networks',
                     daysSinceLastEmail: daysSinceLastEmail,
-                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                    sentAt: FieldValue.serverTimestamp(),
                   });
 
                   console.log(
@@ -9370,7 +9372,7 @@ exports.sendNewContentEmails = onSchedule(
                         email: email,
                         type: 'social_networks',
                         daysSinceLastEmail: daysSinceLastEmail,
-                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                        sentAt: FieldValue.serverTimestamp(),
                       });
 
                       console.log(
@@ -9471,7 +9473,7 @@ exports.processPendingSuspensions = onSchedule(
     },
     async (_event) => {
       console.log('🔍 Starting scheduled job for pending subscription suspensions');
-      const now = admin.firestore.Timestamp.now();
+      const now = Timestamp.now();
       const mailjetApiKey = process.env.MAILJET_API_KEY;
       const mailjetApiSecret = process.env.MAILJET_API_SECRET;
 
@@ -9503,7 +9505,7 @@ exports.processPendingSuspensions = onSchedule(
             // Mettre à jour le statut
             await doc.ref.update({
               status: 'suspended',
-              suspendedAt: admin.firestore.FieldValue.serverTimestamp(),
+              suspendedAt: FieldValue.serverTimestamp(),
             });
 
             // Récupérer le prénom pour l'email
@@ -9776,9 +9778,9 @@ async function sendBlogOpsAlert({alertType, siteSource = 'global', windowStart, 
     site_source: siteSource,
     count,
     lines,
-    window_start: admin.firestore.Timestamp.fromDate(windowStart),
-    window_end: admin.firestore.Timestamp.fromDate(windowEnd),
-    sent_at: admin.firestore.FieldValue.serverTimestamp(),
+    window_start: Timestamp.fromDate(windowStart),
+    window_end: Timestamp.fromDate(windowEnd),
+    sent_at: FieldValue.serverTimestamp(),
   });
 
   return true;
@@ -9794,7 +9796,7 @@ exports.sendBlogLeadsDailyDigest = onSchedule(
     async (_event) => {
       const now = new Date();
       const since = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-      const sinceTs = admin.firestore.Timestamp.fromDate(since);
+      const sinceTs = Timestamp.fromDate(since);
       const mailjetApiKey = process.env.MAILJET_API_KEY;
       const mailjetApiSecret = process.env.MAILJET_API_SECRET;
       const summaries = buildBlogOpsSummaries();
@@ -9888,7 +9890,7 @@ exports.sendBlogLeadsDailyDigest = onSchedule(
       );
 
       await db.collection(BLOG_OPS_DIGEST_COLLECTION).add({
-        sent_at: admin.firestore.FieldValue.serverTimestamp(),
+        sent_at: FieldValue.serverTimestamp(),
         date_label: dateLabel,
         pending_total: pendingTotal,
         summaries,
@@ -9913,13 +9915,13 @@ exports.sendBlogLeadOpsAlerts = onSchedule(
 
       const [leadEvents15m, leadEvents1h, contacts1h] = await Promise.all([
         db.collection('journal_evenements_leads')
-            .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(since15m))
+            .where('createdAt', '>=', Timestamp.fromDate(since15m))
             .get(),
         db.collection('journal_evenements_leads')
-            .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(since1h))
+            .where('createdAt', '>=', Timestamp.fromDate(since1h))
             .get(),
         db.collection('journal_formulaires_contact')
-            .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(since1h))
+            .where('createdAt', '>=', Timestamp.fromDate(since1h))
             .get(),
       ]);
 
@@ -10173,7 +10175,7 @@ exports.sendOptInReminders = onSchedule(
             // Marquer la relance comme envoyée
             await db.collection('newsletterConfirmations').doc(tokenId).update({
               reminderSent: true,
-              reminderSentAt: admin.firestore.FieldValue.serverTimestamp(),
+              reminderSentAt: FieldValue.serverTimestamp(),
               rappelStagesEnvoyes: updatedReminderStages,
               nombreRelancesDoi: updatedReminderStages.length,
             });
@@ -10312,7 +10314,7 @@ exports.registerPresentielCourse = onRequest(
           courseName: courseName || 'Cours Fluance',
           courseDate: courseDate || null,
           courseTime: courseTime || null,
-          registeredAt: admin.firestore.FieldValue.serverTimestamp(),
+          registeredAt: FieldValue.serverTimestamp(),
           source: 'fluance',
         };
 
@@ -10423,7 +10425,7 @@ exports.registerPresentielCourse = onRequest(
           await db.collection('newsletterConfirmations').doc(confirmationToken).set({
             email: normalizedEmail,
             name: name || '',
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
             expiresAt: expirationDate,
             confirmed: false,
             reminderSent: false,
@@ -10731,7 +10733,7 @@ async function handleDoubleOptInForBooking(db, email, firstName, courseId, booki
     await db.collection('newsletterConfirmations').doc(confirmationToken).set({
       email: normalizedEmail,
       name: firstName || '',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       expiresAt: expirationDate,
       confirmed: false,
       reminderSent: false,
@@ -11056,15 +11058,15 @@ async function sendCourseRemindersLogic() {
 
   try {
     // Calculer la date de demain (1 jour avant)
-    const now = admin.firestore.Timestamp.now();
+    const now = Timestamp.now();
     const tomorrow = new Date(now.toDate());
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
     const tomorrowEnd = new Date(tomorrow);
     tomorrowEnd.setHours(23, 59, 59, 999);
 
-    const tomorrowStartTimestamp = admin.firestore.Timestamp.fromDate(tomorrow);
-    const tomorrowEndTimestamp = admin.firestore.Timestamp.fromDate(tomorrowEnd);
+    const tomorrowStartTimestamp = Timestamp.fromDate(tomorrow);
+    const tomorrowEndTimestamp = Timestamp.fromDate(tomorrowEnd);
 
     console.log(`🔍 Looking for courses on ${tomorrow.toISOString().split('T')[0]}`);
 
@@ -11239,7 +11241,7 @@ async function sendCourseRemindersLogic() {
 
           // Marquer le rappel comme envoyé dans la réservation
           await bookingDoc.ref.update({
-            [reminderKey]: admin.firestore.FieldValue.serverTimestamp(),
+            [reminderKey]: FieldValue.serverTimestamp(),
           });
 
           remindersSent++;
@@ -11338,7 +11340,7 @@ async function sendTrialFollowUpsLogic() {
         // Marquer comme envoyé
         await bookingDoc.ref.update({
           trialFollowUpSent: true,
-          trialFollowUpSentAt: admin.firestore.FieldValue.serverTimestamp(),
+          trialFollowUpSentAt: FieldValue.serverTimestamp(),
         });
 
         sentCount++;
@@ -11704,7 +11706,7 @@ exports.sendPromotionalEmails = onSchedule(
                   type: 'promotion_sommeil',
                   month: currentMonth,
                   year: now.getFullYear(),
-                  sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                  sentAt: FieldValue.serverTimestamp(),
                 });
 
                 console.log(`✅ Sleep promotional email sent to ${email}`);
@@ -11770,7 +11772,7 @@ exports.sendPromotionalEmails = onSchedule(
                       email: email,
                       type: 'promotion_somatique_principal',
                       daysSinceOptin: daysSinceOptin,
-                      sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                      sentAt: FieldValue.serverTimestamp(),
                     });
 
                     console.log(`✅ Somatique promotional email (principal) sent to ${email}`);
@@ -11811,7 +11813,7 @@ exports.sendPromotionalEmails = onSchedule(
                         email: email,
                         type: 'promotion_somatique_relance',
                         daysSinceOptin: daysSinceOptin,
-                        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                        sentAt: FieldValue.serverTimestamp(),
                       });
 
                       console.log(`✅ Somatique promotional email (relance) sent to ${email}`);
@@ -11934,7 +11936,7 @@ exports.sendPromotionalEmails = onSchedule(
                               month: currentMonth,
                               year: now.getFullYear(),
                               daysSinceOptin: daysSinceOptin,
-                              sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                              sentAt: FieldValue.serverTimestamp(),
                             });
 
                         console.log(
@@ -12126,7 +12128,7 @@ exports.getAvailableCourses = onRequest(
           return res.json(cached);
         }
 
-        const now = admin.firestore.Timestamp.now();
+        const now = Timestamp.now();
 
         const coursesSnapshot = await db.collection('courses')
             .where('startTime', '>=', now)
@@ -13518,7 +13520,7 @@ exports.getAvailableCoursesForTransfer = onRequest(
           return res.json(cached);
         }
 
-        const now = admin.firestore.Timestamp.now();
+        const now = Timestamp.now();
 
         const query = db.collection('courses')
             .where('startTime', '>=', now)
@@ -13963,7 +13965,7 @@ exports.processMolliePayment = onMessagePublished(
                 email: metadata.email || null,
                 issue: 'subscription_creation_failed',
                 error: subError?.message || 'unknown_error',
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                createdAt: FieldValue.serverTimestamp(),
               }, {merge: true});
 
               if (process.env.MAILJET_API_KEY && process.env.MAILJET_API_SECRET) {
@@ -14029,7 +14031,7 @@ exports.processMolliePayment = onMessagePublished(
               maxPayments,
               lastPayment: paymentId,
               lastPaymentAt: new Date(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
             }, {merge: true});
 
             console.log(
@@ -14141,7 +14143,7 @@ exports.processMolliePayment = onMessagePublished(
                 stripeSessionId: paymentId,
                 stripePaymentIntentId: paymentId,
                 status: 'success',
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                timestamp: FieldValue.serverTimestamp(),
                 metadata: metadata,
                 system: 'firebase',
                 type: 'online_product',
@@ -14164,7 +14166,7 @@ exports.processMolliePayment = onMessagePublished(
                   stripePaymentIntentId: paymentId,
                   status: 'error',
                   error: onlineError.message,
-                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                  timestamp: FieldValue.serverTimestamp(),
                   metadata: metadata,
                   system: 'firebase',
                   type: 'online_product',

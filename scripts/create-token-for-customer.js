@@ -1,16 +1,17 @@
 /**
  * Script pour créer manuellement un token pour un client
- * Usage: node scripts/create-token-for-customer.js cbaka@bluewin.ch
+ * Usage: node scripts/create-token-for-customer.js user@example.com
  */
 
 const admin = require('firebase-admin');
+const {getFirestore, FieldValue} = require('firebase-admin/firestore');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
 // Configuration Firebase
 try {
-  if (!admin.apps.length) {
+  if (!admin.getApps().length) {
     // Chercher le service account dans plusieurs emplacements possibles
     const possiblePaths = [
       process.env.GOOGLE_APPLICATION_CREDENTIALS,
@@ -30,7 +31,7 @@ try {
       console.log(`✅ Utilisation du service account: ${serviceAccountPath}`);
       const serviceAccount = require(serviceAccountPath);
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+        credential: admin.cert(serviceAccount),
         projectId: 'fluance-protected-content',
       });
     } else {
@@ -48,7 +49,7 @@ try {
   process.exit(1);
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 /**
  * Génère un token unique
@@ -75,7 +76,7 @@ async function createTokenForCustomer(email, product, expirationDays = 30) {
     await db.collection('registrationTokens').doc(token).set({
       email: email.toLowerCase().trim(),
       product: product, // Format webhook: singular product
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       expiresAt: expirationDate,
       used: false,
       manuallyCreated: true, // Marquer comme créé manuellement

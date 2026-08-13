@@ -36,12 +36,12 @@ if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
 // Initialiser Firebase Admin
 const serviceAccount = require(SERVICE_ACCOUNT_PATH);
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.cert(serviceAccount),
 });
 
 console.log('✅ Firebase Admin initialisé avec service account');
 
-const db = admin.firestore();
+const db = getFirestore();
 
 // Contenu à ajouter sous la vidéo du jour 22
 const additionalContent = `
@@ -107,7 +107,7 @@ async function updateDay22() {
     // Mettre à jour le document
     await docRef.update({
       content: updatedContent,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     console.log(`✅ Document ${docId} mis à jour avec succès`);

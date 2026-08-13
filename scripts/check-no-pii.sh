@@ -12,6 +12,7 @@ set -u
 ALLOWED_PATTERNS=(
   '@fluance\.io'
   '@actu\.fluance\.io'
+  'fluance-protected-content\.firebaseapp\.com'
   '@example\.(com|org|net)'
   'votre-email'
   'votre@email\.com'

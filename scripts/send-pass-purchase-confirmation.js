@@ -7,16 +7,17 @@
  * 2. Récupère les informations de la première réservation avec ce pass (si disponible)
  * 3. Envoie l'email de confirmation d'achat de pass
  * 
- * Exemple: node scripts/send-pass-purchase-confirmation.js nicolevonlanthen@hotmail.com x9ci3ZqUGjCaMvLyBd1j
+ * Exemple: node scripts/send-pass-purchase-confirmation.js user@example.com x9ci3ZqUGjCaMvLyBd1j
  */
 
 const admin = require('firebase-admin');
+const {getFirestore} = require('firebase-admin/firestore');
 const path = require('path');
 const fs = require('fs');
 
 // Initialiser Firebase Admin
 try {
-  if (!admin.apps.length) {
+  if (!admin.getApps().length) {
     const possiblePaths = [
       process.env.GOOGLE_APPLICATION_CREDENTIALS,
       path.join(__dirname, '../functions/serviceAccountKey.json'),
@@ -35,7 +36,7 @@ try {
       console.log(`📁 Utilisation du service account : ${serviceAccountPath}`);
       const serviceAccount = require(serviceAccountPath);
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+        credential: admin.cert(serviceAccount),
         projectId: 'fluance-protected-content',
       });
     } else {
@@ -49,7 +50,7 @@ try {
   process.exit(1);
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 async function sendPassPurchaseConfirmation(email, passId) {
   console.log(`📧 Envoi de l'email de confirmation d'achat de pass\n`);
@@ -186,7 +187,7 @@ const passId = process.argv[3];
 if (!email || !passId) {
   console.log('❌ Usage: node scripts/send-pass-purchase-confirmation.js [email] [passId]\n');
   console.log('Exemple:');
-  console.log('  node scripts/send-pass-purchase-confirmation.js nicolevonlanthen@hotmail.com x9ci3ZqUGjCaMvLyBd1j');
+  console.log('  node scripts/send-pass-purchase-confirmation.js user@example.com x9ci3ZqUGjCaMvLyBd1j');
   process.exit(1);
 }
 

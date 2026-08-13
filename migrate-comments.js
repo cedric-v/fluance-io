@@ -16,14 +16,14 @@ const admin = require('firebase-admin');
 // Configuration ancien projet (owncommentsfluance)
 const oldServiceAccount = require('./old-project-service-account.json');
 const oldApp = admin.initializeApp({
-  credential: admin.credential.cert(oldServiceAccount),
+  credential: admin.cert(oldServiceAccount),
   projectId: 'owncommentsfluance'
 }, 'old');
 
 // Configuration nouveau projet (fluance-protected-content)
 const newServiceAccount = require('./new-project-service-account.json');
 const newApp = admin.initializeApp({
-  credential: admin.credential.cert(newServiceAccount),
+  credential: admin.cert(newServiceAccount),
   projectId: 'fluance-protected-content'
 }, 'new');
 

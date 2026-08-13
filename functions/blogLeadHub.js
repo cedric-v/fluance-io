@@ -1,8 +1,8 @@
 const {onRequest} = require('firebase-functions/v2/https');
-const admin = require('firebase-admin');
+const {getFirestore, FieldValue} = require('firebase-admin/firestore');
 const crypto = require('crypto');
 
-const db = admin.firestore();
+const db = getFirestore();
 
 const DEFAULT_LIST_ID = 10524140;
 const CONTACT_INTERNAL_TO = 'support@fluance.io';
@@ -459,14 +459,14 @@ async function verifyTurnstile(token, secret, remoteIp) {
 async function logLeadEvent(eventType, payload) {
   await db.collection('journal_evenements_leads').add({
     type_evenement: eventType,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     ...payload,
   });
 }
 
 async function logContactSubmission(payload) {
   await db.collection('journal_formulaires_contact').add({
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     ...payload,
   });
 }
@@ -633,7 +633,7 @@ async function createOrReuseConfirmationToken({
     id: tokenId,
     email,
     name,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     expiresAt,
     confirmed: false,
     sourceOptin: `blog_${site.siteId}`,

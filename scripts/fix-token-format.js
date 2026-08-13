@@ -9,10 +9,11 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore} = require('firebase-admin/firestore');
 
 // Configuration Firebase
 try {
-  if (!admin.apps.length) {
+  if (!admin.getApps().length) {
     admin.initializeApp({
       projectId: 'fluance-protected-content',
     });
@@ -23,7 +24,7 @@ try {
   process.exit(1);
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 /**
  * Vérifie et affiche les détails d'un token

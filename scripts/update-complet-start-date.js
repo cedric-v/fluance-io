@@ -24,11 +24,11 @@ if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
 
 const serviceAccount = require(SERVICE_ACCOUNT_PATH);
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.cert(serviceAccount)
 });
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore();
+const auth = getAuth();
 
 async function updateCompletStartDate(email, weeksAgo = 8) {
   try {
@@ -73,7 +73,7 @@ async function updateCompletStartDate(email, weeksAgo = 8) {
     let products = userData.products || [];
     if (products.length === 0 && userData.product) {
       console.log(`   Migration depuis ancien format: product = "${userData.product}"`);
-      const existingStartDate = userData.registrationDate || userData.createdAt || admin.firestore.Timestamp.now();
+      const existingStartDate = userData.registrationDate || userData.createdAt || Timestamp.now();
       products = [{
         name: userData.product,
         startDate: existingStartDate,
@@ -96,14 +96,14 @@ async function updateCompletStartDate(email, weeksAgo = 8) {
     const oldDate = oldStartDate.toDate ? oldStartDate.toDate() : new Date(oldStartDate.seconds * 1000);
     console.log(`   Ancienne date de démarrage: ${oldDate.toLocaleDateString('fr-FR')}`);
     
-    products[completIndex].startDate = admin.firestore.Timestamp.fromDate(startDate);
+    products[completIndex].startDate = Timestamp.fromDate(startDate);
     
     console.log(`   Nouvelle date de démarrage: ${startDate.toLocaleDateString('fr-FR')}`);
 
     // Mettre à jour le document
     await userDocRef.set({
       products: products,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
     console.log(`✅ Date de démarrage du produit "complet" mise à jour avec succès!`);

@@ -6,6 +6,8 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore, Timestamp} = require('firebase-admin/firestore');
+const {getAuth} = require('firebase-admin/auth');
 const fs = require('fs');
 const path = require('path');
 
@@ -15,7 +17,7 @@ const PROJECT_ID = 'fluance-protected-content';
 // Initialiser Firebase Admin
 async function initFirebase() {
   try {
-    if (admin.apps.length === 0) {
+    if (admin.getApps().length === 0) {
       const possiblePaths = [
         process.env.GOOGLE_APPLICATION_CREDENTIALS,
         path.join(__dirname, 'new-project-service-account.json'),
@@ -35,7 +37,7 @@ async function initFirebase() {
         console.log(`📁 Utilisation du service account : ${serviceAccountPath}`);
         const serviceAccount = require(serviceAccountPath);
         admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
+          credential: admin.cert(serviceAccount),
           projectId: PROJECT_ID,
         });
       } else {
@@ -45,7 +47,7 @@ async function initFirebase() {
         });
       }
     }
-    return { db: admin.firestore(), auth: admin.auth() };
+    return { db: getFirestore(), auth: getAuth() };
   } catch (error) {
     console.error('❌ Erreur lors de l\'initialisation de Firebase:', error.message);
     console.log('\n💡 Assurez-vous que :');
@@ -278,7 +280,7 @@ const email = process.argv[2];
 if (!email) {
   console.error('❌ Erreur: Veuillez fournir un email');
   console.log('Usage: node check-user-firestore.js EMAIL');
-  console.log('Exemple: node check-user-firestore.js sylvie707@cgocable.ca');
+  console.log('Exemple: node check-user-firestore.js user@example.com');
   process.exit(1);
 }
 

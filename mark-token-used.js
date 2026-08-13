@@ -7,6 +7,7 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore, FieldValue} = require('firebase-admin/firestore');
 const fs = require('fs');
 const path = require('path');
 
@@ -16,7 +17,7 @@ const PROJECT_ID = 'fluance-protected-content';
 // Initialiser Firebase Admin
 async function initFirebase() {
     try {
-        if (admin.apps.length === 0) {
+        if (admin.getApps().length === 0) {
             const possiblePaths = [
                 process.env.GOOGLE_APPLICATION_CREDENTIALS,
                 path.join(__dirname, 'new-project-service-account.json'),
@@ -35,7 +36,7 @@ async function initFirebase() {
             if (serviceAccountPath) {
                 const serviceAccount = require(serviceAccountPath);
                 admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccount),
+                    credential: admin.cert(serviceAccount),
                     projectId: PROJECT_ID,
                 });
             } else {
@@ -44,7 +45,7 @@ async function initFirebase() {
                 });
             }
         }
-        return { db: admin.firestore() };
+        return { db: getFirestore() };
     } catch (error) {
         console.error('❌ Erreur lors de l\'initialisation de Firebase:', error.message);
         process.exit(1);
@@ -78,7 +79,7 @@ async function markTokenUsed(email) {
         snapshot.docs.forEach(doc => {
             batch.update(doc.ref, {
                 used: true,
-                usedAt: admin.firestore.FieldValue.serverTimestamp(),
+                usedAt: FieldValue.serverTimestamp(),
                 notes: 'Marqué comme utilisé manuellement (réparation compte effectuée)'
             });
         });

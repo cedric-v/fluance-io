@@ -8,15 +8,16 @@
  * - Le projet par défaut de la cred est correct.
  */
 const admin = require('firebase-admin');
+const {getFirestore, FieldValue} = require('firebase-admin/firestore');
 
 admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
+  credential: admin.applicationDefault(),
 });
 
-const db = admin.firestore();
+const db = getFirestore();
 
 async function main() {
-  const now = admin.firestore.FieldValue.serverTimestamp();
+  const now = FieldValue.serverTimestamp();
   const contentHtml = `<div>La vidéo est en cours de préparation ; elle va être ajoutée sous peu. À très vite.</div>`;
 
   await db.collection('protectedContent').doc('sos-dos-cervicales').set({

@@ -10,6 +10,8 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore, Timestamp, FieldValue} = require('firebase-admin/firestore');
+const {getAuth} = require('firebase-admin/auth');
 const fs = require('fs');
 const path = require('path');
 
@@ -20,7 +22,7 @@ const DAYS_BACK = 22; // Nombre de jours dans le passé pour avoir accès comple
 // Initialiser Firebase Admin
 async function initFirebase() {
   try {
-    if (admin.apps.length === 0) {
+    if (admin.getApps().length === 0) {
       const possiblePaths = [
         process.env.GOOGLE_APPLICATION_CREDENTIALS,
         path.join(__dirname, 'new-project-service-account.json'),
@@ -40,7 +42,7 @@ async function initFirebase() {
         console.log(`📁 Utilisation du service account : ${serviceAccountPath}`);
         const serviceAccount = require(serviceAccountPath);
         admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
+          credential: admin.cert(serviceAccount),
           projectId: PROJECT_ID,
         });
       } else {
@@ -50,7 +52,7 @@ async function initFirebase() {
         });
       }
     }
-    return { db: admin.firestore(), auth: admin.auth() };
+    return { db: getFirestore(), auth: getAuth() };
   } catch (error) {
     console.error('❌ Erreur lors de l\'initialisation de Firebase:', error.message);
     process.exit(1);
@@ -66,7 +68,7 @@ async function grantFullAccess(db, auth, email) {
     // Calculer la date d'inscription (il y a 22 jours pour avoir accès complet)
     const registrationDate = new Date();
     registrationDate.setDate(registrationDate.getDate() - DAYS_BACK);
-    const startDateTimestamp = admin.firestore.Timestamp.fromDate(registrationDate);
+    const startDateTimestamp = Timestamp.fromDate(registrationDate);
 
     // Récupérer le document utilisateur pour mettre à jour products[]
     const userDocRef = db.collection('users').doc(userId);
@@ -79,7 +81,7 @@ async function grantFullAccess(db, auth, email) {
       
       // Migration depuis ancien format si nécessaire
       if (products.length === 0 && userData.product) {
-        const existingStartDate = userData.registrationDate || userData.createdAt || admin.firestore.Timestamp.now();
+        const existingStartDate = userData.registrationDate || userData.createdAt || Timestamp.now();
         products = [{
           name: userData.product,
           startDate: existingStartDate,
@@ -101,7 +103,7 @@ async function grantFullAccess(db, auth, email) {
       products.push({
         name: '21jours',
         startDate: startDateTimestamp,
-        purchasedAt: admin.firestore.Timestamp.now(),
+        purchasedAt: Timestamp.now(),
         started: true,
       });
     }
@@ -112,8 +114,8 @@ async function grantFullAccess(db, auth, email) {
       product: '21jours', // Garder pour compatibilité rétroactive
       registrationDate: startDateTimestamp, // Garder pour compatibilité rétroactive
       fullAccessGranted: true, // Flag pour indiquer que l'accès complet a été accordé
-      fullAccessGrantedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      fullAccessGrantedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
     console.log(`✅ Accès complet accordé à ${email}`);

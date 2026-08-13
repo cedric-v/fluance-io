@@ -6,6 +6,7 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore, FieldValue} = require('firebase-admin/firestore');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -16,7 +17,7 @@ const PROJECT_ID = 'fluance-protected-content';
 // Initialiser Firebase Admin
 async function initFirebase() {
     try {
-        if (admin.apps.length === 0) {
+        if (admin.getApps().length === 0) {
             const possiblePaths = [
                 process.env.GOOGLE_APPLICATION_CREDENTIALS,
                 path.join(__dirname, 'new-project-service-account.json'),
@@ -36,7 +37,7 @@ async function initFirebase() {
                 console.log(`📁 Utilisation du service account : ${serviceAccountPath}`);
                 const serviceAccount = require(serviceAccountPath);
                 admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccount),
+                    credential: admin.cert(serviceAccount),
                     projectId: PROJECT_ID,
                 });
             } else {
@@ -46,7 +47,7 @@ async function initFirebase() {
                 });
             }
         }
-        return { db: admin.firestore() };
+        return { db: getFirestore() };
     } catch (error) {
         console.error('❌ Erreur lors de l\'initialisation de Firebase:', error.message);
         process.exit(1);
@@ -73,7 +74,7 @@ async function createMultiProductToken(email, products, expirationDays, db) {
         await db.collection('registrationTokens').doc(token).set({
             email: emailLower,
             products: products,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
             expiresAt: expirationDate,
             used: false,
             note: 'Token créé manuellement pour corriger un problème de cross-sell',
@@ -117,7 +118,7 @@ async function createMultiProductToken(email, products, expirationDays, db) {
             if (doc.id !== token) {
                 await doc.ref.update({
                     used: true,
-                    invalidatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    invalidatedAt: FieldValue.serverTimestamp(),
                     invalidationReason: 'Remplacé par un nouveau token avec tous les produits',
                 });
                 invalidatedCount++;
@@ -154,7 +155,7 @@ if (args.length < 2) {
     console.log('  - sos-dos-cervicales');
     console.log('  - complet');
     console.log('');
-    console.log('Exemple: node create-multi-product-token.js veronique.corminboeuf@bluewin.ch 21jours sos-dos-cervicales');
+    console.log('Exemple: node create-multi-product-token.js user@example.com 21jours sos-dos-cervicales');
     process.exit(1);
 }
 

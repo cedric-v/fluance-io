@@ -23,11 +23,11 @@ if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
 
 const serviceAccount = require(SERVICE_ACCOUNT_PATH);
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.cert(serviceAccount)
 });
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore();
+const auth = getAuth();
 
 async function createUserWithProduct(email, productName, startDateString, password) {
   try {
@@ -85,7 +85,7 @@ async function createUserWithProduct(email, productName, startDateString, passwo
       products = userData.products || [];
       if (products.length === 0 && userData.product) {
         // Migration depuis ancien format
-        const existingStartDate = userData.registrationDate || userData.createdAt || admin.firestore.Timestamp.now();
+        const existingStartDate = userData.registrationDate || userData.createdAt || Timestamp.now();
         products = [{
           name: userData.product,
           startDate: existingStartDate,
@@ -103,13 +103,13 @@ async function createUserWithProduct(email, productName, startDateString, passwo
       console.log(`⚠️  Le produit "${productName}" existe déjà. Mise à jour de la date de démarrage...`);
       // Mettre à jour la date de démarrage
       const productIndex = products.findIndex(p => p.name === productName);
-      products[productIndex].startDate = admin.firestore.Timestamp.fromDate(startDate);
+      products[productIndex].startDate = Timestamp.fromDate(startDate);
       // Date de démarrage fixée explicitement → défi démarré
       products[productIndex].started = true;
     } else {
       // Ajouter le nouveau produit avec la date spécifiée
-      const startTimestamp = admin.firestore.Timestamp.fromDate(startDate);
-      const purchasedTimestamp = admin.firestore.Timestamp.now();
+      const startTimestamp = Timestamp.fromDate(startDate);
+      const purchasedTimestamp = Timestamp.now();
       
       products.push({
         name: productName,
@@ -124,13 +124,13 @@ async function createUserWithProduct(email, productName, startDateString, passwo
       email: normalizedEmail,
       products: products,
       product: productName,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     };
     
     if (!userDoc.exists) {
-      updateData.createdAt = admin.firestore.FieldValue.serverTimestamp();
+      updateData.createdAt = FieldValue.serverTimestamp();
       if (productName === '21jours') {
-        updateData.registrationDate = admin.firestore.Timestamp.fromDate(startDate);
+        updateData.registrationDate = Timestamp.fromDate(startDate);
       }
     }
 

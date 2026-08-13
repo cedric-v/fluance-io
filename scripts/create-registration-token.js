@@ -23,10 +23,10 @@ if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
 
 const serviceAccount = require(SERVICE_ACCOUNT_PATH);
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.cert(serviceAccount)
 });
 
-const db = admin.firestore();
+const db = getFirestore();
 
 function generateToken() {
   return crypto.randomBytes(32).toString('hex');
@@ -36,10 +36,10 @@ async function createRegistrationToken(email, product, expirationDays = 30) {
   try {
     const normalizedEmail = email.toLowerCase().trim();
     const token = generateToken();
-    const now = admin.firestore.Timestamp.now();
+    const now = Timestamp.now();
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + expirationDays);
-    const expirationTimestamp = admin.firestore.Timestamp.fromDate(expirationDate);
+    const expirationTimestamp = Timestamp.fromDate(expirationDate);
 
     const tokenData = {
       email: normalizedEmail,

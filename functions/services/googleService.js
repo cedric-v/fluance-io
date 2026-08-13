@@ -8,7 +8,7 @@
  */
 
 const {google} = require('googleapis');
-const admin = require('firebase-admin');
+const {Timestamp, FieldValue} = require('firebase-admin/firestore');
 
 // Configuration des IDs (à définir via les secrets Firebase)
 // firebase functions:secrets:set GOOGLE_CALENDAR_ID
@@ -162,8 +162,8 @@ class GoogleService {
       // 1. Nettoyer les cours supprimés de Google Calendar dans la plage synchronisée
       // On récupère tous les cours futurs dans Firestore qui sont dans la plage de temps synchronisée
       const futureCourses = await db.collection('courses')
-          .where('startTime', '>=', admin.firestore.Timestamp.fromDate(new Date(timeMin)))
-          .where('startTime', '<=', admin.firestore.Timestamp.fromDate(new Date(timeMax)))
+          .where('startTime', '>=', Timestamp.fromDate(new Date(timeMin)))
+          .where('startTime', '<=', Timestamp.fromDate(new Date(timeMax)))
           .get();
 
       for (const doc of futureCourses.docs) {
@@ -175,7 +175,7 @@ class GoogleService {
 
       // 2. Nettoyer les anciens cours (passés depuis plus de 7 jours)
       const cleanupDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const cleanupTimestamp = admin.firestore.Timestamp.fromDate(cleanupDate);
+      const cleanupTimestamp = Timestamp.fromDate(cleanupDate);
       const oldCourses = await db.collection('courses')
           .where('startTime', '<', cleanupTimestamp)
           .get();
@@ -296,8 +296,8 @@ class GoogleService {
       const formattedTime = `${hourPart.value}:${minutePart.value}`;
 
       // Convertir en Firestore Timestamp pour le stockage
-      const startTimestamp = admin.firestore.Timestamp.fromDate(startTime);
-      const endTimestamp = endTime ? admin.firestore.Timestamp.fromDate(endTime) : null;
+      const startTimestamp = Timestamp.fromDate(startTime);
+      const endTimestamp = endTime ? Timestamp.fromDate(endTime) : null;
 
       return {
         gcalId: event.id,
@@ -313,8 +313,8 @@ class GoogleService {
         participants: [], // Liste des IDs de réservations confirmées
         participantCount: 0,
         status: 'active',
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       };
     } catch (error) {
       console.error(`Error parsing calendar event date/time: ${error.message}`, {

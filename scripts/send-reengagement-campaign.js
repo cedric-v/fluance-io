@@ -46,6 +46,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
+const {getFirestore, Timestamp, FieldValue} = require('firebase-admin/firestore');
 
 const {buildReengageUrl, buildEmailA, buildEmailB, buildEmailC} = require('./reengagement-content');
 
@@ -226,13 +227,13 @@ function isInternalOrTest(email) {
 
 // ---------------------------------------------------------------- Firestore
 async function initDb() {
-  if (admin.apps.length === 0) {
+  if (admin.getApps().length === 0) {
     admin.initializeApp({
       projectId: 'fluance-protected-content',
-      credential: admin.credential.applicationDefault(),
+      credential: admin.applicationDefault(),
     });
   }
-  return admin.firestore();
+  return getFirestore();
 }
 
 // ---------------------------------------------------------------- plan
@@ -328,7 +329,7 @@ async function sendCampaign(db, plan) {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const todaySends = await db.collection('reengagementSends')
-      .where('sentAt', '>=', admin.firestore.Timestamp.fromDate(startOfDay))
+      .where('sentAt', '>=', Timestamp.fromDate(startOfDay))
       .count()
       .get();
   const alreadyToday = todaySends.data().count;
@@ -373,7 +374,7 @@ async function sendCampaign(db, plan) {
         email: rec.email,
         segment: rec.segment,
         wave: WAVE,
-        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+        sentAt: FieldValue.serverTimestamp(),
         link: cta,
       });
 

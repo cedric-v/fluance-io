@@ -7,17 +7,18 @@
  * 2. Envoie l'email de création de compte
  * 3. Met à jour les contact properties MailJet
  * 
- * Exemple: node scripts/create-token-and-send-email.js cbaka@bluewin.ch sos-dos-cervicales 17
+ * Exemple: node scripts/create-token-and-send-email.js user@example.com sos-dos-cervicales 17
  */
 
 const admin = require('firebase-admin');
+const {getFirestore, FieldValue} = require('firebase-admin/firestore');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
 // Initialiser Firebase Admin
 try {
-  if (!admin.apps.length) {
+  if (!admin.getApps().length) {
     const possiblePaths = [
       process.env.GOOGLE_APPLICATION_CREDENTIALS,
       path.join(__dirname, '../functions/serviceAccountKey.json'),
@@ -36,7 +37,7 @@ try {
       console.log(`📁 Utilisation du service account : ${serviceAccountPath}`);
       const serviceAccount = require(serviceAccountPath);
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+        credential: admin.cert(serviceAccount),
         projectId: 'fluance-protected-content',
       });
     } else {
@@ -50,7 +51,7 @@ try {
   process.exit(1);
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 /**
  * Génère un token unique
@@ -168,7 +169,7 @@ async function createTokenAndSendEmail(email, product, expirationDays = 30, amou
     const tokenData = {
       email: normalizedEmail,
       product: product,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       expiresAt: expirationDate,
       used: false,
     };
@@ -241,7 +242,7 @@ const amount = process.argv[4] ? parseFloat(process.argv[4]) : null;
 if (!email || !product) {
   console.log('❌ Usage: node scripts/create-token-and-send-email.js [email] [product] [amount]\n');
   console.log('Exemple:');
-  console.log('  node scripts/create-token-and-send-email.js cbaka@bluewin.ch sos-dos-cervicales 17');
+  console.log('  node scripts/create-token-and-send-email.js user@example.com sos-dos-cervicales 17');
   console.log('\nProduits valides: 21jours, complet, sos-dos-cervicales');
   process.exit(1);
 }

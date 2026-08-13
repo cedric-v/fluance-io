@@ -15,12 +15,13 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore} = require('firebase-admin/firestore');
 const path = require('path');
 const fs = require('fs');
 
 // Initialiser Firebase Admin avec credentials
 try {
-  if (!admin.apps.length) {
+  if (!admin.getApps().length) {
     // Chercher le service account dans plusieurs emplacements possibles
     const possiblePaths = [
       process.env.GOOGLE_APPLICATION_CREDENTIALS,
@@ -40,7 +41,7 @@ try {
       console.log(`📁 Utilisation du service account : ${serviceAccountPath}`);
       const serviceAccount = require(serviceAccountPath);
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+        credential: admin.cert(serviceAccount),
         projectId: 'fluance-protected-content',
       });
       console.log('✅ Firebase Admin initialisé avec service account');
@@ -64,15 +65,15 @@ try {
   process.exit(1);
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 // Liste des emails de test à supprimer (ajoutez vos emails de test ici)
 const TEST_EMAILS = [
-  'cedricjourney+testauth@gmail.com',
-  'cedricjourney@gmail.com',
-  'c.vonlanthen+testres@gmail.com',
-  'cedricjourney+testres@gmail.com',
-  'c.vonlanthen+teststage2@gmail.com'
+  'test-user-1@example.com',
+  'test-user-2@example.com',
+  'test-user-3@example.com',
+  'test-user-4@example.com',
+  'test-user-5@example.com'
   // Ajoutez vos autres emails de test ici
 ];
 

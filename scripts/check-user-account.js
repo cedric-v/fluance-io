@@ -6,12 +6,14 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore} = require('firebase-admin/firestore');
+const {getAuth} = require('firebase-admin/auth');
 const fs = require('fs');
 const path = require('path');
 
 // Configuration Firebase
 try {
-  if (!admin.apps.length) {
+  if (!admin.getApps().length) {
     const possiblePaths = [
       process.env.GOOGLE_APPLICATION_CREDENTIALS,
       path.join(__dirname, 'fluance-protected-content-service-account.json'),
@@ -30,7 +32,7 @@ try {
       console.log(`📁 Utilisation du service account: ${serviceAccountPath}\n`);
       const serviceAccount = require(serviceAccountPath);
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+        credential: admin.cert(serviceAccount),
         projectId: 'fluance-protected-content',
       });
     } else {
@@ -45,8 +47,8 @@ try {
   process.exit(1);
 }
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore();
+const auth = getAuth();
 
 async function checkUserAccount(email) {
   const normalizedEmail = email.toLowerCase().trim();

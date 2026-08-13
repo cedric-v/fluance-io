@@ -8,6 +8,8 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore} = require('firebase-admin/firestore');
+const {getAuth} = require('firebase-admin/auth');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -18,7 +20,7 @@ const PROJECT_ID = 'fluance-protected-content';
 // Initialiser Firebase Admin
 async function initFirebase() {
   try {
-    if (admin.apps.length === 0) {
+    if (admin.getApps().length === 0) {
       const possiblePaths = [
         process.env.GOOGLE_APPLICATION_CREDENTIALS,
         path.join(__dirname, 'new-project-service-account.json'),
@@ -38,7 +40,7 @@ async function initFirebase() {
         console.log(`📁 Utilisation du service account : ${serviceAccountPath}`);
         const serviceAccount = require(serviceAccountPath);
         admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
+          credential: admin.cert(serviceAccount),
           projectId: PROJECT_ID,
         });
       } else {
@@ -48,7 +50,7 @@ async function initFirebase() {
         });
       }
     }
-    return { db: admin.firestore(), auth: admin.auth() };
+    return { db: getFirestore(), auth: getAuth() };
   } catch (error) {
     console.error('❌ Erreur lors de l\'initialisation de Firebase:', error.message);
     process.exit(1);

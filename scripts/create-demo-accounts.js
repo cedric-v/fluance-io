@@ -13,8 +13,8 @@ process.env.FIREBASE_CONFIG = JSON.stringify({ projectId });
 
 admin.initializeApp({ projectId });
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore();
+const auth = getAuth();
 
 const ALL_PRODUCTS = ['21jours', 'complet', 'sos-dos-cervicales'];
 
@@ -34,7 +34,7 @@ async function createDemoAccount(email, password) {
 
     // Date de début dans le passé pour débloquer tout le contenu
     const startDate = new Date('2024-01-01');
-    const startTimestamp = admin.firestore.Timestamp.fromDate(startDate);
+    const startTimestamp = Timestamp.fromDate(startDate);
 
     // Créer ou récupérer l'utilisateur Firebase Auth
     let userRecord;
@@ -71,8 +71,8 @@ async function createDemoAccount(email, password) {
       products: products,
       product: ALL_PRODUCTS[0],
       isDemo: true,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
       registrationDate: startTimestamp,
     }, { merge: true });
 

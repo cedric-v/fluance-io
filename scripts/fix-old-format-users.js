@@ -14,6 +14,7 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore, Timestamp, FieldValue} = require('firebase-admin/firestore');
 
 function toJsDate(value) {
   if (!value) return null;
@@ -29,9 +30,9 @@ function toJsDate(value) {
 async function main() {
   admin.initializeApp({
     projectId: 'fluance-protected-content',
-    credential: admin.credential.applicationDefault(),
+    credential: admin.applicationDefault(),
   });
-  const db = admin.firestore();
+  const db = getFirestore();
   const apply = process.argv.includes('--apply');
 
   const snap = await db.collection('users').get();
@@ -48,8 +49,8 @@ async function main() {
     const purchasedAt = toJsDate(data.createdAt) || startDate;
     const newProducts = [{
       name: data.product,
-      startDate: admin.firestore.Timestamp.fromDate(startDate),
-      purchasedAt: admin.firestore.Timestamp.fromDate(purchasedAt),
+      startDate: Timestamp.fromDate(startDate),
+      purchasedAt: Timestamp.fromDate(purchasedAt),
     }];
 
     console.log(`- ${data.email} (${doc.id}) : product="${data.product}" → products[${newProducts[0].name}] startDate=${startDate.toISOString()}`);
@@ -57,7 +58,7 @@ async function main() {
     if (apply) {
       await doc.ref.update({
         products: newProducts,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       console.log(`  ✅ migré`);
     }

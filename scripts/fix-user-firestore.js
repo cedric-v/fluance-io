@@ -31,11 +31,11 @@ if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
 // Initialiser Firebase Admin
 const serviceAccount = require(SERVICE_ACCOUNT_PATH);
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.cert(serviceAccount)
 });
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore();
+const auth = getAuth();
 
 async function fixUserAccount(email, productsFromArgs = []) {
   try {
@@ -183,7 +183,7 @@ async function fixUserAccount(email, productsFromArgs = []) {
     console.log('4. CRÉATION DU DOCUMENT FIRESTORE');
     console.log('='.repeat(80));
     
-    const now = admin.firestore.Timestamp.now();
+    const now = Timestamp.now();
     const productsArray = detectedProducts.map((prod) => ({
       name: prod,
       startDate: now,

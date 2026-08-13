@@ -35,12 +35,12 @@ if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
 // Initialiser Firebase Admin
 const serviceAccount = require(SERVICE_ACCOUNT_PATH);
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.cert(serviceAccount),
 });
 
 console.log('✅ Firebase Admin initialisé avec service account');
 
-const db = admin.firestore();
+const db = getFirestore();
 
 // Vidéo de contenu
 const videoContent = `<div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/1088cfc3-2795-4052-a395-c526080cf8e6?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>`;
@@ -92,7 +92,7 @@ async function updateSosDosCervicales() {
         product: 'sos-dos-cervicales', // S'assurer que le champ product est correct
         content: fullContent,
         commentText: commentText,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       
       console.log(`✅ Document ${docId} mis à jour avec succès`);
@@ -103,8 +103,8 @@ async function updateSosDosCervicales() {
         title: 'SOS dos & cervicales',
         content: fullContent,
         commentText: commentText,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       
       console.log(`✅ Document ${docId} créé avec succès`);

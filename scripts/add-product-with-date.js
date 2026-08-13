@@ -23,11 +23,11 @@ if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
 
 const serviceAccount = require(SERVICE_ACCOUNT_PATH);
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.cert(serviceAccount)
 });
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore();
+const auth = getAuth();
 
 async function addProductToUserWithDate(email, productName, startDateString) {
   try {
@@ -87,7 +87,7 @@ async function addProductToUserWithDate(email, productName, startDateString) {
     let products = userData.products || [];
     if (products.length === 0 && userData.product) {
       console.log(`   Migration depuis ancien format: product = "${userData.product}"`);
-      const existingStartDate = userData.registrationDate || userData.createdAt || admin.firestore.Timestamp.now();
+      const existingStartDate = userData.registrationDate || userData.createdAt || Timestamp.now();
       products = [{
         name: userData.product,
         startDate: existingStartDate,
@@ -105,8 +105,8 @@ async function addProductToUserWithDate(email, productName, startDateString) {
     }
 
     // Ajouter le nouveau produit avec la date spécifiée
-    const startTimestamp = admin.firestore.Timestamp.fromDate(startDate);
-    const purchasedTimestamp = admin.firestore.Timestamp.now();
+    const startTimestamp = Timestamp.fromDate(startDate);
+    const purchasedTimestamp = Timestamp.now();
 
     products.push({
       name: productName,
@@ -123,7 +123,7 @@ async function addProductToUserWithDate(email, productName, startDateString) {
     await userDocRef.set({
       products: products,
       product: productName, // Garder pour compatibilité rétroactive (dernier produit ajouté)
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
     console.log(`✅ Produit "${productName}" ajouté avec succès!`);

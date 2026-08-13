@@ -6,6 +6,7 @@
  */
 
 const admin = require('firebase-admin');
+const {getFirestore, FieldValue} = require('firebase-admin/firestore');
 const crypto = require('crypto');
 
 // Configuration
@@ -17,7 +18,7 @@ const EXPIRATION_DAYS = 365; // 1 an pour l'accès complet
 // Initialiser Firebase Admin
 async function initFirebase() {
   try {
-    if (admin.apps.length === 0) {
+    if (admin.getApps().length === 0) {
       const fs = require('fs');
       const path = require('path');
       
@@ -41,7 +42,7 @@ async function initFirebase() {
         console.log(`📁 Utilisation du service account : ${serviceAccountPath}`);
         const serviceAccount = require(serviceAccountPath);
         admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
+          credential: admin.cert(serviceAccount),
           projectId: PROJECT_ID,
         });
       } else {
@@ -52,7 +53,7 @@ async function initFirebase() {
         });
       }
     }
-    return admin.firestore();
+    return getFirestore();
   } catch (error) {
     console.error('❌ Erreur lors de l\'initialisation de Firebase:', error.message);
     console.log('\n💡 Solutions possibles :');
@@ -79,7 +80,7 @@ async function createToken(db, email) {
   await db.collection('registrationTokens').doc(token).set({
     email: email.toLowerCase().trim(),
     product: PRODUCT,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     expiresAt: expirationDate,
     used: false,
   });
