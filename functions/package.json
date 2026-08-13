@@ -16,20 +16,20 @@
     "node": "22"
   },
   "dependencies": {
-    "@google-cloud/pubsub": "^5.3.0",
+    "@google-cloud/pubsub": "^6.0.1",
     "@mollie/api-client": "^4.5.0",
     "firebase-admin": "^13.10.0",
     "firebase-functions": "^7.3.2",
-    "google-auth-library": "^10.6.2",
-    "googleapis": "^173.0.0",
-    "stripe": "^22.4.0"
+    "google-auth-library": "^11.0.2",
+    "googleapis": "^174.0.1",
+    "stripe": "^22.5.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
-    "@eslint/js": "^9.39.4",
-    "eslint": "^9.39.4",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.1",
     "eslint-config-google": "^0.14.0",
-    "globals": "^17.6.0"
+    "globals": "^17.11.0"
   },
   "overrides": {
     "@opentelemetry/core": "2.10.0",

@@ -3795,9 +3795,9 @@ Session: ${session.id}
       // ou peuvent être liés à un Payment Intent via la charge associée
       if (event.type === 'charge.refunded') {
         const charge = event.data.object;
-        let customerEmail = null;
-        let product = null;
-        let system = null;
+        let customerEmail;
+        let product;
+        let system;
 
         // Récupérer l'email depuis les métadonnées de la charge ou du customer
         customerEmail = charge.metadata?.email || charge.billing_details?.email;
@@ -5649,7 +5649,7 @@ exports.sendNewsletter = onCall(
       }
 
       // Récupérer les emails depuis Firestore si recipientList est un nom de collection
-      let emails = [];
+      let emails;
       if (typeof recipientList === 'string') {
         const usersSnapshot = await db.collection(recipientList).get();
         emails = usersSnapshot.docs.map((doc) => doc.data().email).filter(Boolean);

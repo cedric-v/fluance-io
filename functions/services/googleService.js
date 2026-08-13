@@ -84,6 +84,7 @@ class GoogleService {
 
         throw new Error(
             `Invalid JSON in GOOGLE_SERVICE_ACCOUNT: ${parseError.message}. ${helpMessage}`,
+            {cause: parseError},
         );
       }
 

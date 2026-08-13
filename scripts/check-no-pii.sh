@@ -17,6 +17,10 @@ ALLOWED_PATTERNS=(
   'votre@email\.com'
   '@votre-domaine'
   'user@example'
+  # Email du mainteneur npm (Isaac Schlueter) présent dans le message de
+  # dépréciation du paquet glob, intégré aux métadonnées de package-lock.json
+  # (pas une donnée client).
+  'i@izs\.me'
 )
 
 EMAIL_REGEX='[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
