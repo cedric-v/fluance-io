@@ -42,3 +42,6 @@ COUPON_ABONNEMENT_DUPLEX.md
 CODES_PARTENAIRES_ABONNEMENTS.md
 # Ré-engagement — exports contenant des emails (PII)
 reengagement_*.csv
+
+# Ré-engagement — journaux d'exécution (contiennent des emails)
+scripts/logs/
