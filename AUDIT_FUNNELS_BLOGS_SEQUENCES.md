@@ -40,6 +40,11 @@
 >   **Rythme Mailjet respecté** : cap journalier `--daily-cap` (défaut 200,
 >   plan gratuit), budget calculé depuis `reengagementSends` du jour, délai
 >   `--delay` (défaut 250 ms), retries API.
+>   **Verrou anti-doublon** : verrou atomique Firestore (`campaignLocks`, par
+>   vague + jour, TTL 6 h) — une exécution parallèle (launchd + manuelle)
+>   abandonne au lieu d'envoyer deux fois ; libéré en fin de run.
+>   **Relance programmée** : launchd `com.fluance.reengagement-relance`
+>   (25-26/08 9h, wrapper `scripts/relance-j14.sh`, logs dans `scripts/logs/`).
 
 ---
 

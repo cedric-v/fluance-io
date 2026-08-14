@@ -133,6 +133,66 @@ async function mailjetRetry(method, pathUrl, body) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const LOCK_TTL_MS = 6 * 60 * 60 * 1000; // 6 h : un run ne peut pas dépasser ça
+const localDayKey = (ms) =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Zurich',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(ms));
+
+/**
+ * Verrou atomique (Firestore) pour éviter qu'un même run soit exécuté deux fois
+ * en parallèle (ex. launchd + exécution manuelle simultanées).
+ * - `create()` échoue si le verrou existe déjà → deuxième exécution abandonnée.
+ * - Un verrou expiré (crash du process) est détruit et réessayé.
+ * - Libéré en fin de run (finally), même en cas d'erreur.
+ *
+ * NB : le marquage reengagement_wave protège déjà contre les DOUBLONS séquentiels
+ * (relancer plus tard n'envoie qu'aux contacts non encore marqués) ; ce verrou
+ * protège contre le CHEVAUCHEMENT simultané.
+ */
+async function acquireLock(db, lockId) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await db.collection('campaignLocks').doc(lockId).create({
+        startedAt: FieldValue.serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + LOCK_TTL_MS),
+        pid: process.pid,
+        hostname: require('os').hostname(),
+        wave: WAVE,
+      });
+      console.log(`🔒 Verrou pris : ${lockId} (pid ${process.pid})`);
+      return true;
+    } catch (e) {
+      const code = e.code;
+      if (code === 6 || code === 'already-exists') {
+        const doc = await db.collection('campaignLocks').doc(lockId).get();
+        const expiresAt = doc.exists ? (doc.data().expiresAt?.toMillis?.() || 0) : 0;
+        if (doc.exists && expiresAt && expiresAt < Date.now()) {
+          // Verrou expiré (run précédent crashé) → on le libère et on retente.
+          console.warn(`♻️ Verrou ${lockId} expiré, nettoyage…`);
+          await db.collection('campaignLocks').doc(lockId).delete();
+          continue;
+        }
+        console.log(`⛔ Un autre run de la vague ${WAVE} est déjà en cours (verrou ${lockId}, ` +
+          `pid ${doc.exists ? doc.data().pid : '?'}) — abandon pour éviter les doublons.`);
+        return false;
+      }
+      throw e;
+    }
+  }
+  return false;
+}
+
+async function releaseLock(db, lockId) {
+  try {
+    await db.collection('campaignLocks').doc(lockId).delete();
+    console.log(`🔓 Verrou libéré : ${lockId}`);
+  } catch (e) {
+    console.warn(`⚠️ Impossible de libérer le verrou ${lockId}: ${e.message}`);
+  }
+}
+
 /**
  * Vérifie/crée les propriétés Mailjet utilisées par la campagne
  * (Mailjet refuse d'écrire une propriété non déclarée : erreur 400
@@ -357,6 +417,11 @@ async function sendCampaign(db, plan) {
   }
   console.log('');
 
+  // ── Verrou anti-doublon (parallèle launchd + manuel) ───────────────────
+  const lockId = `reengagement-wave${WAVE}-${localDayKey(Date.now())}`;
+  if (!(await acquireLock(db, lockId))) return;
+
+  try {
   for (const rec of all) {
     try {
       const cta = buildReengageUrl(rec.email, rec.firstname);
@@ -393,6 +458,9 @@ async function sendCampaign(db, plan) {
   fs.writeFileSync(file, csvRows.join('\n') + '\n');
   console.log(`\n📄 Rapport : ${file}`);
   console.log(`✅ ${sent} envoyé(s), ${errors} erreur(s)`);
+  } finally {
+    await releaseLock(db, lockId);
+  }
 }
 
 // ---------------------------------------------------------------- main
