@@ -13,7 +13,7 @@
  *   node scripts/fix-old-format-users.js --apply    # applique les changements
  */
 
-const admin = require('firebase-admin');
+const {initializeApp, applicationDefault} = require('firebase-admin');
 const {getFirestore, Timestamp, FieldValue} = require('firebase-admin/firestore');
 
 function toJsDate(value) {
