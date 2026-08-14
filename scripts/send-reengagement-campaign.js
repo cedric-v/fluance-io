@@ -56,7 +56,7 @@ const WAVE = parseInt(
     (process.argv.find((a) => a.startsWith('--wave=')) || '').split('=')[1] || '1', 10);
 const DAYS_AFTER = parseInt(
     (process.argv.find((a) => a.startsWith('--days-after=')) || '').split('=')[1] || '14', 10);
-const SEGMENT = ((process.argv.find((a) => a.startsWith('--segment=')) || '').split('=')[1] || 'ALL').toUpperCase();
+const SEGMENT = ((process.argv.find((a) => a.startsWith('--segment=')) || '').split('=')[1] || (WAVE >= 2 ? 'A' : 'ALL')).toUpperCase();
 const LIMIT = parseInt(
     (process.argv.find((a) => a.startsWith('--limit=')) || '').split('=')[1] || '0', 10);
 const DAILY_CAP = parseInt(
