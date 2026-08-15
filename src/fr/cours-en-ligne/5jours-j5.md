@@ -3,6 +3,7 @@ layout: base.njk
 title: Jour 5 - Harmonie
 description: Cinquième pratique de la série de 5 jours pour libérer les tensions et retrouver votre calme intérieur. Harmonie.
 locale: fr
+robots: noindex, follow
 permalink: /cours-en-ligne/5jours/j5/
 ---
 

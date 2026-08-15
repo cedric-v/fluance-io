@@ -3,6 +3,7 @@ layout: base.njk
 title: Jour 4 - Fluidité et Emotions
 description: Quatrième pratique de la série de 5 jours pour libérer les tensions et retrouver votre calme intérieur. Fluidité et Emotions.
 locale: fr
+robots: noindex, follow
 permalink: /cours-en-ligne/5jours/j4/
 ---
 

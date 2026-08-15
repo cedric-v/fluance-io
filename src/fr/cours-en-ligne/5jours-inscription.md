@@ -3,6 +3,7 @@ layout: base.njk
 title: 5 jours pour libérer les tensions
 description: 5 minutes par jour durant 5 jours d'expériences intuitives et puissantes pour relâcher la pression, libérer les tensions et développer une présence calme et confiante.
 locale: fr
+robots: noindex, follow
 permalink: /cours-en-ligne/5jours/inscription/
 ---
 

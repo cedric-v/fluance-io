@@ -3,6 +3,7 @@ layout: base.njk
 title: Défi 21 jours
 description: Retrouvez légèreté, mobilité et sérénité en seulement 2 à 5 minutes par jour, durant 21 jours.
 locale: fr
+robots: noindex, follow
 permalink: /cours-en-ligne/21jours/
 ---
 

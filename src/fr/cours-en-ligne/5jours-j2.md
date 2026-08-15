@@ -3,6 +3,7 @@ layout: base.njk
 title: Jour 2 - Lâcher-prise
 description: Deuxième pratique de la série de 5 jours pour libérer les tensions et retrouver votre calme intérieur. Lâcher-prise.
 locale: fr
+robots: noindex, follow
 permalink: /cours-en-ligne/5jours/j2/
 ---
 
