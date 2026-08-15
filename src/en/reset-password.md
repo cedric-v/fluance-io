@@ -3,6 +3,7 @@ layout: base.njk
 title: Reset Password
 description: Reset your password to access your protected Fluance content
 locale: en
+robots: noindex, follow
 permalink: /en/reset-password/
 ---
 
@@ -25,7 +26,7 @@ permalink: /en/reset-password/
           name="email"
           required
           class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
-          placeholder="your@email.com"
+          placeholder="user@example.com"
         />
       </div>
 

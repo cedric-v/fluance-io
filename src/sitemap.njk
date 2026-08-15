@@ -19,7 +19,13 @@ eleventyExcludeFromCollections: true
           or page.url.startsWith("/emails/")
           or page.url.startsWith("/assets/")
           or page.url.startsWith("/admin/")
-          or page.url.startsWith("/membre/") -%}
+          or page.url.startsWith("/membre/")
+          or page.url.startsWith("/agent/")
+          or page.url.startsWith("/.well-known/")
+          or page.url.startsWith("/connexion")
+          or page.url.startsWith("/creer-compte")
+          or page.url.startsWith("/reinitialiser-mot-de-passe")
+          or page.url.startsWith("/en/reset-password") -%}
         {%- if not page.url.endsWith(".js") and not page.url.endsWith(".css") and not page.url.endsWith(".xml") and not isNoIndex and not page.data.eleventyExcludeFromCollections and not isExcludedFromSitemap -%}
           {%- set cleanUrl = page.url | replace("/fluance-io", "") -%}
           {%- set fullUrl = "https://fluance.io" + cleanUrl -%}

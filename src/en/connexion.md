@@ -3,6 +3,7 @@ layout: base.njk
 title: Login
 description: Access your online training space or register for an in-person session.
 locale: en
+robots: noindex, follow
 permalink: /en/connexion/
 ---
 

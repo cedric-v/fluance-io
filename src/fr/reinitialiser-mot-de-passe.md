@@ -3,6 +3,7 @@ layout: base.njk
 title: Réinitialiser le mot de passe
 description: Réinitialisez votre mot de passe pour accéder à votre contenu protégé Fluance
 locale: fr
+robots: noindex, follow
 permalink: /reinitialiser-mot-de-passe/
 ---
 
