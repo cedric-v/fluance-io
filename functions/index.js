@@ -2720,7 +2720,7 @@ exports.webhookStripe = onRequest(
 
         // Déterminer le produit depuis les métadonnées uniquement (pas de fallback)
         const product = session.metadata?.product;
-        const VALID_ONLINE_PRODUCTS = ['21jours', 'complet', 'rdv-clarte', 'focus-sos', 'site-vitrine'];
+        const VALID_ONLINE_PRODUCTS = ['21jours', 'complet', 'rdv-clarte', 'focus-sos', 'site-vitrine', 'diagnostic-digital'];
         if (!product || !VALID_ONLINE_PRODUCTS.includes(product)) {
           console.error(`Paiement Stripe ignoré - produit invalide: ${product}`);
           return res.status(200).json({received: true, ignored: true});
@@ -2775,9 +2775,9 @@ exports.webhookStripe = onRequest(
           });
         }
 
-        // Focus SOS & Site Vitrine (cedricv.com) : pas d'espace membre, pas de token.
+        // Focus SOS, Site Vitrine & Diagnostic Digital (cedricv.com) : pas d'espace membre, pas de token.
         // On loggue l'achat (audit + notification admin) pour le suivi.
-        if (product === 'focus-sos' || product === 'site-vitrine') {
+        if (product === 'focus-sos' || product === 'site-vitrine' || product === 'diagnostic-digital') {
           try {
             const auditAmount = session.amount_total ? session.amount_total / 100 : 0;
             await db.collection('audit_payments').add({
@@ -4117,13 +4117,14 @@ exports.createStripeCheckoutSession = onCall(
         // demande (auto-provisioning, voir services/stripePrices.js).
         'STRIPE_PRICE_ID_RDV_CLARTE_UNIQUE',
         'STRIPE_PRICE_ID_RDV_CLARTE_ABONNEMENT',
+        'STRIPE_TAX_ENABLED',
       ],
     },
     async (request) => {
       const {product, variant, locale = 'fr', includeSosDos = false, email = null, firstName = null, lastName = null} = request.data;
 
       // Valider les paramètres
-      const VALID_PRODUCTS = ['21jours', 'complet', 'rdv-clarte', 'focus-sos', 'site-vitrine', 'flow_pass', 'semester_pass'];
+      const VALID_PRODUCTS = ['21jours', 'complet', 'rdv-clarte', 'focus-sos', 'site-vitrine', 'diagnostic-digital', 'flow_pass', 'semester_pass'];
       if (!product || !VALID_PRODUCTS.includes(product)) {
         throw new HttpsError('invalid-argument', `Product must be one of: ${VALID_PRODUCTS.join(', ')}`);
       }
@@ -4134,6 +4135,7 @@ exports.createStripeCheckoutSession = onCall(
         'rdv-clarte': ['unique', 'abonnement'],
         'focus-sos': ['unique', '3x'],
         'site-vitrine': ['5x'],
+        'diagnostic-digital': ['unique'],
       };
       if (VALID_VARIANTS[product]) {
         const v = variant || (product === 'rdv-clarte' ? 'unique' : null);
@@ -4182,12 +4184,16 @@ exports.createStripeCheckoutSession = onCall(
       // URLs de redirection selon le produit et la locale
       const langPrefix = locale === 'en' ? '/en' : '';
       let baseUrl; let successUrl; let cancelUrl;
-      if (product === 'rdv-clarte' || product === 'focus-sos' || product === 'site-vitrine') {
+      if (product === 'rdv-clarte' || product === 'focus-sos' || product === 'site-vitrine' || product === 'diagnostic-digital') {
       // Produits cedricv.com
         baseUrl = 'https://cedricv.com';
         if (product === 'site-vitrine') {
           successUrl = `${baseUrl}/merci-paiement/?session_id={CHECKOUT_SESSION_ID}`;
           cancelUrl = `${baseUrl}/paiement/site-vitrine/`;
+        } else if (product === 'diagnostic-digital') {
+          successUrl = `${baseUrl}${langPrefix}/confirmation` +
+            `?session_id={CHECKOUT_SESSION_ID}&produit=diagnostic-digital`;
+          cancelUrl = `${baseUrl}${langPrefix}/digital-manager`;
         } else {
           successUrl = `${baseUrl}${langPrefix}/confirmation?session_id={CHECKOUT_SESSION_ID}`;
           cancelUrl = product === 'rdv-clarte' ?
@@ -4242,6 +4248,17 @@ exports.createStripeCheckoutSession = onCall(
         // Email du client (nécessaire pour les abonnements — envoi des factures)
         if (email) {
           sessionParams.customer_email = email;
+        }
+
+        // TVA automatique (Stripe Tax) — uniquement pour le diagnostic digital ET
+        // uniquement si la variable d'environnement STRIPE_TAX_ENABLED='true' est
+        // configurée (par défaut : pas de TVA, aucun impact sur les autres produits).
+        // Stripe collecte l'adresse de facturation du client et applique la TVA
+        // suisse (8,1%) pour les clients suisses, et 0% / reverse charge pour les
+        // clients étrangers B2B (via tax_id_collection). Le prix affiché reste HT.
+        if (product === 'diagnostic-digital' && process.env.STRIPE_TAX_ENABLED === 'true') {
+          sessionParams.automatic_tax = {enabled: true};
+          sessionParams.tax_id_collection = {enabled: true};
         }
 
         // Pour les paiements uniques : métadonnées aussi sur le Payment Intent

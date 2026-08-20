@@ -73,6 +73,11 @@ const PRICE_DEFINITIONS = {
     amount: 20000, // 200 CHF/mois
     interval: {interval: 'month', interval_count: 1},
   },
+  'diagnostic-digital_unique': {
+    name: 'Diagnostic Clarté - CedricV (750 CHF)',
+    description: 'Diagnostic stratégique de votre écosystème digital (5h) - feuille de route priorisée',
+    amount: 75000, // 750 CHF
+  },
   'flow_pass': {
     name: 'Fluance - Flow Pass (10 séances)',
     description: 'Flow Pass : 10 séances de cours présentiel',
