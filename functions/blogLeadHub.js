@@ -1111,6 +1111,17 @@ exports.sendContactEmail = onRequest(
           }
         }
 
+        // Prénom et nom obligatoires sur fluance.io (les formulaires des blogs
+        // peuvent n'envoyer qu'un seul champ — toléré pour ne rien casser).
+        if (site.contactOnly && (!prenom || !nom)) {
+          return sendJson(
+              response,
+              {success: false, error: 'Prénom et nom requis'},
+              400,
+              corsHeaders,
+          );
+        }
+
         if (!email || !message) {
           return sendJson(response, {success: false, error: 'Email et message requis'}, 400, corsHeaders);
         }
