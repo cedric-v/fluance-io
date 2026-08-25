@@ -40,7 +40,30 @@ Dans le dashboard Cloudflare :
    généralement qu’une seule fois.
 
 Ce token est différent de `CF_API_TOKEN`, qui sert uniquement au déploiement
-Cloudflare Pages. Ne jamais l’ajouter à `.env`, au dépôt Git ou aux logs.
+Cloudflare Pages.
+
+### Stockage et renouvellement du token
+
+Ne pas enregistrer `CF_WORKER_API_TOKEN` dans le fichier `.env` du projet : ce
+fichier est local, peut être copié ou exposé par erreur, et le token est une
+clé de déploiement — pas une variable nécessaire à l’exécution du Worker.
+
+Le stockage de référence est le secret GitHub Actions
+`CF_WORKER_API_TOKEN`. Un redeploy du Worker ne supprime ni ne modifie ce
+secret. Pour conserver une copie de récupération, utiliser un gestionnaire de
+mots de passe ou un coffre de secrets, jamais le dépôt Git.
+
+Pour un déploiement local, deux options sont recommandées :
+
+- `npx wrangler login`, qui conserve une session OAuth dans le profil local de
+  Wrangler et non dans le projet ;
+- ou une variable de session temporaire, non persistée :
+  `CLOUDFLARE_API_TOKEN` et éventuellement `CLOUDFLARE_ACCOUNT_ID`.
+
+Les tokens Cloudflare ne sont pas récupérables après leur création depuis le
+dashboard. S’il est perdu, créer un nouveau token et remplacer le secret
+GitHub ; l’ancien peut ensuite être révoqué. Vérifier également sa date
+d’expiration lors de sa création et planifier sa rotation si nécessaire.
 
 ### 2. Ajouter le token à GitHub
 
