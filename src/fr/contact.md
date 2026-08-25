@@ -49,6 +49,19 @@ permalink: /contact/
   </div>
 </section>
 
+<section id="temoignages" class="max-w-6xl mx-auto px-6 md:px-12 pb-16" aria-labelledby="temoignages-title">
+  <div class="text-center space-y-4">
+    <p class="cta-pill mx-auto bg-[#E6B84A]/20 text-fluance">Ils en parlent</p>
+    <h2 id="temoignages-title" class="text-3xl md:text-4xl font-semibold text-fluance">
+      Ce qu’en disent celles et ceux qui pratiquent Fluance
+    </h2>
+    <p class="max-w-2xl mx-auto text-[#3E3A35]/75">
+      Des retours de participant·es recueillis au fil des parcours en ligne, autour du mouvement, de la détente et de la reconnexion au corps.
+    </p>
+  </div>
+  {% include "testimonials.njk" %}
+</section>
+
 <script>
   // Protection anti-spam : construction dynamique de l'email
   (function() {

@@ -1,0 +1,125 @@
+{
+  "testimonials": [
+    {
+      "author": "Sylvie Danielle",
+      "source": {
+        "fr": "Page d’accueil",
+        "en": "Homepage"
+      },
+      "text": {
+        "fr": "Cela me fait un bien fou !",
+        "en": "It feels so incredibly good!"
+      }
+    },
+    {
+      "author": "Monique",
+      "source": {
+        "fr": "Parcours 21 jours",
+        "en": "21-day programme"
+      },
+      "text": {
+        "fr": "Cette semaine les douleurs ont vraiment diminué, ce qui est fort appréciable. Je me rends compte combien il est important de bouger et surtout d'une manière dont je n'ai pas l'habitude.",
+        "en": "This week my pain really decreased, which is greatly appreciated. I realise how important it is to move, especially in a way I am not used to."
+      }
+    },
+    {
+      "author": "Isabelle",
+      "source": {
+        "fr": "Parcours 21 jours",
+        "en": "21-day programme"
+      },
+      "text": {
+        "fr": "Ta méthode est tellement simple et fluide. C'est agréable et on n'a pas le sentiment d'avoir un effort à faire. Mentalement, je sais déjà que ce sera plus facile d'insérer cette pratique au quotidien. Gratitude 💖",
+        "en": "Your method is so simple and fluid. It feels good and you don't feel like you have to make an effort. Mentally, I already know it will be easier to fit this practice into my daily life. Gratitude 💖"
+      }
+    },
+    {
+      "author": "Claire",
+      "source": {
+        "fr": "Parcours 21 jours",
+        "en": "21-day programme"
+      },
+      "text": {
+        "fr": "Merci, j'ai du plaisir à recontacter mon corps.",
+        "en": "Thank you, I am enjoying reconnecting with my body."
+      }
+    },
+    {
+      "author": "France",
+      "source": {
+        "fr": "5 jours offerts",
+        "en": "5-day free series"
+      },
+      "text": {
+        "fr": "Wow merci beaucoup, j'ai adoré, à demain !!!! 😊",
+        "en": "Wow, thank you so much, I loved it, see you tomorrow!!!! 😊"
+      }
+    },
+    {
+      "author": "Peggy",
+      "source": {
+        "fr": "5 jours offerts",
+        "en": "5-day free series"
+      },
+      "text": {
+        "fr": "Ça m'a fait du bien. Merci beaucoup 🙏",
+        "en": "It did me good. Thank you so much 🙏"
+      }
+    },
+    {
+      "author": "Brigitte",
+      "source": {
+        "fr": "5 jours offerts",
+        "en": "5-day free series"
+      },
+      "text": {
+        "fr": "J'ai trouvé cette pratique agréable, facile, réalisable par le plus grand nombre.",
+        "en": "I found this practice pleasant and easy, accessible to as many people as possible."
+      }
+    },
+    {
+      "author": "Patricia",
+      "source": {
+        "fr": "5 jours offerts",
+        "en": "5-day free series"
+      },
+      "text": {
+        "fr": "Cet exercice m'aide à plus de souplesse.",
+        "en": "This exercise is helping me become more flexible."
+      }
+    },
+    {
+      "author": "Cathy",
+      "source": {
+        "fr": "5 jours offerts",
+        "en": "5-day free series"
+      },
+      "text": {
+        "fr": "Toujours génial de prendre 10 mn pour soi. J'ai hâte, à demain. Merci, gratitudes.",
+        "en": "It is always wonderful to take 10 minutes for yourself. I can't wait, see you tomorrow. Thank you, with gratitude."
+      }
+    },
+    {
+      "author": "Hélène",
+      "source": {
+        "fr": "5 jours offerts",
+        "en": "5-day free series"
+      },
+      "text": {
+        "fr": "Merci ! Court et efficace !",
+        "en": "Thank you! Short and effective!"
+      }
+    },
+    {
+      "author": "Ghis",
+      "source": {
+        "fr": "Parcours 21 jours",
+        "en": "21-day programme"
+      },
+      "text": {
+        "fr": "Quel sport ! Mais quel bien après ! MERCI pour ces moments de détente.",
+        "en": "What a workout! But it feels so good afterwards! THANK YOU for these moments of relaxation."
+      }
+    }
+  ]
+}
