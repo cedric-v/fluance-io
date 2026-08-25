@@ -33,7 +33,7 @@ Fluance is a wellness and personal development approach created by Cédric Vonla
 - [Upcoming Workshops](/presentiel/prochains-stages/): Information about upcoming workshops and seminars
 
 ### Individual Support
-- [For Entrepreneurs and Self-Employed](/accompagnements-individuels/entrepreneurs-individuels/): Personalized support for entrepreneurs and independent professionals
+- [For Entrepreneurs and Self-Employed](/accompagnements-individuels/entrepreneurs-independants/): Personalized support for entrepreneurs and independent professionals
 
 ### Practical Information
 - [Contact](/contact/): Contact information and ways to reach Cédric Vonlanthen
