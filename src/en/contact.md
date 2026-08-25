@@ -17,7 +17,7 @@ permalink: /en/contact/
   <div class="section-card p-8 bg-white space-y-6">
     <h2 class="text-xl font-semibold text-fluance mb-3">Send a message</h2>
     <p class="text-[#3E3A35] mb-4">
-      Fill in the form below — I usually reply within 24 to 48&nbsp;hours.
+      Fill in the form below — I usually reply within 24 to 48&nbsp;hours on business days.
     </p>
 
     <form id="contact-form" class="space-y-4" autocomplete="off" data-form-type="other" data-1p-ignore="true" data-lpignore="true" data-lastpass-ignore="true" data-bwignore="true" novalidate>
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
         form.reset();
         startedAt.value = String(Date.now());
         if (window.turnstile && turnstileWidgetId) window.turnstile.reset(turnstileWidgetId);
-        showMessage('Thank you! Your message has been sent. I usually reply within 24 to 48 hours.', 'success');
+        showMessage('Thank you! Your message has been sent. I usually reply within 24 to 48 hours on business days.', 'success');
       } else {
         showMessage(data.error || 'An error occurred. Please try again.', 'error');
       }

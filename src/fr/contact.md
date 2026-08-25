@@ -17,7 +17,7 @@ permalink: /contact/
   <div class="section-card p-8 bg-white space-y-6">
     <h2 class="text-xl font-semibold text-fluance mb-3">Envoyer un message</h2>
     <p class="text-[#3E3A35] mb-4">
-      Remplissez le formulaire ci-dessous, je vous réponds généralement sous 24 à 48&nbsp;h.
+      Remplissez le formulaire ci-dessous, je vous réponds généralement sous 24 à 48&nbsp;h les jours ouvrés.
     </p>
 
     <form id="contact-form" class="space-y-4" autocomplete="off" data-form-type="other" data-1p-ignore="true" data-lpignore="true" data-lastpass-ignore="true" data-bwignore="true" novalidate>
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
         form.reset();
         startedAt.value = String(Date.now());
         if (window.turnstile && turnstileWidgetId) window.turnstile.reset(turnstileWidgetId);
-        showMessage('Merci ! Votre message a bien été envoyé. Je vous réponds généralement sous 24 à 48h.', 'success');
+        showMessage('Merci ! Votre message a bien été envoyé. Je vous réponds généralement sous 24 à 48h les jours ouvrés.', 'success');
       } else {
         showMessage(data.error || 'Une erreur est survenue. Veuillez réessayer.', 'error');
       }
