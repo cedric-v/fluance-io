@@ -618,9 +618,10 @@ function buildContactEmailHtml(site, payload) {
       <div style="background:#ffffff;border-radius:18px;padding:36px 30px;box-shadow:0 8px 28px rgba(0,0,0,0.07);">
         <p style="${eyebrowStyle}">Nouveau message blog</p>
         <h1 style="margin:0 0 22px;font-size:30px;line-height:1.2;color:#2D2A26;">${escapeHtml(site.siteLabel)}</h1>
-        <p style="margin:0 0 10px;"><strong>Nom :</strong> ${escapeHtml(payload.name)}</p>
         <p style="margin:0 0 10px;"><strong>Email :</strong> ${escapeHtml(payload.email)}</p>
         <p style="margin:0 0 10px;"><strong>Sujet :</strong> ${escapeHtml(payload.subject || '(sans sujet)')}</p>
+        ${payload.prenom ? `<p style="margin:0 0 10px;"><strong>Prénom :</strong> ${escapeHtml(payload.prenom)}</p>` : ''}
+        <p style="margin:0 0 10px;"><strong>Nom :</strong> ${escapeHtml(payload.nom || payload.name)}</p>
         <p style="margin:0 0 10px;"><strong>Site source :</strong> ${escapeHtml(site.blogSource)}</p>
         <p style="margin:0 0 10px;">
           <strong>URL source :</strong> ${escapeHtml(payload.optinUrl || payload.referer || '')}
@@ -1037,12 +1038,14 @@ exports.sendContactEmail = onRequest(
 
       try {
         const email = normalizeEmail(getFormValue(request, 'email'));
-        const name = normalizeName(
+        const prenom = normalizeName(getFormValue(request, 'prenom') || '');
+        const nom = normalizeName(
             getFormValue(request, 'name') ||
-            getFormValue(request, 'prenom') ||
             getFormValue(request, 'firstname') ||
-            getFormValue(request, 'first_name'),
+            getFormValue(request, 'first_name') ||
+            '',
         );
+        const name = prenom && nom ? `${prenom} ${nom}` : (prenom || nom);
         const subject = truncate(getFormValue(request, 'subject') || getFormValue(request, 'sujet') || '', 200);
         const message = truncate(getFormValue(request, 'message') || '', 5000);
         const siteId = truncate(getFormValue(request, 'site_id') || '', 80);
@@ -1212,6 +1215,8 @@ exports.sendContactEmail = onRequest(
           to: CONTACT_INTERNAL_TO,
           subject: `[${site.siteLabel}] ${subject || 'Nouveau message de contact'}`,
           htmlContent: buildContactEmailHtml(site, {
+            prenom,
+            nom,
             name,
             email,
             subject,
@@ -1219,7 +1224,7 @@ exports.sendContactEmail = onRequest(
             optinUrl,
             referer: getHeader(request, 'Referer') || '',
           }),
-          textContent: `${site.siteLabel}\nNom: ${name}\nEmail: ${email}\nSujet: ${subject}\n\n${message}`,
+          textContent: `${site.siteLabel}\n${prenom ? `Prénom: ${prenom}\n` : ''}Nom: ${nom || name}\nEmail: ${email}\nSujet: ${subject}\n\n${message}`,
           apiKey: mailjetApiKey,
           apiSecret: mailjetApiSecret,
           fromEmail: TRANSACTIONAL_FROM_EMAIL,
@@ -1241,6 +1246,7 @@ exports.sendContactEmail = onRequest(
           site_source: site.siteId,
           blog_source: site.blogSource,
           email,
+          prenom,
           nom: name,
           sujet: subject,
           message,

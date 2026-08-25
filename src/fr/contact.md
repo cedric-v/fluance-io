@@ -6,77 +6,85 @@ locale: fr
 permalink: /contact/
 ---
 
-<section id="contact" class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
-  <div class="section-card p-8 bg-white text-center space-y-6">
+<section id="contact" class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-10">
+  <div class="section-card p-8 md:p-10 bg-white text-center space-y-6">
     <h1 class="text-3xl font-semibold text-fluance">Contactez Cédric</h1>
     <p class="text-lg text-[#3E3A35]">
       Une question ? Une demande ? Écrivez à l'une des adresses mentionnées
     </p>
   </div>
 
-  <div class="section-card p-8 bg-white space-y-6">
-    <h2 class="text-xl font-semibold text-fluance mb-3">Envoyer un message</h2>
-    <p class="text-[#3E3A35] mb-4">
-      Remplissez le formulaire ci-dessous, je vous réponds généralement sous 24 à 48&nbsp;h les jours ouvrés.
-    </p>
-
-    <form id="contact-form" class="space-y-4" autocomplete="off" data-form-type="other" data-1p-ignore="true" data-lpignore="true" data-lastpass-ignore="true" data-bwignore="true" novalidate>
-      <!-- Honeypot anti-bot : champ invisible, jamais rempli par un humain. -->
-      <div aria-hidden="true" style="position:absolute !important;left:-9999px !important;width:1px;height:1px;overflow:hidden;">
-        <label for="contact-website">Website</label>
-        <input type="text" id="contact-website" name="website" tabindex="-1" autocomplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true">
-      </div>
-
-      <input type="hidden" name="site_id" value="fluance">
-      <input type="hidden" name="contact_started_at" id="contact-started-at" value="">
-
-      <div>
-        <label for="contact-name" class="block text-sm font-medium text-gray-700 mb-2">Votre nom <span class="text-red-500">*</span></label>
-        <input type="text" id="contact-name" name="name" required maxlength="120" autocomplete="name" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
-      </div>
-
-      <div>
-        <label for="contact-email" class="block text-sm font-medium text-gray-700 mb-2">Votre email <span class="text-red-500">*</span></label>
-        <input type="email" id="contact-email" name="email" required maxlength="254" autocomplete="email" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
-      </div>
-
-      <div>
-        <label for="contact-subject" class="block text-sm font-medium text-gray-700 mb-2">Sujet</label>
-        <input type="text" id="contact-subject" name="subject" maxlength="200" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
-      </div>
-
-      <div>
-        <label for="contact-message" class="block text-sm font-medium text-gray-700 mb-2">Votre message <span class="text-red-500">*</span></label>
-        <textarea id="contact-message" name="message" required rows="6" maxlength="5000" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent"></textarea>
-        <p class="text-xs text-gray-500 mt-1">Minimum 10 caractères.</p>
-      </div>
-
-      <div id="contact-form-message" class="hidden text-sm" role="status" aria-live="polite"></div>
-
-      <!-- Cloudflare Turnstile (rendu explicite par le script ci-dessous). -->
-      <div id="contact-turnstile-widget" aria-label="Vérification anti-bot Cloudflare Turnstile" role="region"></div>
-      <div id="contact-turnstile-loading" class="text-sm text-gray-600 mb-2" style="display:none;">⏳ Chargement de la vérification anti-bot…</div>
-      <div id="contact-turnstile-error" class="text-sm text-yellow-600 mb-2 hidden">⚠️ La vérification anti-bot est temporairement indisponible. Rafraîchissez la page pour réessayer.</div>
-
-      <button type="submit" id="contact-submit-btn" class="w-full btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] py-3 px-6 rounded-md font-medium transition-colors">
-        <span id="contact-submit-text">Envoyer le message</span>
-        <span id="contact-submit-loading" class="hidden">Envoi en cours…</span>
-      </button>
-
-      <div class="text-xs text-gray-500 mt-4">
-        Vos données sont utilisées uniquement pour traiter votre demande et vous répondre.
-        Consultez les <a href="/mentions-legales/" class="text-[#5B8A8F] hover:underline" target="_blank">mentions légales et la politique de confidentialité</a>.
-      </div>
-    </form>
-  </div>
-
-  <div class="section-card p-8 bg-white space-y-6">
-    <div>
-      <h2 class="text-xl font-semibold text-fluance mb-3">Messagerie instantanée</h2>
-      <p class="text-[#3E3A35] mb-4">
-        Messages textuels ou vocaux (pas d'appel)
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 items-start">
+    <!-- Formulaire (gauche sur desktop) -->
+    <div class="section-card p-8 md:p-10 bg-white lg:col-span-3">
+      <h2 class="text-2xl font-semibold text-fluance mb-3">Envoyer un message</h2>
+      <p class="text-[#3E3A35] mb-6">
+        Remplissez le formulaire ci-dessous, je vous réponds généralement sous 24 à 48&nbsp;h les jours ouvrés.
       </p>
-      <div class="flex flex-col sm:flex-row gap-3">
+
+      <form id="contact-form" class="space-y-4" autocomplete="off" data-form-type="other" data-1p-ignore="true" data-lpignore="true" data-lastpass-ignore="true" data-bwignore="true" novalidate>
+        <!-- Honeypot anti-bot : champ invisible, jamais rempli par un humain. -->
+        <div aria-hidden="true" style="position:absolute !important;left:-9999px !important;width:1px;height:1px;overflow:hidden;">
+          <label for="contact-website">Website</label>
+          <input type="text" id="contact-website" name="website" tabindex="-1" autocomplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true">
+        </div>
+
+        <input type="hidden" name="site_id" value="fluance">
+        <input type="hidden" name="contact_started_at" id="contact-started-at" value="">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="contact-prenom" class="block text-sm font-medium text-gray-700 mb-2">Prénom <span class="text-red-500">*</span></label>
+            <input type="text" id="contact-prenom" name="prenom" required maxlength="60" autocomplete="given-name" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
+          </div>
+          <div>
+            <label for="contact-name" class="block text-sm font-medium text-gray-700 mb-2">Nom <span class="text-red-500">*</span></label>
+            <input type="text" id="contact-name" name="name" required maxlength="120" autocomplete="family-name" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
+          </div>
+        </div>
+
+        <div>
+          <label for="contact-email" class="block text-sm font-medium text-gray-700 mb-2">Votre email <span class="text-red-500">*</span></label>
+          <input type="email" id="contact-email" name="email" required maxlength="254" autocomplete="email" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
+        </div>
+
+        <div>
+          <label for="contact-subject" class="block text-sm font-medium text-gray-700 mb-2">Sujet</label>
+          <input type="text" id="contact-subject" name="subject" maxlength="200" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
+        </div>
+
+        <div>
+          <label for="contact-message" class="block text-sm font-medium text-gray-700 mb-2">Votre message <span class="text-red-500">*</span></label>
+          <textarea id="contact-message" name="message" required rows="6" maxlength="5000" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent"></textarea>
+          <p class="text-xs text-gray-500 mt-1">Minimum 10 caractères.</p>
+        </div>
+
+        <div id="contact-form-message" class="hidden text-sm" role="status" aria-live="polite"></div>
+
+        <!-- Cloudflare Turnstile (rendu explicite par le script ci-dessous). -->
+        <div id="contact-turnstile-widget" aria-label="Vérification anti-bot Cloudflare Turnstile" role="region"></div>
+        <div id="contact-turnstile-loading" class="text-sm text-gray-600 mb-2" style="display:none;">⏳ Chargement de la vérification anti-bot…</div>
+        <div id="contact-turnstile-error" class="text-sm text-yellow-600 mb-2 hidden">⚠️ La vérification anti-bot est temporairement indisponible. Rafraîchissez la page pour réessayer.</div>
+
+        <button type="submit" id="contact-submit-btn" class="w-full btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] py-3 px-6 rounded-md font-medium transition-colors">
+          <span id="contact-submit-text">Envoyer le message</span>
+          <span id="contact-submit-loading" class="hidden">Envoi en cours…</span>
+        </button>
+
+        <div class="text-xs text-gray-500 mt-4">
+          Vos données sont utilisées uniquement pour traiter votre demande et vous répondre.
+          Consultez les <a href="/mentions-legales/" class="text-[#5B8A8F] hover:underline" target="_blank">mentions légales et la politique de confidentialité</a>.
+        </div>
+      </form>
+    </div>
+
+    <!-- Autres canaux (droite sur desktop) -->
+    <aside class="lg:col-span-2 space-y-6 lg:sticky lg:top-24 lg:self-start">
+      <div class="section-card p-8 bg-white space-y-4">
+        <h2 class="text-xl font-semibold text-fluance">Messagerie instantanée</h2>
+        <p class="text-[#3E3A35]">
+          Messages textuels ou vocaux (pas d'appel)
+        </p>
         <a href="https://wa.me/message/J3EROZAQFOSJM1" id="whatsapp-link" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#25D366] text-white rounded-full font-semibold hover:bg-[#20BA5A] transition-colors shadow-md no-underline cursor-pointer" style="background-color: #25D366; color: #F5F7F6; text-decoration: none;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" style="display: inline-block; vertical-align: middle;">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
@@ -84,24 +92,24 @@ permalink: /contact/
           <span style="color: #F5F7F6; font-weight: 600;">WhatsApp</span>
         </a>
       </div>
-    </div>
 
-    <div class="pt-6 border-t border-fluance/20">
-      <h2 class="text-xl font-semibold text-fluance mb-3">E-mail</h2>
-      <p class="text-[#3E3A35]">
-        <a href="#" id="contact-email-link" class="text-fluance hover:underline"></a>
-      </p>
-    </div>
+      <div class="section-card p-8 bg-white space-y-4">
+        <h2 class="text-xl font-semibold text-fluance">E-mail</h2>
+        <p class="text-[#3E3A35]">
+          <a href="#" id="contact-email-link" class="text-fluance hover:underline"></a>
+        </p>
+      </div>
 
-    <div class="pt-6 border-t border-fluance/20">
-      <h2 class="text-xl font-semibold text-fluance mb-3">Adresse</h2>
-      <p class="text-[#3E3A35]">
-        Instants Zen Sàrl<br>
-        Case postale<br>
-        1782 Belfaux<br>
-        Suisse
-      </p>
-    </div>
+      <div class="section-card p-8 bg-white space-y-4">
+        <h2 class="text-xl font-semibold text-fluance">Adresse</h2>
+        <p class="text-[#3E3A35]">
+          Instants Zen Sàrl<br>
+          Case postale<br>
+          1782 Belfaux<br>
+          Suisse
+        </p>
+      </div>
+    </aside>
   </div>
 </section>
 
@@ -223,11 +231,13 @@ document.addEventListener('DOMContentLoaded', function() {
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    const prenom = form.elements['prenom'].value.trim();
     const name = form.elements['name'].value.trim();
     const email = form.elements['email'].value.trim();
     const subject = form.elements['subject'].value.trim();
     const message = form.elements['message'].value.trim();
 
+    if (!prenom) return showMessage('Veuillez indiquer votre prénom.', 'error');
     if (!name) return showMessage('Veuillez indiquer votre nom.', 'error');
     if (!email) return showMessage('Veuillez indiquer votre email.', 'error');
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -254,6 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const payload = {
         site_id: 'fluance',
+        prenom: prenom,
         name: name,
         email: email,
         subject: subject,
