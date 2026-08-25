@@ -72,6 +72,21 @@ const SITE_CONFIGS = {
       'Vous vous êtes inscrit depuis DéveloppementPersonnel.org pour recevoir votre cadeau de bienvenue et rejoindre une relation éditoriale portée par Fluance autour du développement personnel et de la transformation intérieure.',
     interestLabel: 'developpement_personnel',
   },
+  'fluance': {
+    siteId: 'fluance',
+    blogSource: 'fluance.io',
+    siteLabel: 'Fluance',
+    legalLinkLabel: 'Fluance',
+    origins: [
+      'https://fluance.io',
+      'https://www.fluance.io',
+      'http://localhost:8080',
+    ],
+    turnstileSecretEnv: 'TURNSTILE_SECRET_KEY',
+    // Site principal fluance.io : uniquement le formulaire de contact.
+    // Le lead magnet de fluance.io est géré par subscribeToNewsletter, pas captureLead.
+    contactOnly: true,
+  },
 };
 
 const ROOT_ALLOWED_ORIGINS = Array.from(
@@ -440,7 +455,7 @@ async function sendMailjetEmail(params) {
   }
 }
 
-async function verifyTurnstile(token, secret, remoteIp) {
+async function verifyTurnstile(token, secret, remoteIp, expectedAction = '') {
   const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
     headers: {
@@ -453,7 +468,20 @@ async function verifyTurnstile(token, secret, remoteIp) {
     }),
   });
 
-  return response.json();
+  const result = await response.json();
+
+  // 🔒 Bonne pratique Turnstile : lier le token à l'action attendue du
+  // formulaire pour empêcher le rejeu d'un token généré par un autre widget.
+  if (result.success && expectedAction && result.action !== expectedAction) {
+    return {
+      'success': false,
+      'error-codes': ['invalid-action'],
+      'action': result.action || '',
+      'hostname': result.hostname || '',
+    };
+  }
+
+  return result;
 }
 
 async function logLeadEvent(eventType, payload) {
@@ -468,6 +496,33 @@ async function logContactSubmission(payload) {
   await db.collection('journal_formulaires_contact').add({
     createdAt: FieldValue.serverTimestamp(),
     ...payload,
+  });
+}
+
+const CONTACT_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const CONTACT_RATE_LIMIT_MAX = 3;
+
+/**
+ * Limite anti-spam simple par email : 3 soumissions valides par fenêtre de
+ * 10 minutes. Utilise un document Firestore dédié (pas d'index composite).
+ */
+async function checkContactRateLimit(email) {
+  const docRef = db.collection('contactRateLimits').doc(email);
+  const now = Date.now();
+  const windowStart = now - CONTACT_RATE_LIMIT_WINDOW_MS;
+
+  return db.runTransaction(async (tx) => {
+    const doc = await tx.get(docRef);
+    const data = doc.exists ? doc.data() : {};
+    const firstAt = data.firstAt && data.firstAt > windowStart ? data.firstAt : now;
+    const count = data.firstAt && data.firstAt > windowStart ? data.count || 0 : 0;
+
+    if (count >= CONTACT_RATE_LIMIT_MAX) {
+      return {limited: true};
+    }
+
+    tx.set(docRef, {count: count + 1, firstAt, lastAt: now});
+    return {limited: false};
   });
 }
 
@@ -767,6 +822,16 @@ exports.captureLead = onRequest(
           return sendJson(response, {success: false, error: 'Site non reconnu'}, 400, corsHeaders);
         }
 
+        // Les sites « contact-only » (ex: fluance.io) n'utilisent pas le hub opt-in.
+        if (site.contactOnly) {
+          return sendJson(
+              response,
+              {success: false, error: 'Inscription non disponible sur ce site'},
+              400,
+              corsHeaders,
+          );
+        }
+
         if (botField) {
           await logLeadEvent('bot_honeypot_optin', {
             site_source: site.siteId,
@@ -954,6 +1019,7 @@ exports.sendContactEmail = onRequest(
         'TURNSTILE_SECRET_KEY_TDM',
         'TURNSTILE_SECRET_KEY_VIE_EXPLOSIVE',
         'TURNSTILE_SECRET_KEY_DEVPERSO',
+        'TURNSTILE_SECRET_KEY',
       ],
     },
     async (request, response) => {
@@ -1054,6 +1120,25 @@ exports.sendContactEmail = onRequest(
           return sendJson(response, {success: false, error: 'Trop de liens dans le message'}, 400, corsHeaders);
         }
 
+        const rateLimit = await checkContactRateLimit(email);
+        if (rateLimit.limited) {
+          await logContactSubmission({
+            site_source: site.siteId,
+            blog_source: site.blogSource,
+            email,
+            nom: name,
+            sujet: subject,
+            message: '',
+            statut: 'filtre_rate_limit',
+          });
+          return sendJson(
+              response,
+              {success: false, error: 'Trop de demandes. Veuillez réessayer plus tard.'},
+              429,
+              corsHeaders,
+          );
+        }
+
         if (!turnstileToken) {
           return sendJson(response, {success: false, error: 'Jeton de sécurité manquant'}, 400, corsHeaders);
         }
@@ -1067,6 +1152,7 @@ exports.sendContactEmail = onRequest(
             turnstileToken,
             turnstileSecret,
             getHeader(request, 'x-forwarded-for') || '',
+            'contact-submit',
         );
 
         if (!turnstileResult.success) {

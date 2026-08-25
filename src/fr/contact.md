@@ -15,6 +15,62 @@ permalink: /contact/
   </div>
 
   <div class="section-card p-8 bg-white space-y-6">
+    <h2 class="text-xl font-semibold text-fluance mb-3">Envoyer un message</h2>
+    <p class="text-[#3E3A35] mb-4">
+      Remplissez le formulaire ci-dessous, je vous réponds généralement sous 24 à 48&nbsp;h.
+    </p>
+
+    <form id="contact-form" class="space-y-4" autocomplete="off" data-form-type="other" data-1p-ignore="true" data-lpignore="true" data-lastpass-ignore="true" data-bwignore="true" novalidate>
+      <!-- Honeypot anti-bot : champ invisible, jamais rempli par un humain. -->
+      <div aria-hidden="true" style="position:absolute !important;left:-9999px !important;width:1px;height:1px;overflow:hidden;">
+        <label for="contact-website">Website</label>
+        <input type="text" id="contact-website" name="website" tabindex="-1" autocomplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true">
+      </div>
+
+      <input type="hidden" name="site_id" value="fluance">
+      <input type="hidden" name="contact_started_at" id="contact-started-at" value="">
+
+      <div>
+        <label for="contact-name" class="block text-sm font-medium text-gray-700 mb-2">Votre nom <span class="text-red-500">*</span></label>
+        <input type="text" id="contact-name" name="name" required maxlength="120" autocomplete="name" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
+      </div>
+
+      <div>
+        <label for="contact-email" class="block text-sm font-medium text-gray-700 mb-2">Votre email <span class="text-red-500">*</span></label>
+        <input type="email" id="contact-email" name="email" required maxlength="254" autocomplete="email" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
+      </div>
+
+      <div>
+        <label for="contact-subject" class="block text-sm font-medium text-gray-700 mb-2">Sujet</label>
+        <input type="text" id="contact-subject" name="subject" maxlength="200" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
+      </div>
+
+      <div>
+        <label for="contact-message" class="block text-sm font-medium text-gray-700 mb-2">Votre message <span class="text-red-500">*</span></label>
+        <textarea id="contact-message" name="message" required rows="6" maxlength="5000" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent"></textarea>
+        <p class="text-xs text-gray-500 mt-1">Minimum 10 caractères.</p>
+      </div>
+
+      <div id="contact-form-message" class="hidden text-sm" role="status" aria-live="polite"></div>
+
+      <!-- Cloudflare Turnstile (rendu explicite par le script ci-dessous). -->
+      <div id="contact-turnstile-widget" aria-label="Vérification anti-bot Cloudflare Turnstile" role="region"></div>
+      <div id="contact-turnstile-loading" class="text-sm text-gray-600 mb-2" style="display:none;">⏳ Chargement de la vérification anti-bot…</div>
+      <div id="contact-turnstile-error" class="text-sm text-yellow-600 mb-2 hidden">⚠️ La vérification anti-bot est temporairement indisponible. Rafraîchissez la page pour réessayer.</div>
+
+      <button type="submit" id="contact-submit-btn" class="w-full btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] py-3 px-6 rounded-md font-medium transition-colors">
+        <span id="contact-submit-text">Envoyer le message</span>
+        <span id="contact-submit-loading" class="hidden">Envoi en cours…</span>
+      </button>
+
+      <div class="text-xs text-gray-500 mt-4">
+        Vos données sont utilisées uniquement pour traiter votre demande et vous répondre.
+        Consultez les <a href="/mentions-legales/" class="text-[#5B8A8F] hover:underline" target="_blank">mentions légales et la politique de confidentialité</a>.
+      </div>
+    </form>
+  </div>
+
+  <div class="section-card p-8 bg-white space-y-6">
     <div>
       <h2 class="text-xl font-semibold text-fluance mb-3">Messagerie instantanée</h2>
       <p class="text-[#3E3A35] mb-4">
@@ -75,4 +131,169 @@ permalink: /contact/
   })();
 
 </script>
+
+<script>
+// Formulaire de contact robuste (anti-bot / anti-spam)
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('contact-form');
+  if (!form) return;
+
+  const messageDiv = document.getElementById('contact-form-message');
+  const submitBtn = document.getElementById('contact-submit-btn');
+  const submitText = document.getElementById('contact-submit-text');
+  const submitLoading = document.getElementById('contact-submit-loading');
+  const turnstileWidget = document.getElementById('contact-turnstile-widget');
+  const turnstileLoading = document.getElementById('contact-turnstile-loading');
+  const turnstileError = document.getElementById('contact-turnstile-error');
+  const startedAt = document.getElementById('contact-started-at');
+
+  const isLocalhost = window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.') ||
+    window.location.hostname.startsWith('10.') ||
+    window.location.hostname.endsWith('.local');
+
+  // Anti-bot : le serveur rejette les soumissions en moins de 3 s
+  // (temps de remplissage trop court) et les formulaires ouverts > 12 h.
+  startedAt.value = String(Date.now());
+
+  let turnstileRendered = false;
+  let turnstileWidgetId = null;
+
+  function showMessage(text, type) {
+    if (!messageDiv) return;
+    messageDiv.textContent = text;
+    messageDiv.className = 'text-sm ' + (type === 'success' ? 'text-green-600' : 'text-red-600');
+    messageDiv.classList.remove('hidden');
+  }
+
+  function markTurnstileFailed() {
+    if (turnstileLoading) turnstileLoading.style.display = 'none';
+    if (turnstileError) {
+      turnstileError.textContent = '⚠️ La vérification anti-bot ne se charge pas. Rafraîchissez la page pour réessayer.';
+      turnstileError.classList.remove('hidden');
+    }
+    if (turnstileWidget) turnstileWidget.style.display = 'none';
+  }
+
+  if (turnstileWidget) {
+    if (!isLocalhost && turnstileLoading) turnstileLoading.style.display = 'block';
+
+    let loadTimeout = setTimeout(function() {
+      if (!turnstileRendered) markTurnstileFailed();
+    }, 3000);
+
+    // Rendu explicite dès que le script Turnstile est disponible.
+    function initTurnstile() {
+      if (typeof turnstile === 'undefined') {
+        setTimeout(initTurnstile, 100);
+        return;
+      }
+      if (turnstileRendered) return;
+      if (loadTimeout) { clearTimeout(loadTimeout); loadTimeout = null; }
+
+      try {
+        turnstileWidgetId = turnstile.render(turnstileWidget, {
+          sitekey: isLocalhost ? '0x4AAAAAAABkMYinukE8K9X0' : '0x4AAAAAACF5HWhHHcGA5yJk',
+          theme: 'light',
+          size: 'normal',
+          action: 'contact-submit',
+          retry: 'auto',
+          'refresh-expired': 'auto',
+          callback: function() {
+            if (turnstileLoading) turnstileLoading.style.display = 'none';
+            if (turnstileError) turnstileError.classList.add('hidden');
+          },
+          'error-callback': function(error) {
+            console.error('[Contact] Turnstile error:', error);
+          },
+        });
+        turnstileRendered = true;
+        turnstileWidget.style.display = 'block';
+        if (turnstileLoading) turnstileLoading.style.display = 'none';
+        if (turnstileError) turnstileError.classList.add('hidden');
+      } catch (error) {
+        console.error('[Contact] Turnstile render failed:', error);
+        markTurnstileFailed();
+      }
+    }
+    initTurnstile();
+  }
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const name = form.elements['name'].value.trim();
+    const email = form.elements['email'].value.trim();
+    const subject = form.elements['subject'].value.trim();
+    const message = form.elements['message'].value.trim();
+
+    if (!name) return showMessage('Veuillez indiquer votre nom.', 'error');
+    if (!email) return showMessage('Veuillez indiquer votre email.', 'error');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return showMessage('Veuillez entrer une adresse email valide.', 'error');
+    if (message.length < 10) return showMessage('Votre message doit contenir au moins 10 caractères.', 'error');
+    const linkCount = (message.match(/https?:\/\//g) || []).length;
+    if (linkCount > 3) return showMessage('Trop de liens dans le message.', 'error');
+
+    // Le serveur exige un token Turnstile valide (plus de fallback).
+    let turnstileToken = null;
+    if (!isLocalhost) {
+      const resp = document.querySelector('[name="cf-turnstile-response"]');
+      if (!resp || !resp.value) {
+        return showMessage('La vérification anti-bot est temporairement indisponible. Veuillez réessayer dans quelques instants.', 'error');
+      }
+      turnstileToken = resp.value;
+    }
+
+    submitBtn.disabled = true;
+    submitText.classList.add('hidden');
+    submitLoading.classList.remove('hidden');
+    if (messageDiv) messageDiv.classList.add('hidden');
+
+    try {
+      const payload = {
+        site_id: 'fluance',
+        name: name,
+        email: email,
+        subject: subject,
+        message: message,
+        contact_started_at: startedAt.value,
+      };
+      if (turnstileToken) payload['cf-turnstile-response'] = turnstileToken;
+
+      const endpoint = isLocalhost
+        ? 'https://europe-west1-fluance-protected-content.cloudfunctions.net/sendContactEmail'
+        : 'https://fluance.io/api/send-contact-email';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(function() { return {}; });
+
+      if (response.ok && data.success) {
+        form.reset();
+        startedAt.value = String(Date.now());
+        if (window.turnstile && turnstileWidgetId) window.turnstile.reset(turnstileWidgetId);
+        showMessage('Merci ! Votre message a bien été envoyé. Je vous réponds généralement sous 24 à 48h.', 'success');
+      } else {
+        showMessage(data.error || 'Une erreur est survenue. Veuillez réessayer.', 'error');
+      }
+    } catch (error) {
+      console.error('[Contact] Erreur lors de l\'envoi:', error);
+      showMessage('Une erreur est survenue. Veuillez réessayer plus tard.', 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitText.classList.remove('hidden');
+      submitLoading.classList.add('hidden');
+    }
+  });
+});
+</script>
+
+<!-- Cloudflare Turnstile Script -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 

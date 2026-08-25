@@ -12235,6 +12235,7 @@ exports.apiStatus = onRequest(
           '/api/course-status',
           '/api/pass-status',
           '/api/bookings',
+          '/api/send-contact-email',
         ],
       });
     },

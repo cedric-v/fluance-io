@@ -17,6 +17,10 @@ const ROUTES = {
     functionName: 'bookCourse',
     methods: ['POST'],
   },
+  '/api/send-contact-email': {
+    functionName: 'sendContactEmail',
+    methods: ['POST'],
+  },
   '/api/status': {
     functionName: 'apiStatus',
     methods: ['GET'],
