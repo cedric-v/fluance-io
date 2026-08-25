@@ -32,11 +32,10 @@ robots: noindex,follow
     <h2 class="text-2xl font-semibold text-fluance">État actuel</h2>
     <ul class="space-y-3 text-[#3E3A35]">
       <li>Les ressources de discovery <code>/.well-known/api-catalog</code>, <code>/.well-known/agent-skills/index.json</code> et <code>/.well-known/mcp/server-card.json</code> sont publiées sur le site public.</li>
-      <li>Les routes publiques same-origin <code>/api/*</code> existent et sont documentées pour les humains, les agents et la discovery automatique.</li>
-      <li>Le frontend de réservation du site n’utilise pas ces routes en production. Il appelle directement les Cloud Functions publiques.</li>
-      <li>Cette décision est volontaire car le site statique est déployé sur GitHub Pages, qui ne prend pas en charge les rewrites nécessaires pour faire fonctionner <code>/api/*</code> comme façade same-origin vers Firebase Functions.</li>
-      <li>Les outils WebMCP peuvent exposer une surface agent prête à l’emploi, mais pour le navigateur public il faut considérer les endpoints Cloud Functions comme la source réelle d’exécution.</li>
-      <li>Les routes <code>/api/*</code> doivent donc être considérées comme une façade documentaire et future-facing, à n’utiliser réellement en production que si un reverse proxy ou une couche edge est ajoutée devant le site.</li>
+      <li>Les routes publiques same-origin <code>/api/*</code> sont servies par le Worker Cloudflare <code>fluance-api-proxy</code> et sont documentées pour les humains, les agents et la discovery automatique.</li>
+      <li>Le Worker ne contient pas la logique métier : il proxyfie les appels vers les Cloud Functions Firebase, qui restent la source réelle d’exécution.</li>
+      <li>Le frontend de réservation peut continuer à appeler directement les Cloud Functions ; les URLs <code>/api/*</code> constituent la façade publique stable pour les agents et les intégrations externes.</li>
+      <li>Les réponses dynamiques de l’API ne doivent pas être mises en cache par Cloudflare.</li>
     </ul>
   </article>
 
@@ -63,12 +62,12 @@ robots: noindex,follow
   <article class="section-card p-8 bg-white space-y-6">
     <h2 class="text-2xl font-semibold text-fluance">Limites connues</h2>
     <ul class="space-y-3 text-[#3E3A35]">
-      <li>GitHub Pages ne permet pas d’ajouter des en-têtes HTTP personnalisés sur la homepage. Les vérifications qui attendent des <code>Link</code> headers sur <code>/</code> resteront donc en échec sans proxy, CDN programmable ou migration d’hébergement.</li>
-      <li>GitHub Pages ne permet pas non plus de forcer le type MIME idéal <code>application/linkset+json</code> pour le chemin sans extension <code>/.well-known/api-catalog</code>. Le fichier est publié, mais servi avec un type générique.</li>
+      <li>Les pages statiques restent servies par Cloudflare Pages ; les routes dynamiques <code>/api/*</code> sont traitées séparément par le Worker Cloudflare.</li>
+      <li>Les ressources de discovery et les réponses API doivent conserver des en-têtes adaptés, notamment le type MIME JSON et l’absence de cache pour les données dynamiques.</li>
       <li>Le site publie des ressources markdown dédiées pour les agents, mais ne fait pas encore de vraie négociation de contenu sur les pages HTML via <code>Accept: text/markdown</code>.</li>
       <li>Aucun endpoint OAuth/OIDC de discovery n’est publié pour l’instant, car l’API exposée publiquement ne repose pas encore sur un vrai serveur OAuth/OIDC dédié.</li>
       <li>Le server card MCP publié décrit la surface WebMCP navigateur. Il ne décrit pas un serveur MCP distant autonome en transport HTTP/SSE.</li>
-      <li>Comme le site public est servi par GitHub Pages, les rewrites et headers Firebase Hosting définis dans <code>firebase.json</code> ne s’appliquent pas au site statique en production.</li>
+      <li>Le site public est servi par Cloudflare Pages. Les rewrites Firebase Hosting définis dans <code>firebase.json</code> ne s’appliquent donc pas au site public ; le routage <code>/api/*</code> est assuré séparément par le Worker Cloudflare.</li>
     </ul>
   </article>
 </section>

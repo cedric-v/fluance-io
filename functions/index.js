@@ -12017,7 +12017,7 @@ exports.syncPlanning = onSchedule(
 
       try {
         const result = await googleService.syncCalendarToFirestore(db, calendarId);
-        console.log(`📅 Sync completed: ${result.synced} synced, ${result.errors} errors`);
+        console.log(`📅 Sync completed: ${result.synced} synced, ${result.deleted} deleted, ${result.errors} errors`);
       } catch (error) {
         console.error('Error syncing calendar:', error);
       }
@@ -12048,6 +12048,7 @@ exports.syncPlanningManual = onRequest(
         return res.json({
           success: true,
           synced: result.synced,
+          deleted: result.deleted,
           errors: result.errors,
         });
       } catch (error) {
@@ -12139,6 +12140,10 @@ exports.getAvailableCourses = onRequest(
       cors: ALLOWED_WEB_ORIGINS,
     },
     async (req, res) => {
+      // Les cours changent sans nouvelle publication du site (synchronisation
+      // Google Calendar). Empêcher un cache HTTP de servir une liste périmée.
+      res.set('Cache-Control', 'no-store');
+
       try {
         const cached = readCoursesCache('getAvailableCourses');
         if (cached) {

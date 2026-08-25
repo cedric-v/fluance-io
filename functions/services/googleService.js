@@ -112,36 +112,60 @@ class GoogleService {
    * Récupère les événements du calendrier Google et les synchronise avec Firestore
    * @param {Object} db - Instance Firestore
    * @param {string} calendarId - ID du calendrier Google (depuis les secrets)
-   * @returns {Promise<{synced: number, errors: number}>}
+   * @returns {Promise<{synced: number, deleted: number, errors: number}>}
    */
   async syncCalendarToFirestore(db, calendarId) {
     await this.initialize();
 
     const now = new Date();
-    const timeMin = now.toISOString();
+    // Relire les derniers jours permet de détecter la suppression d'un cours
+    // qui vient d'avoir lieu. Avec timeMin = maintenant, un cours supprimé
+    // hier sortait de la requête Google et restait donc dans Firestore jusqu'à
+    // la purge des cours vieux de 7 jours.
+    const calendarTimeMinDate = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000);
+    const calendarTimeMin = calendarTimeMinDate.toISOString();
     // Synchroniser les 3 prochains mois
     const timeMax = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
-    console.log(`📅 Syncing calendar events from ${timeMin} to ${timeMax}`);
+    console.log(`📅 Syncing calendar events from ${calendarTimeMin} to ${timeMax}`);
 
     try {
-      const response = await this.calendar.events.list({
-        calendarId: calendarId,
-        timeMin: timeMin,
-        timeMax: timeMax,
-        singleEvents: true,
-        orderBy: 'startTime',
-      });
+      // showDeleted est nécessaire pour recevoir les occurrences annulées,
+      // notamment les exceptions d'un événement récurrent. La pagination est
+      // gérée explicitement afin de ne pas laisser des événements hors de la
+      // première page influencer le nettoyage des orphelins.
+      const events = [];
+      let pageToken;
+      do {
+        const response = await this.calendar.events.list({
+          calendarId: calendarId,
+          timeMin: calendarTimeMin,
+          timeMax: timeMax,
+          singleEvents: true,
+          showDeleted: true,
+          orderBy: 'startTime',
+          pageToken: pageToken,
+        });
+        events.push(...(response.data.items || []));
+        pageToken = response.data.nextPageToken;
+      } while (pageToken);
 
-      const events = response.data.items || [];
       console.log(`📋 Found ${events.length} events to sync`);
 
       let synced = 0;
+      let deleted = 0;
       let errors = 0;
       const syncedIds = new Set();
 
       for (const event of events) {
         try {
+          // Une occurrence annulée ne doit ni être créée ni être conservée
+          // dans Firestore. Elle sera supprimée par le nettoyage ci-dessous.
+          if (event.status === 'cancelled') {
+            console.log(`🗑️ Skipping cancelled event: ${event.id}`);
+            continue;
+          }
+
           const courseData = this.parseCalendarEvent(event);
 
           if (courseData) {
@@ -159,16 +183,18 @@ class GoogleService {
         }
       }
 
-      // 1. Nettoyer les cours supprimés de Google Calendar dans la plage synchronisée
-      // On récupère tous les cours futurs dans Firestore qui sont dans la plage de temps synchronisée
-      const futureCourses = await db.collection('courses')
-          .where('startTime', '>=', Timestamp.fromDate(new Date(timeMin)))
+      // 1. Nettoyer les cours supprimés de Google Calendar dans la plage
+      // relue. La borne basse inclut les cours passés récemment : un cours
+      // supprimé hier ne doit pas attendre la purge à J+7.
+      const coursesInSyncWindow = await db.collection('courses')
+          .where('startTime', '>=', Timestamp.fromDate(calendarTimeMinDate))
           .where('startTime', '<=', Timestamp.fromDate(new Date(timeMax)))
           .get();
 
-      for (const doc of futureCourses.docs) {
+      for (const doc of coursesInSyncWindow.docs) {
         if (!syncedIds.has(doc.id)) {
           await doc.ref.delete();
+          deleted++;
           console.log(`🗑️ Deleted orphaned course (removed from GCal): ${doc.id}`);
         }
       }
@@ -185,7 +211,7 @@ class GoogleService {
         console.log(`🗑️ Deleted old course: ${doc.id}`);
       }
 
-      return {synced, errors};
+      return {synced, deleted, errors};
     } catch (error) {
       console.error('❌ Error fetching calendar events:', error.message);
       throw error;

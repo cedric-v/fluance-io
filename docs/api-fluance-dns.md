@@ -1,162 +1,101 @@
-# Configuration DNS et domaine pour `api.fluance.io`
+# API publique Fluance sur Cloudflare
 
-## Architecture retenue
+## Architecture actuelle
 
-- `fluance.io` reste sur GitHub Pages
-- `api.fluance.io` pointe vers Firebase Hosting
-- Firebase Hosting route ensuite vers les Functions HTTP
-- les Functions, Firestore et secrets restent dans le meme projet Firebase que `fluance-io`
+Le site public est servi par le projet **Cloudflare Pages** `fluance-io`.
 
-## Recommandation de structure
+La façade API publique est un **Cloudflare Worker séparé** :
 
-La bonne separation n'est pas de creer un second projet Firebase. La bonne separation est:
+```text
+fluance.io/api/*
+        ↓
+Worker fluance-api-proxy
+        ↓
+Firebase Cloud Functions HTTP
+        ↓
+Firestore / services métier
+```
 
-- un seul projet Firebase pour `fluance-io`
-- un site Firebase Hosting dedie a l'API
-- un custom domain `api.fluance.io` attache a ce site Hosting
-- GitHub Pages conserve le front public `fluance.io`
+Le Worker ne contient pas la logique de réservation. Il fournit une URL stable
+pour les agents, les intégrations et les clients navigateur, tandis que les
+Firebase Cloud Functions restent le backend de référence.
 
-Architecture cible:
+## Routes exposées
 
-- `fluance.io` -> GitHub Pages
-- `api.fluance.io` -> Firebase Hosting site dedie API
-- Firebase Hosting API -> rewrites vers les Functions HTTP
-- Firestore / secrets / Mailjet / cron -> meme projet Firebase que le reste de Fluance
+| Route publique | Fonction backend |
+|---|---|
+| `GET /api/courses` | `getAvailableCourses` |
+| `GET /api/course-status` | `getCourseStatus` |
+| `GET /api/pass-status` | `checkUserPass` |
+| `POST /api/bookings` | `bookCourse` |
+| `GET /api/status` | `apiStatus` |
 
-## Point de vigilance sur le projet Firebase
+Les paramètres de requête sont conservés. Le corps JSON et les en-têtes utiles
+sont relayés pour les requêtes POST. Les réponses API sont marquées
+`Cache-Control: no-store`.
 
-Dans ce repository, le fichier `.firebaserc` pointe actuellement vers le projet par defaut:
+## Fichiers du Worker
 
-- `fluance-protected-content`
+- `cloudflare/api-proxy/src/index.js` : proxy et table de routage
+- `cloudflare/api-proxy/wrangler.toml` : configuration et routes Cloudflare
+- `cloudflare/api-proxy/README.md` : procédure de déploiement et de test
 
-Si, dans la console Firebase, tu vois un projet affiche comme `fluance-website`, il faut distinguer:
+Le Worker est attaché à :
 
-- le nom affiche dans la console
-- le `project id` reel utilise par la CLI
+- `fluance.io/api/*`
+- `www.fluance.io/api/*`
 
-Avant toute commande, verifier le projet actif:
+Les autres URLs continuent d’être servies par Cloudflare Pages.
+
+## Déploiement
+
+Le Worker est déployé séparément du site Pages, car le dépôt utilise déjà le
+dossier racine `functions/` pour les Firebase Cloud Functions.
+
+Déploiement local, avec Wrangler authentifié :
 
 ```bash
-cd "/Users/cedric 1/Documents/coding/fluance-io"
-firebase use
+npx wrangler deploy --config cloudflare/api-proxy/wrangler.toml
 ```
 
-Si besoin, lister les projets accessibles:
+Déploiement CI : lancer manuellement le workflow GitHub Actions **Deploy API
+proxy Worker**.
+
+Le secret GitHub `CF_WORKER_API_TOKEN` doit disposer au minimum des permissions
+suivantes pour la zone `fluance.io` :
+
+- Workers Scripts: Edit
+- Workers Routes: Edit
+- Zone: Read
+
+Le site statique et le Worker utilisent le compte Cloudflare indiqué par
+`CF_ACCOUNT_ID`.
+
+## Vérification
 
 ```bash
-firebase projects:list
+curl -i https://fluance.io/api/status
+curl -i https://fluance.io/api/courses
+curl -i -X OPTIONS https://fluance.io/api/bookings \
+  -H 'Origin: https://fluance.io' \
+  -H 'Access-Control-Request-Method: POST' \
+  -H 'Access-Control-Request-Headers: content-type'
 ```
 
-Puis selectionner explicitement le bon projet:
+Résultats attendus :
 
-```bash
-firebase use <PROJECT_ID>
-```
+- HTTP 200 et JSON pour `/api/status` ;
+- HTTP 200 et la liste des cours pour `/api/courses` ;
+- HTTP 204 pour la requête `OPTIONS` ;
+- `Cache-Control: no-store` sur les réponses dynamiques.
 
-## Ce que le code prepare deja
+## Limites et sécurité
 
-Dans `firebase.json`, les routes suivantes existent:
-
-- `/capture-lead` -> `captureLead`
-- `/send-contact-email` -> `sendContactEmail`
-- `/api/capture-lead` -> `captureLead`
-- `/api/send-contact-email` -> `sendContactEmail`
-
-## Creation du site Hosting dedie a l'API
-
-Je recommande de creer un site Hosting dedie, par exemple:
-
-- site id Firebase Hosting: `fluance-api`
-- target local Firebase CLI: `api`
-
-Commandes:
-
-```bash
-cd "/Users/cedric 1/Documents/coding/fluance-io"
-firebase hosting:sites:create fluance-api
-firebase target:apply hosting api fluance-api
-```
-
-Effet attendu:
-
-- `fluance.io` continue a vivre sur GitHub Pages
-- Firebase Hosting n'est utilise que pour `api.fluance.io`
-- les futurs deploys deviennent explicites avec `hosting:api`
-
-Une fois cela fait, `.firebaserc` contiendra une section `targets` similaire a:
-
-```json
-{
-  "targets": {
-    "<PROJECT_ID>": {
-      "hosting": {
-        "api": [
-          "fluance-api"
-        ]
-      }
-    }
-  }
-}
-```
-
-Le `PROJECT_ID` exact depend de ton projet Firebase reel.
-
-## Ce qu'il faut faire manuellement dans Firebase
-
-1. Verifier le bon projet Firebase avec `firebase use`
-2. Creer le site Hosting dedie API si ce n'est pas deja fait
-3. Ouvrir Firebase Hosting
-4. Selectionner le site Hosting dedie API
-5. Ajouter `api.fluance.io` comme custom domain
-6. Laisser Firebase afficher les DNS records exacts requis
-
-## Ce qu'il faut faire manuellement dans Cloudflare DNS
-
-1. Ouvrir la zone DNS de `fluance.io`
-2. Creer exactement les records demandes par Firebase
-3. Pendant la verification initiale:
-   - preferer `DNS only` si Firebase ne valide pas
-4. Attendre la validation du domaine et le certificat TLS
-
-## Important
-
-- ne pas inventer une cible manuelle
-- ne pas mettre un autre record concurrent sur `api`
-- suivre strictement les valeurs affichees par Firebase Hosting
-
-## Verification finale
-
-Une fois DNS et certificat en place, tester:
-
-- `https://api.fluance.io/capture-lead`
-- `https://api.fluance.io/send-contact-email`
-
-Les deux doivent repondre:
-
-- `405 Method Not Allowed` en GET
-
-Ce resultat est normal et montre que le routage arrive bien sur la Function.
-
-## Commandes de deploiement recommandees
-
-Pour eviter toute confusion avec GitHub Pages, je recommande de deployer explicitement:
-
-```bash
-cd "/Users/cedric 1/Documents/coding/fluance-io"
-firebase deploy --only functions,hosting:api
-```
-
-Cela suppose que le target Hosting `api` a bien ete associe au site `fluance-api`.
-
-Si tu veux verifier le routage Hosting avant un deploy complet:
-
-```bash
-firebase target
-```
-
-## Ce qu'il ne faut pas faire
-
-- ne pas creer un second projet Firebase juste pour l'API
-- ne pas utiliser le site Hosting Firebase pour le front `fluance.io` tant que GitHub Pages reste en place
-- ne pas lancer un deploy Hosting ambigu sans target explicite si plusieurs usages coexistent
-- ne pas creer de record DNS concurrent sur `api`
+- Le Worker ne remplace pas les contrôles de sécurité des Functions.
+- Les réservations doivent continuer à être validées et limitées côté Firebase.
+- Il ne faut pas mettre en cache `/api/bookings`, `/api/pass-status` ou
+  `/api/course-status`.
+- Les webhooks, fonctions d’administration et fonctions de synchronisation
+  Google Calendar ne doivent pas être ajoutés à cette façade publique.
+- `firebase.json` et Firebase Hosting ne servent pas au routage du domaine
+  public `fluance.io`.

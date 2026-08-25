@@ -221,6 +221,7 @@ Important deployment notes:
 - Cloud Functions remain deployed independently with Firebase and are called directly from the browser via the Firebase SDK.
 - The `/.well-known/*` resources are published on the live site with proper response headers (Content-Type, CORS) configured via `_headers`.
 - Hidden files (`.well-known/`, etc.) are included in the build output and deployed to Cloudflare Pages.
+- The public API façade is a separate Cloudflare Worker in `cloudflare/api-proxy/`. It owns only `fluance.io/api/*` and proxies to the Firebase HTTP Functions; the static site remains on Pages.
 
 #### Cloudflare Pages (via GitHub Actions)
 
@@ -237,6 +238,19 @@ Automatically build, smoke-test, and deploy the site on each push to `main` usin
    - Run smoke tests (pre-deploy)
    - Deploy `_site/` to Cloudflare Pages via wrangler-action
    - Run post-deploy accessibility tests
+
+#### API proxy Worker
+
+The API proxy is deliberately deployed separately from the Pages static site because the repository already uses `functions/` for Firebase Cloud Functions.
+
+- Source: `cloudflare/api-proxy/src/index.js`
+- Configuration: `cloudflare/api-proxy/wrangler.toml`
+- Routes: `fluance.io/api/*` and `www.fluance.io/api/*`
+- Manual deployment workflow: **Deploy API proxy Worker** (`workflow_dispatch`)
+
+The `CF_WORKER_API_TOKEN` used by that workflow must have permission to deploy Workers and manage the matching Workers routes (Workers Scripts: Edit, Workers Routes: Edit, and Zone: Read as required by the Cloudflare account configuration). It is intentionally separate from the Pages-only `CF_API_TOKEN`.
+
+The Worker does not replace the Firebase endpoints: it provides stable same-origin public URLs for agents and browser clients. Dynamic API responses are explicitly marked `Cache-Control: no-store`.
 
 #### Manual or other hosts (Netlify, S3, etc.)
 
@@ -410,6 +424,7 @@ This project uses environment variables for:
 | Secret | Description |
 |--------|-------------|
 | `CF_API_TOKEN` | Cloudflare API token with Pages:Edit permission |
+| `CF_WORKER_API_TOKEN` | Cloudflare API token with Workers Scripts:Edit, Workers Routes:Edit and Zone:Read for the API proxy workflow |
 | `CF_ACCOUNT_ID` | Cloudflare account ID |
 | `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key for frontend |
 | `FIREBASE_API_KEY` | Firebase Web API key |

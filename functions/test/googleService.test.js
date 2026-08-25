@@ -55,3 +55,81 @@ test('parseCalendarEvent accepte les événements à visibilité par défaut', (
   const course = svc.parseCalendarEvent(event);
   assert.ok(course, 'un événement à visibilité par défaut doit être synchronisé');
 });
+
+test('syncCalendarToFirestore supprime un cours annulé récemment', async () => {
+  const svc = new GoogleService();
+  svc.auth = {};
+
+  const requests = [];
+  svc.calendar = {
+    events: {
+      list: async (request) => {
+        requests.push(request);
+        if (!request.pageToken) {
+          return {
+            data: {
+              items: [makeEvent({
+                id: 'kept',
+                start: {
+                  dateTime: '2026-08-24T14:00:00+02:00',
+                  timeZone: 'Europe/Zurich',
+                },
+              })],
+              nextPageToken: 'next-page',
+            },
+          };
+        }
+        return {
+          data: {
+            items: [{id: 'deleted', status: 'cancelled'}],
+          },
+        };
+      },
+    },
+  };
+
+  const deletedIds = [];
+  const writtenIds = [];
+  const makeDoc = (id) => ({
+    id,
+    ref: {
+      delete: async () => deletedIds.push(id),
+    },
+  });
+  const coursesCollection = {
+    doc: (id) => ({
+      set: async () => writtenIds.push(id),
+    }),
+    where: (field, operator) => {
+      const clauses = [{field, operator}];
+      const query = {
+        where: (nextField, nextOperator) => {
+          clauses.push({field: nextField, operator: nextOperator});
+          return query;
+        },
+        get: async () => ({
+          // La première requête est celle de la fenêtre de synchronisation;
+          // la seconde correspond à la purge historique.
+          docs: clauses[0].operator === '>=' ? [makeDoc('deleted'), makeDoc('kept')] : [],
+        }),
+      };
+      return query;
+    },
+  };
+
+  const result = await svc.syncCalendarToFirestore(
+      {collection: () => coursesCollection},
+      'calendar@test',
+  );
+
+  assert.equal(result.synced, 1);
+  assert.equal(result.deleted, 1);
+  assert.equal(result.errors, 0);
+  assert.deepEqual(writtenIds, ['kept']);
+  assert.deepEqual(deletedIds, ['deleted']);
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].showDeleted, true);
+  assert.equal(requests[0].singleEvents, true);
+  assert.equal(requests[1].pageToken, 'next-page');
+  assert.equal(requests[1].showDeleted, true);
+});
