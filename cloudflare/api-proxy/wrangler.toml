@@ -7,7 +7,9 @@ workers_dev = false
 # machine-facing API routes. The rest of fluance.io remains on Pages.
 routes = [
   { pattern = "fluance.io/api/*", zone_name = "fluance.io" },
-  { pattern = "www.fluance.io/api/*", zone_name = "fluance.io" }
+  { pattern = "www.fluance.io/api/*", zone_name = "fluance.io" },
+  { pattern = "fluance.io/.well-known/*", zone_name = "fluance.io" },
+  { pattern = "www.fluance.io/.well-known/*", zone_name = "fluance.io" }
 ]
 
 [vars]

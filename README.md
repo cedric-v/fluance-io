@@ -221,7 +221,7 @@ Important deployment notes:
 - Cloud Functions remain deployed independently with Firebase and are called directly from the browser via the Firebase SDK.
 - The `/.well-known/*` resources are published on the live site with proper response headers (Content-Type, CORS) configured via `_headers`.
 - Hidden files (`.well-known/`, etc.) are included in the build output and deployed to Cloudflare Pages.
-- The public API façade is a separate Cloudflare Worker in `cloudflare/api-proxy/`. It owns only `fluance.io/api/*` and proxies to the Firebase HTTP Functions; the static site remains on Pages.
+- The public API façade and agent discovery endpoints are served by a separate Cloudflare Worker in `cloudflare/api-proxy/`. It owns `fluance.io/api/*` and `fluance.io/.well-known/*`, and proxies API calls to the Firebase HTTP Functions; the static site remains on Pages.
 
 #### Cloudflare Pages (via GitHub Actions)
 

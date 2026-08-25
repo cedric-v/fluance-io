@@ -1,3 +1,5 @@
+import {DISCOVERY_RESPONSES} from './discovery.generated.js';
+
 const ROUTES = {
   '/api/courses': {
     functionName: 'getAvailableCourses',
@@ -55,10 +57,31 @@ function jsonResponse(request, payload, status) {
   return new Response(JSON.stringify(payload), {status, headers});
 }
 
+function discoveryResponse(request, resource) {
+  const headers = corsHeaders(request);
+  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('Content-Type', resource.contentType);
+  headers.set('Cache-Control', 'public, max-age=3600, must-revalidate');
+  return new Response(request.method === 'HEAD' ? null : resource.body, {
+    status: 200,
+    headers,
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const route = ROUTES[normalizePath(url.pathname)];
+    const path = normalizePath(url.pathname);
+    const discovery = DISCOVERY_RESPONSES[path];
+
+    if (discovery) {
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return jsonResponse(request, {error: 'Method not allowed'}, 405);
+      }
+      return discoveryResponse(request, discovery);
+    }
+
+    const route = ROUTES[path];
 
     if (!route) {
       return jsonResponse(request, {error: 'API route not found'}, 404);

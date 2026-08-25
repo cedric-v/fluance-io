@@ -1,8 +1,9 @@
 # Fluance API proxy Worker
 
-Ce Worker fournit la façade publique stable `https://fluance.io/api/*` pour
-les agents et les intégrations. Le site statique reste déployé sur Cloudflare
-Pages ; la logique métier reste dans les Firebase Cloud Functions.
+Ce Worker fournit la façade publique stable `https://fluance.io/api/*` et
+sert les ressources de découverte `/.well-known/*` pour les agents et les
+intégrations. Le site statique reste déployé sur Cloudflare Pages ; la logique
+métier reste dans les Firebase Cloud Functions.
 
 ## Routes
 
@@ -88,15 +89,19 @@ Dans GitHub :
 4. Contrôler les logs : Wrangler doit indiquer le déploiement de
    `fluance-api-proxy` et les routes `fluance.io/api/*`.
 
-Le Worker est attaché aux routes `fluance.io/api/*` et
-`www.fluance.io/api/*`. Le déploiement ne modifie pas les autres routes du
-projet Pages.
+Le Worker est attaché aux routes `fluance.io/api/*`,
+`fluance.io/.well-known/*` et leurs variantes `www`. Le déploiement ne modifie
+pas les autres routes du projet Pages.
+
+La ressource `discovery.generated.js` est générée depuis `src/.well-known`
+avant chaque déploiement afin de conserver les digests des skills à jour.
 
 ### Déploiement local (optionnel)
 
 Avec Wrangler authentifié et un compte autorisé :
 
 ```bash
+node scripts/generate-api-proxy-discovery.mjs
 npx wrangler deploy --config cloudflare/api-proxy/wrangler.toml
 ```
 
@@ -125,6 +130,10 @@ Après le déploiement :
 ```bash
 curl -i https://fluance.io/api/status
 curl -i https://fluance.io/api/courses
+curl -i https://fluance.io/.well-known/api-catalog
+curl -i https://fluance.io/.well-known/agent-skills/index.json
+curl -i https://fluance.io/.well-known/mcp/server-card.json
+curl -i https://fluance.io/.well-known/agent-skills/list-fluance-classes/SKILL.md
 curl -i -X OPTIONS https://fluance.io/api/bookings
 ```
 

@@ -114,11 +114,11 @@ The site includes:
 
 ### Current implementation notes
 
-- The public website is deployed as static files on GitHub Pages
-- The website booking frontend uses legacy direct Cloud Functions endpoints in production
-- Same-origin `/api/*` routes described in repository config are not browser-routable on production GitHub Pages without an additional reverse proxy or edge layer
-- The public `/.well-known/*` files are live, but `/.well-known/api-catalog` is served with a generic content type because GitHub Pages cannot force `application/linkset+json` on an extensionless path
-- GitHub Pages does not allow Fluance to attach custom `Link` response headers on `/`
-- Dedicated markdown resources for agents exist under `/agent/*.md`
-- The site does not yet support full HTTP content negotiation returning markdown on the same page URLs when `Accept: text/markdown` is sent
-- No OAuth/OIDC discovery metadata is published yet because no dedicated OAuth/OIDC authorization server is currently exposed for this public API surface
+- The public website is deployed as static files on Cloudflare Pages.
+- The public API façade and agent discovery resources are served by the Cloudflare Worker `fluance-api-proxy`.
+- The Worker proxies the public `/api/*` routes to Firebase Cloud Functions; Firebase remains the backend for the business logic.
+- The public `/.well-known/*` resources expose the API catalog, Agent Skills index, skill Markdown files, and MCP server card.
+- Dynamic API responses use `Cache-Control: no-store`; discovery metadata is cacheable for a short period.
+- Dedicated Markdown resources for agents also exist under `/agent/*.md`.
+- The site does not yet support full HTTP content negotiation returning Markdown on the same HTML page URLs when `Accept: text/markdown` is sent.
+- No OAuth/OIDC discovery metadata is published yet because no dedicated OAuth/OIDC authorization server is currently exposed for this public API surface.

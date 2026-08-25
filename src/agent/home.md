@@ -26,8 +26,8 @@ Fluance helps people release tension and regain fluidity through movement, breat
 
 ## Current limitations
 
-- The public `/.well-known/*` discovery resources are served by Cloudflare Pages with the configured content types and headers.
-- The dynamic `/api/*` routes are handled by the separate Cloudflare Worker `fluance-api-proxy`.
+- The public `/.well-known/*` discovery resources are served by the separate Cloudflare Worker `fluance-api-proxy` with their configured content types and headers.
+- The dynamic `/api/*` routes are handled by the same Cloudflare Worker.
 - Fluance publishes dedicated markdown resources for agents, but does not yet provide full `Accept: text/markdown` negotiation on the same HTML URLs.
 - The public website is served on Cloudflare Pages. The `/api/*` façade is handled by the separate Cloudflare Worker `fluance-api-proxy`, while Firebase Cloud Functions remain the backend.
 - No OAuth/OIDC discovery metadata is currently published for the public API surface.
