@@ -62,11 +62,11 @@ Déploiement CI : lancer manuellement le workflow GitHub Actions **Deploy API
 proxy Worker**.
 
 Le secret GitHub `CF_WORKER_API_TOKEN` doit disposer au minimum des permissions
-suivantes pour la zone `fluance.io` :
+suivantes :
 
-- Workers Scripts: Edit
-- Workers Routes: Edit
-- Zone: Read
+- **Account → Workers Scripts → Edit** ;
+- **Zone → Workers Routes → Edit** ;
+- **Zone → Zone → Read**, limité à `fluance.io`.
 
 Le site statique et le Worker utilisent le compte Cloudflare indiqué par
 `CF_ACCOUNT_ID`.

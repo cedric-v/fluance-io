@@ -32,7 +32,7 @@ Dans le dashboard Cloudflare :
 4. Donner un nom explicite, par exemple `fluance-github-api-worker-deploy`.
 5. Ajouter ces permissions minimales :
    - **Account → Workers Scripts → Edit** ;
-   - **Account → Workers Routes → Edit** ;
+   - **Zone → Workers Routes → Edit** ;
    - **Zone → Zone → Read**.
 6. Limiter **Account Resources** au compte Cloudflare de Fluance.
 7. Limiter **Zone Resources** à la zone `fluance.io`.

@@ -248,7 +248,7 @@ The API proxy is deliberately deployed separately from the Pages static site bec
 - Routes: `fluance.io/api/*` and `www.fluance.io/api/*`
 - Manual deployment workflow: **Deploy API proxy Worker** (`workflow_dispatch`)
 
-The `CF_WORKER_API_TOKEN` used by that workflow must have permission to deploy Workers and manage the matching Workers routes (Workers Scripts: Edit, Workers Routes: Edit, and Zone: Read as required by the Cloudflare account configuration). It is intentionally separate from the Pages-only `CF_API_TOKEN`.
+The `CF_WORKER_API_TOKEN` used by that workflow must have permission to deploy Workers and manage the matching Workers routes: **Account → Workers Scripts → Edit**, plus **Zone → Workers Routes → Edit** and **Zone → Zone → Read** for `fluance.io`. It is intentionally separate from the Pages-only `CF_API_TOKEN`.
 
 The Worker does not replace the Firebase endpoints: it provides stable same-origin public URLs for agents and browser clients. Dynamic API responses are explicitly marked `Cache-Control: no-store`.
 
