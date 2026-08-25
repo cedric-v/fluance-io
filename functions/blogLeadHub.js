@@ -616,7 +616,7 @@ function buildContactEmailHtml(site, payload) {
   <body style="margin:0;padding:0;background:#f6f3ef;font-family:Arial,sans-serif;color:#3E3A35;">
     <div style="max-width:720px;margin:0 auto;padding:32px 20px;">
       <div style="background:#ffffff;border-radius:18px;padding:36px 30px;box-shadow:0 8px 28px rgba(0,0,0,0.07);">
-        <p style="${eyebrowStyle}">Nouveau message blog</p>
+        <p style="${eyebrowStyle}">Nouveau message</p>
         <h1 style="margin:0 0 22px;font-size:30px;line-height:1.2;color:#2D2A26;">${escapeHtml(site.siteLabel)}</h1>
         <p style="margin:0 0 10px;"><strong>Email :</strong> ${escapeHtml(payload.email)}</p>
         <p style="margin:0 0 10px;"><strong>Sujet :</strong> ${escapeHtml(payload.subject || '(sans sujet)')}</p>
