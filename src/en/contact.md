@@ -4,6 +4,7 @@ title: Contact
 description: Contact Fluance for questions about our courses, workshops, or to learn more about our approach to body and mind fluidity.
 locale: en
 permalink: /en/contact/
+templateEngineOverride: njk
 ---
 
 <section id="contact" class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-10">

@@ -4,6 +4,7 @@ title: Contact
 description: Contactez l'équipe Fluance pour toute question ou si vous avez besoin d'aide concernant nos cours en ligne, nos séances en présentiel ou sur un abonnement.
 locale: fr
 permalink: /contact/
+templateEngineOverride: njk
 ---
 
 <section id="contact" class="max-w-6xl mx-auto px-6 md:px-12 py-16 space-y-10">
