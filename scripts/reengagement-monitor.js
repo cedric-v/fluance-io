@@ -69,21 +69,28 @@ async function main() {
   });
   const db = getFirestore();
 
-  // 1) Envois vague 1
+  // 1) Envois par vague
   const sends = [];
   const sendsByEmail = new Map();
+  const wave2SentEmails = new Set();
   const sendsSnap = await db.collection('reengagementSends').get();
   sendsSnap.forEach((d) => {
     const data = d.data();
-    if (data.wave !== 1) return;
+    const email = (data.email || '').toLowerCase();
+    const wave = data.wave || 1;
     const ts = (data.sentAt?._seconds || 0) * 1000;
-    sends.push({email: data.email.toLowerCase(), ts, segment: data.segment || 'A', day: dayKey(ts)});
-    if (ts > (sendsByEmail.get(data.email.toLowerCase()) || 0)) {
-      sendsByEmail.set(data.email.toLowerCase(), ts);
+    if (wave === 2) {
+      wave2SentEmails.add(email);
+    }
+    sends.push({email, ts, segment: data.segment || 'A', wave, day: dayKey(ts)});
+    if (ts > (sendsByEmail.get(email) || 0)) {
+      sendsByEmail.set(email, ts);
     }
   });
+  const sendsWave1 = sends.filter((s) => s.wave === 1);
+  const sendsWave2 = sends.filter((s) => s.wave === 2);
   const sentEmails = new Set(sendsByEmail.keys());
-  const campaignStart = Math.min(...sends.map((s) => s.ts));
+  const campaignStart = sends.length ? Math.min(...sends.map((s) => s.ts)) : Date.now();
 
   // 2) Clics
   const clicks = [];
@@ -146,46 +153,53 @@ async function main() {
 
   const count = (arr, day) => arr.filter((x) => x.day === day).length;
 
-  console.log(`\n📊 Ré-engagement « 5 jours » — vague 1 (début : ${dayKey(campaignStart)})`);
-  console.log('═'.repeat(72));
-  console.log('Date        | Envoyés | Clics | Taux clic | Ré-optins | Désinscrits');
-  console.log('─'.repeat(72));
+  console.log(`\n📊 Ré-engagement « 5 jours » (début : ${dayKey(campaignStart)})`);
+  console.log('═'.repeat(82));
+  console.log('Date        | Vague 1 | Vague 2 | Clics | Taux clic | Ré-optins | Désinscrits');
+  console.log('─'.repeat(82));
   for (const day of days) {
-    const env = count(sends, day);
+    const env1 = count(sendsWave1, day);
+    const env2 = count(sendsWave2, day);
     const cli = count(clicks, day);
     const reo = count(reoptins, day);
     const uns = count(unsubs, day);
-    const taux = env ? ((cli / env) * 100).toFixed(1) : '—';
+    const totalDaySent = env1 + env2;
+    const taux = totalDaySent ? ((cli / totalDaySent) * 100).toFixed(1) : '—';
     console.log(
-        `${day} | ${String(env).padStart(7)} | ${String(cli).padStart(5)} | ` +
-        `${String(taux).padStart(8)}% | ${String(reo).padStart(8)} | ${String(uns).padStart(10)}`,
+        `${day} | ${String(env1).padStart(7)} | ${String(env2).padStart(7)} | ` +
+        `${String(cli).padStart(5)} | ${String(taux).padStart(8)}% | ${String(reo).padStart(8)} | ${String(uns).padStart(10)}`,
     );
   }
-  console.log('─'.repeat(72));
-  const totalEnv = sends.length;
+  console.log('─'.repeat(82));
+  const totalEnv1 = sendsWave1.length;
+  const totalEnv2 = sendsWave2.length;
+  const totalEnv = totalEnv1 + totalEnv2;
   const totalCli = clicks.length;
   const totalReo = reoptins.length;
   const totalUns = unsubs.length;
   console.log(
-      `TOTAL       | ${String(totalEnv).padStart(7)} | ${String(totalCli).padStart(5)} | ` +
+      `TOTAL       | ${String(totalEnv1).padStart(7)} | ${String(totalEnv2).padStart(7)} | ` +
+      `${String(totalCli).padStart(5)} | ` +
       `${((totalCli / totalEnv) * 100).toFixed(1).padStart(8)}% | ` +
       `${String(totalReo).padStart(8)} | ${String(totalUns).padStart(10)}`,
   );
-  console.log(`\nTaux de clic : ${((totalCli / totalEnv) * 100).toFixed(1)} %` +
+  console.log(`\nVague 1 : ${totalEnv1} envois · Vague 2 : ${totalEnv2} envois` +
+    `\nTaux de clic global : ${((totalCli / totalEnv) * 100).toFixed(1)} %` +
     ` · Ré-optins (conversions) : ${((totalReo / totalEnv) * 100).toFixed(1)} %` +
     ` · Désinscrits : ${((totalUns / totalEnv) * 100).toFixed(1)} %`);
 
-  // 6) Candidats relance J+14 (segment A, sans clic, ≥ 14 jours)
+  // 6) Candidats relance J+14 restants (segment A v1, non encore en v2, sans clic, ≥ 14 jours)
   const now = Date.now();
   const relance = [...sendsByEmail.entries()].filter(([email, sentTs]) => {
-    const s = sends.find((x) => x.email === email && x.segment === 'A');
+    const s = sendsWave1.find((x) => x.email === email && x.segment === 'A');
     if (!s) return false;
+    if (wave2SentEmails.has(email)) return false; // déjà relancé en vague 2
     if ((now - sentTs) < RELANCE_DAYS * 86400000) return false;
     return !lastClickByEmail.has(email);
   });
-  console.log(`\n🎯 Relance J+14 : ${relance.length} candidat(s) (segment A, sans clic, ≥ ${RELANCE_DAYS} j)`);
+  console.log(`\n🎯 Relance J+14 restante : ${relance.length} candidat(s) (segment A v1 non relancé, sans clic, ≥ ${RELANCE_DAYS} j)`);
   relance.slice(0, 10).forEach(([email, ts]) =>
-    console.log(`   - ${email} (envoyé le ${dayKey(ts)})`));
+    console.log(`   - ${email} (envoyé v1 le ${dayKey(ts)})`));
   if (relance.length > 10) console.log(`   … et ${relance.length - 10} autres`);
 }
 

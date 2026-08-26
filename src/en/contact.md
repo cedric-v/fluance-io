@@ -46,7 +46,9 @@ templateEngineOverride: njk
 
         <div>
           <label for="contact-email" class="block text-sm font-medium text-gray-700 mb-2">Your email <span class="text-red-500">*</span></label>
-          <input type="email" id="contact-email" name="email" required maxlength="254" autocomplete="email" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
+          <input type="email" id="contact-email" name="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="contact-email-error contact-email-suggestion" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent transition-colors">
+          <p id="contact-email-error" class="hidden text-xs text-red-600 mt-1" role="alert"></p>
+          <p id="contact-email-suggestion" class="hidden text-xs text-slate-600 mt-1"></p>
         </div>
 
         <div>
@@ -165,6 +167,142 @@ document.addEventListener('DOMContentLoaded', function() {
   const turnstileLoading = document.getElementById('contact-turnstile-loading');
   const turnstileError = document.getElementById('contact-turnstile-error');
   const startedAt = document.getElementById('contact-started-at');
+  const emailInput = form.elements['email'];
+  const emailError = document.getElementById('contact-email-error');
+  const emailSuggestion = document.getElementById('contact-email-suggestion');
+
+  const COMMON_DOMAIN_TYPOS = {
+    'gmai.com': 'gmail.com',
+    'gamil.com': 'gmail.com',
+    'gmial.com': 'gmail.com',
+    'gmaill.com': 'gmail.com',
+    'gmal.com': 'gmail.com',
+    'gmaik.com': 'gmail.com',
+    'hotmial.com': 'hotmail.com',
+    'hotmai.com': 'hotmail.com',
+    'hormail.com': 'hotmail.com',
+    'hotmaill.com': 'hotmail.com',
+    'outlok.com': 'outlook.com',
+    'outloo.com': 'outlook.com',
+    'outloook.com': 'outlook.com',
+    'yahou.com': 'yahoo.com',
+    'yaho.com': 'yahoo.com',
+    'yahooo.com': 'yahoo.com',
+    'protonmai.com': 'protonmail.com',
+    'protonmal.com': 'protonmail.com',
+    'protomail.com': 'protonmail.com',
+    'wanado.fr': 'wanadoo.fr',
+    'orang.fr': 'orange.fr',
+    'oranje.fr': 'orange.fr',
+    'freee.fr': 'free.fr',
+    'sfrr.fr': 'sfr.fr',
+    'bluewin.ch': 'bluewin.ch',
+    'bluewind.ch': 'bluewin.ch',
+    'bluewim.ch': 'bluewin.ch',
+    'iclud.com': 'icloud.com',
+    'icoud.com': 'icloud.com',
+    'iclaud.com': 'icloud.com',
+  };
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  let emailTouched = false;
+
+  function showEmailError(text) {
+    if (!emailError) return;
+    emailError.textContent = text;
+    emailError.classList.remove('hidden');
+    if (emailInput) {
+      emailInput.setAttribute('aria-invalid', 'true');
+      emailInput.classList.add('border-red-500', 'focus:ring-red-500');
+      emailInput.classList.remove('focus:ring-[#5B8A8F]');
+    }
+  }
+
+  function clearEmailError() {
+    if (emailError) {
+      emailError.textContent = '';
+      emailError.classList.add('hidden');
+    }
+    if (emailInput) {
+      emailInput.removeAttribute('aria-invalid');
+      emailInput.classList.remove('border-red-500', 'focus:ring-red-500');
+      emailInput.classList.add('focus:ring-[#5B8A8F]');
+    }
+  }
+
+  function checkTypoSuggestion(val) {
+    if (!emailSuggestion) return;
+    if (!val || !val.includes('@')) {
+      emailSuggestion.innerHTML = '';
+      emailSuggestion.classList.add('hidden');
+      return;
+    }
+    const parts = val.split('@');
+    if (parts.length !== 2) return;
+    const domain = parts[1].toLowerCase();
+    const suggestedDomain = COMMON_DOMAIN_TYPOS[domain];
+    if (suggestedDomain && suggestedDomain !== domain) {
+      const corrected = parts[0] + '@' + suggestedDomain;
+      emailSuggestion.innerHTML = 'Did you mean <button type="button" class="underline font-medium text-[#5B8A8F] hover:text-[#4A7377] cursor-pointer" id="fix-email-typo">' + corrected + '</button>?';
+      emailSuggestion.classList.remove('hidden');
+      const fixBtn = document.getElementById('fix-email-typo');
+      if (fixBtn) {
+        fixBtn.addEventListener('click', function() {
+          if (emailInput) {
+            emailInput.value = corrected;
+            clearEmailError();
+            emailSuggestion.innerHTML = '';
+            emailSuggestion.classList.add('hidden');
+            emailInput.focus();
+          }
+        });
+      }
+    } else {
+      emailSuggestion.innerHTML = '';
+      emailSuggestion.classList.add('hidden');
+    }
+  }
+
+  function validateEmailField(isSubmitting) {
+    if (!emailInput) return true;
+    const val = emailInput.value.trim();
+    if (!val) {
+      if (isSubmitting) {
+        showEmailError('Please enter your email.');
+        return false;
+      }
+      clearEmailError();
+      return true;
+    }
+    if (!emailRegex.test(val)) {
+      showEmailError('Please enter a valid email address (e.g. user@example.com).');
+      return false;
+    }
+    clearEmailError();
+    checkTypoSuggestion(val);
+    return true;
+  }
+
+  if (emailInput) {
+    // Punish late : validate on blur
+    emailInput.addEventListener('blur', function() {
+      if (emailInput.value.trim()) {
+        emailTouched = true;
+        validateEmailField(false);
+      }
+    });
+
+    // Reward early : dynamic validation on input once error has appeared
+    emailInput.addEventListener('input', function() {
+      const val = emailInput.value.trim();
+      if (emailTouched && emailInput.getAttribute('aria-invalid') === 'true') {
+        if (emailRegex.test(val)) {
+          clearEmailError();
+        }
+      }
+      checkTypoSuggestion(val);
+    });
+  }
 
   const isLocalhost = window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1' ||
@@ -250,9 +388,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!prenom) return showMessage('Please enter your first name.', 'error');
     if (!name) return showMessage('Please enter your last name.', 'error');
-    if (!email) return showMessage('Please enter your email.', 'error');
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return showMessage('Please enter a valid email address.', 'error');
+    if (!validateEmailField(true)) {
+      if (emailInput) emailInput.focus();
+      return;
+    }
     if (message.length < 10) return showMessage('Your message must contain at least 10 characters.', 'error');
     const linkCount = (message.match(/https?:\/\//g) || []).length;
     if (linkCount > 3) return showMessage('Too many links in the message.', 'error');
@@ -298,6 +437,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (response.ok && data.success) {
         form.reset();
+        clearEmailError();
+        if (emailSuggestion) {
+          emailSuggestion.innerHTML = '';
+          emailSuggestion.classList.add('hidden');
+        }
+        emailTouched = false;
         startedAt.value = String(Date.now());
         if (window.turnstile && turnstileWidgetId) window.turnstile.reset(turnstileWidgetId);
         showMessage('Thank you! Your message has been sent. I usually reply within 24 to 48 hours on business days.', 'success');
