@@ -4,6 +4,7 @@ title: Cours de mouvement libre à Fribourg | Fluance – Expression corporelle 
 description: Rejoignez nos cours hebdomadaires de mouvement libre en présentiel à Fribourg. Relâchez vos tensions et retrouvez une grande fluidité corporelle et mentale.
 locale: fr
 permalink: /presentiel/cours-hebdomadaires/
+templateEngineOverride: njk
 ---
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">

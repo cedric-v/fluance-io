@@ -4,6 +4,7 @@ title: Free movement classes in Fribourg | Fluance – Conscious body expression
 description: Join our weekly in-person classes to regain fluidity in your body.
 locale: en
 permalink: /en/presentiel/cours-hebdomadaires/
+templateEngineOverride: njk
 ---
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
