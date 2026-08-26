@@ -5,6 +5,7 @@ description: Découvrez l'approche globale de Fluance pour reconnecter votre cor
 locale: fr
 permalink: /a-propos/approche-fluance/
 ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
+templateEngineOverride: njk
 ---
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
@@ -74,6 +75,11 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
       <p class="text-lg text-[#3E3A35] leading-relaxed">
         Pas besoin de postures complexes ou de prérequis athlétiques. Les pratiques proposées sont accessibles à tous et conçues pour procurer un soulagement immédiat et un sentiment de liberté intérieure. C'est une invitation à lâcher le mental pour revenir dans l'intelligence du corps.
       </p>
+      <div class="my-8">
+        <div class="aspect-video w-full max-w-3xl mx-auto rounded-lg overflow-hidden">
+          <div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/c7298a71-73a9-41cf-a421-a4f722b5c884?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;fullscreen;" allowfullscreen="true"></iframe></div>
+        </div>
+      </div>
     </div>
 
     <div class="space-y-4 pt-6 border-t border-fluance/10">

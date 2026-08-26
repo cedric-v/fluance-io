@@ -5,6 +5,7 @@ description: Discover Fluance's holistic approach for body and mind fluidity.
 locale: en
 permalink: /en/a-propos/approche-fluance/
 ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
+templateEngineOverride: njk
 ---
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-16 space-y-8">
@@ -19,6 +20,11 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
   </header>
 
   <article class="prose prose-lg max-w-none space-y-8 text-[#1f1f1f]">
+    <div class="my-8">
+      <div class="aspect-video w-full max-w-3xl mx-auto rounded-lg overflow-hidden">
+        <div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/d09798a7-faf4-4117-9b98-54edad2b7aec?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="true"></iframe></div>
+      </div>
+    </div>
     <div class="space-y-6">
       <h2 class="text-2xl font-semibold text-fluance text-center">The tripod of vitality:</h2>
       <p class="text-xl text-[#3E3A35] font-medium text-center">
@@ -69,6 +75,11 @@ ogImage: assets/img/cedric-dehors-fluance-reduit.jpeg
       <p class="text-lg text-[#3E3A35] leading-relaxed">
         No need for complex postures or athletic prerequisites. The practices offered are accessible to everyone and designed to provide immediate relief and a sense of inner freedom. It's an invitation to let go of the mind to return to the body's intelligence.
       </p>
+      <div class="my-8">
+        <div class="aspect-video w-full max-w-3xl mx-auto rounded-lg overflow-hidden">
+          <div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/479894/c7298a71-73a9-41cf-a421-a4f722b5c884?autoplay=false&loop=false&muted=false&preload=true&responsive=true" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;fullscreen;" allowfullscreen="true"></iframe></div>
+        </div>
+      </div>
     </div>
 
     <div class="space-y-4 pt-6 border-t border-fluance/10">
