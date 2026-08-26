@@ -36,11 +36,13 @@ templateEngineOverride: njk
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label for="contact-prenom" class="block text-sm font-medium text-gray-700 mb-2">Prénom <span class="text-red-500">*</span></label>
-            <input type="text" id="contact-prenom" name="prenom" required maxlength="60" autocomplete="given-name" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
+            <input type="text" id="contact-prenom" name="prenom" required maxlength="60" autocomplete="given-name" aria-describedby="contact-prenom-error" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent transition-colors">
+            <p id="contact-prenom-error" class="hidden text-sm text-red-600 mt-1" role="alert"></p>
           </div>
           <div>
             <label for="contact-name" class="block text-sm font-medium text-gray-700 mb-2">Nom <span class="text-red-500">*</span></label>
-            <input type="text" id="contact-name" name="name" required maxlength="120" autocomplete="family-name" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent">
+            <input type="text" id="contact-name" name="name" required maxlength="120" autocomplete="family-name" aria-describedby="contact-name-error" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent transition-colors">
+            <p id="contact-name-error" class="hidden text-sm text-red-600 mt-1" role="alert"></p>
           </div>
         </div>
 
@@ -48,12 +50,13 @@ templateEngineOverride: njk
           <div>
             <label for="contact-email" class="block text-sm font-medium text-gray-700 mb-2">Votre email <span class="text-red-500">*</span></label>
             <input type="email" id="contact-email" name="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="contact-email-error contact-email-suggestion" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent transition-colors">
-            <p id="contact-email-error" class="hidden text-xs text-red-600 mt-1" role="alert"></p>
+            <p id="contact-email-error" class="hidden text-sm text-red-600 mt-1" role="alert"></p>
             <p id="contact-email-suggestion" class="hidden text-xs text-slate-600 mt-1"></p>
           </div>
           <div>
             <label for="contact-phone" class="block text-sm font-medium text-gray-700 mb-2">Téléphone mobile <span class="text-xs text-gray-500 font-normal">(optionnel)</span></label>
-            <input type="tel" id="contact-phone" name="phone" maxlength="30" autocomplete="tel" inputmode="tel" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" placeholder="+41 79 123 45 67" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent transition-colors">
+            <input type="tel" id="contact-phone" name="phone" maxlength="30" autocomplete="tel" inputmode="tel" aria-describedby="contact-phone-error" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" placeholder="+41 79 123 45 67" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent transition-colors">
+            <p id="contact-phone-error" class="hidden text-sm text-red-600 mt-1" role="alert"></p>
           </div>
         </div>
 
@@ -64,8 +67,9 @@ templateEngineOverride: njk
 
         <div>
           <label for="contact-message" class="block text-sm font-medium text-gray-700 mb-2">Votre message <span class="text-red-500">*</span></label>
-          <textarea id="contact-message" name="message" required rows="6" maxlength="5000" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent"></textarea>
-          <p class="text-xs text-gray-500 mt-1">Minimum 10 caractères.</p>
+          <textarea id="contact-message" name="message" required rows="6" maxlength="5000" aria-describedby="contact-message-error contact-message-hint" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent transition-colors"></textarea>
+          <p id="contact-message-hint" class="text-xs text-gray-500 mt-1">Minimum 10 caractères.</p>
+          <p id="contact-message-error" class="hidden text-sm text-red-600 mt-1" role="alert"></p>
         </div>
 
         <div id="contact-form-message" class="hidden text-sm" role="status" aria-live="polite"></div>
@@ -211,29 +215,75 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  let emailTouched = false;
+  // Téléphone optionnel : validé seulement s'il est rempli.
+  // Format international souple : +, chiffres, espaces, points, tirets, parenthèses ; min. 7 chiffres.
+  const phoneRegex = /^\+?[0-9\s().-]{7,20}$/;
 
-  function showEmailError(text) {
-    if (!emailError) return;
-    emailError.textContent = text;
-    emailError.classList.remove('hidden');
-    if (emailInput) {
-      emailInput.setAttribute('aria-invalid', 'true');
-      emailInput.classList.add('border-red-500', 'focus:ring-red-500');
-      emailInput.classList.remove('focus:ring-[#5B8A8F]');
+  // ---- Validation inline générique : erreur sous le champ, aria-invalid, bordure rouge ----
+  function showError(input, errEl, text) {
+    if (!errEl) return;
+    errEl.textContent = text;
+    errEl.classList.remove('hidden');
+    input.setAttribute('aria-invalid', 'true');
+    input.classList.add('border-red-500', 'focus:ring-red-500');
+    input.classList.remove('focus:ring-[#5B8A8F]');
+  }
+
+  function clearError(input, errEl) {
+    if (errEl) {
+      errEl.textContent = '';
+      errEl.classList.add('hidden');
+    }
+    input.removeAttribute('aria-invalid');
+    input.classList.remove('border-red-500', 'focus:ring-red-500');
+    input.classList.add('focus:ring-[#5B8A8F]');
+  }
+
+  // Retourne le message d'erreur pour une valeur donnée ('' si valide).
+  function getValidationError(id, val) {
+    switch (id) {
+      case 'contact-prenom':
+        return val ? '' : 'Veuillez indiquer votre prénom.';
+      case 'contact-name':
+        return val ? '' : 'Veuillez indiquer votre nom.';
+      case 'contact-email':
+        if (!val) return 'Veuillez indiquer votre email.';
+        return emailRegex.test(val) ? '' : 'Veuillez entrer une adresse email valide (ex. votre@email.com).';
+      case 'contact-phone':
+        // Champ optionnel : vide = valide.
+        if (!val) return '';
+        return phoneRegex.test(val) && (val.match(/[0-9]/g) || []).length >= 7 ? '' : 'Veuillez entrer un numéro de téléphone valide (ex. +41 79 123 45 67).';
+      case 'contact-message':
+        if (!val) return 'Veuillez écrire votre message.';
+        return val.length >= 10 ? '' : 'Votre message doit contenir au moins 10 caractères.';
+      default:
+        return '';
     }
   }
 
-  function clearEmailError() {
-    if (emailError) {
-      emailError.textContent = '';
-      emailError.classList.add('hidden');
+  // Champs validés inline (le sujet et le honeypot sont exclus).
+  const VALIDATED_FIELDS = ['contact-prenom', 'contact-name', 'contact-email', 'contact-phone', 'contact-message'];
+  const touchedFields = {};
+
+  function validateField(id, isSubmitting) {
+    const input = document.getElementById(id);
+    const errEl = document.getElementById(id + '-error');
+    if (!input || !errEl) return true;
+    const val = input.value.trim();
+    const error = getValidationError(id, val);
+    if (error) {
+      // Punish late : au blur on n'affiche l'erreur que si l'utilisateur a saisi quelque chose,
+      // ou s'il s'agit d'un champ requis laissé vide lors de la soumission.
+      if (isSubmitting || val || touchedFields[id]) {
+        showError(input, errEl, error);
+        return false;
+      }
+      clearError(input, errEl);
+      return true;
     }
-    if (emailInput) {
-      emailInput.removeAttribute('aria-invalid');
-      emailInput.classList.remove('border-red-500', 'focus:ring-red-500');
-      emailInput.classList.add('focus:ring-[#5B8A8F]');
-    }
+    clearError(input, errEl);
+    if (id === 'contact-email' && val) checkTypoSuggestion(val);
+    return true;
   }
 
   function checkTypoSuggestion(val) {
@@ -256,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fixBtn.addEventListener('click', function() {
           if (emailInput) {
             emailInput.value = corrected;
-            clearEmailError();
+            clearError(emailInput, emailError);
             emailSuggestion.innerHTML = '';
             emailSuggestion.classList.add('hidden');
             emailInput.focus();
@@ -269,45 +319,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function validateEmailField(isSubmitting) {
-    if (!emailInput) return true;
-    const val = emailInput.value.trim();
-    if (!val) {
-      if (isSubmitting) {
-        showEmailError('Veuillez indiquer votre email.');
-        return false;
+  // Validation à la sortie du champ (blur) : feedback immédiat, jamais à chaque frappe.
+  // Reward early : une fois l'erreur affichée, elle disparaît dès que la saisie redevient valide.
+  VALIDATED_FIELDS.forEach(function(id) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.addEventListener('blur', function() {
+      touchedFields[id] = true;
+      validateField(id, false);
+    });
+    input.addEventListener('input', function() {
+      if (input.getAttribute('aria-invalid') === 'true') {
+        validateField(id, false);
       }
-      clearEmailError();
-      return true;
-    }
-    if (!emailRegex.test(val)) {
-      showEmailError('Veuillez entrer une adresse email valide (ex. votre@email.com).');
-      return false;
-    }
-    clearEmailError();
-    checkTypoSuggestion(val);
-    return true;
-  }
-
-  if (emailInput) {
-    // Punish late : validation au blur
-    emailInput.addEventListener('blur', function() {
-      if (emailInput.value.trim()) {
-        emailTouched = true;
-        validateEmailField(false);
+      if (id === 'contact-email') {
+        checkTypoSuggestion(input.value.trim());
       }
     });
+  });
 
-    // Reward early : validation dynamique à la saisie dès qu'une erreur était apparue
-    emailInput.addEventListener('input', function() {
-      const val = emailInput.value.trim();
-      if (emailTouched && emailInput.getAttribute('aria-invalid') === 'true') {
-        if (emailRegex.test(val)) {
-          clearEmailError();
-        }
-      }
-      checkTypoSuggestion(val);
+  // Au submit : marque tous les champs invalides en rouge et place le focus sur le premier.
+  function validateAllFields() {
+    let firstInvalid = null;
+    VALIDATED_FIELDS.forEach(function(id) {
+      const ok = validateField(id, true);
+      if (!ok && !firstInvalid) firstInvalid = document.getElementById(id);
     });
+    if (firstInvalid) firstInvalid.focus();
+    return !firstInvalid;
   }
 
   const isLocalhost = window.location.hostname === 'localhost' ||
@@ -393,13 +432,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const subject = form.elements['subject'].value.trim();
     const message = form.elements['message'].value.trim();
 
-    if (!prenom) return showMessage('Veuillez indiquer votre prénom.', 'error');
-    if (!name) return showMessage('Veuillez indiquer votre nom.', 'error');
-    if (!validateEmailField(true)) {
-      if (emailInput) emailInput.focus();
-      return;
-    }
-    if (message.length < 10) return showMessage('Votre message doit contenir au moins 10 caractères.', 'error');
+    // Validation inline de tous les champs : chaque champ invalide affiche son message
+    // sous le champ (bordure rouge + focus sur le premier champ en erreur).
+    if (!validateAllFields()) return;
+
     const linkCount = (message.match(/https?:\/\//g) || []).length;
     if (linkCount > 3) return showMessage('Trop de liens dans le message.', 'error');
 
@@ -445,12 +481,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (response.ok && data.success) {
         form.reset();
-        clearEmailError();
+        VALIDATED_FIELDS.forEach(function(id) {
+          const input = document.getElementById(id);
+          if (input) clearError(input, document.getElementById(id + '-error'));
+        });
+        Object.keys(touchedFields).forEach(function(k) { delete touchedFields[k]; });
         if (emailSuggestion) {
           emailSuggestion.innerHTML = '';
           emailSuggestion.classList.add('hidden');
         }
-        emailTouched = false;
         startedAt.value = String(Date.now());
         if (window.turnstile && turnstileWidgetId) window.turnstile.reset(turnstileWidgetId);
         showMessage('Merci ! Votre message a bien été envoyé. Je vous réponds généralement sous 24 à 48h les jours ouvrés.', 'success');
