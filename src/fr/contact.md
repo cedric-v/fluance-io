@@ -44,11 +44,17 @@ templateEngineOverride: njk
           </div>
         </div>
 
-        <div>
-          <label for="contact-email" class="block text-sm font-medium text-gray-700 mb-2">Votre email <span class="text-red-500">*</span></label>
-          <input type="email" id="contact-email" name="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="contact-email-error contact-email-suggestion" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent transition-colors">
-          <p id="contact-email-error" class="hidden text-xs text-red-600 mt-1" role="alert"></p>
-          <p id="contact-email-suggestion" class="hidden text-xs text-slate-600 mt-1"></p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="contact-email" class="block text-sm font-medium text-gray-700 mb-2">Votre email <span class="text-red-500">*</span></label>
+            <input type="email" id="contact-email" name="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="contact-email-error contact-email-suggestion" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent transition-colors">
+            <p id="contact-email-error" class="hidden text-xs text-red-600 mt-1" role="alert"></p>
+            <p id="contact-email-suggestion" class="hidden text-xs text-slate-600 mt-1"></p>
+          </div>
+          <div>
+            <label for="contact-phone" class="block text-sm font-medium text-gray-700 mb-2">Téléphone mobile <span class="text-xs text-gray-500 font-normal">(optionnel)</span></label>
+            <input type="tel" id="contact-phone" name="phone" maxlength="30" autocomplete="tel" inputmode="tel" data-1p-ignore="true" data-lpignore="true" data-form-type="other" data-bwignore="true" placeholder="+41 79 123 45 67" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5B8A8F] focus:border-transparent transition-colors">
+          </div>
         </div>
 
         <div>
@@ -383,6 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const prenom = form.elements['prenom'].value.trim();
     const name = form.elements['name'].value.trim();
     const email = form.elements['email'].value.trim();
+    const phone = (form.elements['phone'] ? form.elements['phone'].value : '').trim();
     const subject = form.elements['subject'].value.trim();
     const message = form.elements['message'].value.trim();
 
@@ -417,6 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
         prenom: prenom,
         name: name,
         email: email,
+        phone: phone,
         subject: subject,
         message: message,
         contact_started_at: startedAt.value,

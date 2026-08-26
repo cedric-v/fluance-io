@@ -619,6 +619,7 @@ function buildContactEmailHtml(site, payload) {
         <p style="${eyebrowStyle}">Nouveau message</p>
         <h1 style="margin:0 0 22px;font-size:30px;line-height:1.2;color:#2D2A26;">${escapeHtml(site.siteLabel)}</h1>
         <p style="margin:0 0 10px;"><strong>Email :</strong> ${escapeHtml(payload.email)}</p>
+        ${payload.phone ? `<p style="margin:0 0 10px;"><strong>Téléphone :</strong> ${escapeHtml(payload.phone)}</p>` : ''}
         <p style="margin:0 0 10px;"><strong>Sujet :</strong> ${escapeHtml(payload.subject || '(sans sujet)')}</p>
         ${payload.prenom ? `<p style="margin:0 0 10px;"><strong>Prénom :</strong> ${escapeHtml(payload.prenom)}</p>` : ''}
         <p style="margin:0 0 10px;"><strong>Nom :</strong> ${escapeHtml(payload.nom || payload.name)}</p>
@@ -1038,6 +1039,7 @@ exports.sendContactEmail = onRequest(
 
       try {
         const email = normalizeEmail(getFormValue(request, 'email'));
+        const phone = truncate(getFormValue(request, 'phone') || getFormValue(request, 'telephone') || '', 40);
         const prenom = normalizeName(getFormValue(request, 'prenom') || '');
         const nom = normalizeName(
             getFormValue(request, 'name') ||
@@ -1230,12 +1232,13 @@ exports.sendContactEmail = onRequest(
             nom,
             name,
             email,
+            phone,
             subject,
             message,
             optinUrl,
             referer: getHeader(request, 'Referer') || '',
           }),
-          textContent: `${site.siteLabel}\n${prenom ? `Prénom: ${prenom}\n` : ''}Nom: ${nom || name}\nEmail: ${email}\nSujet: ${subject}\n\n${message}`,
+          textContent: `${site.siteLabel}\n${prenom ? `Prénom: ${prenom}\n` : ''}Nom: ${nom || name}\nEmail: ${email}\n${phone ? `Téléphone: ${phone}\n` : ''}Sujet: ${subject}\n\n${message}`,
           apiKey: mailjetApiKey,
           apiSecret: mailjetApiSecret,
           fromEmail: TRANSACTIONAL_FROM_EMAIL,
@@ -1257,6 +1260,7 @@ exports.sendContactEmail = onRequest(
           site_source: site.siteId,
           blog_source: site.blogSource,
           email,
+          telephone: phone || null,
           prenom,
           nom: name,
           sujet: subject,
