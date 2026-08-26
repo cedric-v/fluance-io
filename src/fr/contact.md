@@ -102,13 +102,23 @@ templateEngineOverride: njk
       </div>
 
       <div class="section-card p-8 bg-white space-y-4">
-        <h2 class="text-xl font-semibold text-fluance">Adresse</h2>
+        <h2 class="text-xl font-semibold text-fluance">Repère géographique</h2>
         <p class="text-[#3E3A35]">
           Instants Zen Sàrl<br>
           Case postale<br>
           1782 Belfaux<br>
           Suisse
         </p>
+        <div class="aspect-[16/10] overflow-hidden rounded-lg bg-[#e2e8f0]">
+          <iframe
+            title="Carte de Belfaux, Suisse"
+            src="https://www.google.com/maps?q=1782+Belfaux,+Suisse&amp;output=embed"
+            class="w-full h-full border-0"
+            loading="lazy"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen></iframe>
+        </div>
+        <a href="https://www.google.com/maps/search/?api=1&amp;query=1782+Belfaux+Suisse" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-fluance hover:underline inline-block">Ouvrir dans Google Maps →</a>
       </div>
     </aside>
   </div>
