@@ -154,11 +154,14 @@ DOI / relances DOI / emails newsletter lies aux opt-ins:
 
 - From: `fluance@actu.fluance.io`
 - Name: `Cedric de Fluance`
+- Reply-To: `support@fluance.io` (les reponses du visiteur arrivent au support,
+  pas dans la boite de l'alias d'expedition)
 
 Transactionnel contact:
 
 - From: `support@actu.fluance.io`
 - Name: `Support de Fluance`
+- Reply-To: l'adresse du visiteur (repondre au mail renvoie au visiteur)
 - To interne: `support@fluance.io`
 
 ## Invariants a ne pas casser

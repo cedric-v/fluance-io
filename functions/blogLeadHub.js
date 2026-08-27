@@ -8,6 +8,8 @@ const DEFAULT_LIST_ID = 10524140;
 const CONTACT_INTERNAL_TO = 'support@fluance.io';
 const NEWSLETTER_FROM_EMAIL = 'fluance@actu.fluance.io';
 const NEWSLETTER_FROM_NAME = 'Cédric de Fluance';
+const NEWSLETTER_REPLY_TO_EMAIL = 'support@fluance.io';
+const NEWSLETTER_REPLY_TO_NAME = 'Support de Fluance';
 const TRANSACTIONAL_FROM_EMAIL = 'support@actu.fluance.io';
 const TRANSACTIONAL_FROM_NAME = 'Support de Fluance';
 const CENTRAL_PRIVACY_URL = 'https://fluance.io/mentions-legales/';
@@ -960,6 +962,8 @@ exports.captureLead = onRequest(
           apiSecret: mailjetApiSecret,
           fromEmail: NEWSLETTER_FROM_EMAIL,
           fromName: NEWSLETTER_FROM_NAME,
+          replyToEmail: NEWSLETTER_REPLY_TO_EMAIL,
+          replyToName: NEWSLETTER_REPLY_TO_NAME,
         }).catch(async (error) => {
           await logLeadEvent('mailjet_send_failed_optin', {
             site_source: site.siteId,
