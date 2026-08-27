@@ -34,6 +34,8 @@ For DOI and newsletter-related emails:
 
 - from email: `fluance@actu.fluance.io`
 - from name: `Cedric de Fluance`
+- reply-to email: `support@fluance.io`
+- reply-to name: `Support de Fluance`
 
 For contact transactional emails:
 
@@ -59,10 +61,11 @@ For contact transactional emails:
 - final gift access after DOI is controlled by Fluance confirmation flow
 - central privacy policy URL is `https://fluance.io/mentions-legales/`
 - operational monitoring now includes:
-  - `sendBlogLeadsDailyDigest` at `08:00 Europe/Zurich`
+  - `sendBlogLeadsMonthlyDigest` at `08:00 Europe/Zurich` on the 1st of each month (30-day summary, always sent)
+  - `sendBlogLeadsIssueReport` daily at `08:00 Europe/Zurich` (sent only when critical issues occurred in the last 24h)
   - `sendBlogLeadOpsAlerts` every `15 minutes`
   - deduplicated alert documents in `journal_alertes_ops`
-  - daily digest history in `digest_ops_history`
+  - digest and issue report history in `digest_ops_history` (with `type`: `issue_report` or `monthly_digest`, and `sent` flag)
 
 ## Future improvements already anticipated
 

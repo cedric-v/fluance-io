@@ -41,9 +41,12 @@ La fonction scheduled actuelle:
 
 ## Pilotage quotidien
 
-Email attendu:
+Emails attendus:
 
-- un digest quotidien envoye a `support@fluance.io`
+- un rapport quotidien envoye a `support@fluance.io` UNIQUEMENT si des soucis
+  critiques ont ete detectes sur les dernieres 24h (aucun e-mail si tout est normal)
+- un digest mensuel envoye a `support@fluance.io` le 1er de chaque mois,
+  systematiquement, couvrant les 30 derniers jours
 
 Contenu attendu:
 
@@ -68,6 +71,16 @@ Si une alerte arrive:
 2. verifier `journal_formulaires_contact`
 3. verifier l'etat Mailjet si l'alerte concerne un envoi
 4. verifier les logs Firebase Functions si l'alerte concerne une erreur serveur
+   (lien inclus dans le pied de page de chaque e-mail d'alerte)
+5. verifier `digest_ops_history` (type `issue_report`) pour l'historique des
+   rapports quotidiens, meme ceux sans e-mail (`sent: false`)
+6. si aucune alerte n'arrive alors qu'un incident est suspecte, verifier que les
+   fonctions planifiees tournent: logs de `sendBlogLeadsIssueReport` et
+   `sendBlogLeadOpsAlerts` dans la console Firebase
+
+Note migration (terminee): l'ancienne fonction `sendBlogLeadsDailyDigest`
+(digest quotidien systematique) a ete supprimee au profit du rapport
+conditionnel `sendBlogLeadsIssueReport` et du digest mensuel.
 
 ## Cas particulier important
 

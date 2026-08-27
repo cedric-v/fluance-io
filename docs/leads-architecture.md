@@ -77,13 +77,17 @@ Important:
 
 Deux mecanismes d'exploitation existent en plus des journaux Firestore:
 
-- digest quotidien `sendBlogLeadsDailyDigest`
+- digest mensuel `sendBlogLeadsMonthlyDigest`
+- rapport quotidien des soucis `sendBlogLeadsIssueReport`
 - alertes critiques `sendBlogLeadOpsAlerts`
+- purge des journaux `cleanupOpsJournals`
 
-Digest quotidien:
+Digest mensuel:
 
-- horaire: `08:00 Europe/Zurich`
+- horaire: `08:00 Europe/Zurich` le 1er de chaque mois
+- fenetre: 30 derniers jours
 - destination: `support@fluance.io`
+- envoye systematiquement, meme sans incident
 - resume par blog:
   - opt-ins captures
   - confirmations DOI
@@ -92,8 +96,19 @@ Digest quotidien:
   - formulaires contact recus
   - echecs Turnstile
   - erreurs critiques
+- avertissements de fraicheur (rapports quotidiens manquants, site a zero opt-in)
+- liens utiles: logs Firebase Console et runbook
 
-Alertes critiques:
+Rapport quotidien des soucis:
+
+- horaire: `08:00 Europe/Zurich`
+- fenetre: dernieres 24h
+- destination: `support@fluance.io`
+- envoi conditionnel: aucun e-mail si aucune erreur critique detectee
+  (echecs Mailjet, erreurs internes) sur les dernieres 24h
+- trace ecrite dans `digest_ops_history` meme sans e-mail (champ `sent`)
+
+Alertes critiques (temps reel):
 
 - cadence: toutes les `15 minutes`
 - destination: `support@fluance.io`
@@ -110,6 +125,28 @@ Collections Firestore associees:
 - `newsletterConfirmations`
 - `journal_alertes_ops`
 - `digest_ops_history`
+
+Le code est separe en deux:
+
+- `functions/blogOpsReporting.js`: fonctions pures (construction des resumes,
+  classification des evenements, formatage des e-mails) — sans dependance Firebase
+- `functions/index.js`: fonctions planifiees, acces Firestore et envoi Mailjet
+
+Tests: `functions/test/blogOpsReporting.test.js` (`npm test` dans `functions/`).
+
+### Retention des journaux
+
+Les collections de journalisation sont purgees automatiquement:
+
+- fonction planifiee `cleanupOpsJournals` (quotidienne, 04:30 Europe/Zurich)
+- `journal_evenements_leads`: suppression au-dela de `90 jours` (champ `createdAt`)
+- `journal_formulaires_contact`: suppression au-dela de `180 jours` (champ `createdAt`)
+- `journal_alertes_ops`: suppression au-dela de `180 jours` (champ `sent_at`)
+- `digest_ops_history`: conservation `365 jours` (champ `sent_at`)
+
+Variante possible: un TTL Firestore natif sur ces memes champs
+(console GCP ou `gcloud firestore fields ttls update <champ> --collection-group=<collection> --enable-ttl`),
+auquel cas la fonction de purge peut etre retiree.
 
 ## Expéditeurs Mailjet
 
