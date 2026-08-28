@@ -9811,6 +9811,7 @@ exports.sendBlogLeadsIssueReport = onSchedule(
               'Support de Fluance',
           );
           sent = true;
+          console.log(`📧 Issue report sent: ${criticalErrors.length} critical issue(s) reported`);
         } catch (error) {
           sendError = error.message;
           console.error('❌ Failed to send issue report email:', error.message);
@@ -9895,6 +9896,7 @@ exports.sendBlogLeadsMonthlyDigest = onSchedule(
             'Support de Fluance',
         );
         sent = true;
+        console.log(`📧 Monthly digest sent: ${warnings.length} warning(s), ${criticalErrors.length} critical issue(s)`);
       } catch (error) {
         sendError = error.message;
         console.error('❌ Failed to send monthly digest email:', error.message);
