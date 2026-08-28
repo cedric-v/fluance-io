@@ -9923,6 +9923,11 @@ exports.sendBlogLeadsMonthlyDigest = onSchedule(
  * Purge quotidienne des journaux ops (04:30, Europe/Zurich).
  * Supprime par lots les documents au-dela de leur duree de retention
  * pour eviter une croissance non bornee des collections.
+ *
+ * Timeout volontairement a 300s (contre 60s par defaut): permet de rattraper
+ * un stock de documents si la fonction n'a pas tourne pendant un temps.
+ * L'execution s'arrete des que les collections sont propres (facturation
+ * au temps reel uniquement). Voir docs/leads-architecture.md (Retention).
  */
 exports.cleanupOpsJournals = onSchedule(
     {
@@ -9930,6 +9935,7 @@ exports.cleanupOpsJournals = onSchedule(
       timeZone: 'Europe/Zurich',
       secrets: [],
       region: 'europe-west1',
+      timeoutSeconds: 300,
     },
     async (_event) => {
       const now = new Date();

@@ -144,6 +144,13 @@ Les collections de journalisation sont purgees automatiquement:
 - `journal_alertes_ops`: suppression au-dela de `180 jours` (champ `sent_at`)
 - `digest_ops_history`: conservation `365 jours` (champ `sent_at`)
 
+La fonction tourne avec un timeout de `300 secondes` (defaut: 60s) pour pouvoir
+rattraper un stock de documents apres une interruption prolongee; l'execution
+s'arrete des que les collections sont propres (facturee au temps reel uniquement).
+Point de controle: si un jour les logs montrent une execution proche du timeout
+ou une erreur `deadline exceeded`, reduire la retention ou passer les purges
+en TTL Firestore natif (voir ci-dessus).
+
 Variante possible: un TTL Firestore natif sur ces memes champs
 (console GCP ou `gcloud firestore fields ttls update <champ> --collection-group=<collection> --enable-ttl`),
 auquel cas la fonction de purge peut etre retiree.

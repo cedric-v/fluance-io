@@ -57,6 +57,16 @@ Contenu attendu:
 - contacts recus
 - erreurs critiques
 
+## Purge des journaux (cleanupOpsJournals)
+
+- tourne chaque nuit a `04:30 Europe/Zurich`, logs contenant le prefixe `🧹`
+- nombre de documents purges par collection affiche dans les logs
+- timeout: `300 secondes` (defaut 60s) pour rattraper un stock apres une
+  interruption; l'execution s'arrete des que tout est purge
+- si un jour l'execution approche le timeout ou renvoie `deadline exceeded`:
+  reduire la retention ou passer au TTL Firestore natif
+  (voir docs/leads-architecture.md, section Retention des journaux)
+
 ## Alertes critiques
 
 Emails d'alerte attendus seulement si:
