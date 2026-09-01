@@ -5,13 +5,14 @@ description: "Réservez votre place pour les cours Fluance en présentiel à Fri
 locale: fr
 permalink: /presentiel/reserver/
 markdownAlternate: /agent/presentiel-reserver-fr.md
+# Pré-connexion aux origines tierces utilisées par la page : l'API de
+# réservation (liste des cours) et Stripe. Injecté dans le <head> par
+# base.njk — réduit la latence (DNS + TLS) avant le fetch des cours.
+preconnects:
+  - href: https://europe-west1-fluance-protected-content.cloudfunctions.net
+    crossorigin: true
+  - href: https://js.stripe.com
 ---
-
-<!-- Pré-connexion aux origines tierces utilisées par la page : l'API de
-réservation (liste des cours) et Stripe. Réduit la latence de chargement
-(DNS + TLS) avant le fetch des cours par booking.js. -->
-<link rel="preconnect" href="https://europe-west1-fluance-protected-content.cloudfunctions.net" crossorigin>
-<link rel="preconnect" href="https://js.stripe.com">
 
 <section class="max-w-6xl mx-auto px-6 md:px-12 py-16">
   <header class="text-center mb-12">
@@ -87,4 +88,4 @@ réservation (liste des cours) et Stripe. Réduit la latence de chargement
 <!-- Script de réservation -->
 {% stripeConfig %}
 <script src="https://js.stripe.com/v3/" async></script>
-<script src="{{ '/assets/js/booking.js' | relativeUrl }}?v={{ version }}"></script>
+<script src="{{ '/assets/js/booking.js' | relativeUrl }}?v={{ version }}" defer></script>

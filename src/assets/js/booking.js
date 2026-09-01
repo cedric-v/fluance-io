@@ -325,8 +325,16 @@
     // Charger les cours disponibles (cache local affiché instantanément)
     loadAvailableCourses();
 
-    // Mettre à jour périodiquement
-    setInterval(loadAvailableCourses, CONFIG.REFRESH_INTERVAL);
+    // Mettre à jour périodiquement — uniquement quand l'onglet est visible
+    // (inutile de solliciter l'API en arrière-plan)
+    setInterval(() => {
+      if (!document.hidden) loadAvailableCourses();
+    }, CONFIG.REFRESH_INTERVAL);
+
+    // Rafraîchir immédiatement au retour sur l'onglet
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) loadAvailableCourses();
+    });
 
     // Écouter les événements du formulaire
     setupFormListeners();
@@ -347,13 +355,26 @@
     stripe = Stripe(CONFIG.STRIPE_PUBLISHABLE_KEY);
   }
 
+  // Garde anti-concurrence : évite les requêtes qui se chevauchent
+  // (rafraîchissement 30 s + retour sur l'onglet + retry manuel)
+  let coursesFetchInFlight = false;
+
   /**
    * Charge et affiche tous les cours disponibles.
    * Affiche d'abord le cache local (instantané), puis rafraîchit en arrière-plan.
    */
   async function loadAvailableCourses() {
     const container = document.getElementById('courses-list');
-    if (!container) return;
+    if (!container || coursesFetchInFlight) return;
+    coursesFetchInFlight = true;
+    try {
+      await loadAvailableCoursesInner(container);
+    } finally {
+      coursesFetchInFlight = false;
+    }
+  }
+
+  async function loadAvailableCoursesInner(container) {
 
     // 1. Affichage immédiat du cache local (stale-while-revalidate)
     const hasRenderedCourses = container.querySelector('[data-course-id], [data-month-pill]') !== null;
