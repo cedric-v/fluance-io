@@ -14,7 +14,6 @@ const firebaseConfig = {
   storageBucket: '{{ env.FIREBASE_STORAGE_BUCKET }}',
   messagingSenderId: '{{ env.FIREBASE_MESSAGING_SENDER_ID }}',
   appId: '{{ env.FIREBASE_APP_ID }}',
-  measurementId: '{{ env.FIREBASE_MEASUREMENT_ID }}',
 };
 
 
@@ -196,7 +195,7 @@ function showEmailCaptureModal(locale = 'fr') {
         desc: 'Please enter your details to finalize your subscription and receive your access.',
         placeholderFirstName: 'Your first name',
         placeholderLastName: 'Your last name',
-        placeholderEmail: 'your@email.com',
+        placeholderEmail: 'you@example.com',
         button: 'Continue to payment',
         error: 'Please fill all fields and enter a valid email.'
       }

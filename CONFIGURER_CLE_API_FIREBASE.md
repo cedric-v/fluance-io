@@ -16,7 +16,6 @@ FIREBASE_PROJECT_ID=fluance-protected-content
 FIREBASE_STORAGE_BUCKET=fluance-protected-content.firebasestorage.app
 FIREBASE_MESSAGING_SENDER_ID=173938686776
 FIREBASE_APP_ID=1:173938686776:web:891caf76098a42c3579fcd
-FIREBASE_MEASUREMENT_ID=G-CWPNXDQEYR
 ```
 
 ### Étape 2 : Configurer GitHub pour le déploiement

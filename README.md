@@ -433,7 +433,6 @@ This project uses environment variables for:
 | `FIREBASE_STORAGE_BUCKET` | Firebase storage bucket |
 | `FIREBASE_MESSAGING_SENDER_ID` | Firebase sender ID |
 | `FIREBASE_APP_ID` | Firebase app ID |
-| `FIREBASE_MEASUREMENT_ID` | Firebase measurement ID |
 
 ---
 
