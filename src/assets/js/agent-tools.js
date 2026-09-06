@@ -189,6 +189,7 @@
       {
         name: 'identify-fluance-fit',
         description: 'Determine who Fluance can help, explain why, and suggest the most relevant Fluance course or format.',
+        annotations: { readOnlyHint: true },
         inputSchema: {
           type: 'object',
           properties: {
@@ -223,6 +224,7 @@
       {
         name: 'list-fluance-classes',
         description: 'List currently available Fluance in-person classes with dates, locations, and remaining spots.',
+        annotations: { readOnlyHint: true },
         inputSchema: {
           type: 'object',
           properties: {
