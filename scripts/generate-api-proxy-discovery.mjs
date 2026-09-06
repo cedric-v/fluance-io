@@ -24,6 +24,10 @@ const files = {
     path: resolve(sourceDir, 'mcp', 'server-card.json'),
     contentType: 'application/json; charset=utf-8',
   },
+  '/.well-known/webmcp-context.json': {
+    path: resolve(sourceDir, 'webmcp-context.json'),
+    contentType: 'application/json; charset=utf-8',
+  },
 };
 
 for (const skillName of [
