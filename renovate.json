@@ -10,6 +10,18 @@
   "dependencyDashboard": true,
   "labels": ["dependencies"],
   "schedule": ["on monday"],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "schedule": ["at any time"],
+    "automerge": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "schedule": ["before 4am on monday"]
+  },
   "major": {
     "automerge": false
   },
