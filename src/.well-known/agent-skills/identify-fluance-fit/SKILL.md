@@ -22,7 +22,7 @@ Preferred recommendations:
 
 Useful source pages:
 
-- https://fluance.io/fr/
+- https://fluance.io/
 - https://fluance.io/presentiel/cours-hebdomadaires/
-- https://fluance.io/fr/cours-en-ligne/21-jours-mouvement/
-- https://fluance.io/fr/cours-en-ligne/approche-fluance-complete/
+- https://fluance.io/cours-en-ligne/21-jours-mouvement/
+- https://fluance.io/cours-en-ligne/approche-fluance-complete/

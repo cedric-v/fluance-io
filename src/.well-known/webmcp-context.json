@@ -1,0 +1,104 @@
+{
+  "$schema": "https://fluance.io/schemas/webmcp-context/v1",
+  "site": {
+    "name": "Fluance",
+    "url": "https://fluance.io",
+    "description": "Le mouvement qui éveille et apaise. Cours en ligne et séances en présentiel à Fribourg (Suisse), pour libérer le corps des tensions via le mouvement, le souffle et le jeu.",
+    "llmsUrl": "https://fluance.io/llms.txt",
+    "apiCatalogUrl": "https://fluance.io/.well-known/api-catalog",
+    "mcpServerCardUrl": "https://fluance.io/.well-known/mcp/server-card.json",
+    "agentSkillsIndexUrl": "https://fluance.io/.well-known/agent-skills/index.json",
+    "docsUrl": "https://fluance.io/docs/api/",
+    "openApiUrl": "https://fluance.io/docs/api/openapi.json"
+  },
+  "updatedAt": "2026-09-06",
+  "languages": ["fr", "en"],
+  "defaultLocale": "fr",
+  "organization": {
+    "name": "Instants Zen Sàrl / Fluance",
+    "founder": "Cédric Vonlanthen",
+    "location": "Fribourg, Suisse",
+    "email": "support@fluance.io",
+    "phone": "+41 (0)76 673 83 11"
+  },
+  "offers": [
+    {
+      "type": "online-course",
+      "id": "21-jours-mouvement",
+      "title": "Challenge 21 jours",
+      "url": { "fr": "/cours-en-ligne/21-jours-mouvement/", "en": "/en/cours-en-ligne/21-jours-mouvement/" },
+      "description": "Programme de 21 jours avec des pratiques quotidiennes de 2 à 5 minutes pour retrouver légèreté, mobilité et sérénité."
+    },
+    {
+      "type": "subscription",
+      "id": "approche-fluance-complete",
+      "title": "Approche Fluance complète",
+      "url": { "fr": "/cours-en-ligne/approche-fluance-complete/", "en": "/en/cours-en-ligne/approche-fluance-complete/" },
+      "description": "Accès complet à tous les cours et pratiques Fluance, par abonnement mensuel ou trimestriel."
+    },
+    {
+      "type": "in-person",
+      "id": "cours-hebdomadaires",
+      "title": "Cours hebdomadaires à Fribourg",
+      "url": "/presentiel/cours-hebdomadaires/",
+      "bookingUrl": "/presentiel/reserver/",
+      "description": "Cours en présentiel hebdomadaires à Fribourg, Suisse. Dates, lieux, prix et places restantes exposés via l'API et les outils WebMCP."
+    },
+    {
+      "type": "in-person",
+      "id": "prochains-stages",
+      "title": "Prochains stages",
+      "url": "/presentiel/prochains-stages/",
+      "description": "Ateliers et stages ponctuels."
+    },
+    {
+      "type": "in-person",
+      "id": "en-entreprise",
+      "title": "Fluance en entreprise",
+      "url": "/presentiel/en-entreprise/",
+      "description": "Programmes bien-être pour entreprises."
+    },
+    {
+      "type": "individual-support",
+      "id": "entrepreneurs-independants",
+      "title": "Accompagnement individuel entrepreneurs",
+      "url": "/accompagnements-individuels/entrepreneurs-independants/",
+      "description": "Accompagnement personnalisé pour entrepreneurs et indépendants."
+    }
+  ],
+  "bookingFlow": {
+    "page": "/presentiel/reserver/",
+    "description": "Le parcours de réservation des cours en présentiel. Les outils WebMCP y sont enregistrés : identifier la pertinence de Fluance, lister les classes disponibles, puis ouvrir le flow de réservation pour la classe choisie. La confirmation finale reste toujours entre les mains de l'utilisateur.",
+    "tools": [
+      "identify-fluance-fit",
+      "list-fluance-classes",
+      "book-fluance-session"
+    ]
+  },
+  "publicApi": {
+    "baseUrl": "/api",
+    "endpoints": [
+      { "path": "/api/courses", "description": "Liste des classes en présentiel avec dates, lieux, prix et places restantes." },
+      { "path": "/api/course-status", "description": "Statut d'une classe (complète, annulée, etc.)." },
+      { "path": "/api/bookings", "description": "Création et suivi des réservations." },
+      { "path": "/api/status", "description": "Statut de l'API." }
+    ],
+    "openApiUrl": "https://fluance.io/docs/api/openapi.json"
+  },
+  "keyPages": [
+    { "title": "Accueil", "locale": "fr", "url": "/", "category": "general" },
+    { "title": "Home", "locale": "en", "url": "/en/", "category": "general" },
+    { "title": "Approche", "locale": "fr", "url": "/a-propos/approche-fluance/", "category": "about" },
+    { "title": "Philosophie", "locale": "fr", "url": "/a-propos/philosophie/", "category": "about" },
+    { "title": "Histoire de Cédric", "locale": "fr", "url": "/a-propos/histoire-cedric/", "category": "about" },
+    { "title": "Cours hebdomadaires", "locale": "fr", "url": "/presentiel/cours-hebdomadaires/", "category": "in-person" },
+    { "title": "Réservation", "locale": "fr", "url": "/presentiel/reserver/", "category": "conversion" },
+    { "title": "Contact", "locale": "fr", "url": "/contact/", "category": "conversion" },
+    { "title": "CGV", "locale": "fr", "url": "/cgv/", "category": "legal" }
+  ],
+  "notes": [
+    "Les pages françaises n'ont pas de préfixe /fr/ : la version FR est servie à la racine.",
+    "WebMCP est une amélioration progressive : les outils ne sont exposés que dans les pages compatibles (par exemple /presentiel/reserver/).",
+    "Aucune authentification n'est requise pour la découverte ; la réservation effective est toujours confirmée par l'utilisateur."
+  ]
+}

@@ -221,7 +221,7 @@
         execute: async (input) => buildFitRecommendation(input || {}),
       },
       {
-        name: 'list-fluance-courses',
+        name: 'list-fluance-classes',
         description: 'List currently available Fluance in-person classes with dates, locations, and remaining spots.',
         inputSchema: {
           type: 'object',
@@ -240,14 +240,14 @@
         execute: async (input) => listAvailableCourses(input || {}),
       },
       {
-        name: 'reserve-fluance-session',
+        name: 'book-fluance-session',
         description: 'Open the Fluance booking flow for a selected in-person class so the user can complete the reservation.',
         inputSchema: {
           type: 'object',
           properties: {
             courseId: {
               type: 'string',
-              description: 'The Fluance course identifier returned by list-fluance-courses.',
+              description: 'The Fluance class identifier returned by list-fluance-classes.',
             },
             locale: {
               type: 'string',
