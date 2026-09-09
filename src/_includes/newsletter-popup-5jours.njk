@@ -302,7 +302,10 @@
           email: email, 
           name: name, 
           turnstileToken: turnstileToken,
-          locale: locale // Langue détectée depuis l'URL
+          locale: locale, // Langue détectée depuis l'URL
+          // Attribution du trafic (répond à "d'où vient le lead") :
+          pageUrl: window.location.href,        // URL courante (porte les paramètres UTM / gclid)
+          pageReferrer: document.referrer || ''  // page précédente = canal d'acquisition réel
         });
 
         if (result.data && result.data.success) {

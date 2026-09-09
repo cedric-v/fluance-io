@@ -106,6 +106,69 @@ function getClientIp(req) {
 }
 
 /**
+ * Extrait les informations d'attribution du trafic (referer / UTM) depuis une requête.
+ * Lit le header HTTP `Referer` (la page qui a déclenché l'appel) et en extrait
+ * l'origine, les paramètres UTM et les identifiants publicitaires (gclid, fbclid).
+ *
+ * ⚠️ NOTE : pour un appel `onCall` depuis une page du site vers la Cloud Function
+ * (cross-origin), le navigateur peut réduire le Referer à la seule origine
+ * (`strict-origin-when-cross-origin`). On ne récupère alors que
+ * `https://fluance.io`, sans chemin ni UTM. Pour une attribution complète
+ * (canal d'acquisition réel), il faut aussi transmettre `pageUrl`/`pageReferrer`
+ * depuis le front (voir note dans subscribeToNewsletter).
+ *
+ * @param {object} req - La requête (rawRequest ou request) avec `headers`
+ * @param {object} [opts] - Données d'attribution fournies côté front (prioritaires)
+ * @param {string} [opts.pageUrl] - URL complète de la page courante (contient les UTM)
+ * @param {string} [opts.pageReferrer] - document.referrer (page précédente, = canal réel)
+ * @returns {{referer:string|null, refererHost:string|null, utmSource:string|null,
+ *            utmMedium:string|null, utmCampaign:string|null, utmContent:string|null,
+ *            utmTerm:string|null, gclid:string|null, fbclid:string|null}}
+ */
+function extractAttributionFromRequest(req, opts = {}) {
+  const headers = (req && req.headers) || (req && req.rawRequest && req.rawRequest.headers) || {};
+  // Priorité : valeurs fournies par le front (document.referrer / pageUrl), sinon header Referer.
+  const referer = opts.pageReferrer || headers.referer || headers.referrer || null;
+  const pageUrl = opts.pageUrl || referer || null;
+  const attribution = {
+    referer: null,
+    refererHost: null,
+    utmSource: null,
+    utmMedium: null,
+    utmCampaign: null,
+    utmContent: null,
+    utmTerm: null,
+    gclid: null,
+    fbclid: null,
+  };
+  if (referer) {
+    try {
+      const rUrl = new URL(referer);
+      attribution.referer = rUrl.href;
+      attribution.refererHost = rUrl.hostname;
+    } catch {
+      attribution.referer = referer; // URL invalide, on garde la valeur brute
+    }
+  }
+  // Les UTM / clics proviennent de l'URL de la page (pageUrl) ou du Referer complet.
+  if (pageUrl) {
+    try {
+      const s = new URL(pageUrl).searchParams;
+      attribution.utmSource = s.get('utm_source');
+      attribution.utmMedium = s.get('utm_medium');
+      attribution.utmCampaign = s.get('utm_campaign');
+      attribution.utmContent = s.get('utm_content');
+      attribution.utmTerm = s.get('utm_term');
+      attribution.gclid = s.get('gclid');
+      attribution.fbclid = s.get('fbclid');
+    } catch {
+      // URL de page invalide : ignorer silencieusement
+    }
+  }
+  return attribution;
+}
+
+/**
  * Retourne true si l'IP est privée/locale (développement local uniquement).
  * @param {string} ip
  * @returns {boolean}
@@ -1282,7 +1345,54 @@ async function sendStagesWaitlistNotificationAdmin(email, name, region, locale, 
 /**
  * Envoie une notification admin pour chaque nouvel opt-in
  */
-async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret) {
+/**
+ * Construit le bloc HTML affichant l'attribution du trafic (referer / UTM) dans
+ * les emails de notification admin. Retourne une chaîne vide si aucune info.
+ * @param {object|null} attribution
+ * @returns {string}
+ */
+function buildAttributionHtml(attribution) {
+  if (!attribution) return '';
+  const rows = [];
+  if (attribution.refererHost) rows.push({label: 'Referer (origine)', value: attribution.refererHost});
+  else if (attribution.referer) rows.push({label: 'Referer', value: attribution.referer});
+  if (attribution.utmSource) rows.push({label: 'UTM source', value: attribution.utmSource});
+  if (attribution.utmMedium) rows.push({label: 'UTM medium', value: attribution.utmMedium});
+  if (attribution.utmCampaign) rows.push({label: 'UTM campaign', value: attribution.utmCampaign});
+  if (attribution.gclid) rows.push({label: 'Google Click ID', value: attribution.gclid});
+  if (attribution.fbclid) rows.push({label: 'Facebook Click ID', value: attribution.fbclid});
+  if (!rows.length) return '';
+  const block = [
+    '    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #E6E6E6;">',
+    '      <p style="margin: 0 0 8px; font-weight: bold; color: #7A1F3D;">Origine du trafic</p>',
+    ...rows.map((r) => `      <p style="margin: 3px 0;"><strong style="color:#555;">${r.label} :</strong>` +
+        ` ${escapeHtml(String(r.value))}</p>`),
+    '    </div>',
+  ];
+  return block.join('\n');
+}
+
+/**
+ * Construit la version texte de l'attribution du trafic pour les emails admin.
+ * Retourne une chaîne vide si aucune info.
+ * @param {object|null} attribution
+ * @returns {string}
+ */
+function buildAttributionText(attribution) {
+  if (!attribution) return '';
+  const rows = [];
+  if (attribution.refererHost) rows.push(`Referer: ${attribution.refererHost}`);
+  else if (attribution.referer) rows.push(`Referer: ${attribution.referer}`);
+  if (attribution.utmSource) rows.push(`UTM source: ${attribution.utmSource}`);
+  if (attribution.utmMedium) rows.push(`UTM medium: ${attribution.utmMedium}`);
+  if (attribution.utmCampaign) rows.push(`UTM campaign: ${attribution.utmCampaign}`);
+  if (attribution.gclid) rows.push(`Google Click ID: ${attribution.gclid}`);
+  if (attribution.fbclid) rows.push(`Facebook Click ID: ${attribution.fbclid}`);
+  if (!rows.length) return '';
+  return rows.join('\n');
+}
+
+async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret, attribution = null) {
   try {
     // Vérifier que les paramètres nécessaires sont disponibles
     if (!apiKey || !apiSecret) {
@@ -1322,11 +1432,13 @@ async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret
           ${name ? `<p style="margin: 5px 0;"><strong>Nom :</strong> ${name}</p>` : ''}
           <p style="margin: 5px 0;"><strong>Source :</strong> ${sourceLabel}</p>
           <p style="margin: 5px 0;"><strong>Date :</strong> ${dateStr}</p>
+          ${buildAttributionHtml(attribution)}
         </div>
       </div>
     `;
+    const attributionText = buildAttributionText(attribution);
     const textContent =
-      `Nouvel opt-in Fluance\n\nEmail: ${email}\n${name ? `Nom: ${name}\n` : ''}Source: ${sourceLabel}\nDate: ${dateStr}`;
+      `Nouvel opt-in Fluance\n\nEmail: ${email}\n${name ? `Nom: ${name}\n` : ''}Source: ${sourceLabel}\nDate: ${dateStr}${attributionText ? '\n' + attributionText : ''}`;
 
     await sendMailjetEmail(
         ADMIN_EMAIL,
@@ -5748,6 +5860,15 @@ exports.subscribeToNewsletter = onCall(
     async (request) => {
       const {email, name, turnstileToken, locale = 'fr'} = request.data;
 
+      // Partage d'attribution : referer / UTM capturés côté serveur via le header `Referer`.
+      // Si le front transmet `pageUrl` (URL courante avec ses UTM) et `pageReferrer`
+      // (document.referrer), on les utilise en priorité : le header `Referer` est
+      // souvent réduit à la seule origine en cross-origin, ce qui ferait perdre le canal.
+      const attribution = extractAttributionFromRequest(request.rawRequest, {
+        pageUrl: request.data.pageUrl,
+        pageReferrer: request.data.pageReferrer,
+      });
+
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
       }
@@ -5834,7 +5955,7 @@ exports.subscribeToNewsletter = onCall(
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + 7); // Token valide 7 jours
 
-        // Stocker le token de confirmation dans Firestore
+        // Stocker le token de confirmation dans Firestore (+ attribution du trafic)
         await db.collection('newsletterConfirmations').doc(confirmationToken).set({
           email: email.toLowerCase().trim(),
           name: name || '',
@@ -5843,6 +5964,14 @@ exports.subscribeToNewsletter = onCall(
           confirmed: false,
           reminderSent: false,
           sourceOptin: '2pratiques',
+          // Attribution : referer + paramètres de campagne (voir extractAttributionFromRequest)
+          referer: attribution.referer,
+          refererHost: attribution.refererHost,
+          utmSource: attribution.utmSource,
+          utmMedium: attribution.utmMedium,
+          utmCampaign: attribution.utmCampaign,
+          gclid: attribution.gclid,
+          fbclid: attribution.fbclid,
         });
 
         // Ajouter le contact à MailJet
@@ -5973,6 +6102,19 @@ exports.subscribeToNewsletter = onCall(
           properties.firstname = capitalizeName(name);
         }
 
+        // Enrichir avec l'attribution du trafic (referer / UTM)
+        if (attribution.refererHost) {
+          properties.referer_host = attribution.refererHost;
+        }
+        if (attribution.referer) {
+          properties.url_source = attribution.referer;
+        }
+        if (attribution.utmSource) properties.utm_source = attribution.utmSource;
+        if (attribution.utmMedium) properties.utm_medium = attribution.utmMedium;
+        if (attribution.utmCampaign) properties.utm_campaign = attribution.utmCampaign;
+        if (attribution.gclid) properties.gclid = attribution.gclid;
+        if (attribution.fbclid) properties.fbclid = attribution.fbclid;
+
         console.log('📋 Starting MailJet contact properties update for 2 pratiques:', contactData.Email);
         console.log('📋 Properties to set:', JSON.stringify(properties));
         await updateMailjetContactProperties(
@@ -6031,6 +6173,7 @@ exports.subscribeToNewsletter = onCall(
               '2pratiques',
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
+              attribution,
           );
         } catch (notifError) {
           console.error('Error sending opt-in admin notification (2pratiques):', notifError);
@@ -6844,6 +6987,13 @@ exports.subscribeTo5Days = onCall(
     async (request) => {
       const {email, name, turnstileToken, locale = 'fr'} = request.data;
 
+      // Partage d'attribution : referer / UTM. Priorité aux valeurs du front (pageUrl,
+      // pageReferrer) pour une attribution fiable même en cross-origin.
+      const attribution = extractAttributionFromRequest(request.rawRequest, {
+        pageUrl: request.data.pageUrl,
+        pageReferrer: request.data.pageReferrer,
+      });
+
       if (!email) {
         throw new HttpsError('invalid-argument', 'Email is required');
       }
@@ -6926,7 +7076,7 @@ exports.subscribeTo5Days = onCall(
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + 7); // Token valide 7 jours
 
-        // Stocker le token de confirmation dans Firestore
+        // Stocker le token de confirmation dans Firestore (+ attribution du trafic)
         await db.collection('newsletterConfirmations').doc(confirmationToken).set({
           email: email.toLowerCase().trim(),
           name: name || '',
@@ -6935,6 +7085,14 @@ exports.subscribeTo5Days = onCall(
           confirmed: false,
           reminderSent: false,
           sourceOptin: '5joursofferts',
+          // Attribution : referer + paramètres de campagne (voir extractAttributionFromRequest)
+          referer: attribution.referer,
+          refererHost: attribution.refererHost,
+          utmSource: attribution.utmSource,
+          utmMedium: attribution.utmMedium,
+          utmCampaign: attribution.utmCampaign,
+          gclid: attribution.gclid,
+          fbclid: attribution.fbclid,
         });
 
         // Ajouter le contact à MailJet
@@ -7109,6 +7267,15 @@ exports.subscribeTo5Days = onCall(
           properties.firstname = capitalizeName(name);
         }
 
+        // Enrichir avec l'attribution du trafic (referer / UTM)
+        if (attribution.refererHost) properties.referer_host = attribution.refererHost;
+        if (attribution.referer) properties.url_source = attribution.referer;
+        if (attribution.utmSource) properties.utm_source = attribution.utmSource;
+        if (attribution.utmMedium) properties.utm_medium = attribution.utmMedium;
+        if (attribution.utmCampaign) properties.utm_campaign = attribution.utmCampaign;
+        if (attribution.gclid) properties.gclid = attribution.gclid;
+        if (attribution.fbclid) properties.fbclid = attribution.fbclid;
+
         // Si date_optin existe déjà et est plus ancienne, la conserver
         // Comparer les dates au format ISO (YYYY-MM-DD) ou ancien format (JJ/MM/AAAA)
         if (currentProperties.date_optin) {
@@ -7187,6 +7354,7 @@ exports.subscribeTo5Days = onCall(
               '5joursofferts',
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
+              attribution,
           );
         } catch (notifError) {
           console.error('Error sending opt-in admin notification (5joursofferts):', notifError);
