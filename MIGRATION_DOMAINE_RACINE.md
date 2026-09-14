@@ -40,9 +40,9 @@ Dans votre dépôt GitHub (`cedric-v/fluance-io`) :
 
 Le site utilise actuellement le pathPrefix `/fluance-io` pour GitHub Pages. Pour le domaine racine, il faut le retirer.
 
-#### Option A : Modifier directement `eleventy.config.js` (recommandé)
+#### Option A : Modifier directement `eleventy.config.mjs` (recommandé)
 
-Modifiez la ligne 6 de `eleventy.config.js` :
+Modifiez la ligne 6 de `eleventy.config.mjs` :
 
 **AVANT** (pour GitHub Pages) :
 ```javascript
@@ -58,7 +58,7 @@ const PATH_PREFIX = ""; // Pas de pathPrefix pour le domaine racine
 
 Si vous voulez garder la flexibilité pour déployer sur les deux environnements :
 
-1. Modifiez `eleventy.config.js` :
+1. Modifiez `eleventy.config.mjs` :
 ```javascript
 // PathPrefix conditionnel : vide en dev, configurable en prod
 const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' 
@@ -120,7 +120,7 @@ grep -o 'href="[^"]*"' _site/index.html | head -10
 
 1. **Commitez et poussez les changements** :
    ```bash
-   git add eleventy.config.js
+   git add eleventy.config.mjs
    git commit -m "Migration vers domaine racine fluance.io"
    git push origin main
    ```
@@ -188,7 +188,7 @@ Après la migration, vérifiez :
 
 ### Les liens ne fonctionnent pas
 
-- Vérifiez que `PATH_PREFIX` est bien vide dans `eleventy.config.js`
+- Vérifiez que `PATH_PREFIX` est bien vide dans `eleventy.config.mjs`
 - Vérifiez que le build a bien été fait avec `ELEVENTY_ENV=prod`
 - Inspectez le HTML généré dans `_site/` pour voir les URLs
 
@@ -222,7 +222,7 @@ Après la migration, vérifiez :
 
 Si vous devez revenir à GitHub Pages avec pathPrefix :
 
-1. Remettez `PATH_PREFIX = "/fluance-io"` dans `eleventy.config.js`
+1. Remettez `PATH_PREFIX = "/fluance-io"` dans `eleventy.config.mjs`
 2. Commitez et poussez
 3. Le site redeviendra accessible sur `https://cedric-v.github.io/fluance-io/`
 

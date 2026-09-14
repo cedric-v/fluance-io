@@ -29,7 +29,7 @@ Pour que le site fonctionne une fois déployé sur GitHub Pages, vous devez ajou
 ### Étape 3 : Fonctionnement technique
 
 Le projet utilise maintenant :
-- Un shortcode Eleventy `{% firebaseConfig %}` (défini dans `eleventy.config.js`) qui lit ces variables.
+- Un shortcode Eleventy `{% firebaseConfig %}` (défini dans `eleventy.config.mjs`) qui lit ces variables.
 - Ce shortcode injecte la configuration dans `window.FLUANCE_FIREBASE_CONFIG` via le layout `base.njk`.
 - Les scripts du site (comme l'authentification ou le paiement) utilisent cette variable globale au lieu de valeurs en dur.
 

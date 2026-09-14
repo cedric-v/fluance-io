@@ -123,8 +123,8 @@ Stop the dev server with `Ctrl + C`.
   - `sitemap.xml` – automatically generated sitemap
   - `robots.txt` – copied from src/
   - `llms.txt` – copied from src/
-- `eleventy.config.js` – Eleventy configuration (i18n, filters, transforms, shortcodes)
-- `tailwind.config.js` – Tailwind configuration
+- `eleventy.config.mjs` – Eleventy configuration (i18n, filters, transforms, shortcodes)
+- `postcss.config.js` – PostCSS configuration (Tailwind CSS v4 is configured CSS-first in `src/assets/css/styles.css`; there is no `tailwind.config.js`)
 
 ---
 
@@ -150,10 +150,10 @@ From `package.json`:
 
 - **`npm run dev:css`**
 
-  Tailwind CSS in watch mode:
+  Tailwind CSS in watch mode (via PostCSS, unminified):
 
   ```bash
-  npx tailwindcss -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --watch
+  mkdir -p _site/assets/css && npx postcss ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --watch
   ```
 
 - **`npm run build`**
@@ -161,7 +161,7 @@ From `package.json`:
   Production build for deployment:
 
   ```bash
-  cross-env ELEVENTY_ENV=prod npm-run-all build:css build:11ty build:cf
+  cross-env ELEVENTY_ENV=prod npm-run-all build:css build:11ty build:js build:cf
   ```
 
 - **`npm run validate`** (exécuté automatiquement avant chaque `npm run build`)
@@ -181,8 +181,28 @@ From `package.json`:
 
 - **`npm run build:css`**
 
+  Builds and minifies Tailwind CSS. `NODE_ENV=production` enables the built-in
+  Lightning CSS optimization of `@tailwindcss/postcss` (minification + browser
+  prefixes), so no separate minifier or autoprefixer is needed:
+
   ```bash
-  npx tailwindcss -i ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --minify
+  cross-env NODE_ENV=production npx postcss ./src/assets/css/styles.css -o ./_site/assets/css/styles.css
+  ```
+
+- **`npm run build:js`**
+
+  Minifies the static booking script with Terser:
+
+  ```bash
+  terser src/assets/js/booking.js -c -m --ecma 2020 -o _site/assets/js/booking.js
+  ```
+
+- **`npm run build:email-templates`**
+
+  Builds the MJML email templates:
+
+  ```bash
+  node scripts/build-email-templates.js
   ```
 
 - **`npm run build:cf`**
@@ -442,31 +462,34 @@ To keep the project healthy over time:
 
 - **Automatic dependency security monitoring:**
 
-  The project uses **GitHub Dependabot** to automatically monitor dependencies for security vulnerabilities and version updates.
+  The project uses **Renovate** to automatically monitor dependencies for security vulnerabilities and version updates.
 
-  - **Security alerts**: Dependabot automatically scans dependencies and creates pull requests for security updates
-  - **Version updates**: Weekly checks for new versions of dependencies (minor and patch updates)
-  - **Configuration**: See `.github/dependabot.yml` for monitoring settings
-  - **Notifications**: You'll receive GitHub notifications and emails for:
-    - Security vulnerabilities (high priority)
-    - Available dependency updates (weekly summary)
-  - **Pull requests**: Dependabot creates PRs automatically with:
-    - Changelog information
-    - Labels: `dependencies`, `npm`, `functions`
-    - Grouped updates for minor/patch versions
+  - **Security / vulnerability alerts**: OSV-based scanning creates PRs for security updates **at any time** (automerge enabled)
+  - **Version updates**: Minor/patch updates are grouped and proposed **every Monday**; major updates are proposed but never automerged
+  - **Configuration**: See `renovate.json` for monitoring settings
+  - **Lockfile maintenance**: Weekly (before 4am on Monday)
+  - **Dashboard**: The Renovate Dependency Dashboard issue lists all pending updates
+  - **Pull requests**: Renovate creates PRs automatically with grouped minor/patch updates and labels `dependencies` (plus `security` for vulnerabilities)
 
-  **How to use Dependabot PRs:**
+  **How to use Renovate PRs:**
   1. Review the PR description and changelog
-  2. Test locally if needed: `git checkout <dependabot-branch> && npm install && npm test`
-  3. Merge the PR if everything looks good
-  4. Dependabot will automatically update `package-lock.json` and `package.json`
+  2. Test locally if needed: `git checkout <renovate-branch> && npm install && npm --prefix functions test && npm run build`
+  3. Merge the PR if everything looks good (minor/patch and security PRs are automerged once CI passes)
+  4. Renovate updates `package-lock.json` automatically
 
   **Manual dependency checks:**
 
   ```bash
-  npm outdated   # see what is out of date
-  npm update     # safe minor/patch updates
+  npm outdated                # root: what is out of date
+  npm --prefix functions outdated
+  npm update                  # safe minor/patch updates
+  npm audit                   # known vulnerabilities (root)
+  npm --prefix functions audit
   ```
+
+  > **Security overrides**: transitive vulnerabilities that cannot be fixed
+  > upstream yet are pinned in the `overrides` field of `package.json`
+  > (root and `functions/`), e.g. `js-yaml`, `protobufjs`, `ws`.
 
 - **Automated Bexio Token Monitoring:**
 
@@ -488,7 +511,7 @@ To keep the project healthy over time:
 
 - **Internationalization (i18n):**
   - The site supports **French (FR)** and **English (EN)** languages.
-  - Basic i18n is configured via `eleventy-plugin-i18n` in `eleventy.config.js`.
+  - Basic i18n is configured via `eleventy-plugin-i18n` in `eleventy.config.mjs`.
   - French content is located in `src/fr/`, English content in `src/en/`.
   - Language switching is handled in the header navigation.
   - Each page includes `hreflang` tags for proper SEO and language targeting.
@@ -536,7 +559,7 @@ To keep the project healthy over time:
 
 - **Schema.org JSON-LD:**
   - Structured data markup is automatically generated for all pages to improve SEO and enable rich results in search engines.
-  - The `schemaOrg` shortcode in `eleventy.config.js` generates appropriate schemas based on page type.
+  - The `schemaOrg` shortcode in `eleventy.config.mjs` generates appropriate schemas based on page type.
   - **Schemas included:**
     - **Organization** (all pages): Information about Fluance / Instants Zen Sàrl, address, contact, social media
     - **WebSite** (all pages): Site information with SearchAction for search functionality
@@ -567,7 +590,7 @@ To keep the project healthy over time:
 
 ### Security and secrets
  
- - **Dependency security**: Automated monitoring via GitHub Dependabot (see [Maintenance](#maintenance) section)
+ - **Dependency security**: Automated monitoring via **Renovate** (OSV vulnerability alerts + weekly updates, see [Maintenance](#maintenance) section)
  - **Secrets management**: No API keys or secrets are committed to the repository.
  - **Frontend Environment variables**: The site uses environment variables for Firebase and Stripe configuration. These are loaded from a local `.env` file during development and from **GitHub Repository Secrets** during deployment.
  - **Backend Environment variables**: Firebase Functions use environment variables configured via the Firebase Console (see `CONFIGURATION_VARIABLES_ENV.md`).

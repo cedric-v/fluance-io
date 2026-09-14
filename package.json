@@ -11,7 +11,7 @@
     "validate": "node scripts/validate-frontmatter.mjs",
     "build:11ty": "eleventy",
     "build:cf": "node scripts/generate-cf-config.mjs",
-    "build:css": "npx postcss ./src/assets/css/styles.css -o ./_site/assets/css/styles.css --minify",
+    "build:css": "cross-env NODE_ENV=production npx postcss ./src/assets/css/styles.css -o ./_site/assets/css/styles.css",
     "build:js": "terser src/assets/js/booking.js -c -m --ecma 2020 -o _site/assets/js/booking.js",
     "build:email-templates": "node scripts/build-email-templates.js"
   },
@@ -23,21 +23,20 @@
   "dependencies": {
     "@11ty/eleventy": "^3.1.5",
     "@11ty/eleventy-img": "^7.0.0",
+    "@google-cloud/firestore": "^9.0.0",
     "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
     "eleventy-plugin-i18n": "^0.1.3",
     "eleventy-plugin-seo": "^0.5.2",
-    "@google-cloud/firestore": "^9.0.0",
     "firebase-admin": "^14.2.0",
     "npm-run-all2": "^9.0.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
-    "autoprefixer": "^10.5.0",
     "html-minifier-next": "^8.0.0",
     "mjml": "^5.3.0",
     "postcss": "^8.5.26",
-    "postcss-cli": "^11.0.1",
+    "postcss-cli": "^12.0.0",
     "qrcode": "^1.5.4",
     "tailwindcss": "^4.3.0"
   },
@@ -46,6 +45,10 @@
     "@protobufjs/utf8": "1.1.2",
     "fast-xml-builder": "1.3.1",
     "fast-xml-parser": "5.11.1",
+    "gray-matter": {
+      "js-yaml": "3.15.2"
+    },
+    "js-yaml": "4.3.2",
     "liquidjs": "10.29.0",
     "protobufjs": "8.8.0",
     "sharp": "0.35.4",
