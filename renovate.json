@@ -27,6 +27,12 @@
   },
   "packageRules": [
     {
+      "description": "js-yaml v5 casse gray-matter (safeLoad/safeDump supprimés depuis v4) — ignorer le major",
+      "matchPackageNames": ["js-yaml"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "matchUpdateTypes": ["minor", "patch"],
       "matchCurrentVersion": "!/^0/",
       "groupName": "non-major dependencies",
