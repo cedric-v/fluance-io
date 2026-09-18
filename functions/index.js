@@ -6597,6 +6597,26 @@ exports.setNotificationOptIn = onCall(
     });
 
 /**
+ * Retourne la préférence de rappels de pratique de l'utilisateur connecté.
+ * Région : europe-west1
+ */
+exports.getNotificationPrefs = onCall(
+    {
+      region: 'europe-west1',
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e).');
+      }
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (!userDoc.exists) {
+        throw new HttpsError('not-found', 'Compte introuvable.');
+      }
+      return {success: true, optIn: userDoc.data().notificationOptIn === true};
+    });
+
+/**
  * Retourne les favoris, l'historique récent et les statistiques de pratique
  * de l'utilisateur connecté.
  * Région : europe-west1

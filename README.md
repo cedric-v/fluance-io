@@ -153,7 +153,9 @@ member area. See **[docs/ma-pratique.md](docs/ma-pratique.md)** for the full ref
   (see `firestore.rules`).
 - Reminders (transactional **emails**, not push): `sendPracticeReminders` (daily 9am
   Europe/Paris, explicit opt-in, max 1/week) + `unsubscribePracticeReminders` (tokenized
-  one-click, disables reminders only — never the global Mailjet list).
+  one-click, disables reminders only — never the global Mailjet list). The opt-in is
+  configurable from the member area (`/membre/`) and from the mini-app ("Mon suivi"), via
+  `getNotificationPrefs` / `setNotificationOptIn`.
 - Analytics events pushed to `dataLayer` (consent-gated): `companion_opened`, `need_selected`,
   `recommendation_displayed`, `practice_started`, `practice_completed`, `practice_favorited`,
   `practice_unfavorited`, `free_account_created`.

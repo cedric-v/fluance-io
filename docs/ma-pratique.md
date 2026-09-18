@@ -196,6 +196,9 @@ Quatre fonctions callables (auth requise, `europe-west1`) :
     uniquement `users/{uid}.notificationOptIn = false` ;
   - en-têtes `List-Unsubscribe` + `List-Unsubscribe-Post: List-Unsubscribe=One-Click` ;
   - le lien dans l'e-mail fonctionne **sans connexion** ;
+  - réglage également disponible directement **dans l'espace membre** (`/membre/`, carte
+    « Rappels de pratique », via `getNotificationPrefs`/`setNotificationOptIn`) et dans
+    Ma pratique (« Mon suivi ») ;
   - alternative in-app : `/ma-pratique/?notifications=off` (après connexion) ;
   - **aucune API Mailjet d'unsubscribe n'est appelée** : le contact reste dans la liste
     `10524140` et continue de recevoir les autres e-mails Fluance.
@@ -271,7 +274,7 @@ Tout se fait dans `src/_data/practices.json` — **aucun déploiement de Cloud F
   prix et le découplage de la date) :
 
   ```bash
-  firebase deploy --only functions:createFreeAccount,functions:getProtectedContent,functions:createStripeCheckoutSession,functions:logPractice,functions:toggleFavorite,functions:setNotificationOptIn,functions:getPracticeStats,functions:sendPracticeReminders,functions:unsubscribePracticeReminders
+  firebase deploy --only functions:createFreeAccount,functions:getProtectedContent,functions:createStripeCheckoutSession,functions:logPractice,functions:toggleFavorite,functions:setNotificationOptIn,functions:getNotificationPrefs,functions:getPracticeStats,functions:sendPracticeReminders,functions:unsubscribePracticeReminders
   ```
 
   Les règles Firestore doivent aussi être déployées (nouvelle sous-collection

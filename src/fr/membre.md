@@ -408,8 +408,23 @@ document.addEventListener('DOMContentLoaded', function() {
         </a>
       `;
 
+      // Carte « Rappels de pratique » : réglage direct depuis l'espace membre
+      // (même préférence que dans Ma pratique — Firestore, écriture serveur).
+      const notificationCardHTML = `
+        <div id="member-notifications" class="mb-6 rounded-lg border border-fluance/15 bg-white p-5">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="font-semibold text-[#3E3A35]">Rappels de pratique</p>
+              <p class="text-sm text-gray-600">Recevoir un petit email « Un petit moment pour toi ? » quand tu n’as pas pratiqué depuis quelques jours (max. 1×/semaine).</p>
+            </div>
+            <button type="button" id="member-notif-toggle" class="shrink-0 rounded-full px-3 py-1 text-sm font-semibold bg-gray-200 text-gray-700" aria-pressed="false">…</button>
+          </div>
+          <p id="member-notif-message" class="hidden text-sm text-[#5a7d2a] mt-3" role="status"></p>
+        </div>
+      `;
+
       // Créer le contenu pour chaque produit
-      let contentHTML = companionCardHTML + tabsHTML + '<div class="space-y-6" id="product-content">';
+      let contentHTML = companionCardHTML + notificationCardHTML + tabsHTML + '<div class="space-y-6" id="product-content">';
       
       allProducts.forEach((prod) => {
         // Gérer l'onglet communauté (toujours accessible)
@@ -746,6 +761,8 @@ document.addEventListener('DOMContentLoaded', function() {
       contentContainer.innerHTML = contentHTML;
       contentContainer.classList.remove('hidden');
       contentContainer.removeAttribute('aria-busy');
+      // Régler les rappels de pratique directement depuis l'espace membre
+      initNotificationToggle();
       
       // Vérifier que le HTML a bien été inséré
       const insertedTab = contentContainer.querySelector(`.product-tab-content[data-product="${activeProductId}"]`);
@@ -1105,6 +1122,69 @@ function switchProductTab(productId) {
 
   // Recentrer la carte du jour/semaine actuel dans le rail (mobile)
   setTimeout(centerActiveDayRail, 50);
+}
+
+// Réglage des rappels de pratique depuis l'espace membre (même préférence que
+// dans Ma pratique : users/{uid}.notificationOptIn, écriture serveur).
+async function initNotificationToggle() {
+  const btn = document.getElementById('member-notif-toggle');
+  const message = document.getElementById('member-notif-message');
+  if (!btn) return;
+
+  let optIn = false;
+
+  function paint() {
+    btn.textContent = optIn ? 'Activés' : 'Désactivés';
+    btn.setAttribute('aria-pressed', optIn ? 'true' : 'false');
+    btn.classList.toggle('bg-fluance', optIn);
+    btn.classList.toggle('text-white', optIn);
+    btn.classList.toggle('bg-gray-200', !optIn);
+    btn.classList.toggle('text-gray-700', !optIn);
+  }
+
+  async function ensureFunctions() {
+    if (typeof firebase !== 'undefined' && typeof firebase.functions === 'function') return;
+    await new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
+      script.onload = resolve;
+      script.onerror = resolve;
+      document.head.appendChild(script);
+    });
+  }
+
+  btn.addEventListener('click', async function () {
+    btn.disabled = true;
+    try {
+      await ensureFunctions();
+      const callable = firebase.app().functions('europe-west1').httpsCallable('setNotificationOptIn');
+      const response = await callable({ optIn: !optIn });
+      optIn = !!(response.data && response.data.optIn);
+      paint();
+      if (message) {
+        message.textContent = 'Préférence enregistrée.';
+        message.classList.remove('hidden');
+      }
+    } catch (error) {
+      console.warn('[Espace Membre] Préférence rappels non enregistrée :', error);
+      if (message) {
+        message.textContent = 'Impossible d’enregistrer pour le moment.';
+        message.classList.remove('hidden');
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  try {
+    await ensureFunctions();
+    const callable = firebase.app().functions('europe-west1').httpsCallable('getNotificationPrefs');
+    const response = await callable({});
+    optIn = !!(response.data && response.data.optIn);
+  } catch (error) {
+    console.warn('[Espace Membre] Préférence rappels indisponible :', error);
+  }
+  paint();
 }
 
 // Fonction globale pour gérer la déconnexion
