@@ -45,3 +45,7 @@ reengagement_*.csv
 
 # Ré-engagement — journaux d'exécution (contiennent des emails)
 scripts/logs/
+
+# Clés VAPID (notifications push) — ne jamais committer
+functions/.vapid-keys.json
+.vapid-keys.json

@@ -71,6 +71,15 @@
       installDesktopSteps: 'Cliquez sur l’icône d’installation dans la barre d’adresse de votre navigateur (un petit écran avec une flèche).',
       installDismiss: 'Plus tard',
       installFootnote: 'Facultatif : vous pouvez continuer à utiliser Fluance dans votre navigateur.',
+      pushTitle: 'Notifications sur votre téléphone',
+      pushText: 'Recevoir « Un petit moment pour toi ? » directement sur cet appareil, en plus des emails. Vous pouvez les désactiver à tout moment.',
+      pushOn: 'Activées',
+      pushOff: 'Désactivées',
+      pushEnabled: 'Notifications activées sur cet appareil.',
+      pushDisabled: 'Notifications désactivées sur cet appareil.',
+      pushDenied: 'Notifications bloquées : autorisez-les dans les réglages de votre navigateur.',
+      pushError: 'Impossible d’activer les notifications pour le moment.',
+      pushIosInstall: 'Sur iPhone et iPad, ajoutez d’abord Ma pratique Fluance à l’écran d’accueil (voir « Avoir Fluance sur votre téléphone » plus bas), puis revenez ici pour activer les notifications.',
       gateTitle: 'Crée ton accès pour lancer la pratique',
       gateText: 'Ta sélection est prête. Crée ton compte gratuit (aucun engagement) et lance la pratique tout de suite.',
       gateLaunchTitle: 'Crée ton accès pour continuer',
@@ -132,6 +141,15 @@
       installDesktopSteps: 'Click the install icon in your browser’s address bar (a small screen with an arrow).',
       installDismiss: 'Later',
       installFootnote: 'Optional: you can keep using Fluance in your browser.',
+      pushTitle: 'Notifications on your phone',
+      pushText: 'Receive “A little moment for you?” directly on this device, in addition to emails. You can turn them off at any time.',
+      pushOn: 'On',
+      pushOff: 'Off',
+      pushEnabled: 'Notifications enabled on this device.',
+      pushDisabled: 'Notifications disabled on this device.',
+      pushDenied: 'Notifications blocked: allow them in your browser settings.',
+      pushError: 'Could not enable notifications right now.',
+      pushIosInstall: 'On iPhone and iPad, first add My practice to your home screen (see “Have Fluance on your phone” below), then come back here to enable notifications.',
       gateTitle: 'Create your access to start the practice',
       gateText: 'Your selection is ready. Create your free account (no commitment) and start right away.',
       gateLaunchTitle: 'Create your access to continue',
@@ -206,6 +224,8 @@
   let deferredInstallPrompt = null;
   let installCardEl = null;
   let installButtonEl = null;
+  let pushSubscription = null;
+  let pushMessage = '';
   let userStats = null;
   let pendingNeed = null;
   let pendingUnsubscribe = false;
@@ -424,6 +444,148 @@
     playerFavorite.setAttribute('aria-label', fav ? T.removeFavorite : T.addFavorite);
   }
 
+  // --- Notifications Web Push (appareil) ---
+
+  function pushSupported() {
+    return 'serviceWorker' in navigator && 'PushManager' in window &&
+      !!(app.getAttribute('data-vapid-key'));
+  }
+
+  function isStandalone() {
+    return !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  }
+
+  function isIosDevice() {
+    const ua = navigator.userAgent || '';
+    return /iphone|ipad|ipod/i.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    const output = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; i++) output[i] = rawData.charCodeAt(i);
+    return output;
+  }
+
+  async function getPushSubscription() {
+    if (!('serviceWorker' in navigator)) return null;
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      return await registration.pushManager.getSubscription();
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  async function refreshPushState() {
+    pushSubscription = await getPushSubscription();
+    if (userStats) renderPushRow();
+  }
+
+  function renderPushRow() {
+    if (!notificationsEl) return;
+    const existing = document.getElementById('companion-push-row');
+    if (existing) existing.remove();
+    if (!pushSupported()) return;
+
+    const block = document.createElement('div');
+    block.id = 'companion-push-row';
+    block.className = 'rounded-xl border border-fluance/15 bg-white p-5 mt-3';
+
+    const heading = document.createElement('h3');
+    heading.className = 'font-semibold text-[#3E3A35]';
+    heading.textContent = T.pushTitle;
+    block.appendChild(heading);
+
+    // Sur iPhone/iPad, les notifications exigent l'app installée.
+    if (isIosDevice() && !isStandalone()) {
+      const note = document.createElement('p');
+      note.className = 'text-sm text-[#3E3A35]/70 mt-1';
+      note.textContent = T.pushIosInstall;
+      block.appendChild(note);
+      notificationsEl.appendChild(block);
+      return;
+    }
+
+    const on = !!pushSubscription;
+    const head = document.createElement('div');
+    head.className = 'flex items-start justify-between gap-4';
+
+    const left = document.createElement('div');
+    const text = document.createElement('p');
+    text.className = 'text-sm text-[#3E3A35]/70 mt-1';
+    text.textContent = T.pushText;
+    left.appendChild(text);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'companion-push-toggle';
+    btn.className = 'shrink-0 rounded-full px-3 py-1 text-sm font-semibold ' +
+      (on ? 'bg-fluance text-white' : 'bg-gray-200 text-gray-700');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.textContent = on ? T.pushOn : T.pushOff;
+    btn.addEventListener('click', function () {
+      if (on) disablePush(); else enablePush();
+    });
+
+    head.appendChild(left);
+    head.appendChild(btn);
+    block.appendChild(head);
+
+    if (pushMessage) {
+      const msg = document.createElement('p');
+      msg.className = 'text-sm text-[#5a7d2a] mt-3';
+      msg.setAttribute('role', 'status');
+      msg.textContent = pushMessage;
+      block.appendChild(msg);
+    }
+
+    notificationsEl.appendChild(block);
+  }
+
+  async function enablePush() {
+    pushMessage = '';
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        pushMessage = T.pushDenied;
+        renderPushRow();
+        return;
+      }
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(app.getAttribute('data-vapid-key')),
+      });
+      await callFunction('savePushSubscription', {subscription: subscription.toJSON()});
+      pushSubscription = subscription;
+      pushMessage = T.pushEnabled;
+    } catch (e) {
+      console.warn('[Ma pratique] Notifications non activées :', e && e.message ? e.message : e);
+      pushMessage = T.pushError;
+    }
+    renderPushRow();
+  }
+
+  async function disablePush() {
+    pushMessage = '';
+    try {
+      const subscription = pushSubscription || await getPushSubscription();
+      if (subscription) {
+        await callFunction('removePushSubscription', {endpoint: subscription.endpoint});
+        await subscription.unsubscribe();
+      }
+      pushSubscription = null;
+      pushMessage = T.pushDisabled;
+    } catch (e) {
+      console.warn('[Ma pratique] Notifications non désactivées :', e && e.message ? e.message : e);
+    }
+    renderPushRow();
+  }
+
   function renderTracking() {
     if (!trackingSection || !userStats) return;
     setVisible(trackingSection, true);
@@ -502,6 +664,7 @@
         '</div>';
       const toggle = document.getElementById('companion-notif-toggle');
       if (toggle) toggle.addEventListener('click', function () { setNotifications(!on); });
+      renderPushRow();
     }
   }
 
@@ -790,6 +953,7 @@
     });
     renderUpsell();
     setupInstallPrompt();
+    refreshPushState();
   }
 
   function handleAuthState(user) {

@@ -84,3 +84,44 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+/*
+ * Notifications Web Push
+ * - `push` : affiche une notification (payload JSON : title, body, url, tag).
+ * - `notificationclick` : ouvre/focus la mini-app sur la bonne URL.
+ */
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (_e) {
+    data = {body: event.data ? event.data.text() : ''};
+  }
+  const title = data.title || 'Ma pratique Fluance';
+  const options = {
+    body: data.body || 'Un petit moment pour toi ?',
+    icon: '/assets/img/android-chrome-192x192.png',
+    badge: '/assets/img/favicon-32x32.png',
+    tag: data.tag || 'fluance-pratique',
+    renotify: false,
+    data: {url: data.url || '/ma-pratique/'},
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || '/ma-pratique/';
+  event.waitUntil(
+    self.clients.matchAll({type: 'window', includeUncontrolled: true}).then((clients) => {
+      for (const client of clients) {
+        if (client.url.includes('/ma-pratique') || client.url.includes('/my-practice')) {
+          client.focus();
+          if (client.navigate) client.navigate(target);
+          return undefined;
+        }
+      }
+      return self.clients.openWindow(target);
+    })
+  );
+});

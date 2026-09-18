@@ -304,6 +304,35 @@ Les tags/variables GTM correspondants sont à créer côté GTM (aucune modifica
   - iOS/Safari : pas d'événement d'installation → étapes « Partager → Sur l'écran d'accueil ».
   - Non intrusive : dismissible (« Plus tard »), mémorisée (`fluance_install_dismissed`),
     jamais affichée si déjà installée (`display-mode: standalone`).
+### Notifications Web Push (implémenté)
+
+- Abonnement par appareil via le service worker (`pushManager.subscribe`), clé publique VAPID
+  injectée dans la page compagnon (`data-vapid-key`).
+- Callables `savePushSubscription` / `removePushSubscription` (auth) ; souscriptions stockées
+  dans `users/{uid}/pushSubscriptions/*` (serveur uniquement).
+- Le job `sendPracticeReminders` envoie **email et/ou push** selon les préférences
+  (`notificationOptIn` pour l'email, `pushEnabled` pour le push), avec le même plafond de
+  fréquence (1/semaine) et la même logique d'inactivité.
+- Service worker : handlers `push` (affiche la notification) et `notificationclick`
+  (ouvre la mini-app).
+- **iPhone/iPad** : les notifications exigent l'app **installée** (iOS 16.4+) → le UI affiche
+  une consigne d'installation au lieu du bouton.
+
+**Mise en place (une fois)** :
+
+```bash
+node scripts/generate-vapid-keys.mjs          # génère functions/.vapid-keys.json (gitignoré)
+```
+
+1. Copier la **clé publique** dans `.env` **et** dans les GitHub secrets (`WEBPUSH_PUBLIC_KEY`) —
+   indispensable pour le build CI.
+2. Stocker la **clé privée** en secret Firebase :
+   `node -e "process.stdout.write(require('./functions/.vapid-keys.json').privateKey)" | firebase functions:secrets:set WEBPUSH_PRIVATE_KEY`
+3. Déployer :
+   `firebase deploy --only functions:savePushSubscription,functions:removePushSubscription,functions:sendPracticeReminders`
+
+> ⚠️ Régénérer les clés VAPID invalide tous les abonnements push existants.
+
 - **Métadonnées iOS** : `apple-mobile-web-app-capable`, `mobile-web-app-capable`,
   `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title` (variable de page
   `appTitle`, défaut « Fluance »).

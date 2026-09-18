@@ -155,6 +155,10 @@ practice, without changing the existing programmes, checkout or member area. See
   `manageSubscription` — cancel **at period end** (access kept until then), **pause 1/3 months**
   (billing paused, premium access suspended, auto-resume), reactivate/resume, with confirmation
   emails (`annulation-abonnement`, `pause-abonnement`).
+- **Web Push notifications** (`savePushSubscription`/`removePushSubscription` + SW `push`
+  handlers, VAPID). Sent alongside email reminders by `sendPracticeReminders`. iOS requires the
+  app to be installed. Setup: `scripts/generate-vapid-keys.mjs` → `WEBPUSH_PUBLIC_KEY` (env +
+  GitHub secret) + `WEBPUSH_PRIVATE_KEY` (Firebase secret).
 - Logic: `src/assets/js/practice-companion.mjs` · PWA: `src/sw.njk` + `src/ma-pratique.webmanifest`
   (install prompt Android + iOS hint, app-shell cache only — never the videos).
 - Tracking (server-only writes): `logPractice`, `toggleFavorite`, `setNotificationOptIn`,

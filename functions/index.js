@@ -6547,6 +6547,70 @@ exports.createFreeAccount = onCall(
 // ---------------------------------------------------------------------------
 
 const PRACTICE_NEEDS = ['tendu', 'mental', 'fatigue', 'calme', 'bouger'];
+
+// ---------------------------------------------------------------------------
+// Notifications Web Push (VAPID)
+// ---------------------------------------------------------------------------
+
+let _webpushClient = null;
+
+/**
+ * Retourne le client web-push configuré (ou null si les clés VAPID manquent).
+ * @returns {Object|null}
+ */
+function getWebPushClient() {
+  const publicKey = process.env.WEBPUSH_PUBLIC_KEY;
+  const privateKey = process.env.WEBPUSH_PRIVATE_KEY;
+  if (!publicKey || !privateKey) return null;
+  try {
+    if (!_webpushClient) _webpushClient = require('web-push');
+    _webpushClient.setVapidDetails('mailto:support@fluance.io', publicKey, privateKey);
+    return _webpushClient;
+  } catch (error) {
+    console.error('web-push indisponible:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Envoie une notification push à toutes les souscriptions d'un utilisateur.
+ * Supprime les souscriptions expirées (404/410).
+ * @param {FirebaseFirestore.DocumentReference} userRef
+ * @param {Object} payload - {title, body, url, tag}
+ * @returns {Promise<number>} nombre d'envois réussis
+ */
+async function sendPushToUser(userRef, payload) {
+  const client = getWebPushClient();
+  if (!client) return 0;
+  let subsSnapshot;
+  try {
+    subsSnapshot = await userRef.collection('pushSubscriptions').get();
+  } catch {
+    return 0;
+  }
+  if (subsSnapshot.empty) return 0;
+
+  let sent = 0;
+  for (const subDoc of subsSnapshot.docs) {
+    const data = subDoc.data() || {};
+    if (!data.endpoint || !data.keys || !data.keys.p256dh || !data.keys.auth) continue;
+    try {
+      await client.sendNotification(
+          {endpoint: data.endpoint, keys: data.keys},
+          JSON.stringify(payload),
+      );
+      sent += 1;
+    } catch (error) {
+      const status = error && (error.statusCode || error.status);
+      if (status === 404 || status === 410) {
+        await subDoc.ref.delete().catch(() => {});
+      } else {
+        console.warn('Push send failed:', status, error && error.message);
+      }
+    }
+  }
+  return sent;
+}
 const MAX_PRACTICE_FAVORITES = 30;
 const PRACTICE_REMINDER_MIN_DAYS = 3; // absence minimale avant un rappel
 const PRACTICE_REMINDER_COOLDOWN_DAYS = 7; // fréquence maximale (1 / 7 jours)
@@ -7073,6 +7137,73 @@ exports.manageSubscription = onCall(
     });
 
 /**
+ * Enregistre (ou met à jour) l'abonnement Web Push de l'appareil de l'utilisateur.
+ * Région : europe-west1
+ */
+exports.savePushSubscription = onCall(
+    {
+      region: 'europe-west1',
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e).');
+      }
+      const subscription = request.data && request.data.subscription;
+      if (!subscription || !subscription.endpoint ||
+          !subscription.keys || !subscription.keys.p256dh || !subscription.keys.auth) {
+        throw new HttpsError('invalid-argument', 'Abonnement push invalide.');
+      }
+      const userRef = db.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        throw new HttpsError('not-found', 'Compte introuvable.');
+      }
+
+      const id = crypto.createHash('sha256').update(subscription.endpoint).digest('hex').slice(0, 40);
+      await userRef.collection('pushSubscriptions').doc(id).set({
+        endpoint: subscription.endpoint,
+        keys: {p256dh: subscription.keys.p256dh, auth: subscription.keys.auth},
+        userAgent: (request.rawRequest && request.rawRequest.headers &&
+          request.rawRequest.headers['user-agent']) || null,
+        createdAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+      await userRef.set({
+        pushEnabled: true,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+
+      return {success: true};
+    });
+
+/**
+ * Retire l'abonnement Web Push d'un appareil.
+ * Région : europe-west1
+ */
+exports.removePushSubscription = onCall(
+    {
+      region: 'europe-west1',
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e).');
+      }
+      const endpoint = request.data && request.data.endpoint;
+      const userRef = db.collection('users').doc(uid);
+      if (endpoint) {
+        const id = crypto.createHash('sha256').update(endpoint).digest('hex').slice(0, 40);
+        await userRef.collection('pushSubscriptions').doc(id).delete().catch(() => {});
+      }
+      const remaining = await userRef.collection('pushSubscriptions').limit(1).get();
+      await userRef.set({
+        pushEnabled: !remaining.empty,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+      return {success: true};
+    });
+
+/**
  * Rappels de pratique intelligents (email), quotidien.
  *
  * Ciblage : utilisateurs ayant explicitement activé les rappels, inactifs depuis
@@ -7086,43 +7217,61 @@ exports.sendPracticeReminders = onSchedule(
     {
       schedule: '0 9 * * *', // Tous les jours à 9h
       timeZone: 'Europe/Paris',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL', 'WEBPUSH_PUBLIC_KEY', 'WEBPUSH_PRIVATE_KEY'],
       region: 'europe-west1',
     },
     async () => {
       const mailjetApiKey = process.env.MAILJET_API_KEY;
       const mailjetApiSecret = process.env.MAILJET_API_SECRET;
-      if (!mailjetApiKey || !mailjetApiSecret) {
-        console.error('❌ Mailjet credentials not configured (practice reminders)');
+      const emailChannelReady = !!(mailjetApiKey && mailjetApiSecret);
+      if (!emailChannelReady && !getWebPushClient()) {
+        console.error('❌ Ni Mailjet ni Web Push configurés (rappels de pratique)');
         return;
       }
 
       const now = new Date();
       const DAY_MS = 24 * 60 * 60 * 1000;
       let sent = 0;
+      let pushSent = 0;
       let skipped = 0;
       let errors = 0;
 
-      let snapshot;
+      // Fusionner les utilisateurs qui veulent des rappels : email (notificationOptIn)
+      // et/ou notifications push (pushEnabled).
+      const usersById = new Map();
       try {
-        snapshot = await db.collection('users')
-            .where('notificationOptIn', '==', true)
-            .limit(2000)
-            .get();
+        const emailSnapshot = await db.collection('users')
+            .where('notificationOptIn', '==', true).limit(2000).get();
+        emailSnapshot.docs.forEach((doc) => {
+          usersById.set(doc.id, {doc: doc, emailOptIn: true});
+        });
       } catch (queryError) {
-        console.error('❌ Error querying opted-in users:', queryError);
-        return;
+        console.error('❌ Error querying email opt-in users:', queryError);
+      }
+      try {
+        const pushSnapshot = await db.collection('users')
+            .where('pushEnabled', '==', true).limit(2000).get();
+        pushSnapshot.docs.forEach((doc) => {
+          const existing = usersById.get(doc.id) || {doc: doc, emailOptIn: false};
+          existing.pushOptIn = true;
+          usersById.set(doc.id, existing);
+        });
+      } catch (queryError) {
+        console.error('❌ Error querying push opt-in users:', queryError);
       }
 
-      for (const userDoc of snapshot.docs) {
+      for (const entry of usersById.values()) {
         if (sent >= PRACTICE_REMINDER_MAX_PER_RUN) break;
+        const userDoc = entry.doc;
         const userData = userDoc.data() || {};
         if (userData.isDemo === true) {
           skipped++;
           continue;
         }
         const email = userData.email;
-        if (!email) {
+        const wantEmail = entry.emailOptIn === true && emailChannelReady && !!email;
+        const wantPush = entry.pushOptIn === true;
+        if (!wantEmail && !wantPush) {
           skipped++;
           continue;
         }
@@ -7156,85 +7305,116 @@ exports.sendPracticeReminders = onSchedule(
         const practiceUrl = lastNeed ?
           `${baseUrl}?need=${encodeURIComponent(lastNeed)}` : baseUrl;
 
-        // Jeton de désinscription CIBLÉE (rappels de pratique uniquement).
-        // N'affecte en rien la mailing list Mailjet globale : aucune API Mailjet
-        // d'unsubscribe n'est appelée.
-        let unsubToken = userData.reminderUnsubToken;
-        if (!unsubToken || typeof unsubToken !== 'string') {
-          unsubToken = generateUniqueToken();
-          await db.collection('reminderUnsubTokens').doc(unsubToken).set({
-            uid: userDoc.id,
-            email: email,
-            createdAt: FieldValue.serverTimestamp(),
+        let delivered = false;
+
+        // Notifications push (si l'appareil est abonné).
+        if (wantPush) {
+          const pushCopy = locale === 'en' ? {
+            title: 'A little moment for you?',
+            body: 'A short practice is waiting for you in Fluance.',
+          } : {
+            title: 'Un petit moment pour toi ?',
+            body: 'Une pratique courte t’attend dans Fluance.',
+          };
+          const pushCount = await sendPushToUser(userDoc.ref, {
+            title: pushCopy.title,
+            body: pushCopy.body,
+            url: practiceUrl,
+            tag: 'fluance-pratique',
           });
-          await userDoc.ref.set({reminderUnsubToken: unsubToken}, {merge: true});
+          if (pushCount > 0) {
+            pushSent += pushCount;
+            delivered = true;
+          }
         }
-        const manageUrl = 'https://europe-west1-fluance-protected-content.cloudfunctions.net/' +
-          `unsubscribePracticeReminders?token=${unsubToken}&lang=${locale}`;
 
-        const copy = locale === 'en' ? {
-          subject: 'A little moment for you?',
-          title: 'A little moment for you?',
-          greeting: `Hi ${firstName}`.trim(),
-          body: lastNeed ?
-            'Your body may be asking for a few minutes of movement and breath. Fluance suggests a short practice, in line with what felt good last time.' :
-            'A few minutes of movement, breath and presence are often enough to release tension. Feel like practicing?',
-          cta: 'Open My practice',
-          footer: 'You receive this email because you enabled practice reminders. You can',
-          footerLink: 'turn them off here',
-        } : {
-          subject: 'Un petit moment pour toi ?',
-          title: 'Un petit moment pour toi ?',
-          greeting: `Bonjour ${firstName}`.trim(),
-          body: lastNeed ?
-            'Ton corps a peut-être envie de quelques minutes de mouvement et de souffle. Fluance te propose une pratique courte, dans la continuité de ce qui t\'a fait du bien la dernière fois.' :
-            'Quelques minutes de mouvement, de souffle et de présence suffisent souvent à relâcher les tensions. Envie de pratiquer ?',
-          cta: 'Ouvrir Ma pratique',
-          footer: 'Tu reçois cet email car tu as activé les rappels de pratique. Tu peux',
-          footerLink: 'les désactiver ici',
-        };
+        // Email de rappel (si opt-in email).
+        if (wantEmail) {
+          // Jeton de désinscription CIBLÉE (rappels de pratique uniquement).
+          // N'affecte en rien la mailing list Mailjet globale : aucune API Mailjet
+          // d'unsubscribe n'est appelée.
+          let unsubToken = userData.reminderUnsubToken;
+          if (!unsubToken || typeof unsubToken !== 'string') {
+            unsubToken = generateUniqueToken();
+            await db.collection('reminderUnsubTokens').doc(unsubToken).set({
+              uid: userDoc.id,
+              email: email,
+              createdAt: FieldValue.serverTimestamp(),
+            });
+            await userDoc.ref.set({reminderUnsubToken: unsubToken}, {merge: true});
+          }
+          const manageUrl = 'https://europe-west1-fluance-protected-content.cloudfunctions.net/' +
+            `unsubscribePracticeReminders?token=${unsubToken}&lang=${locale}`;
 
-        const html = loadEmailTemplate('rappel-pratique', {
-          title: copy.title,
-          greeting: copy.greeting,
-          body: copy.body,
-          cta: copy.cta,
-          ctaUrl: practiceUrl,
-          manageUrl: manageUrl,
-          footer: copy.footer,
-          footerLink: copy.footerLink,
-        });
-        const text = `${copy.greeting}\n\n${copy.body}\n\n` +
-          `${copy.cta}: ${practiceUrl}\n\n${copy.footer} ${copy.footerLink}: ${manageUrl}`;
+          const copy = locale === 'en' ? {
+            subject: 'A little moment for you?',
+            title: 'A little moment for you?',
+            greeting: `Hi ${firstName}`.trim(),
+            body: lastNeed ?
+              'Your body may be asking for a few minutes of movement and breath. Fluance suggests a short practice, in line with what felt good last time.' :
+              'A few minutes of movement, breath and presence are often enough to release tension. Feel like practicing?',
+            cta: 'Open My practice',
+            footer: 'You receive this email because you enabled practice reminders. You can',
+            footerLink: 'turn them off here',
+          } : {
+            subject: 'Un petit moment pour toi ?',
+            title: 'Un petit moment pour toi ?',
+            greeting: `Bonjour ${firstName}`.trim(),
+            body: lastNeed ?
+              'Ton corps a peut-être envie de quelques minutes de mouvement et de souffle. Fluance te propose une pratique courte, dans la continuité de ce qui t\'a fait du bien la dernière fois.' :
+              'Quelques minutes de mouvement, de souffle et de présence suffisent souvent à relâcher les tensions. Envie de pratiquer ?',
+            cta: 'Ouvrir Ma pratique',
+            footer: 'Tu reçois cet email car tu as activé les rappels de pratique. Tu peux',
+            footerLink: 'les désactiver ici',
+          };
 
-        try {
-          await sendMailjetEmail(
-              email,
-              copy.subject,
-              html,
-              text,
-              mailjetApiKey,
-              mailjetApiSecret,
-              undefined,
-              undefined,
-              {
-                'List-Unsubscribe': `<${manageUrl}>`,
-                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-              },
-          );
+          const html = loadEmailTemplate('rappel-pratique', {
+            title: copy.title,
+            greeting: copy.greeting,
+            body: copy.body,
+            cta: copy.cta,
+            ctaUrl: practiceUrl,
+            manageUrl: manageUrl,
+            footer: copy.footer,
+            footerLink: copy.footerLink,
+          });
+          const text = `${copy.greeting}\n\n${copy.body}\n\n` +
+            `${copy.cta}: ${practiceUrl}\n\n${copy.footer} ${copy.footerLink}: ${manageUrl}`;
+
+          try {
+            await sendMailjetEmail(
+                email,
+                copy.subject,
+                html,
+                text,
+                mailjetApiKey,
+                mailjetApiSecret,
+                undefined,
+                undefined,
+                {
+                  'List-Unsubscribe': `<${manageUrl}>`,
+                  'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                },
+            );
+            delivered = true;
+          } catch (sendError) {
+            errors++;
+            console.error(`❌ Practice reminder failed for ${email}:`, sendError.message);
+          }
+        }
+
+        if (delivered) {
           await userDoc.ref.set({
             lastPracticeReminderAt: Timestamp.now(),
             practiceReminderCount: FieldValue.increment(1),
             updatedAt: FieldValue.serverTimestamp(),
           }, {merge: true});
           sent++;
-        } catch (sendError) {
-          errors++;
-          console.error(`❌ Practice reminder failed for ${email}:`, sendError.message);
         }
       }
 
-      console.log(`📧 Practice reminders — sent: ${sent}, skipped: ${skipped}, errors: ${errors}`);
+      console.log(`📧 Practice reminders — users: ${sent}, ` +
+        `push sent: ${pushSent}, skipped: ${skipped}, errors: ${errors}`);
     });
 
 /**
