@@ -60,6 +60,16 @@
       signupLoading: 'Création du compte…',
       install: 'Installer l’application',
       installIos: 'Pour installer : Partager → « Sur l’écran d’accueil »',
+      gateTitle: 'Crée ton accès pour lancer la pratique',
+      gateText: 'Ta sélection est prête. Crée ton compte gratuit (aucun engagement) et lance la pratique tout de suite.',
+      gateLaunchTitle: 'Crée ton accès pour continuer',
+      gateLaunchText: 'Tu as découvert ta première pratique offerte. Crée ton compte gratuit (aucun engagement) pour lancer les suivantes.',
+      gateFavoriteTitle: 'Crée ton accès pour enregistrer tes favoris',
+      gateFavoriteText: 'Crée ton compte gratuit (aucun engagement) pour sauvegarder tes pratiques préférées.',
+      gateLogTitle: 'Crée ton accès pour garder ton historique',
+      gateLogText: 'Crée ton compte gratuit (aucun engagement) pour enregistrer cette pratique et suivre ton rythme.',
+      firstFreeNote: 'Ta première pratique est offerte, sans compte.',
+      anonNote: 'Première pratique offerte, sans compte. Crée ton accès gratuit pour garder ton historique et tes favoris.',
       trackingTitle: 'Mon suivi',
       stat7: '7 derniers jours',
       stat30: '30 derniers jours',
@@ -100,6 +110,16 @@
       signupLoading: 'Creating account…',
       install: 'Install the app',
       installIos: 'To install: Share → “Add to Home Screen”',
+      gateTitle: 'Create your access to start the practice',
+      gateText: 'Your selection is ready. Create your free account (no commitment) and start right away.',
+      gateLaunchTitle: 'Create your access to continue',
+      gateLaunchText: 'You’ve discovered your first free practice. Create your free account (no commitment) to start the next ones.',
+      gateFavoriteTitle: 'Create your access to save favourites',
+      gateFavoriteText: 'Create your free account (no commitment) to save your favourite practices.',
+      gateLogTitle: 'Create your access to keep your history',
+      gateLogText: 'Create your free account (no commitment) to record this practice and track your rhythm.',
+      firstFreeNote: 'Your first practice is free, no account needed.',
+      anonNote: 'First practice free, no account needed. Create your free access to keep your history and favourites.',
       trackingTitle: 'My tracking',
       stat7: 'Last 7 days',
       stat30: 'Last 30 days',
@@ -147,6 +167,10 @@
   const historyEl = document.getElementById('companion-history');
   const notificationsEl = document.getElementById('companion-notifications');
   const playerFavorite = document.getElementById('player-favorite');
+  const recNote = document.getElementById('recommendation-note');
+  const playerAnonNote = document.getElementById('player-anon-note');
+  const authTitleEl = document.getElementById('companion-auth-title');
+  const authTextEl = document.getElementById('companion-auth-text');
 
   let accessibleProtected = new Map(); // contentId → titre (droits résolus côté serveur)
   let protectedCacheLoaded = false;
@@ -162,7 +186,8 @@
   let pendingUnsubscribe = false;
   let notificationMessage = '';
   let authed = false;
-  let pendingPractice = null;
+  let pendingAction = null;
+  let freeTrialUsed = false;
 
   // --- Utilitaires ---
 
@@ -342,7 +367,11 @@
     }
 
     setVisible(recSection, true);
-    track('recommendation_displayed', { need: needId, count: list.length, lang: LANG });
+    if (recNote) {
+      recNote.textContent = T.firstFreeNote;
+      setVisible(recNote, !authed && !freeTrialUsed);
+    }
+    track('recommendation_displayed', {need: needId, count: list.length, lang: LANG});
   }
 
   function renderUpsell() {
@@ -470,8 +499,7 @@
   async function setFavorite(contentId, favorite) {
     if (!contentId) return;
     if (!authed) {
-      revealSignup();
-      scrollToEl(authRequiredEl);
+      requestSignup('favorite', {contentId: contentId, favorite: favorite});
       return;
     }
     // Mise à jour optimiste de l'interface
@@ -550,17 +578,27 @@
 
   function startPractice(practice) {
     if (!practice || !playerSection || !playerContainer) return;
-    // Non connecté : l'inscription devient la dernière étape avant la pratique.
+
+    // Anonyme : la PREMIÈRE pratique gratuite est offerte, sans compte.
+    // Toute autre action (2e pratique, favori, historique) nécessite un compte.
     if (!authed) {
-      pendingPractice = practice;
-      revealSignup();
-      scrollToEl(authRequiredEl);
-      return;
+      const isFirstFree = practice.source === 'free' && !freeTrialUsed;
+      if (!isFirstFree) {
+        requestSignup('launch', {practice: practice});
+        return;
+      }
+      markFreeTrialUsed();
     }
+
+    const anonymous = !authed;
     currentPractice = practice;
     if (playerDone) playerDone.disabled = false;
     setVisible(playerFeedback, false);
     playerContainer.innerHTML = '';
+    if (playerAnonNote) {
+      playerAnonNote.textContent = T.anonNote;
+      setVisible(playerAnonNote, anonymous);
+    }
 
     const title = practice.source === 'free'
       ? localize(practice.title)
@@ -584,18 +622,23 @@
 
     setVisible(playerSection, true);
     updatePlayerFavorite();
-    if (playerSection.scrollIntoView) playerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    track('practice_started', { practice: practice.id, source: practice.source, need: selectedNeed, lang: LANG });
+    scrollToEl(playerSection);
+    track('practice_started', {practice: practice.id, source: practice.source, need: selectedNeed, lang: LANG, anonymous: anonymous});
   }
 
   function finishPractice() {
     if (!currentPractice) return;
+    // Enregistrer une pratique (historique) nécessite un compte.
+    if (!authed) {
+      requestSignup('log', {practice: currentPractice});
+      return;
+    }
     if (playerFeedback) {
       playerFeedback.textContent = T.thanks;
       setVisible(playerFeedback, true);
     }
     if (playerDone) playerDone.disabled = true;
-    track('practice_completed', { practice: currentPractice.id, need: selectedNeed, lang: LANG });
+    track('practice_completed', {practice: currentPractice.id, need: selectedNeed, lang: LANG});
     logPractice(currentPractice);
   }
 
@@ -608,16 +651,70 @@
 
   // --- Auth ---
 
-  // Affiche le formulaire d'inscription uniquement après une intention
-  // (clic sur un besoin ou sur « Lancer la pratique »).
-  function revealSignup() {
-    if (authed) return;
-    setVisible(authRequiredEl, true);
-    renderTurnstile();
-  }
-
   function scrollToEl(el) {
     if (el && el.scrollIntoView) el.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+
+  // --- Mur d'inscription (après la première pratique gratuite sans compte) ---
+
+  function loadFreeTrialState() {
+    try {
+      freeTrialUsed = localStorage.getItem('fluance_free_trial_used') === '1';
+    } catch (_e) {
+      freeTrialUsed = false;
+    }
+  }
+
+  function markFreeTrialUsed() {
+    freeTrialUsed = true;
+    try { localStorage.setItem('fluance_free_trial_used', '1'); } catch (_e) { /* stockage indisponible */ }
+    if (recNote) setVisible(recNote, false);
+  }
+
+  function applyGateCopy(reason) {
+    if (authTitleEl) {
+      authTitleEl.textContent = reason === 'favorite' ? T.gateFavoriteTitle
+        : reason === 'log' ? T.gateLogTitle
+          : reason === 'launch' ? T.gateLaunchTitle
+            : T.gateTitle;
+    }
+    if (authTextEl) {
+      authTextEl.textContent = reason === 'favorite' ? T.gateFavoriteText
+        : reason === 'log' ? T.gateLogText
+          : reason === 'launch' ? T.gateLaunchText
+            : T.gateText;
+    }
+  }
+
+  // Toute action au-delà de la première pratique gratuite nécessite un compte.
+  function requestSignup(reason, data) {
+    if (authed) return;
+    pendingAction = Object.assign({type: reason}, data || {});
+    applyGateCopy(reason);
+    setVisible(authRequiredEl, true);
+    renderTurnstile();
+    scrollToEl(authRequiredEl);
+    track('signup_wall_reached', {reason: reason, lang: LANG});
+  }
+
+  // Reprend l'action interrompue par le mur d'inscription, une fois connecté.
+  function resumePendingAction() {
+    if (!pendingAction) return;
+    const action = pendingAction;
+    pendingAction = null;
+    if (action.type === 'launch' && action.practice) {
+      startPractice(action.practice);
+    } else if (action.type === 'log' && action.practice) {
+      if (playerFeedback) {
+        playerFeedback.textContent = T.thanks;
+        setVisible(playerFeedback, true);
+      }
+      if (playerDone) playerDone.disabled = true;
+      track('practice_completed', {practice: action.practice.id, need: selectedNeed, lang: LANG});
+      logPractice(action.practice);
+    } else if (action.type === 'favorite' && action.contentId) {
+      setFavorite(action.contentId, action.favorite);
+    }
   }
 
   function showLogin() {
@@ -640,6 +737,7 @@
     setVisible(pendingEl, false);
     setVisible(authRequiredEl, false);
     setVisible(mainEl, true);
+    setVisible(playerAnonNote, false);
     if (appShown) return;
     appShown = true;
     track('companion_opened', { lang: LANG });
@@ -660,12 +758,8 @@
         renderRecommendations(need);
         scrollToEl(recSection);
       }
-      // Inscription depuis un clic « Lancer » : on démarre la pratique tout de suite.
-      if (pendingPractice) {
-        const practice = pendingPractice;
-        pendingPractice = null;
-        startPractice(practice);
-      }
+      // Reprend l'action interrompue par le mur d'inscription.
+      resumePendingAction();
     });
     renderUpsell();
     setupInstallPrompt();
@@ -683,13 +777,9 @@
     needGrid.querySelectorAll('[data-need]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         const need = btn.getAttribute('data-need');
-        track('need_selected', { need: need, lang: LANG });
+        track('need_selected', {need: need, lang: LANG});
         renderRecommendations(need);
-        // L'utilisateur a exprimé un besoin → on propose l'inscription, juste sous l'aperçu.
-        if (!authed) {
-          revealSignup();
-          scrollToEl(recSection);
-        }
+        scrollToEl(recSection);
       });
     });
   }
@@ -875,6 +965,7 @@
   }
 
   function boot() {
+    loadFreeTrialState();
     attachNeedHandlers();
     wirePlayer();
     wireSignup();

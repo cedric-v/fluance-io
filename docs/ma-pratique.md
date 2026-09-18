@@ -133,11 +133,13 @@ simple demande (sous-collection `practiceLog` + champ `favorites`).
 
 ## 5. Règles d'accès
 
-0. **Valeur avant l'effort** : la question « Comment te sens-tu ? » et les **choix de besoins**
-   sont visibles **sans compte**. Un clic sur un besoin affiche l'**aperçu de la recommandation**
-   (titre, durée, pourquoi) puis révèle le formulaire d'inscription (« Gratuit · accès
-   immédiat »). Le clic sur « Lancer la pratique » ou sur un favori déclenche aussi le
-   formulaire, et la pratique choisie est **lancée automatiquement** après l'inscription.
+0. **Valeur avant l'effort (PLG)** : la question, les **choix de besoins** et l'**aperçu des
+   recommandations** sont visibles **sans compte**. La **première pratique gratuite se lance
+   sans compte** (mémorisé localement : `fluance_free_trial_used`). Toute action
+   supplémentaire — lancer une 2e pratique, ajouter un favori, enregistrer l'historique,
+   accéder au premium — ouvre le formulaire d'inscription (« Gratuit · accès immédiat »)
+   avec un message contextualisé ; l'action interrompue est **reprise automatiquement**
+   après l'inscription (lancement, favori ou enregistrement).
 1. `practice-companion.mjs` attend l'état d'auth **confirmé** par Firebase (jamais de flash
    « connectez-vous » pendant la restauration de session).
 2. Non connecté → écran d'**inscription gratuite ouverte** (formulaire intégré) + lien vers
@@ -222,11 +224,12 @@ accepté** (`localStorage.cookieConsent === 'accepted'`). Aucune donnée personn
 | `companion_opened` | App affichée (utilisateur connecté) |
 | `need_selected` | Clic sur un besoin |
 | `recommendation_displayed` | Recommandations rendues (`need`, `count`, `lang`) |
-| `practice_started` | Lancement d'une pratique (`practice`, `source`, `need`) |
+| `practice_started` | Lancement d'une pratique (`practice`, `source`, `need`, `anonymous`) |
 | `practice_completed` | Clic sur « J'ai pratiqué » |
 | `practice_favorited` | Ajout d'un favori |
 | `practice_unfavorited` | Retrait d'un favori |
 | `free_account_created` | Compte gratuit créé depuis la mini-app |
+| `signup_wall_reached` | Action bloquée par le mur d'inscription (`reason` : `launch`/`favorite`/`log`) |
 
 Les tags/variables GTM correspondants sont à créer côté GTM (aucune modification de code requise).
 

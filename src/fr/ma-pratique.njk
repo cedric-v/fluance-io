@@ -54,6 +54,7 @@ appTitle: Ma pratique
 
     <section id="recommendation" class="hidden scroll-mt-28" aria-live="polite">
       <h2 id="recommendation-title" class="text-lg font-semibold text-[#3E3A35] mb-4"></h2>
+      <p id="recommendation-note" class="hidden text-sm text-[#5a7d2a] -mt-2 mb-4"></p>
       <div id="recommendation-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </section>
 
@@ -67,6 +68,7 @@ appTitle: Ma pratique
           </div>
         </div>
         <div id="player-container" class="rounded-lg overflow-hidden bg-gray-100"></div>
+        <p id="player-anon-note" class="hidden mt-4 text-sm text-[#5a7d2a] bg-[#8bc34a]/10 rounded-lg px-3 py-2"></p>
         <div id="player-feedback" class="hidden mt-4 text-center text-[#5a7d2a] font-medium" role="status"></div>
         <div class="mt-5 flex flex-col sm:flex-row gap-3 sm:justify-end">
           <button type="button" id="player-done" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]">J’ai pratiqué</button>
@@ -87,8 +89,8 @@ appTitle: Ma pratique
   <!-- Inscription gratuite : n'apparaît qu'après une intention (clic sur un besoin / lancer) -->
   <div id="companion-auth-required" class="hidden scroll-mt-28 section-card bg-white p-6 md:p-8 mt-8">
     <p class="cta-pill bg-[#8bc34a]/15 text-[#5a7d2a] mb-3">Gratuit · accès immédiat</p>
-    <h2 class="text-xl font-semibold text-[#3E3A35] mb-2">Crée ton accès pour lancer la pratique</h2>
-    <p class="text-[#3E3A35]/70 mb-5 text-sm">
+    <h2 id="companion-auth-title" class="text-xl font-semibold text-[#3E3A35] mb-2">Crée ton accès pour lancer la pratique</h2>
+    <p id="companion-auth-text" class="text-[#3E3A35]/70 mb-5 text-sm">
       Ta sélection est prête. Crée ton compte gratuit (aucun engagement) et lance la pratique tout de suite.
     </p>
     <form id="free-signup-form" class="space-y-3 text-left" novalidate>
