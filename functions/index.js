@@ -1599,6 +1599,7 @@ async function createTokenAndSendEmail(
     customerPhone = null,
     customerAddress = null,
     langue = 'fr',
+    variant = null,
 ) {
   const token = generateUniqueToken();
   const expirationDate = new Date();
@@ -1608,6 +1609,7 @@ async function createTokenAndSendEmail(
   await db.collection('registrationTokens').doc(token).set({
     email: email.toLowerCase().trim(),
     product: product,
+    ...(variant ? {variant} : {}),
     createdAt: FieldValue.serverTimestamp(),
     expiresAt: expirationDate,
     used: false,
@@ -1784,6 +1786,7 @@ async function createTokenForMultipleProductsAndSendEmail(
     customerPhone = null,
     customerAddress = null,
     langue = 'fr',
+    variant = null,
 ) {
   const token = generateUniqueToken();
   const expirationDate = new Date();
@@ -1793,6 +1796,7 @@ async function createTokenForMultipleProductsAndSendEmail(
   await db.collection('registrationTokens').doc(token).set({
     email: email.toLowerCase().trim(),
     products: products, // Tableau de produits
+    ...(variant ? {variant} : {}),
     createdAt: FieldValue.serverTimestamp(),
     expiresAt: expirationDate,
     used: false,
@@ -3203,6 +3207,7 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
                 customerPhone,
                 fullAddress,
                 langue,
+                session.metadata?.variant || null,
             );
 
             // Envoyer notification admin
@@ -3242,6 +3247,7 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
                 customerPhone,
                 fullAddress,
                 langue,
+                session.metadata?.variant || null,
             );
 
             // Envoyer notification admin
@@ -5178,8 +5184,8 @@ exports.verifyToken = onCall(
         // Ajouter tous les produits du token qui n'existent pas déjà
         const now = FieldValue.serverTimestamp();
         for (const productName of tokenProducts) {
-          const productExists = products.some((p) => p.name === productName);
-          if (!productExists) {
+          const existingIndex = products.findIndex((p) => p.name === productName);
+          if (existingIndex === -1) {
             // 🚀 Défi 21 jours : le décompte démarre au PREMIER accès à la
             // formation (started: false → getProtectedContent fixe startDate
             // au premier accès). Les autres produits démarrent dès la création.
@@ -5191,12 +5197,21 @@ exports.verifyToken = onCall(
                 started: false,
               });
             } else {
-              products.push({
+              const entry = {
                 name: productName,
                 startDate: now,
                 purchasedAt: now,
-              });
+              };
+              // Offre « Fluance Illimité » : mémoriser la variante (mensuel/annuel)
+              // pour distinguer les avantages (bonus annuel).
+              if (productName === 'complet' && tokenData.variant) {
+                entry.variant = tokenData.variant;
+              }
+              products.push(entry);
             }
+          } else if (productName === 'complet' && tokenData.variant) {
+            // Passage mensuel ↔ annuel : on garde la variante à jour.
+            products[existingIndex].variant = tokenData.variant;
           }
         }
 
@@ -5547,6 +5562,8 @@ exports.getProtectedContent = onCall(
           productsData.push({
             name: productName,
             startDate: startDate.toISOString(),
+            // Variante éventuelle (ex. ma_pratique_mensuel / ma_pratique_annuel)
+            variant: userProductData.variant || null,
             contents: contents,
             daysSinceStart: productName === '21jours' ? daysSinceStart : null,
             weeksSinceStart: productName === 'complet' ? weeksSinceStart : null,
@@ -6714,6 +6731,84 @@ exports.getPracticeStats = onCall(
         stats: {...stats, topNeeds},
         history: entries.slice(0, 20),
       };
+    });
+
+/**
+ * Envoie une question d'un client de l'offre annuelle (« Fluance Illimité »)
+ * à l'adresse support, avec un objet clair indiquant le statut annuel.
+ * Réservé aux clients annuels (vérifié côté serveur). Auth requise.
+ * Région : europe-west1
+ */
+exports.sendAnnualQuestion = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e).');
+      }
+
+      const question = String((request.data && request.data.question) || '').trim();
+      if (question.length < 5) {
+        throw new HttpsError('invalid-argument', 'Merci d\'écrire votre question.');
+      }
+      if (question.length > 2000) {
+        throw new HttpsError('invalid-argument', 'Question trop longue (2000 caractères maximum).');
+      }
+
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (!userDoc.exists) {
+        throw new HttpsError('not-found', 'Compte introuvable.');
+      }
+      const userData = userDoc.data() || {};
+      const products = userData.products || [];
+      const isAnnual = products.some((p) =>
+        p && p.name === 'complet' && p.variant === 'ma_pratique_annuel');
+      if (!isAnnual) {
+        throw new HttpsError('permission-denied',
+            'Ce service est réservé aux clients de l\'offre annuelle Fluance Illimité.');
+      }
+
+      const limit = await checkRateLimit(uid, 'sendAnnualQuestion', 5, 3600);
+      if (limit.limited) {
+        throw new HttpsError('resource-exhausted',
+            `Trop de questions envoyées. Réessayez dans ${limit.retryAfterSeconds} s.`);
+      }
+
+      const email = userData.email || '';
+      const firstName = userData.firstName || '';
+      const safe = (value) => String(value || '')
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const subject = `[Client offre annuelle] Question de ${firstName || email}`;
+      const html = `
+        <h2>Question d'un client de l'offre annuelle</h2>
+        <p><strong>Client :</strong> ${safe(firstName)} &lt;${safe(email)}&gt;</p>
+        <p><strong>Statut :</strong> Fluance Illimité — annuel</p>
+        <p><strong>UID :</strong> ${safe(uid)}</p>
+        <hr>
+        <p style="white-space: pre-wrap;">${safe(question)}</p>
+      `;
+      const text = `[Client offre annuelle]\nDe : ${firstName} <${email}>\nUID : ${uid}\n\n${question}`;
+
+      try {
+        await sendMailjetEmail(
+            ADMIN_EMAIL,
+            subject,
+            html,
+            text,
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+            'support@actu.fluance.io',
+            'Fluance — Question client annuel',
+        );
+      } catch (sendError) {
+        console.error('sendAnnualQuestion email error:', sendError);
+        throw new HttpsError('internal', 'Impossible d\'envoyer la question. Réessayez.');
+      }
+
+      return {success: true};
     });
 
 /**

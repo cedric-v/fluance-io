@@ -763,6 +763,8 @@ document.addEventListener('DOMContentLoaded', function() {
       contentContainer.removeAttribute('aria-busy');
       // Régler les rappels de pratique directement depuis l'espace membre
       initNotificationToggle();
+      // Formulaire de question (offre annuelle uniquement)
+      initAnnualQuestion();
       
       // Vérifier que le HTML a bien été inséré
       const insertedTab = contentContainer.querySelector(`.product-tab-content[data-product="${activeProductId}"]`);
@@ -1185,6 +1187,107 @@ async function initNotificationToggle() {
     console.warn('[Espace Membre] Préférence rappels indisponible :', error);
   }
   paint();
+}
+
+// Formulaire de question réservé aux clients de l'offre annuelle (Fluance Illimité).
+// La carte est construite en DOM (pas de HTML dans le markdown, pour ne pas être
+// interprétée par le moteur Markdown du fichier .md).
+function initAnnualQuestion() {
+  const products = Array.isArray(window.currentUserProducts) ? window.currentUserProducts : [];
+  const isAnnual = products.some((p) =>
+    p && typeof p === 'object' && p.name === 'complet' && p.variant === 'ma_pratique_annuel');
+  if (!isAnnual) return;
+
+  const container = document.getElementById('content-container');
+  if (!container) return;
+
+  const card = document.createElement('div');
+  card.id = 'member-annual-question';
+  card.className = 'mb-6 rounded-lg border border-[#E6B84A]/40 bg-[#E6B84A]/10 p-5';
+
+  const kicker = document.createElement('p');
+  kicker.className = 'text-xs uppercase tracking-[0.16em] font-semibold text-[#7A1F3D] mb-1';
+  kicker.textContent = 'Bonus offre annuelle';
+
+  const title = document.createElement('h3');
+  title.className = 'font-semibold text-[#3E3A35] mb-2';
+  title.textContent = 'Une question ? Cédric vous répond';
+
+  const intro = document.createElement('p');
+  intro.className = 'text-sm text-gray-700 mb-3';
+  intro.textContent = 'Posez votre question pour mieux appliquer les pratiques selon vos spécificités et vos besoins précis.';
+
+  const form = document.createElement('form');
+  form.id = 'annual-question-form';
+  form.className = 'space-y-3';
+
+  const textarea = document.createElement('textarea');
+  textarea.id = 'annual-question-text';
+  textarea.rows = 4;
+  textarea.required = true;
+  textarea.placeholder = 'Votre question…';
+  textarea.className = 'w-full px-4 py-3 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]';
+
+  const message = document.createElement('p');
+  message.id = 'annual-question-message';
+  message.className = 'hidden text-sm';
+  message.setAttribute('role', 'status');
+
+  const submit = document.createElement('button');
+  submit.type = 'submit';
+  submit.id = 'annual-question-submit';
+  submit.className = 'btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]';
+  submit.textContent = 'Envoyer ma question';
+
+  form.appendChild(textarea);
+  form.appendChild(message);
+  form.appendChild(submit);
+  card.appendChild(kicker);
+  card.appendChild(title);
+  card.appendChild(intro);
+  card.appendChild(form);
+
+  const anchor = document.getElementById('member-notifications');
+  if (anchor && anchor.parentNode) {
+    anchor.parentNode.insertBefore(card, anchor.nextSibling);
+  } else {
+    container.insertBefore(card, container.firstChild);
+  }
+
+  function showQuestionMessage(text, ok) {
+    message.textContent = text;
+    message.className = ok ? 'text-sm text-[#5a7d2a]' : 'text-sm text-red-700';
+  }
+
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const question = (textarea.value || '').trim();
+    if (question.length < 5) {
+      showQuestionMessage('Merci d’écrire votre question.', false);
+      return;
+    }
+    submit.disabled = true;
+    try {
+      if (typeof firebase === 'undefined' || typeof firebase.functions !== 'function') {
+        await new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
+          script.onload = resolve;
+          script.onerror = resolve;
+          document.head.appendChild(script);
+        });
+      }
+      const callable = firebase.app().functions('europe-west1').httpsCallable('sendAnnualQuestion');
+      await callable({ question: question });
+      textarea.value = '';
+      showQuestionMessage('Merci, votre question a bien été envoyée. Cédric vous répondra par email.', true);
+    } catch (error) {
+      console.warn('[Espace Membre] Envoi de la question échoué :', error);
+      showQuestionMessage('Impossible d’envoyer la question pour le moment. Réessayez.', false);
+    } finally {
+      submit.disabled = false;
+    }
+  });
 }
 
 // Fonction globale pour gérer la déconnexion
