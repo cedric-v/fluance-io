@@ -212,6 +212,22 @@ simple demande (sous-collection `practiceLog` + champ `favorites`).
 - ⚠️ Les abonnés annuels **antérieurs** à ce changement n'ont pas de `variant` stocké → prévoir
   un backfill (script ou requête Stripe) pour qu'ils voient le formulaire.
 
+### Gestion de l'abonnement (100 % native)
+
+- `/membre/` affiche une carte **« Mon abonnement Fluance Illimité »** (si produit `complet`) :
+  statut + actions, sans passer par le Stripe Customer Portal.
+- Callables : `getSubscriptionStatus` (rafraîchit depuis Stripe et met en cache) et
+  `manageSubscription` (`cancel` / `resume` / `pause` / `unpause`).
+- **Résiliation à la fin de la période** (`cancel_at_period_end: true`) : l'accès est conservé
+  jusqu'au terme déjà payé ; le produit est retiré par le webhook `customer.subscription.deleted`.
+- **Pause 1 ou 3 mois** (`pause_collection` + `resumes_at`) : aucune facturation pendant la
+  pause, **accès premium suspendu** (`products[complet].paused = true` → `getProtectedContent`
+  renvoie `SUBSCRIPTION_PAUSED`), reprise automatique à échéance.
+- **Rétention** : l'écran de résiliation propose d'abord la pause (1/3 mois), sans blocage.
+- Emails de confirmation : `annulation-abonnement` et `pause-abonnement`.
+- Les IDs Stripe (`stripeCustomerId`, `stripeSubscriptionId`) sont persistés via le token
+  d'inscription → `verifyToken` ; un repli par recherche email existe si absents.
+
 ### Suivi, favoris et rappels
 
 Quatre fonctions callables (auth requise, `europe-west1`) :

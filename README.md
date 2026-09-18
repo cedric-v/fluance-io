@@ -151,6 +151,10 @@ practice, without changing the existing programmes, checkout or member area. See
   (`functions/services/stripePrices.js`). Existing 30/75 CHF subscriptions are unchanged.
 - **Annual bonus**: a question form in `/membre/`, shown only to annual subscribers, sends the
   question to support with a subject prefixed `[Client offre annuelle]` (`sendAnnualQuestion`).
+- **Native subscription management** (no Stripe portal): `getSubscriptionStatus` /
+  `manageSubscription` — cancel **at period end** (access kept until then), **pause 1/3 months**
+  (billing paused, premium access suspended, auto-resume), reactivate/resume, with confirmation
+  emails (`annulation-abonnement`, `pause-abonnement`).
 - Logic: `src/assets/js/practice-companion.mjs` · PWA: `src/sw.njk` + `src/ma-pratique.webmanifest`
   (install prompt Android + iOS hint, app-shell cache only — never the videos).
 - Tracking (server-only writes): `logPractice`, `toggleFavorite`, `setNotificationOptIn`,

@@ -1,0 +1,51 @@
+---
+layout: false
+permalink: /emails/annulation-abonnement.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+      <mj-button background-color="#E6B84A" color="#0f172a" font-weight="bold" border-radius="5px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#7A1F3D" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold" padding="10px">
+          Ton abonnement est résilié
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Ton abonnement <strong>Fluance Illimité</strong> est bien résilié. Tu conserves l’accès
+          à toutes les pratiques <strong>jusqu’au {{endDate}} inclus</strong>.
+        </mj-text>
+        <mj-text>
+          Aucune nouvelle facturation ne sera émise. Tu peux réactiver ton abonnement à tout
+          moment avant cette date, en un clic.
+        </mj-text>
+        <mj-button href="{{reactivateUrl}}" align="center" padding="20px">
+          Réactiver mon abonnement
+        </mj-button>
+        <mj-text>
+          Au plaisir de te retrouver,<br>Cédric
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666" padding="0">
+          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #7A1F3D;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

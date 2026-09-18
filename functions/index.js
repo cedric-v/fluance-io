@@ -1600,6 +1600,8 @@ async function createTokenAndSendEmail(
     customerAddress = null,
     langue = 'fr',
     variant = null,
+    stripeCustomerId = null,
+    stripeSubscriptionId = null,
 ) {
   const token = generateUniqueToken();
   const expirationDate = new Date();
@@ -1610,6 +1612,8 @@ async function createTokenAndSendEmail(
     email: email.toLowerCase().trim(),
     product: product,
     ...(variant ? {variant} : {}),
+    ...(stripeCustomerId ? {stripeCustomerId} : {}),
+    ...(stripeSubscriptionId ? {stripeSubscriptionId} : {}),
     createdAt: FieldValue.serverTimestamp(),
     expiresAt: expirationDate,
     used: false,
@@ -1787,6 +1791,8 @@ async function createTokenForMultipleProductsAndSendEmail(
     customerAddress = null,
     langue = 'fr',
     variant = null,
+    stripeCustomerId = null,
+    stripeSubscriptionId = null,
 ) {
   const token = generateUniqueToken();
   const expirationDate = new Date();
@@ -1797,6 +1803,8 @@ async function createTokenForMultipleProductsAndSendEmail(
     email: email.toLowerCase().trim(),
     products: products, // Tableau de produits
     ...(variant ? {variant} : {}),
+    ...(stripeCustomerId ? {stripeCustomerId} : {}),
+    ...(stripeSubscriptionId ? {stripeSubscriptionId} : {}),
     createdAt: FieldValue.serverTimestamp(),
     expiresAt: expirationDate,
     used: false,
@@ -3208,6 +3216,8 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
                 fullAddress,
                 langue,
                 session.metadata?.variant || null,
+                session.customer || null,
+                session.subscription || null,
             );
 
             // Envoyer notification admin
@@ -3248,6 +3258,8 @@ node create-multi-product-token.js ${customerEmail} ${productsToCreate.join(' ')
                 fullAddress,
                 langue,
                 session.metadata?.variant || null,
+                session.customer || null,
+                session.subscription || null,
             );
 
             // Envoyer notification admin
@@ -5222,6 +5234,9 @@ exports.verifyToken = onCall(
           email: email,
           products: products,
           product: tokenProducts[0], // Garder pour compatibilité rétroactive (premier produit)
+          // Références de facturation Stripe (pour la gestion native de l'abonnement)
+          ...(tokenData.stripeCustomerId ? {stripeCustomerId: tokenData.stripeCustomerId} : {}),
+          ...(tokenData.stripeSubscriptionId ? {stripeSubscriptionId: tokenData.stripeSubscriptionId} : {}),
           createdAt: existingUserData.createdAt || FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         };
@@ -5359,7 +5374,10 @@ exports.getProtectedContent = onCall(
       // déblocage progressif (il paie pour l'accès complet).
       const FULL_ACCESS_PRODUCT = 'complet';
       const FULL_ACCESS_CONTENT_PRODUCTS = ['complet', '21jours', 'sos-dos-cervicales'];
-      const hasFullAccess = userProducts.some((p) => p && p.name === FULL_ACCESS_PRODUCT);
+      const completPaused = userProducts.some((p) =>
+        p && p.name === FULL_ACCESS_PRODUCT && p.paused === true);
+      const hasFullAccess = userProducts.some((p) =>
+        p && p.name === FULL_ACCESS_PRODUCT && p.paused !== true);
 
       /**
        * Vérifie l'accès progressif (21jours : jour ; complet : semaine).
@@ -5431,6 +5449,16 @@ exports.getProtectedContent = onCall(
             error: 'Vous n\'avez pas accès à ce contenu. Ce contenu fait partie d\'une autre formation que celle à laquelle vous êtes inscrit(e).',
             errorCode: 'PRODUCT_MISMATCH',
             suggestion: 'Accédez au contenu depuis votre espace membre.',
+          };
+        }
+
+        // Abonnement en pause : accès suspendu (le produit reste, pour permettre la reprise).
+        if (completPaused && (userProductData.name === FULL_ACCESS_PRODUCT || userProductData.fullAccess)) {
+          return {
+            success: false,
+            error: 'Votre abonnement Fluance Illimité est en pause. Reprenez-le pour retrouver l\'accès.',
+            errorCode: 'SUBSCRIPTION_PAUSED',
+            suggestion: 'Reprenez votre abonnement depuis votre espace membre.',
           };
         }
 
@@ -5528,6 +5556,8 @@ exports.getProtectedContent = onCall(
           const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
           const weeksSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24 * 7));
           const contents = [];
+          const productPaused = userProductData.name === FULL_ACCESS_PRODUCT &&
+            userProductData.paused === true;
 
           contentsSnapshot.forEach((doc) => {
             const data = doc.data();
@@ -5545,7 +5575,7 @@ exports.getProtectedContent = onCall(
               day: dayNumber,
               week: weekNumber,
               commentText: data.commentText || null,
-              isAccessible: access.accessible,
+              isAccessible: productPaused ? false : access.accessible,
               daysRemaining: access.daysRemaining || null,
               weeksRemaining: access.weeksRemaining || null,
             };
@@ -6809,6 +6839,227 @@ exports.sendAnnualQuestion = onCall(
       }
 
       return {success: true};
+    });
+
+/**
+ * Abonnement Fluance Illimité — statut (fin de période, pause…).
+ * Rafraîchit depuis Stripe si l'ID d'abonnement est connu, sinon renvoie le cache.
+ * Région : europe-west1
+ */
+exports.getSubscriptionStatus = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['STRIPE_SECRET_KEY'],
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e).');
+      }
+      const userRef = db.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        throw new HttpsError('not-found', 'Compte introuvable.');
+      }
+      const userData = userDoc.data() || {};
+      const products = userData.products || [];
+      const complet = products.find((p) => p && p.name === 'complet');
+      if (!complet) {
+        return {success: true, hasSubscription: false};
+      }
+
+      const cache = userData.subscription || {};
+      const subscriptionId = userData.stripeSubscriptionId || cache.stripeSubscriptionId;
+      let live = null;
+      if (subscriptionId && process.env.STRIPE_SECRET_KEY) {
+        try {
+          const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          live = {
+            status: sub.status,
+            cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+            currentPeriodEnd: sub.current_period_end ?
+              new Date(sub.current_period_end * 1000).toISOString() : null,
+            paused: !!sub.pause_collection,
+            resumesAt: sub.pause_collection && sub.pause_collection.resumes_at ?
+              new Date(sub.pause_collection.resumes_at * 1000).toISOString() : null,
+            variant: (sub.metadata && sub.metadata.variant) || complet.variant || null,
+            stripeSubscriptionId: subscriptionId,
+          };
+          await userRef.set({subscription: live, updatedAt: FieldValue.serverTimestamp()}, {merge: true});
+          // Resynchroniser le drapeau `paused` du produit (ex. pause expirée automatiquement).
+          if ((complet.paused === true) !== live.paused) {
+            const synced = products.map((p) =>
+              (p && p.name === 'complet') ? {...p, paused: live.paused} : p);
+            await userRef.set({products: synced}, {merge: true});
+          }
+        } catch (stripeError) {
+          console.warn('getSubscriptionStatus — Stripe indisponible:', stripeError.message);
+        }
+      }
+
+      const status = live || {
+        status: cache.status || (complet.paused ? 'paused' : 'active'),
+        cancelAtPeriodEnd: cache.cancelAtPeriodEnd === true,
+        currentPeriodEnd: cache.currentPeriodEnd || null,
+        paused: cache.paused === true || complet.paused === true,
+        resumesAt: cache.resumesAt || null,
+        variant: cache.variant || complet.variant || null,
+        stripeSubscriptionId: subscriptionId || null,
+      };
+
+      return {success: true, hasSubscription: true, ...status};
+    });
+
+/**
+ * Abonnement Fluance Illimité — actions natives : résiliation (fin de période),
+ * réactivation, pause (1 ou 3 mois) et reprise.
+ * Région : europe-west1
+ */
+exports.manageSubscription = onCall(
+    {
+      region: 'europe-west1',
+      secrets: ['STRIPE_SECRET_KEY', 'MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e).');
+      }
+      const action = request.data && request.data.action;
+      if (!['cancel', 'resume', 'pause', 'unpause'].includes(action)) {
+        throw new HttpsError('invalid-argument', 'Action invalide.');
+      }
+      if (!process.env.STRIPE_SECRET_KEY) {
+        throw new HttpsError('failed-precondition', 'Paiement non configuré.');
+      }
+
+      const userRef = db.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        throw new HttpsError('not-found', 'Compte introuvable.');
+      }
+      const userData = userDoc.data() || {};
+      const products = userData.products || [];
+      const complet = products.find((p) => p && p.name === 'complet');
+      if (!complet) {
+        throw new HttpsError('failed-precondition', 'Aucun abonnement Fluance Illimité actif.');
+      }
+
+      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+      // Retrouver l'abonnement (ID stocké, sinon recherche par email).
+      let subscriptionId = userData.stripeSubscriptionId ||
+        (userData.subscription && userData.subscription.stripeSubscriptionId) || null;
+      if (!subscriptionId && userData.email) {
+        try {
+          const customers = await stripe.customers.list({email: userData.email, limit: 10});
+          for (const customer of customers.data) {
+            const subs = await stripe.subscriptions.list({customer: customer.id, status: 'all', limit: 20});
+            const found = subs.data.find((s) => s.metadata && s.metadata.product === 'complet');
+            if (found) {
+              subscriptionId = found.id;
+              break;
+            }
+          }
+        } catch (lookupError) {
+          console.warn('manageSubscription — recherche Stripe échouée:', lookupError.message);
+        }
+      }
+      if (!subscriptionId) {
+        throw new HttpsError('failed-precondition',
+            'Abonnement introuvable. Contactez le support à support@fluance.io.');
+      }
+
+      let sub;
+      if (action === 'cancel') {
+        sub = await stripe.subscriptions.update(subscriptionId, {cancel_at_period_end: true});
+      } else if (action === 'resume') {
+        sub = await stripe.subscriptions.update(subscriptionId, {cancel_at_period_end: false});
+      } else if (action === 'pause') {
+        const months = (request.data && request.data.months === 3) ? 3 : 1;
+        const resumesAt = new Date();
+        resumesAt.setMonth(resumesAt.getMonth() + months);
+        sub = await stripe.subscriptions.update(subscriptionId, {
+          pause_collection: {
+            behavior: 'void',
+            resumes_at: Math.floor(resumesAt.getTime() / 1000),
+          },
+        });
+      } else {
+        sub = await stripe.subscriptions.update(subscriptionId, {pause_collection: ''});
+      }
+
+      const paused = !!sub.pause_collection;
+      const subscription = {
+        status: sub.status,
+        cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+        currentPeriodEnd: sub.current_period_end ?
+          new Date(sub.current_period_end * 1000).toISOString() : null,
+        paused: paused,
+        resumesAt: sub.pause_collection && sub.pause_collection.resumes_at ?
+          new Date(sub.pause_collection.resumes_at * 1000).toISOString() : null,
+        variant: (sub.metadata && sub.metadata.variant) || complet.variant || null,
+        stripeSubscriptionId: subscriptionId,
+      };
+
+      // Marquer le produit comme en pause (l'accès est suspendu tant que `paused`).
+      const updatedProducts = products.map((p) =>
+        (p && p.name === 'complet') ? {...p, paused} : p);
+
+      await userRef.set({
+        subscription: subscription,
+        products: updatedProducts,
+        stripeSubscriptionId: subscriptionId,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+
+      // Emails de confirmation (résiliation / pause).
+      const mailjetApiKey = process.env.MAILJET_API_KEY;
+      const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+      if (mailjetApiKey && mailjetApiSecret && userData.email) {
+        const firstName = userData.firstName || userData.firstname || '';
+        try {
+          if (action === 'cancel' && subscription.currentPeriodEnd) {
+            const endDate = new Date(subscription.currentPeriodEnd)
+                .toLocaleDateString('fr-FR', {day: '2-digit', month: 'long', year: 'numeric'});
+            const html = loadEmailTemplate('annulation-abonnement', {
+              firstName: firstName,
+              endDate: endDate,
+              reactivateUrl: 'https://fluance.io/membre/',
+            });
+            await sendMailjetEmail(
+                userData.email,
+                'Ton abonnement Fluance Illimité est résilié',
+                html,
+                `Bonjour ${firstName},\n\nTon abonnement est résilié. ` +
+                `Tu conserves l'accès jusqu'au ${endDate}.`,
+                mailjetApiKey,
+                mailjetApiSecret,
+            );
+          } else if (action === 'pause' && subscription.resumesAt) {
+            const resumeDate = new Date(subscription.resumesAt)
+                .toLocaleDateString('fr-FR', {day: '2-digit', month: 'long', year: 'numeric'});
+            const html = loadEmailTemplate('pause-abonnement', {
+              firstName: firstName,
+              resumeDate: resumeDate,
+              manageUrl: 'https://fluance.io/membre/',
+            });
+            await sendMailjetEmail(
+                userData.email,
+                'Ton abonnement Fluance Illimité est en pause',
+                html,
+                `Bonjour ${firstName},\n\nTon abonnement est en pause jusqu'au ${resumeDate}.`,
+                mailjetApiKey,
+                mailjetApiSecret,
+            );
+          }
+        } catch (emailError) {
+          console.error('manageSubscription — email non envoyé:', emailError.message);
+        }
+      }
+
+      return {success: true, ...subscription};
     });
 
 /**

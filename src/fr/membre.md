@@ -765,6 +765,8 @@ document.addEventListener('DOMContentLoaded', function() {
       initNotificationToggle();
       // Formulaire de question (offre annuelle uniquement)
       initAnnualQuestion();
+      // Gestion native de l'abonnement Fluance Illimité (résiliation fin de période, pause)
+      initSubscriptionManager();
       
       // Vérifier que le HTML a bien été inséré
       const insertedTab = contentContainer.querySelector(`.product-tab-content[data-product="${activeProductId}"]`);
@@ -1288,6 +1290,157 @@ function initAnnualQuestion() {
       submit.disabled = false;
     }
   });
+}
+
+// Gestion native de l'abonnement Fluance Illimité :
+// - résiliation à la fin de la période (l'accès reste jusqu'au terme payé),
+// - pause 1 ou 3 mois (accès suspendu, reprise automatique),
+// - réactivation / reprise.
+function initSubscriptionManager() {
+  const products = Array.isArray(window.currentUserProducts) ? window.currentUserProducts : [];
+  const hasComplet = products.some((p) =>
+    p && typeof p === 'object' && p.name === 'complet');
+  if (!hasComplet) return;
+
+  const container = document.getElementById('content-container');
+  if (!container) return;
+
+  const card = document.createElement('div');
+  card.id = 'member-subscription';
+  card.className = 'mb-6 rounded-lg border border-fluance/15 bg-white p-5';
+  card.innerHTML = '<p class="text-sm text-gray-500">Chargement de votre abonnement…</p>';
+
+  const anchor = document.getElementById('member-notifications');
+  if (anchor && anchor.parentNode) {
+    anchor.parentNode.insertBefore(card, anchor.nextSibling);
+  } else {
+    container.insertBefore(card, container.firstChild);
+  }
+
+  let status = null;
+  let view = 'main';
+  let message = null;
+
+  function fmtDate(iso) {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleDateString('fr-FR', {day: '2-digit', month: 'long', year: 'numeric'});
+    } catch (_e) {
+      return '';
+    }
+  }
+
+  async function callFunction(name, payload) {
+    if (typeof firebase === 'undefined' || typeof firebase.functions !== 'function') {
+      await new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions-compat.js';
+        script.onload = resolve;
+        script.onerror = resolve;
+        document.head.appendChild(script);
+      });
+    }
+    const fn = firebase.app().functions('europe-west1').httpsCallable(name);
+    const res = await fn(payload || {});
+    return res.data;
+  }
+
+  function statusText() {
+    if (!status) return '';
+    if (status.paused) return 'En pause jusqu’au ' + fmtDate(status.resumesAt) + ' (reprise automatique).';
+    if (status.cancelAtPeriodEnd) return 'Résiliation programmée — accès jusqu’au ' + fmtDate(status.currentPeriodEnd) + '.';
+    return 'Abonnement actif' + (status.currentPeriodEnd ? ' — prochain renouvellement le ' + fmtDate(status.currentPeriodEnd) + '.' : '.');
+  }
+
+  function makeButton(label, handler, danger) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.className = 'rounded-full px-4 py-2 text-sm font-semibold transition-colors ' +
+      (danger ?
+        'border border-red-200 text-red-700 hover:bg-red-50' :
+        'border border-fluance/20 text-fluance hover:bg-fluance/5');
+    b.addEventListener('click', handler);
+    return b;
+  }
+
+  function render() {
+    card.innerHTML = '';
+
+    const head = document.createElement('div');
+    head.className = 'mb-3';
+    const title = document.createElement('p');
+    title.className = 'font-semibold text-[#3E3A35]';
+    title.textContent = 'Mon abonnement Fluance Illimité';
+    const sub = document.createElement('p');
+    sub.className = 'text-sm text-gray-600 mt-1';
+    sub.textContent = statusText();
+    head.appendChild(title);
+    head.appendChild(sub);
+    card.appendChild(head);
+
+    const actions = document.createElement('div');
+    actions.className = 'flex flex-wrap gap-3';
+
+    if (view === 'cancel') {
+      const note = document.createElement('p');
+      note.className = 'text-sm text-gray-700 w-full mb-1';
+      note.textContent = 'Avant de partir : une pause de 1 à 3 mois te permet de garder ton élan et de reprendre quand tu veux. Sinon, tu peux résilier — tu conserveras l’accès jusqu’à la fin de la période payée.';
+      actions.appendChild(note);
+      actions.appendChild(makeButton('Pauser 1 mois', () => doAction('pause', {months: 1})));
+      actions.appendChild(makeButton('Pauser 3 mois', () => doAction('pause', {months: 3})));
+      actions.appendChild(makeButton('Confirmer la résiliation', () => doAction('cancel'), true));
+      actions.appendChild(makeButton('Annuler', () => { view = 'main'; message = null; render(); }));
+    } else if (status && status.paused) {
+      actions.appendChild(makeButton('Reprendre maintenant', () => doAction('unpause')));
+    } else if (status && status.cancelAtPeriodEnd) {
+      actions.appendChild(makeButton('Réactiver mon abonnement', () => doAction('resume')));
+    } else {
+      actions.appendChild(makeButton('Pauser 1 mois', () => doAction('pause', {months: 1})));
+      actions.appendChild(makeButton('Pauser 3 mois', () => doAction('pause', {months: 3})));
+      actions.appendChild(makeButton('Résilier', () => { view = 'cancel'; message = null; render(); }, true));
+    }
+
+    card.appendChild(actions);
+
+    if (message) {
+      const p = document.createElement('p');
+      p.className = 'text-sm mt-3 ' + (message.ok ? 'text-[#5a7d2a]' : 'text-red-700');
+      p.setAttribute('role', 'status');
+      p.textContent = message.text;
+      card.appendChild(p);
+    }
+  }
+
+  async function doAction(action, payload) {
+    message = {text: 'Traitement…', ok: true};
+    render();
+    try {
+      const data = await callFunction('manageSubscription', Object.assign({action: action}, payload || {}));
+      status = data;
+      view = 'main';
+      const okText = action === 'cancel' ?
+        'Résiliation enregistrée. Un email de confirmation t’a été envoyé.' :
+        action === 'pause' ?
+          'Abonnement mis en pause. Un email de confirmation t’a été envoyé.' :
+          action === 'resume' ? 'Abonnement réactivé.' : 'Abonnement repris.';
+      message = {text: okText, ok: true};
+    } catch (error) {
+      console.warn('[Espace Membre] Gestion abonnement échouée :', error);
+      message = {text: 'L’opération a échoué. Réessaie ou écris à support@fluance.io.', ok: false};
+    }
+    render();
+  }
+
+  (async function load() {
+    try {
+      status = await callFunction('getSubscriptionStatus', {});
+      render();
+    } catch (error) {
+      console.warn('[Espace Membre] Statut abonnement indisponible :', error);
+      card.innerHTML = '<p class="text-sm text-gray-600">Abonnement indisponible pour le moment.</p>';
+    }
+  })();
 }
 
 // Fonction globale pour gérer la déconnexion
