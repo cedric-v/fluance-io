@@ -54,7 +54,7 @@ eleventyExcludeFromCollections: true
   <p class="text-center text-[#3E3A35]/40 text-2xl my-12" aria-hidden="true">↓</p>
 
   <!-- Deux façons d'aller plus loin -->
-  <section class="space-y-6">
+  <section id="formules" class="space-y-6 scroll-mt-28">
     <h2 class="text-2xl md:text-3xl font-semibold text-[#3E3A35] text-center">
       Deux façons d’aller plus loin
     </h2>
@@ -62,10 +62,18 @@ eleventyExcludeFromCollections: true
       Lorsque vous avez envie de pratiquer davantage, choisissez la formule qui vous convient.
     </p>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 items-stretch">
       <!-- Mensuel -->
       <div class="section-card bg-white p-8 flex flex-col">
-        <h3 class="text-xl font-semibold text-[#3E3A35] mb-1">🌿 Fluance Mensuel</h3>
+        <div class="flex items-center gap-3 mb-5">
+          <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fluance/10 text-fluance" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-5.5 5.5-9.5 16-9.5C20 14 15.5 18.5 11 20Z"/><path d="M4 20c3.2-4.3 7.4-7.3 12.5-8.5"/></svg>
+          </span>
+          <div>
+            <p class="text-[0.68rem] uppercase tracking-[0.18em] font-semibold text-[#3E3A35]/45">Formule mensuelle</p>
+            <h3 class="text-xl font-semibold text-[#3E3A35] leading-tight">Fluance Mensuel</h3>
+          </div>
+        </div>
         <p class="text-3xl font-semibold text-fluance mb-4">CHF 14.90 <span class="text-base font-normal text-[#3E3A35]/60">/ mois</span></p>
         <p class="text-[#3E3A35] mb-5">
           Pour celles et ceux qui souhaitent faire de Fluance une pratique régulière,
@@ -78,20 +86,31 @@ eleventyExcludeFromCollections: true
           <li>✓ Recommandations selon vos besoins du moment</li>
           <li>✓ Accès aux nouveaux contenus</li>
           <li>✓ Parcours et programmes guidés</li>
-          <li>✓ Vos favoris et votre historique <span class="text-xs text-[#3E3A35]/50">(bientôt)</span></li>
+          <li>✓ Vos favoris et votre historique</li>
           <li>✓ Une pratique toujours accessible, où que vous soyez</li>
         </ul>
-        <p class="text-sm text-[#3E3A35]/60 mb-6">Résiliable à tout moment.</p>
+        <p class="text-sm text-[#3E3A35]/60 mb-6">14 jours offerts pour commencer · résiliable à tout moment.</p>
         <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_mensuel','fr',event) : (window.location.href='/cours-en-ligne/approche-fluance-complete/')" class="btn-primary mt-auto text-center">Commencer avec Fluance</button>
       </div>
 
       <!-- Annuel (recommandé) -->
-      <div class="section-card bg-white p-8 flex flex-col ring-2 ring-[#E6B84A] relative">
-        <span class="absolute -top-3 left-8 bg-[#E6B84A] text-[#7A1F3D] text-xs font-bold px-3 py-1 rounded-full">
+      <div class="section-card bg-white p-8 flex flex-col ring-2 ring-[#E6B84A] relative md:scale-[1.02] shadow-xl">
+        <span class="absolute -top-3 left-8 bg-[#E6B84A] text-[#7A1F3D] text-xs font-bold px-3 py-1 rounded-full tracking-wide">
           Recommandé
         </span>
-        <h3 class="text-xl font-semibold text-[#3E3A35] mb-1">✨ Fluance Annuel</h3>
-        <p class="text-3xl font-semibold text-fluance mb-4">CHF 119 <span class="text-base font-normal text-[#3E3A35]/60">/ an</span></p>
+        <div class="flex items-center gap-3 mb-5">
+          <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E6B84A]/25 text-[#7A1F3D]" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.6 6.9 6.9 2.6-6.9 2.6L12 21.5l-2.6-6.9L2.5 12l6.9-2.6L12 2.5Z"/></svg>
+          </span>
+          <div>
+            <p class="text-[0.68rem] uppercase tracking-[0.18em] font-semibold text-[#3E3A35]/45">Formule annuelle</p>
+            <h3 class="text-xl font-semibold text-[#3E3A35] leading-tight">Fluance Annuel</h3>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-2 mb-4">
+          <p class="text-3xl font-semibold text-fluance">CHF 119 <span class="text-base font-normal text-[#3E3A35]/60">/ an</span></p>
+          <span class="text-xs font-bold text-[#5a7d2a] bg-[#8bc34a]/15 px-2.5 py-1 rounded-full">Économisez 33 %</span>
+        </div>
         <p class="text-[#3E3A35] mb-5">
           L’expérience Fluance complète, au meilleur tarif.
         </p>
@@ -104,10 +123,10 @@ eleventyExcludeFromCollections: true
           <li>✓ Tous les parcours et programmes</li>
           <li>✓ Nouveaux contenus au fil de l’année</li>
           <li>✓ Recommandations personnalisées</li>
-          <li>✓ Favoris et historique <span class="text-xs text-[#3E3A35]/50">(bientôt)</span></li>
+          <li>✓ Favoris et historique</li>
           <li>✓ Accès à votre espace de pratique partout, sur ordinateur ou téléphone</li>
         </ul>
-        <p class="text-sm font-medium text-fluance mb-6">Soit moins de CHF 10 par mois.</p>
+        <p class="text-sm font-medium text-fluance mb-6">Soit moins de CHF 10 par mois · 14 jours offerts pour commencer.</p>
         <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_annuel','fr',event) : (window.location.href='/cours-en-ligne/approche-fluance-complete/')" class="btn-primary mt-auto text-center">Choisir l’abonnement annuel</button>
       </div>
     </div>
@@ -145,7 +164,7 @@ eleventyExcludeFromCollections: true
 
       <!-- Annuel -->
       <div class="section-card bg-white p-7 flex flex-col ring-2 ring-[#E6B84A]">
-        <p class="text-xs font-bold tracking-wide text-fluance mb-2">ANNUEL · RECOMMANDÉ</p>
+        <p class="text-xs font-bold tracking-wide text-fluance mb-2">ANNUEL · RECOMMANDÉ · −33 %</p>
         <h3 class="text-lg font-semibold text-[#3E3A35] mb-1">Je sais que Fluance a sa place dans mon quotidien</h3>
         <p class="text-2xl font-semibold text-fluance mb-3">CHF 119 <span class="text-sm font-normal text-[#3E3A35]/60">/ an</span></p>
         <p class="text-[#3E3A35] mb-6">
