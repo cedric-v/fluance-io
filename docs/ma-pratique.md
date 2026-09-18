@@ -178,6 +178,25 @@ simple demande (sous-collection `practiceLog` + champ `favorites`).
 - **Amélioration possible** : vérification d'email / double opt-in avant accès complet
   (aujourd'hui le compte est actif immédiatement ; le contenu gratuit est déjà public).
 
+### Accès complet des abonnés Ma pratique (Option A)
+
+- Le produit interne de l'abonnement est **`complet`**. Un abonné `complet` accède à **tous**
+  les contenus : `complet` + `21jours` + `sos-dos-cervicales`, **sans déblocage progressif**
+  (accès immédiat : il paie pour l'accès complet).
+- Implémentation serveur (`getProtectedContent`) :
+  - **par `contentId`** : si le contenu appartient à `21jours`/`sos-dos-cervicales` et que
+    l'utilisateur possède `complet`, l'accès est accordé via un produit synthétique
+    `fullAccess` (pas de progression).
+  - **listing** : le compagnon demande `includeFullAccess: true` → les contenus `21jours` et
+    `sos-dos-cervicales` sont ajoutés à la réponse pour un abonné `complet`.
+  - l'espace membre (`/membre/`) n'envoie **pas** `includeFullAccess` : comportement inchangé
+    (pas de régression sur l'UI 21 jours / progression).
+- Catalogue : entrée **`sos-dos-cervicales`** ajoutée ; les 2 pratiques gratuites qui dupliquent
+  `complet-week-1` / `complet-week-3` sont marquées `duplicateOf` et **masquées** pour les
+  abonnés qui ont déjà la version premium.
+- Les produits `21jours` et `sos-dos-cervicales` restent **vendables à l'unité** pour les
+  non-abonnés.
+
 ### Suivi, favoris et rappels
 
 Quatre fonctions callables (auth requise, `europe-west1`) :

@@ -17,6 +17,7 @@
       "durationMin": 5,
       "needs": ["calme", "mental", "tendu"],
       "priority": 20,
+      "duplicateOf": "complet-week-1",
       "reason": { "fr": "Pour apaiser le mental et relâcher les tensions", "en": "To calm the mind and release tension" }
     },
     {
@@ -28,6 +29,7 @@
       "durationMin": 5,
       "needs": ["tendu", "fatigue"],
       "priority": 20,
+      "duplicateOf": "complet-week-3",
       "reason": { "fr": "Pour dénouer les tensions physiques", "en": "To release physical tension" }
     },
     {
@@ -175,6 +177,16 @@
       "durationMin": 10,
       "needs": ["mental", "calme"],
       "priority": 30
+    },
+
+    {
+      "id": "sos-dos-cervicales",
+      "source": "protected",
+      "contentId": "sos-dos-cervicales",
+      "tier": "premium",
+      "durationMin": 15,
+      "needs": ["tendu", "fatigue"],
+      "priority": 35
     },
 
     {

@@ -5339,6 +5339,13 @@ exports.getProtectedContent = onCall(
       const userProduct = userProducts[0].name;
       const now = new Date();
 
+      // 🎟️ Accès complet : un abonné « complet » (Ma pratique) accède à TOUS les
+      // contenus : approche complète + 21 jours + SOS dos & cervicales, sans
+      // déblocage progressif (il paie pour l'accès complet).
+      const FULL_ACCESS_PRODUCT = 'complet';
+      const FULL_ACCESS_CONTENT_PRODUCTS = ['complet', '21jours', 'sos-dos-cervicales'];
+      const hasFullAccess = userProducts.some((p) => p && p.name === FULL_ACCESS_PRODUCT);
+
       /**
        * Vérifie l'accès progressif (21jours : jour ; complet : semaine).
        * @returns {{accessible: boolean, daysRemaining?: number,
@@ -5396,7 +5403,12 @@ exports.getProtectedContent = onCall(
 
         const contentData = contentDoc.data();
         const contentProduct = contentData.product;
-        const userProductData = userProducts.find((p) => p.name === contentProduct);
+        let userProductData = userProducts.find((p) => p.name === contentProduct);
+
+        // Abonné « complet » : accès immédiat aux contenus 21jours / SOS dos & cervicales.
+        if (!userProductData && hasFullAccess && FULL_ACCESS_CONTENT_PRODUCTS.includes(contentProduct)) {
+          userProductData = {name: contentProduct, startDate: null, purchasedAt: null, fullAccess: true};
+        }
 
         if (!userProductData) {
           return {
@@ -5407,7 +5419,9 @@ exports.getProtectedContent = onCall(
           };
         }
 
-        const access = checkProgressiveAccess(contentProduct, contentData, userProductData);
+        const access = userProductData.fullAccess ?
+          {accessible: true} :
+          checkProgressiveAccess(contentProduct, contentData, userProductData);
         if (!access.accessible) {
           if (contentProduct === '21jours' && access.daysRemaining !== undefined) {
             return {
@@ -5454,7 +5468,19 @@ exports.getProtectedContent = onCall(
       try {
         const productsData = [];
 
-        for (const userProductData of userProducts) {
+        // La liste peut inclure les contenus à accès complet (21jours / SOS dos)
+        // pour un abonné « complet » lorsque le client le demande (compagnon).
+        const includeFullAccess = request.data && request.data.includeFullAccess === true;
+        const productList = userProducts.slice();
+        if (includeFullAccess && hasFullAccess) {
+          FULL_ACCESS_CONTENT_PRODUCTS.forEach((name) => {
+            if (!productList.some((p) => p && p.name === name)) {
+              productList.push({name: name, startDate: null, purchasedAt: null, fullAccess: true});
+            }
+          });
+        }
+
+        for (const userProductData of productList) {
           const productName = userProductData.name;
           const startDate = userProductData.startDate && typeof userProductData.startDate.toDate === 'function' ?
             userProductData.startDate.toDate() :
@@ -5492,7 +5518,9 @@ exports.getProtectedContent = onCall(
             const data = doc.data();
             const dayNumber = data.day;
             const weekNumber = data.week;
-            const access = checkProgressiveAccess(productName, data, userProductData);
+            const access = userProductData.fullAccess ?
+              {accessible: true} :
+              checkProgressiveAccess(productName, data, userProductData);
 
             const contentObj = {
               id: doc.id,

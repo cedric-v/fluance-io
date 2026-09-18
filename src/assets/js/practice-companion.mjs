@@ -268,7 +268,7 @@
     protectedCacheLoaded = true;
     try {
       if (!window.FluanceAuth || typeof window.FluanceAuth.loadProtectedContent !== 'function') return;
-      const result = await window.FluanceAuth.loadProtectedContent(null, { startProgression: false });
+      const result = await window.FluanceAuth.loadProtectedContent(null, {startProgression: false, includeFullAccess: true});
       if (!result || !result.success || !Array.isArray(result.products)) {
         // Un compte sans produit (gratuit) déclenche NO_PRODUCT : ce n'est pas une erreur ici.
         return;
@@ -294,6 +294,8 @@
     return all
       .filter(function (p) { return Array.isArray(p.needs) && p.needs.indexOf(needId) !== -1; })
       .filter(function (p) {
+        // Doublon gratuit d'une pratique premium déjà accessible → on le masque.
+        if (p.source === 'free' && p.duplicateOf && accessibleProtected.has(p.duplicateOf)) return false;
         if (p.source === 'free') return true; // gratuit : accessible à tout utilisateur connecté
         if (p.source === 'protected') return accessibleProtected.has(p.contentId);
         return false;

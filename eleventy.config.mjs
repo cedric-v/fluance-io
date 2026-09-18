@@ -146,6 +146,12 @@ export default function (eleventyConfig) {
     return JSON.stringify(data).replace(/</g, "\\u003c");
   });
 
+  // Nombre de pratiques distinctes du catalogue (les doublons gratuits/premium exclus).
+  eleventyConfig.addFilter("practiceCount", function (practices) {
+    const list = (practices && practices.practices) || [];
+    return list.filter((item) => !item.duplicateOf).length;
+  });
+
   eleventyConfig.addFilter("canonicalUrl", function (url) {
     if (!url || url === '.' || url === './') return '/';
 
