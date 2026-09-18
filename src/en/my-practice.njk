@@ -101,11 +101,23 @@ appTitle: My practice
       <div id="recommendation-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </section>
 
+    <!-- Tracking: stats, favourites, history, reminders -->
+    <section id="companion-tracking" class="hidden mt-10 pt-8 border-t border-gray-200">
+      <h2 class="text-lg font-semibold text-[#3E3A35] mb-4">My tracking</h2>
+      <div id="companion-stats" class="grid grid-cols-3 gap-3 mb-6"></div>
+      <div id="companion-favorites" class="mb-6"></div>
+      <div id="companion-history" class="mb-6"></div>
+      <div id="companion-notifications"></div>
+    </section>
+
     <section id="player-section" class="hidden mt-8" aria-live="polite">
       <div class="section-card bg-white p-5 md:p-6">
         <div class="flex items-center justify-between gap-4 mb-4">
           <h2 id="player-title" class="text-xl font-semibold text-[#3E3A35]">Your practice</h2>
-          <button type="button" id="player-close" class="text-sm text-gray-500 hover:text-fluance underline">Close</button>
+          <div class="flex items-center gap-3">
+            <button type="button" id="player-favorite" class="text-2xl leading-none text-[#E6B84A] hover:opacity-80" aria-pressed="false" aria-label="Add to favourites">☆</button>
+            <button type="button" id="player-close" class="text-sm text-gray-500 hover:text-fluance underline">Close</button>
+          </div>
         </div>
         <div id="player-container" class="rounded-lg overflow-hidden bg-gray-100"></div>
         <div id="player-feedback" class="hidden mt-4 text-center text-[#5a7d2a] font-medium" role="status"></div>

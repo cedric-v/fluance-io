@@ -103,7 +103,31 @@ dans le sitemap tant qu'elle est en `noindex`.
 - `source: "protected"` → référence un `contentId` Firestore. N'est proposée que si
   `getProtectedContent` confirme l'accès (`isAccessible`). Le serveur reste l'autorité.
 
-**Aucun état émotionnel n'est stocké.** Le besoin choisi reste en mémoire.
+### Données utilisateur ajoutées (suivi)
+
+Dans `users/{uid}` (écriture serveur uniquement) :
+
+| Champ | Rôle |
+|---|---|
+| `favorites: string[]` | Favoris (max 30, plus récent en premier) |
+| `notificationOptIn: boolean` | Consentement explicite aux rappels email (défaut : `false`) |
+| `lastPracticeAt: Timestamp` | Dernière pratique terminée (ciblage des rappels) |
+| `lastNeed: string \| null` | Dernier besoin (personnalisation du rappel) |
+| `lastPracticeReminderAt: Timestamp` | Dernier rappel envoyé (fréquence max 1/semaine) |
+| `practiceReminderCount: number` | Nombre de rappels envoyés |
+
+Sous-collection `users/{uid}/practiceLog/{entryId}` :
+
+| Champ | Rôle |
+|---|---|
+| `contentId` | Pratique terminée (id du catalogue) |
+| `need` | Besoin du moment (`tendu`, `mental`, …) ou `null` |
+| `source` | `free` ou `protected` |
+| `completedAt` | Horodatage (indexé automatiquement) |
+
+**Vie privée** : le besoin (`need`) est associé au compte pour les statistiques et la
+personnalisation des rappels. Il n'est jamais exposé publiquement et reste supprimable sur
+simple demande (sous-collection `practiceLog` + champ `favorites`).
 
 ---
 
@@ -147,6 +171,29 @@ dans le sitemap tant qu'elle est en `noindex`.
 - **Amélioration possible** : vérification d'email / double opt-in avant accès complet
   (aujourd'hui le compte est actif immédiatement ; le contenu gratuit est déjà public).
 
+### Suivi, favoris et rappels
+
+Quatre fonctions callables (auth requise, `europe-west1`) :
+
+| Fonction | Rôle |
+|---|---|
+| `logPractice` | Enregistre une pratique terminée (sous-collection `practiceLog`, maj `lastPracticeAt`/`lastNeed`) |
+| `toggleFavorite` | Ajoute/retire un favori (`favorites`, max 30) |
+| `setNotificationOptIn` | Active/désactive les rappels email (consentement) |
+| `getPracticeStats` | Favoris + historique récent (20) + stats (7 j, 30 j, 365 j, total, top besoins) |
+
+- **Aucune nouvelle dépendance, aucune écriture client** : les règles Firestore refusent
+  l'écriture ; la sous-collection `practiceLog` n'est lisible que par son propriétaire.
+- **Rappels** (`sendPracticeReminders`, planifié tous les jours à 9h Europe/Paris) :
+  - cible les comptes avec `notificationOptIn == true`, inactifs ≥ 3 jours, et sans rappel
+    depuis ≥ 7 jours (fréquence max 1/semaine, garde-fou 300 emails/exécution) ;
+  - texte localisé FR/EN, personnalisé avec le dernier besoin ;
+  - désinscription **en un clic** : `/ma-pratique/?notifications=off`
+    (ou `/en/my-practice/?notifications=off`) → la page désactive le rappel automatiquement ;
+  - en-tête `List-Unsubscribe` ajouté (délivrabilité).
+- **Paramètre d'URL** `?need=<id>` : présélectionne un besoin dans le compagnon (utilisé par
+  les rappels).
+
 ---
 
 ## 6. Analytics (GTM / GA existant)
@@ -161,7 +208,8 @@ accepté** (`localStorage.cookieConsent === 'accepted'`). Aucune donnée personn
 | `recommendation_displayed` | Recommandations rendues (`need`, `count`, `lang`) |
 | `practice_started` | Lancement d'une pratique (`practice`, `source`, `need`) |
 | `practice_completed` | Clic sur « J'ai pratiqué » |
-| `practice_favorited` | Réservé (favoris non implémentés, voir §10) |
+| `practice_favorited` | Ajout d'un favori |
+| `practice_unfavorited` | Retrait d'un favori |
 | `free_account_created` | Compte gratuit créé depuis la mini-app |
 
 Les tags/variables GTM correspondants sont à créer côté GTM (aucune modification de code requise).
@@ -215,7 +263,14 @@ Tout se fait dans `src/_data/practices.json` — **aucun déploiement de Cloud F
   prix et le découplage de la date) :
 
   ```bash
-  firebase deploy --only functions:createFreeAccount,functions:getProtectedContent,functions:createStripeCheckoutSession
+  firebase deploy --only functions:createFreeAccount,functions:getProtectedContent,functions:createStripeCheckoutSession,functions:logPractice,functions:toggleFavorite,functions:setNotificationOptIn,functions:getPracticeStats,functions:sendPracticeReminders
+  ```
+
+  Les règles Firestore doivent aussi être déployées (nouvelle sous-collection
+  `practiceLog`) :
+
+  ```bash
+  firebase deploy --only firestore:rules
   ```
 
   Le secret `TURNSTILE_SECRET_KEY` doit déjà être configuré (utilisé par les opt-ins). Les
@@ -234,40 +289,26 @@ Tout se fait dans `src/_data/practices.json` — **aucun déploiement de Cloud F
 
 ## 10. Améliorations futures (roadmap)
 
-### Priorité 1 — statistiques d'usage (décidé)
+### Implémenté — statistiques, favoris, historique
 
-Objectif : mesurer l'usage réel pour piloter conversion et rétention. Aujourd'hui, seuls les
-événements analytics (GTM/GA) existent. Pour des statistiques fiables et interrogeables, il
-faut persister des données agrégées (écriture **serveur uniquement** via fonctions callables).
+- **Favoris** : `users/{uid}.favorites` (max 30), via `toggleFavorite`.
+- **Pratiques effectuées par période** : sous-collection `users/{uid}/practiceLog`
+  (jour / semaine / mois), via `logPractice` + `getPracticeStats` (7 j, 30 j, 365 j, total).
+- **États émotionnels** : le besoin choisi est enregistré avec chaque pratique (`need`),
+  utilisé pour les statistiques (`topNeeds`) et la personnalisation des rappels. Donnée liée
+  au compte, jamais publique, supprimable sur demande.
+- **Régularité** : dérivée de `practiceLog` (`lastPracticeAt`), **sans gamification**.
+- UI dans le compagnon : section « Mon suivi » (stats, favoris, historique) + bouton favori
+  sur chaque recommandation et dans le lecteur.
 
-| Statistique | Donnée | Où | Notes |
-|---|---|---|---|
-| Favoris | liste de `contentId` | `users/{uid}.favorites` | action utilisateur explicite |
-| Pratiques effectuées par période | compteurs + horodatages | `users/{uid}.practiceLog` (ou sous-collection) | jour / semaine / mois |
-| États émotionnels | besoin choisi | **non persisté par défaut** | voir vie privée ci-dessous |
-| Absences / régularité | dernier passage, fréquence | dérivé de `practiceLog` | **pas de gamification** |
+### Implémenté — notifications intelligentes
 
-Fonctions callables envisagées : `logPractice`, `toggleFavorite`, `getPracticeStats`
-(lecture limitée au compte de l'appelant).
-
-**Vie privée — états émotionnels.** Ce sont des données sensibles. Recommandation :
-1. **Par défaut, ne pas les stocker individuellement** : ne conserver que des compteurs
-   agrégés et anonymes (ex. « besoin *tendu* sélectionné N fois »).
-2. Si une personnalisation forte le justifie : stockage **avec consentement explicite**,
-   finalité documentée et possibilité d'effacement.
-
-### Priorité 2 — notifications intelligentes (décidé, après validation du cœur)
-
-Objectif : rappeler « Un petit moment pour toi ? » au bon moment, **sans être intrusif**.
-
-- **Base** : dernière pratique, régularité (`practiceLog`) et besoin le plus fréquent.
-- **Déclencheurs** : absence (ex. 3 jours), moment de la journée habituel de l'utilisateur,
-  retour après une pause.
-- **Canaux** : d'abord **email** (Mailjet, déjà en place) ; **web push** seulement ensuite.
-- **Consentement** : opt-in explicite, désabonnement en un clic, fréquence plafonnée
-  (ex. 1 à 2 par semaine maximum, jamais aux moments où l'utilisateur ne pratique jamais).
-- **Côté serveur** : fonction planifiée (`onSchedule`, comme `sendNewContentEmails`) + segment
-  Mailjet dédié.
+- Fonction planifiée `sendPracticeReminders` (9h Europe/Paris) : inactivité ≥ 3 jours,
+  fréquence max 1/semaine, opt-in explicite, personnalisation par dernier besoin, texte FR/EN,
+  désinscription en un clic, en-tête `List-Unsubscribe`.
+- **Améliorations futures** : web push en complément de l'email ; déclenchement basé sur le
+  moment de la journée habituel de l'utilisateur ; A/B testing des objets ; pause automatique
+  si aucun retour après plusieurs rappels.
 - **Interdit** : notifications agressives, streaks culpabilisants, badges, gamification.
 
 ### Priorité 3 — prix et offres

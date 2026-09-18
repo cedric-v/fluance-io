@@ -1458,7 +1458,7 @@ async function sendOptInNotification(email, name, sourceOptin, apiKey, apiSecret
   }
 }
 
-async function sendMailjetEmail(to, subject, htmlContent, textContent = null, apiKey, apiSecret, fromEmail = 'support@actu.fluance.io', fromName = 'Fluance') {
+async function sendMailjetEmail(to, subject, htmlContent, textContent = null, apiKey, apiSecret, fromEmail = 'support@actu.fluance.io', fromName = 'Fluance', headers = null) {
   // Vérifier que les credentials Mailjet sont configurés
   if (!apiKey || !apiSecret) {
     throw new Error('Mailjet credentials not configured. Please set MAILJET_API_KEY and MAILJET_API_SECRET secrets using: firebase functions:secrets:set');
@@ -1481,6 +1481,8 @@ async function sendMailjetEmail(to, subject, htmlContent, textContent = null, ap
         Subject: subject,
         TextPart: textContent || subject,
         HTMLPart: htmlContent,
+        // En-têtes optionnels (ex. List-Unsubscribe pour les emails de rappel)
+        ...(headers && Object.keys(headers).length ? {Headers: headers} : {}),
       },
     ],
   };
@@ -6453,6 +6455,364 @@ exports.createFreeAccount = onCall(
         uid: userRecord.uid,
         email: normalizedEmail,
       };
+    });
+
+// ---------------------------------------------------------------------------
+// Ma pratique — suivi, favoris et rappels
+// ---------------------------------------------------------------------------
+
+const PRACTICE_NEEDS = ['tendu', 'mental', 'fatigue', 'calme', 'bouger'];
+const MAX_PRACTICE_FAVORITES = 30;
+const PRACTICE_REMINDER_MIN_DAYS = 3; // absence minimale avant un rappel
+const PRACTICE_REMINDER_COOLDOWN_DAYS = 7; // fréquence maximale (1 / 7 jours)
+const PRACTICE_REMINDER_MAX_PER_RUN = 300; // garde-fou par exécution
+
+/**
+ * Enregistre une pratique terminée (historique + statistiques).
+ * Écriture serveur uniquement (les règles Firestore interdisent l'écriture client).
+ * Région : europe-west1
+ */
+exports.logPractice = onCall(
+    {
+      region: 'europe-west1',
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e).');
+      }
+
+      const {contentId, need = null, source = 'free'} = request.data || {};
+      if (!contentId || typeof contentId !== 'string' || contentId.length > 120) {
+        throw new HttpsError('invalid-argument', 'contentId requis.');
+      }
+      if (source !== 'free' && source !== 'protected') {
+        throw new HttpsError('invalid-argument', 'source invalide.');
+      }
+      const cleanNeed = PRACTICE_NEEDS.includes(need) ? need : null;
+
+      const limit = await checkRateLimit(uid, 'logPractice', 60, 3600);
+      if (limit.limited) {
+        throw new HttpsError('resource-exhausted',
+            `Trop de pratiques enregistrées. Réessayez dans ${limit.retryAfterSeconds} s.`);
+      }
+
+      const userRef = db.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        throw new HttpsError('not-found', 'Compte introuvable.');
+      }
+
+      const completedAt = Timestamp.now();
+      await userRef.collection('practiceLog').add({
+        contentId,
+        need: cleanNeed,
+        source,
+        completedAt,
+      });
+      await userRef.set({
+        lastPracticeAt: completedAt,
+        lastNeed: cleanNeed,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+
+      return {success: true};
+    });
+
+/**
+ * Ajoute/retire une pratique des favoris de l'utilisateur.
+ * Région : europe-west1
+ */
+exports.toggleFavorite = onCall(
+    {
+      region: 'europe-west1',
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e).');
+      }
+
+      const {contentId, favorite} = request.data || {};
+      if (!contentId || typeof contentId !== 'string' || contentId.length > 120) {
+        throw new HttpsError('invalid-argument', 'contentId requis.');
+      }
+
+      const userRef = db.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        throw new HttpsError('not-found', 'Compte introuvable.');
+      }
+
+      const current = Array.isArray(userDoc.data().favorites) ? userDoc.data().favorites : [];
+      const isFavorite = current.includes(contentId);
+      const shouldFavorite = (typeof favorite === 'boolean') ? favorite : !isFavorite;
+
+      let next;
+      if (shouldFavorite) {
+        next = isFavorite ? current : [contentId, ...current.filter((id) => id !== contentId)];
+      } else {
+        next = current.filter((id) => id !== contentId);
+      }
+      if (next.length > MAX_PRACTICE_FAVORITES) {
+        next = next.slice(0, MAX_PRACTICE_FAVORITES);
+      }
+
+      await userRef.set({
+        favorites: next,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+
+      return {success: true, favorites: next};
+    });
+
+/**
+ * Active/désactive les rappels de pratique (email).
+ * Consentement explicite : désactivé par défaut.
+ * Région : europe-west1
+ */
+exports.setNotificationOptIn = onCall(
+    {
+      region: 'europe-west1',
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e).');
+      }
+
+      const optIn = request.data && request.data.optIn === true;
+      const userRef = db.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        throw new HttpsError('not-found', 'Compte introuvable.');
+      }
+
+      await userRef.set({
+        notificationOptIn: optIn,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, {merge: true});
+
+      return {success: true, optIn};
+    });
+
+/**
+ * Retourne les favoris, l'historique récent et les statistiques de pratique
+ * de l'utilisateur connecté.
+ * Région : europe-west1
+ */
+exports.getPracticeStats = onCall(
+    {
+      region: 'europe-west1',
+    },
+    async (request) => {
+      const uid = request.auth && request.auth.uid;
+      if (!uid) {
+        throw new HttpsError('unauthenticated', 'Vous devez être connecté(e).');
+      }
+
+      const userRef = db.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        throw new HttpsError('not-found', 'Compte introuvable.');
+      }
+
+      const userData = userDoc.data() || {};
+      const favorites = Array.isArray(userData.favorites) ? userData.favorites : [];
+      const notificationOptIn = userData.notificationOptIn === true;
+
+      // 500 entrées récentes suffisent largement pour des statistiques de pratique.
+      let entries = [];
+      try {
+        const snapshot = await userRef.collection('practiceLog')
+            .orderBy('completedAt', 'desc')
+            .limit(500)
+            .get();
+        entries = snapshot.docs.map((doc) => {
+          const value = doc.data();
+          return {
+            contentId: value.contentId || null,
+            need: value.need || null,
+            source: value.source || 'free',
+            completedAt: value.completedAt ? value.completedAt.toDate().toISOString() : null,
+          };
+        });
+      } catch (logError) {
+        // Sous-collection absente ou index manquant : ne pas bloquer l'app.
+        console.warn('getPracticeStats — practiceLog indisponible:', logError.message);
+      }
+
+      const now = Date.now();
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      const stats = {total: entries.length, last7: 0, last30: 0, last365: 0};
+      const needCounts = {};
+      entries.forEach((entry) => {
+        const time = entry.completedAt ? Date.parse(entry.completedAt) : 0;
+        const age = now - time;
+        if (age <= 7 * DAY_MS) stats.last7 += 1;
+        if (age <= 30 * DAY_MS) stats.last30 += 1;
+        if (age <= 365 * DAY_MS) stats.last365 += 1;
+        if (entry.need) needCounts[entry.need] = (needCounts[entry.need] || 0) + 1;
+      });
+      const topNeeds = Object.keys(needCounts)
+          .map((need) => ({need, count: needCounts[need]}))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 3);
+
+      return {
+        success: true,
+        favorites,
+        notificationOptIn,
+        stats: {...stats, topNeeds},
+        history: entries.slice(0, 20),
+      };
+    });
+
+/**
+ * Rappels de pratique intelligents (email), quotidien.
+ *
+ * Ciblage : utilisateurs ayant explicitement activé les rappels, inactifs depuis
+ * au moins 3 jours, et n'ayant pas reçu de rappel depuis 7 jours (fréquence max
+ * 1 / semaine). Le texte est personnalisé avec le dernier besoin pratiqué.
+ * Lien de désinscription en un clic : /ma-pratique/?notifications=off
+ *
+ * Région : europe-west1
+ */
+exports.sendPracticeReminders = onSchedule(
+    {
+      schedule: '0 9 * * *', // Tous les jours à 9h
+      timeZone: 'Europe/Paris',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+      region: 'europe-west1',
+    },
+    async () => {
+      const mailjetApiKey = process.env.MAILJET_API_KEY;
+      const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+      if (!mailjetApiKey || !mailjetApiSecret) {
+        console.error('❌ Mailjet credentials not configured (practice reminders)');
+        return;
+      }
+
+      const now = new Date();
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      let sent = 0;
+      let skipped = 0;
+      let errors = 0;
+
+      let snapshot;
+      try {
+        snapshot = await db.collection('users')
+            .where('notificationOptIn', '==', true)
+            .limit(2000)
+            .get();
+      } catch (queryError) {
+        console.error('❌ Error querying opted-in users:', queryError);
+        return;
+      }
+
+      for (const userDoc of snapshot.docs) {
+        if (sent >= PRACTICE_REMINDER_MAX_PER_RUN) break;
+        const userData = userDoc.data() || {};
+        if (userData.isDemo === true) {
+          skipped++;
+          continue;
+        }
+        const email = userData.email;
+        if (!email) {
+          skipped++;
+          continue;
+        }
+
+        const lastPractice = toJsDate(userData.lastPracticeAt) ||
+          toJsDate(userData.registrationDate) || toJsDate(userData.createdAt);
+        const lastReminder = toJsDate(userData.lastPracticeReminderAt);
+        if (!lastPractice) {
+          skipped++;
+          continue;
+        }
+
+        const daysSincePractice = Math.floor((now.getTime() - lastPractice.getTime()) / DAY_MS);
+        const daysSinceReminder = lastReminder ?
+          Math.floor((now.getTime() - lastReminder.getTime()) / DAY_MS) : Infinity;
+
+        if (daysSincePractice < PRACTICE_REMINDER_MIN_DAYS) {
+          skipped++;
+          continue;
+        }
+        if (daysSinceReminder < PRACTICE_REMINDER_COOLDOWN_DAYS) {
+          skipped++;
+          continue;
+        }
+
+        const locale = (String(userData.locale).toLowerCase() === 'en') ? 'en' : 'fr';
+        const firstName = userData.firstName || userData.firstname || '';
+        const lastNeed = PRACTICE_NEEDS.includes(userData.lastNeed) ? userData.lastNeed : null;
+        const baseUrl = locale === 'en' ?
+          'https://fluance.io/en/my-practice/' : 'https://fluance.io/ma-pratique/';
+        const practiceUrl = lastNeed ?
+          `${baseUrl}?need=${encodeURIComponent(lastNeed)}` : baseUrl;
+        const manageUrl = `${baseUrl}?notifications=off`;
+
+        const copy = locale === 'en' ? {
+          subject: 'A little moment for you?',
+          title: 'A little moment for you?',
+          greeting: `Hi ${firstName}`.trim(),
+          body: lastNeed ?
+            'Your body may be asking for a few minutes of movement and breath. Fluance suggests a short practice, in line with what felt good last time.' :
+            'A few minutes of movement, breath and presence are often enough to release tension. Feel like practicing?',
+          cta: 'Open My practice',
+          footer: 'You receive this email because you enabled practice reminders. You can',
+          footerLink: 'turn them off here',
+        } : {
+          subject: 'Un petit moment pour toi ?',
+          title: 'Un petit moment pour toi ?',
+          greeting: `Bonjour ${firstName}`.trim(),
+          body: lastNeed ?
+            'Ton corps a peut-être envie de quelques minutes de mouvement et de souffle. Fluance te propose une pratique courte, dans la continuité de ce qui t\'a fait du bien la dernière fois.' :
+            'Quelques minutes de mouvement, de souffle et de présence suffisent souvent à relâcher les tensions. Envie de pratiquer ?',
+          cta: 'Ouvrir Ma pratique',
+          footer: 'Tu reçois cet email car tu as activé les rappels de pratique. Tu peux',
+          footerLink: 'les désactiver ici',
+        };
+
+        const html = loadEmailTemplate('rappel-pratique', {
+          title: copy.title,
+          greeting: copy.greeting,
+          body: copy.body,
+          cta: copy.cta,
+          ctaUrl: practiceUrl,
+          manageUrl: manageUrl,
+          footer: copy.footer,
+          footerLink: copy.footerLink,
+        });
+        const text = `${copy.greeting}\n\n${copy.body}\n\n` +
+          `${copy.cta}: ${practiceUrl}\n\n${copy.footer} ${copy.footerLink}: ${manageUrl}`;
+
+        try {
+          await sendMailjetEmail(
+              email,
+              copy.subject,
+              html,
+              text,
+              mailjetApiKey,
+              mailjetApiSecret,
+              undefined,
+              undefined,
+              {'List-Unsubscribe': `<${manageUrl}>`},
+          );
+          await userDoc.ref.set({
+            lastPracticeReminderAt: Timestamp.now(),
+            practiceReminderCount: FieldValue.increment(1),
+            updatedAt: FieldValue.serverTimestamp(),
+          }, {merge: true});
+          sent++;
+        } catch (sendError) {
+          errors++;
+          console.error(`❌ Practice reminder failed for ${email}:`, sendError.message);
+        }
+      }
+
+      console.log(`📧 Practice reminders — sent: ${sent}, skipped: ${skipped}, errors: ${errors}`);
     });
 
 /**

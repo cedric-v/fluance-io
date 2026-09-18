@@ -19,6 +19,13 @@ service cloud.firestore {
       allow create, update, delete: if false; // Géré par les Functions
     }
 
+    // Historique de pratique (sous-collection de l'utilisateur) :
+    // lecture propriétaire uniquement, écriture via Cloud Functions.
+    match /users/{userId}/practiceLog/{entryId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Géré par les Functions
+    }
+
     // Règles pour le contenu protégé (stocké dans Firestore)
     match /protectedContent/{contentId} {
       // 🔒 Lecture INTERDITE côté client : tout utilisateur authentifié

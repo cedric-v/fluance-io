@@ -148,10 +148,17 @@ member area. See **[docs/ma-pratique.md](docs/ma-pratique.md)** for the full ref
   (`functions/services/stripePrices.js`). Existing 30/75 CHF subscriptions are unchanged.
 - Logic: `src/assets/js/practice-companion.mjs` · PWA: `src/sw.njk` + `src/ma-pratique.webmanifest`
   (install prompt Android + iOS hint, app-shell cache only — never the videos).
+- Tracking (server-only writes): `logPractice`, `toggleFavorite`, `setNotificationOptIn`,
+  `getPracticeStats`. History in `users/{uid}/practiceLog`, favourites in `users/{uid}.favorites`
+  (see `firestore.rules`).
+- Reminders: `sendPracticeReminders` (daily 9am Europe/Paris, explicit opt-in, max 1/week,
+  one-click unsubscribe via `/ma-pratique/?notifications=off`).
 - Analytics events pushed to `dataLayer` (consent-gated): `companion_opened`, `need_selected`,
-  `recommendation_displayed`, `practice_started`, `practice_completed`, `free_account_created`.
+  `recommendation_displayed`, `practice_started`, `practice_completed`, `practice_favorited`,
+  `practice_unfavorited`, `free_account_created`.
 - The Défi 21 jours countdown is **not** started by the companion (`startProgression: false`).
-- No new npm dependency, no new backend, no Firestore schema change.
+- No new npm dependency, no new backend. Additive Firestore fields/subcollection only
+  (`users/{uid}.favorites`, `notificationOptIn`, `practiceLog/`), server-side rules.
 
 ---
 

@@ -60,6 +60,24 @@
       signupLoading: 'Création du compte…',
       install: 'Installer l’application',
       installIos: 'Pour installer : Partager → « Sur l’écran d’accueil »',
+      trackingTitle: 'Mon suivi',
+      stat7: '7 derniers jours',
+      stat30: '30 derniers jours',
+      statTotal: 'Pratiques au total',
+      favoritesTitle: 'Tes favoris',
+      favoritesEmpty: 'Ajoute une pratique en favori avec ☆ pour la retrouver ici.',
+      historyTitle: 'Ton historique',
+      historyEmpty: 'Tes pratiques terminées apparaîtront ici.',
+      removeFavorite: 'Retirer des favoris',
+      addFavorite: 'Ajouter aux favoris',
+      practice: 'Pratiquer',
+      notificationsTitle: 'Rappels de pratique',
+      notificationsText: 'Recevoir un petit email « Un petit moment pour toi ? » quand tu n’as pas pratiqué depuis quelques jours. Maximum une fois par semaine. Désactivable à tout moment.',
+      notificationsOn: 'Activés',
+      notificationsOff: 'Désactivés',
+      notificationsSaved: 'Préférence enregistrée.',
+      unsubscribed: 'Les rappels de pratique sont désactivés.',
+      errorSave: 'Impossible d’enregistrer pour le moment.',
     },
     en: {
       recommended: 'Recommended practices for you',
@@ -82,6 +100,24 @@
       signupLoading: 'Creating account…',
       install: 'Install the app',
       installIos: 'To install: Share → “Add to Home Screen”',
+      trackingTitle: 'My tracking',
+      stat7: 'Last 7 days',
+      stat30: 'Last 30 days',
+      statTotal: 'Total practices',
+      favoritesTitle: 'Your favourites',
+      favoritesEmpty: 'Favourite a practice with ☆ to find it here.',
+      historyTitle: 'Your history',
+      historyEmpty: 'Your completed practices will appear here.',
+      removeFavorite: 'Remove from favourites',
+      addFavorite: 'Add to favourites',
+      practice: 'Practice',
+      notificationsTitle: 'Practice reminders',
+      notificationsText: 'Receive a short email “A little moment for you?” when you haven’t practiced for a few days. At most once a week. Can be turned off anytime.',
+      notificationsOn: 'On',
+      notificationsOff: 'Off',
+      notificationsSaved: 'Preference saved.',
+      unsubscribed: 'Practice reminders are turned off.',
+      errorSave: 'Could not save right now.',
     },
   }[LANG];
 
@@ -105,6 +141,12 @@
   const signupPassword = document.getElementById('signup-password');
   const signupError = document.getElementById('free-signup-error');
   const signupSubmit = document.getElementById('free-signup-submit');
+  const trackingSection = document.getElementById('companion-tracking');
+  const statsEl = document.getElementById('companion-stats');
+  const favoritesEl = document.getElementById('companion-favorites');
+  const historyEl = document.getElementById('companion-history');
+  const notificationsEl = document.getElementById('companion-notifications');
+  const playerFavorite = document.getElementById('player-favorite');
 
   let accessibleProtected = new Map(); // contentId → titre (droits résolus côté serveur)
   let protectedCacheLoaded = false;
@@ -115,6 +157,10 @@
   let turnstileWidgetId = null;
   let turnstileLoading = null;
   let functionsLoading = null;
+  let userStats = null;
+  let pendingNeed = null;
+  let pendingUnsubscribe = false;
+  let notificationMessage = '';
 
   // --- Utilitaires ---
 
@@ -144,6 +190,48 @@
   function setVisible(el, visible) {
     if (!el) return;
     el.classList.toggle('hidden', !visible);
+  }
+
+  // Appelle une fonction callable (charge firebase-functions si nécessaire).
+  async function callFunction(name, payload) {
+    await loadFunctionsCompat();
+    if (typeof firebase === 'undefined' || typeof firebase.functions !== 'function') {
+      throw new Error('firebase-functions-unavailable');
+    }
+    const callable = firebase.app().functions('europe-west1').httpsCallable(name);
+    const response = await callable(payload || {});
+    return response.data;
+  }
+
+  function titleForContent(contentId) {
+    const free = (catalog.practices || []).find(function (p) {
+      return p.id === contentId && p.source === 'free';
+    });
+    if (free) return localize(free.title);
+    if (accessibleProtected && accessibleProtected.get(contentId)) return accessibleProtected.get(contentId);
+    return contentId;
+  }
+
+  function needLabel(needId) {
+    const need = (catalog.needs || []).find(function (n) { return n.id === needId; });
+    return need ? localize(need.label) : needId;
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleDateString(LANG === 'en' ? 'en-GB' : 'fr-CH', {day: '2-digit', month: 'short'});
+    } catch (_e) {
+      return '';
+    }
+  }
+
+  function isFavorite(contentId) {
+    return !!(userStats && Array.isArray(userStats.favorites) && userStats.favorites.indexOf(contentId) !== -1);
+  }
+
+  function findCatalogPractice(contentId) {
+    return (catalog.practices || []).find(function (p) { return p.id === contentId; }) || null;
   }
 
   // --- Accès aux contenus premium (droits réels côté serveur) ---
@@ -221,14 +309,16 @@
         const reason = localize(p.reason);
         const tierLabel = p.source === 'free' ? T.free : T.premium;
         const duration = p.durationMin ? (p.durationMin + ' ' + T.min) : '';
+        const fav = isFavorite(p.id);
         return '' +
           '<article class="section-card bg-white p-5 flex flex-col gap-3">' +
           '  <div class="flex items-start justify-between gap-3">' +
           '    <h3 class="text-lg font-semibold text-[#3E3A35]">' + escapeHtml(title) + '</h3>' +
-          '    <span class="shrink-0 text-xs font-semibold px-2 py-1 rounded-full ' + (p.source === 'free' ? 'bg-[#8bc34a]/15 text-[#5a7d2a]' : 'bg-fluance/10 text-fluance') + '">' + escapeHtml(tierLabel) + '</span>' +
+          '    <button type="button" class="shrink-0 text-xl leading-none text-[#E6B84A] hover:opacity-80" data-fav-id="' + escapeHtml(p.id) + '" data-fav-state="' + (fav ? '1' : '0') + '" aria-pressed="' + (fav ? 'true' : 'false') + '" aria-label="' + escapeHtml(fav ? T.removeFavorite : T.addFavorite) + '">' + (fav ? '★' : '☆') + '</button>' +
           '  </div>' +
           (reason ? '  <p class="text-sm text-[#3E3A35]/70">' + escapeHtml(reason) + '</p>' : '') +
-          '  <div class="flex items-center gap-3 text-sm text-[#3E3A35]/60">' +
+          '  <div class="flex items-center gap-2 text-sm text-[#3E3A35]/60">' +
+          '    <span class="text-xs font-semibold px-2 py-1 rounded-full ' + (p.source === 'free' ? 'bg-[#8bc34a]/15 text-[#5a7d2a]' : 'bg-fluance/10 text-fluance') + '">' + escapeHtml(tierLabel) + '</span>' +
           (duration ? '    <span>⏱ ' + escapeHtml(duration) + '</span>' : '') +
           '  </div>' +
           '  <button type="button" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] mt-1" data-start-index="' + index + '">' + escapeHtml(T.start) + '</button>' +
@@ -239,6 +329,12 @@
         btn.addEventListener('click', function () {
           const idx = parseInt(btn.getAttribute('data-start-index'), 10);
           startPractice(list[idx]);
+        });
+      });
+      recList.querySelectorAll('[data-fav-id]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const id = btn.getAttribute('data-fav-id');
+          setFavorite(id, btn.getAttribute('data-fav-state') !== '1');
         });
       });
     }
@@ -260,11 +356,195 @@
     app.appendChild(upsell);
   }
 
+  // --- Suivi : favoris, historique, statistiques, rappels ---
+
+  function updatePlayerFavorite() {
+    if (!playerFavorite || !currentPractice) return;
+    const fav = isFavorite(currentPractice.id);
+    playerFavorite.textContent = fav ? '★' : '☆';
+    playerFavorite.setAttribute('aria-pressed', fav ? 'true' : 'false');
+    playerFavorite.setAttribute('aria-label', fav ? T.removeFavorite : T.addFavorite);
+  }
+
+  function renderTracking() {
+    if (!trackingSection || !userStats) return;
+    setVisible(trackingSection, true);
+
+    const s = userStats.stats || {};
+    if (statsEl) {
+      const cards = [
+        {value: s.last7 || 0, label: T.stat7},
+        {value: s.last30 || 0, label: T.stat30},
+        {value: s.total || 0, label: T.statTotal},
+      ];
+      statsEl.innerHTML = cards.map(function (c) {
+        return '<div class="rounded-xl border border-fluance/10 bg-white p-4 text-center">' +
+          '<div class="text-2xl font-semibold text-fluance">' + escapeHtml(String(c.value)) + '</div>' +
+          '<div class="text-xs text-[#3E3A35]/60 mt-1">' + escapeHtml(c.label) + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    const favs = Array.isArray(userStats.favorites) ? userStats.favorites : [];
+    if (favoritesEl) {
+      if (favs.length === 0) {
+        favoritesEl.innerHTML = '<h3 class="font-semibold text-[#3E3A35] mb-2">' + escapeHtml(T.favoritesTitle) + '</h3>' +
+          '<p class="text-sm text-[#3E3A35]/60">' + escapeHtml(T.favoritesEmpty) + '</p>';
+      } else {
+        favoritesEl.innerHTML = '<h3 class="font-semibold text-[#3E3A35] mb-3">' + escapeHtml(T.favoritesTitle) + '</h3>' +
+          '<ul class="space-y-2">' + favs.map(function (id) {
+            return '<li class="flex items-center justify-between gap-3 rounded-lg border border-fluance/10 bg-white px-4 py-3">' +
+              '<span class="text-[#3E3A35]">' + escapeHtml(titleForContent(id)) + '</span>' +
+              '<span class="flex items-center gap-3 shrink-0">' +
+              '<button type="button" class="text-sm font-medium text-fluance hover:underline" data-practice-id="' + escapeHtml(id) + '">' + escapeHtml(T.practice) + '</button>' +
+              '<button type="button" class="text-lg leading-none text-[#E6B84A]" data-unfav-id="' + escapeHtml(id) + '" aria-label="' + escapeHtml(T.removeFavorite) + '">★</button>' +
+              '</span></li>';
+          }).join('') + '</ul>';
+      }
+      favoritesEl.querySelectorAll('[data-practice-id]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const practice = findCatalogPractice(btn.getAttribute('data-practice-id'));
+          if (practice) startPractice(practice);
+        });
+      });
+      favoritesEl.querySelectorAll('[data-unfav-id]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          setFavorite(btn.getAttribute('data-unfav-id'), false);
+        });
+      });
+    }
+
+    const history = Array.isArray(userStats.history) ? userStats.history : [];
+    if (historyEl) {
+      if (history.length === 0) {
+        historyEl.innerHTML = '<h3 class="font-semibold text-[#3E3A35] mb-2">' + escapeHtml(T.historyTitle) + '</h3>' +
+          '<p class="text-sm text-[#3E3A35]/60">' + escapeHtml(T.historyEmpty) + '</p>';
+      } else {
+        historyEl.innerHTML = '<h3 class="font-semibold text-[#3E3A35] mb-3">' + escapeHtml(T.historyTitle) + '</h3>' +
+          '<ul class="text-sm text-[#3E3A35]/80">' + history.slice(0, 8).map(function (h) {
+            const need = h.need ? ' · ' + needLabel(h.need) : '';
+            return '<li class="flex items-center justify-between gap-3 border-b border-gray-100 py-2">' +
+              '<span>' + escapeHtml(titleForContent(h.contentId)) + escapeHtml(need) + '</span>' +
+              '<span class="text-[#3E3A35]/50 shrink-0">' + escapeHtml(formatDate(h.completedAt)) + '</span></li>';
+          }).join('') + '</ul>';
+      }
+    }
+
+    if (notificationsEl) {
+      const on = userStats.notificationOptIn === true;
+      notificationsEl.innerHTML =
+        '<div class="rounded-xl border border-fluance/15 bg-white p-5">' +
+        '<div class="flex items-start justify-between gap-4">' +
+        '<div><h3 class="font-semibold text-[#3E3A35]">' + escapeHtml(T.notificationsTitle) + '</h3>' +
+        '<p class="text-sm text-[#3E3A35]/70 mt-1">' + escapeHtml(T.notificationsText) + '</p></div>' +
+        '<button type="button" id="companion-notif-toggle" class="shrink-0 rounded-full px-3 py-1 text-sm font-semibold ' + (on ? 'bg-fluance text-white' : 'bg-gray-200 text-gray-700') + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+        escapeHtml(on ? T.notificationsOn : T.notificationsOff) + '</button>' +
+        '</div>' +
+        (notificationMessage ? '<p class="text-sm text-[#5a7d2a] mt-3" role="status">' + escapeHtml(notificationMessage) + '</p>' : '') +
+        '</div>';
+      const toggle = document.getElementById('companion-notif-toggle');
+      if (toggle) toggle.addEventListener('click', function () { setNotifications(!on); });
+    }
+  }
+
+  async function refreshStats() {
+    try {
+      const data = await callFunction('getPracticeStats', {});
+      if (!data || !data.success) return;
+      userStats = {
+        favorites: Array.isArray(data.favorites) ? data.favorites : [],
+        notificationOptIn: data.notificationOptIn === true,
+        stats: data.stats || {total: 0, last7: 0, last30: 0, last365: 0, topNeeds: []},
+        history: Array.isArray(data.history) ? data.history : [],
+      };
+      renderTracking();
+      if (selectedNeed) renderRecommendations(selectedNeed);
+      updatePlayerFavorite();
+    } catch (e) {
+      console.warn('[Ma pratique] Statistiques indisponibles :', e && e.message ? e.message : e);
+    }
+  }
+
+  async function setFavorite(contentId, favorite) {
+    if (!contentId) return;
+    // Mise à jour optimiste de l'interface
+    if (userStats) {
+      const favs = Array.isArray(userStats.favorites) ? userStats.favorites.slice() : [];
+      const idx = favs.indexOf(contentId);
+      if (favorite && idx === -1) favs.unshift(contentId);
+      if (!favorite && idx !== -1) favs.splice(idx, 1);
+      userStats.favorites = favs;
+      renderTracking();
+      if (selectedNeed) renderRecommendations(selectedNeed);
+      updatePlayerFavorite();
+    }
+    track(favorite ? 'practice_favorited' : 'practice_unfavorited', {practice: contentId, lang: LANG});
+    try {
+      const data = await callFunction('toggleFavorite', {contentId: contentId, favorite: favorite});
+      if (userStats && data && Array.isArray(data.favorites)) {
+        userStats.favorites = data.favorites;
+        renderTracking();
+        if (selectedNeed) renderRecommendations(selectedNeed);
+        updatePlayerFavorite();
+      }
+    } catch (e) {
+      console.warn('[Ma pratique] Favori non enregistré :', e && e.message ? e.message : e);
+      // Resynchroniser l'état réel en cas d'échec.
+      refreshStats();
+    }
+  }
+
+  async function setNotifications(optIn, successMessage) {
+    try {
+      const data = await callFunction('setNotificationOptIn', {optIn: !!optIn});
+      if (userStats) userStats.notificationOptIn = !!(data && data.optIn);
+      notificationMessage = successMessage || T.notificationsSaved;
+    } catch (e) {
+      console.warn('[Ma pratique] Préférence non enregistrée :', e && e.message ? e.message : e);
+      notificationMessage = T.errorSave;
+    }
+    renderTracking();
+  }
+
+  async function logPractice(practice) {
+    if (!practice) return;
+    try {
+      await callFunction('logPractice', {
+        contentId: practice.id || practice.contentId,
+        need: selectedNeed,
+        source: practice.source,
+      });
+      await refreshStats();
+    } catch (e) {
+      console.warn('[Ma pratique] Pratique non enregistrée :', e && e.message ? e.message : e);
+    }
+  }
+
+  function handleUrlParams() {
+    let params;
+    try {
+      params = new URLSearchParams(location.search);
+    } catch (_e) {
+      return;
+    }
+    const need = params.get('need');
+    if (need && (catalog.needs || []).some(function (n) { return n.id === need; })) {
+      pendingNeed = need;
+    }
+    if (params.get('notifications') === 'off') {
+      pendingUnsubscribe = true;
+    }
+    if (pendingNeed || pendingUnsubscribe) {
+      try { history.replaceState(null, '', location.pathname); } catch (_e) { /* ignore */ }
+    }
+  }
+
   // --- Lecture ---
 
   function startPractice(practice) {
     if (!practice || !playerSection || !playerContainer) return;
     currentPractice = practice;
+    if (playerDone) playerDone.disabled = false;
     setVisible(playerFeedback, false);
     playerContainer.innerHTML = '';
 
@@ -289,16 +569,20 @@
     }
 
     setVisible(playerSection, true);
+    updatePlayerFavorite();
     if (playerSection.scrollIntoView) playerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     track('practice_started', { practice: practice.id, source: practice.source, need: selectedNeed, lang: LANG });
   }
 
   function finishPractice() {
+    if (!currentPractice) return;
     if (playerFeedback) {
       playerFeedback.textContent = T.thanks;
       setVisible(playerFeedback, true);
     }
-    track('practice_completed', { practice: currentPractice ? currentPractice.id : null, need: selectedNeed, lang: LANG });
+    if (playerDone) playerDone.disabled = true;
+    track('practice_completed', { practice: currentPractice.id, need: selectedNeed, lang: LANG });
+    logPractice(currentPractice);
   }
 
   function closePlayer() {
@@ -328,6 +612,22 @@
     loadProtectedAccess().then(function () {
       if (selectedNeed) renderRecommendations(selectedNeed);
     });
+    // Charger favoris / historique / statistiques, puis traiter les paramètres d'URL
+    // (`?need=` pour une recommandation ciblée, `?notifications=off` pour se désinscrire).
+    refreshStats().then(function () {
+      if (pendingUnsubscribe) {
+        pendingUnsubscribe = false;
+        setNotifications(false, T.unsubscribed);
+      }
+      if (pendingNeed) {
+        const need = pendingNeed;
+        pendingNeed = null;
+        renderRecommendations(need);
+        if (recSection && recSection.scrollIntoView) {
+          recSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    });
     renderUpsell();
     setupInstallPrompt();
   }
@@ -353,6 +653,11 @@
   function wirePlayer() {
     if (playerDone) playerDone.addEventListener('click', finishPractice);
     if (playerClose) playerClose.addEventListener('click', closePlayer);
+    if (playerFavorite) {
+      playerFavorite.addEventListener('click', function () {
+        if (currentPractice) setFavorite(currentPractice.id, !isFavorite(currentPractice.id));
+      });
+    }
   }
 
   // --- Inscription gratuite (freemium) ---
@@ -434,12 +739,7 @@
     }
     setSignupLoading(true);
     try {
-      await loadFunctionsCompat();
-      if (typeof firebase === 'undefined' || typeof firebase.functions !== 'function') {
-        throw new Error('firebase-functions-unavailable');
-      }
-      const callable = firebase.app().functions('europe-west1').httpsCallable('createFreeAccount');
-      await callable({
+      await callFunction('createFreeAccount', {
         email: email,
         password: password,
         firstName: firstName,
@@ -534,6 +834,7 @@
     attachNeedHandlers();
     wirePlayer();
     wireSignup();
+    handleUrlParams();
     registerServiceWorker();
     setVisible(pendingEl, true);
 
