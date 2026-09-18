@@ -137,6 +137,15 @@ export default function (eleventyConfig) {
     return 'https://fluance.io/' + imagePath;
   });
 
+  // Catalogue du compagnon « Ma pratique » (src/_data/practices.json).
+  // Sérialisé en JSON sûr pour être embarqué dans la page, sans requête réseau
+  // supplémentaire. Les caractères `<` sont échappés pour éviter toute fermeture
+  // prématurée de la balise <script>.
+  eleventyConfig.addFilter("practiceCatalog", function (practices) {
+    const data = practices || { needs: [], practices: [] };
+    return JSON.stringify(data).replace(/</g, "\\u003c");
+  });
+
   eleventyConfig.addFilter("canonicalUrl", function (url) {
     if (!url || url === '.' || url === './') return '/';
 
@@ -685,11 +694,13 @@ export default function (eleventyConfig) {
     "src/assets/js/booking.js": "assets/js/booking.js",
     "src/assets/js/protected-content.js": "assets/js/protected-content.js",
     "src/assets/js/agent-tools.js": "assets/js/agent-tools.js",
-    "src/assets/js/firebase-auth.mjs": "assets/js/firebase-auth.mjs"
+    "src/assets/js/firebase-auth.mjs": "assets/js/firebase-auth.mjs",
+    "src/assets/js/practice-companion.mjs": "assets/js/practice-companion.mjs"
   });
   eleventyConfig.addPassthroughCopy("src/robots.txt");
   eleventyConfig.addPassthroughCopy("src/llms.txt");
   eleventyConfig.addPassthroughCopy("src/site.webmanifest");
+  eleventyConfig.addPassthroughCopy("src/ma-pratique.webmanifest");
   eleventyConfig.addPassthroughCopy({ "src/.well-known": ".well-known" });
   eleventyConfig.addPassthroughCopy({ "src/agent": "agent" });
   eleventyConfig.addPassthroughCopy({ "src/docs/api/openapi.json": "docs/api/openapi.json" });

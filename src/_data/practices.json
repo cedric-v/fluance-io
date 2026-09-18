@@ -1,0 +1,388 @@
+{
+  "_comment": "Catalogue du compagnon « Ma pratique ». Ce fichier ne contient AUCUN contenu vidéo dupliqué : il référence des pratiques existantes. Les entrées 'free' pointent vers des vidéos déjà publiques (2 pratiques offertes + 5 jours) et sont gatées par la connexion. Les entrées 'protected' référencent des documents Firestore protectedContent et sont filtrées par les droits réels (getProtectedContent). Pour ajouter/retirer une pratique du compagnon : ajouter/retirer une entrée ici, ou changer son tableau 'needs'. Aucun déploiement de fonction n'est nécessaire.",
+  "needs": [
+    { "id": "tendu", "icon": "🌿", "label": { "fr": "Tendu", "en": "Tense" } },
+    { "id": "mental", "icon": "🧠", "label": { "fr": "Mentalement chargé", "en": "Mentally loaded" } },
+    { "id": "fatigue", "icon": "🌙", "label": { "fr": "Fatigué", "en": "Tired" } },
+    { "id": "calme", "icon": "🫧", "label": { "fr": "Besoin de calme", "en": "Need calm" } },
+    { "id": "bouger", "icon": "✨", "label": { "fr": "Envie de bouger", "en": "Want to move" } }
+  ],
+  "practices": [
+    {
+      "id": "free-ancrage",
+      "source": "free",
+      "tier": "free",
+      "title": { "fr": "Ancrage et apaisement", "en": "Grounding and calming" },
+      "embedUrl": "https://iframe.mediadelivery.net/embed/479894/a91caa5f-2582-44cf-b027-01c8ac0dc1f8?autoplay=false&loop=false&muted=false&preload=true&responsive=true",
+      "durationMin": 5,
+      "needs": ["calme", "mental", "tendu"],
+      "priority": 20,
+      "reason": { "fr": "Pour apaiser le mental et relâcher les tensions", "en": "To calm the mind and release tension" }
+    },
+    {
+      "id": "free-automassages",
+      "source": "free",
+      "tier": "free",
+      "title": { "fr": "Auto-massages", "en": "Self-massage" },
+      "embedUrl": "https://iframe.mediadelivery.net/embed/479894/9db9bb12-a932-482a-8c7b-2d490fecb978?autoplay=false&loop=false&muted=false&preload=true&responsive=true",
+      "durationMin": 5,
+      "needs": ["tendu", "fatigue"],
+      "priority": 20,
+      "reason": { "fr": "Pour dénouer les tensions physiques", "en": "To release physical tension" }
+    },
+    {
+      "id": "free-5j1",
+      "source": "free",
+      "tier": "free",
+      "title": { "fr": "S'ancrer et détendre", "en": "Ground and relax" },
+      "embedUrl": "https://iframe.mediadelivery.net/embed/25452/bc4ece32-a5cc-4913-b9d7-5556644f93e0?autoplay=false&loop=false&muted=false&preload=true&responsive=true",
+      "durationMin": 5,
+      "needs": ["calme", "mental", "fatigue", "bouger"],
+      "priority": 15,
+      "reason": { "fr": "Pour revenir au calme et relâcher la pression", "en": "To return to calm and release pressure" }
+    },
+    {
+      "id": "free-5j2",
+      "source": "free",
+      "tier": "free",
+      "title": { "fr": "Lâcher-prise", "en": "Letting go" },
+      "embedUrl": "https://iframe.mediadelivery.net/embed/25452/b67d8444-c388-44bc-b593-4176366f343f?autoplay=false&loop=false&muted=false&preload=true&responsive=true",
+      "durationMin": 5,
+      "needs": ["mental", "calme", "tendu"],
+      "priority": 15,
+      "reason": { "fr": "Pour déposer la charge mentale", "en": "To set down mental load" }
+    },
+    {
+      "id": "free-5j3",
+      "source": "free",
+      "tier": "free",
+      "title": { "fr": "Libérer le dos", "en": "Release the back" },
+      "embedUrl": "https://iframe.mediadelivery.net/embed/25452/efc6d270-9cbf-4e67-802d-ac190957d160?autoplay=false&loop=false&muted=false&preload=true&responsive=true",
+      "durationMin": 5,
+      "needs": ["tendu", "fatigue", "bouger"],
+      "priority": 15,
+      "reason": { "fr": "Pour soulager le dos et retrouver de la mobilité", "en": "To soothe the back and regain mobility" }
+    },
+    {
+      "id": "free-5j4",
+      "source": "free",
+      "tier": "free",
+      "title": { "fr": "Fluidité et émotions", "en": "Fluidity and emotions" },
+      "embedUrl": "https://iframe.mediadelivery.net/embed/25452/1fd5b972-2db8-4f9f-b3ea-d9f29799570e?autoplay=false&loop=false&muted=false&preload=true&responsive=true",
+      "durationMin": 5,
+      "needs": ["mental", "fatigue"],
+      "priority": 15,
+      "reason": { "fr": "Pour retrouver de la fluidité intérieure", "en": "To regain inner fluidity" }
+    },
+    {
+      "id": "free-5j5",
+      "source": "free",
+      "tier": "free",
+      "title": { "fr": "Harmonie", "en": "Harmony" },
+      "embedUrl": "https://iframe.mediadelivery.net/embed/25452/1fc4e0f7-4c07-4fdc-9908-8b24755624d3?autoplay=false&loop=false&muted=false&preload=true&responsive=true",
+      "durationMin": 5,
+      "needs": ["calme", "bouger", "fatigue"],
+      "priority": 15,
+      "reason": { "fr": "Pour bouger en douceur et retrouver l'harmonie", "en": "To move gently and regain harmony" }
+    },
+
+    {
+      "id": "complet-week-0",
+      "source": "protected",
+      "contentId": "complet-week-0",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["tendu", "fatigue"],
+      "priority": 30
+    },
+    {
+      "id": "complet-week-1",
+      "source": "protected",
+      "contentId": "complet-week-1",
+      "tier": "premium",
+      "durationMin": 10,
+      "needs": ["calme", "mental"],
+      "priority": 30
+    },
+    {
+      "id": "complet-week-2",
+      "source": "protected",
+      "contentId": "complet-week-2",
+      "tier": "premium",
+      "durationMin": 10,
+      "needs": ["tendu"],
+      "priority": 30
+    },
+    {
+      "id": "complet-week-3",
+      "source": "protected",
+      "contentId": "complet-week-3",
+      "tier": "premium",
+      "durationMin": 10,
+      "needs": ["tendu"],
+      "priority": 30
+    },
+    {
+      "id": "complet-week-4",
+      "source": "protected",
+      "contentId": "complet-week-4",
+      "tier": "premium",
+      "durationMin": 10,
+      "needs": ["tendu", "bouger"],
+      "priority": 30
+    },
+    {
+      "id": "complet-week-5",
+      "source": "protected",
+      "contentId": "complet-week-5",
+      "tier": "premium",
+      "durationMin": 10,
+      "needs": ["fatigue", "bouger"],
+      "priority": 30
+    },
+    {
+      "id": "complet-week-6",
+      "source": "protected",
+      "contentId": "complet-week-6",
+      "tier": "premium",
+      "durationMin": 10,
+      "needs": ["tendu"],
+      "priority": 30
+    },
+    {
+      "id": "complet-week-7",
+      "source": "protected",
+      "contentId": "complet-week-7",
+      "tier": "premium",
+      "durationMin": 10,
+      "needs": ["bouger"],
+      "priority": 30
+    },
+    {
+      "id": "complet-week-8",
+      "source": "protected",
+      "contentId": "complet-week-8",
+      "tier": "premium",
+      "durationMin": 10,
+      "needs": ["bouger"],
+      "priority": 30
+    },
+    {
+      "id": "complet-week-9",
+      "source": "protected",
+      "contentId": "complet-week-9",
+      "tier": "premium",
+      "durationMin": 10,
+      "needs": ["mental", "calme"],
+      "priority": 30
+    },
+
+    {
+      "id": "21jours-jour-0",
+      "source": "protected",
+      "contentId": "21jours-jour-0",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["mental", "calme"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-1",
+      "source": "protected",
+      "contentId": "21jours-jour-1",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["tendu", "calme"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-2",
+      "source": "protected",
+      "contentId": "21jours-jour-2",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["tendu", "bouger"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-3",
+      "source": "protected",
+      "contentId": "21jours-jour-3",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["bouger", "tendu"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-4",
+      "source": "protected",
+      "contentId": "21jours-jour-4",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["tendu"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-5",
+      "source": "protected",
+      "contentId": "21jours-jour-5",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["bouger"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-6",
+      "source": "protected",
+      "contentId": "21jours-jour-6",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["bouger"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-7",
+      "source": "protected",
+      "contentId": "21jours-jour-7",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["tendu", "fatigue"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-8",
+      "source": "protected",
+      "contentId": "21jours-jour-8",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["tendu"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-9",
+      "source": "protected",
+      "contentId": "21jours-jour-9",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["tendu", "mental"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-10",
+      "source": "protected",
+      "contentId": "21jours-jour-10",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["tendu", "fatigue"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-11",
+      "source": "protected",
+      "contentId": "21jours-jour-11",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["bouger", "tendu"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-12",
+      "source": "protected",
+      "contentId": "21jours-jour-12",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["bouger"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-13",
+      "source": "protected",
+      "contentId": "21jours-jour-13",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["bouger"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-14",
+      "source": "protected",
+      "contentId": "21jours-jour-14",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["fatigue", "bouger"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-15",
+      "source": "protected",
+      "contentId": "21jours-jour-15",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["mental", "calme"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-16",
+      "source": "protected",
+      "contentId": "21jours-jour-16",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["bouger", "tendu"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-17",
+      "source": "protected",
+      "contentId": "21jours-jour-17",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["bouger"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-18",
+      "source": "protected",
+      "contentId": "21jours-jour-18",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["tendu", "calme"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-19",
+      "source": "protected",
+      "contentId": "21jours-jour-19",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["calme"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-20",
+      "source": "protected",
+      "contentId": "21jours-jour-20",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["calme"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-21",
+      "source": "protected",
+      "contentId": "21jours-jour-21",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["calme"],
+      "priority": 25
+    },
+    {
+      "id": "21jours-jour-22",
+      "source": "protected",
+      "contentId": "21jours-jour-22",
+      "tier": "premium",
+      "durationMin": 3,
+      "needs": ["calme", "fatigue"],
+      "priority": 25
+    }
+  ]
+}

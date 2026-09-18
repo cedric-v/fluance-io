@@ -1,0 +1,122 @@
+---
+layout: base.njk
+title: My practice
+description: Tell us how you feel and start a short, tailored Fluance practice in just a few minutes.
+locale: en
+permalink: /en/my-practice/
+robots: noindex, nofollow
+eleventyExcludeFromCollections: true
+manifest: /ma-pratique.webmanifest
+appTitle: My practice
+---
+
+<section
+  id="companion-app"
+  class="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-12"
+  data-login-url="/en/member-login/?return=/en/my-practice/"
+  data-upsell-url="/en/discover-my-practice/"
+  data-sw-url="/sw.js?v={{ version }}"
+>
+  <header class="text-center mb-8 md:mb-10">
+    <p class="cta-pill bg-fluance/10 text-fluance mb-4">Fluance · My practice</p>
+    <h1 class="text-2xl sm:text-3xl md:text-4xl font-semibold text-[#3E3A35] mb-3">How do you feel today?</h1>
+    <p class="text-[#3E3A35]/70 max-w-xl mx-auto">
+      Choose what you need right now. Fluance suggests a short practice — 5 minutes are often enough.
+    </p>
+  </header>
+
+  <div id="companion-auth-pending" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+    <div class="inline-flex items-center gap-3 text-gray-500">
+      <svg class="animate-spin h-5 w-5 text-fluance" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span class="text-sm font-medium">Loading your practice…</span>
+    </div>
+  </div>
+
+  <!-- Not signed in: free sign-up (freemium) -->
+  <div id="companion-auth-required" class="hidden section-card bg-white p-6 md:p-8">
+    <h2 class="text-xl font-semibold text-[#3E3A35] mb-2">Start for free</h2>
+    <p class="text-[#3E3A35]/70 mb-5 text-sm">
+      Create your free account to access a selection of practices. No commitment.
+    </p>
+    <form id="free-signup-form" class="space-y-3 text-left" novalidate>
+      <input
+        type="text"
+        id="signup-firstname"
+        name="firstName"
+        placeholder="First name"
+        autocomplete="given-name"
+        class="w-full px-4 py-3 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
+      >
+      <input
+        type="email"
+        id="signup-email"
+        name="email"
+        placeholder="Email"
+        autocomplete="email"
+        required
+        class="w-full px-4 py-3 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
+      >
+      <input
+        type="password"
+        id="signup-password"
+        name="password"
+        placeholder="Password (min. 6 characters)"
+        autocomplete="new-password"
+        minlength="6"
+        required
+        class="w-full px-4 py-3 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
+      >
+      <div id="companion-turnstile" class="min-h-[65px]"></div>
+      <p id="free-signup-error" class="hidden text-sm text-red-700" role="alert"></p>
+      <button type="submit" id="free-signup-submit" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] w-full">
+        Create my free account
+      </button>
+    </form>
+    <p class="text-sm text-[#3E3A35]/70 mt-4">
+      Already have an account?
+      <a href="/en/member-login/?return=/en/my-practice/" class="text-fluance font-medium hover:underline">Sign in</a>
+    </p>
+  </div>
+
+  <div id="companion-main" class="hidden">
+    <div id="need-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8" role="group" aria-label="Choose a need">
+      {% for need in practices.needs %}
+      <button
+        type="button"
+        data-need="{{ need.id }}"
+        aria-pressed="false"
+        class="flex items-center gap-3 text-left px-4 py-4 rounded-xl border border-fluance/15 bg-white hover:bg-fluance/5 transition-colors"
+      >
+        <span class="text-2xl" aria-hidden="true">{{ need.icon }}</span>
+        <span class="font-semibold text-[#3E3A35]">{{ need.label[locale] }}</span>
+      </button>
+      {% endfor %}
+    </div>
+
+    <section id="recommendation" class="hidden" aria-live="polite">
+      <h2 id="recommendation-title" class="text-lg font-semibold text-[#3E3A35] mb-4"></h2>
+      <div id="recommendation-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+    <section id="player-section" class="hidden mt-8" aria-live="polite">
+      <div class="section-card bg-white p-5 md:p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 id="player-title" class="text-xl font-semibold text-[#3E3A35]">Your practice</h2>
+          <button type="button" id="player-close" class="text-sm text-gray-500 hover:text-fluance underline">Close</button>
+        </div>
+        <div id="player-container" class="rounded-lg overflow-hidden bg-gray-100"></div>
+        <div id="player-feedback" class="hidden mt-4 text-center text-[#5a7d2a] font-medium" role="status"></div>
+        <div class="mt-5 flex flex-col sm:flex-row gap-3 sm:justify-end">
+          <button type="button" id="player-done" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]">I practiced</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
+
+<script type="application/json" id="practice-catalog">{{ practices | practiceCatalog | safe }}</script>
+<script type="module" src="/assets/js/firebase-auth.mjs?v={{ version }}"></script>
+<script type="module" src="/assets/js/practice-companion.mjs?v={{ version }}"></script>

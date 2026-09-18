@@ -166,6 +166,22 @@ document.addEventListener('DOMContentLoaded', function() {
       const result = await window.FluanceAuth.loadProtectedContent();
       
       if (!result.success) {
+        // Compte gratuit (sans produit payant) : ne pas afficher une erreur
+        // technique « support », mais orienter vers le compagnon Ma pratique.
+        if (result.errorCode === 'NO_PRODUCT') {
+          contentContainer.innerHTML = `
+            <div class="bg-gradient-to-r from-fluance/10 to-fluance/5 border border-fluance/15 rounded-lg p-6 md:p-8 text-center">
+              <p class="text-2xl mb-2" aria-hidden="true">🌿</p>
+              <h3 class="text-lg font-semibold text-fluance mb-2">Bienvenue dans Ma pratique</h3>
+              <p class="text-gray-700 mb-5">Votre compte gratuit donne accès à une sélection de pratiques. Choisissez ce dont vous avez besoin aujourd'hui.</p>
+              <a href="/ma-pratique/" class="inline-block bg-fluance text-white px-6 py-3 rounded-lg hover:bg-fluance/90 transition-colors font-semibold">Ouvrir Ma pratique</a>
+            </div>
+          `;
+          contentContainer.classList.remove('hidden');
+          contentContainer.removeAttribute('aria-busy');
+          return;
+        }
+
         let errorHTML = `
           <div class="bg-red-50 border border-red-200 rounded-lg p-6">
             <div class="flex items-start">
@@ -377,8 +393,23 @@ document.addEventListener('DOMContentLoaded', function() {
       tabsHTML += '<div class="scroll-rail-edge right" data-rail-edge="right"></div>';
       tabsHTML += '</div>';
       
+      // Carte « Ma pratique » (compagnon de pratique). Extension additive :
+      // elle ne modifie pas les onglets produits ni le parcours existant.
+      const companionCardHTML = `
+        <a href="/ma-pratique/" class="block mb-6 rounded-lg border border-fluance/15 bg-gradient-to-r from-fluance/10 to-fluance/5 p-5 md:p-6 hover:from-fluance/15 transition-colors">
+          <div class="flex items-center gap-4">
+            <span class="text-3xl" aria-hidden="true">🌿</span>
+            <div class="flex-1">
+              <p class="text-lg font-semibold text-fluance">Ma pratique</p>
+              <p class="text-sm text-gray-700">Comment te sens-tu aujourd’hui ? Lance une pratique courte adaptée, 5 minutes suffisent.</p>
+            </div>
+            <span class="text-fluance text-xl" aria-hidden="true">→</span>
+          </div>
+        </a>
+      `;
+
       // Créer le contenu pour chaque produit
-      let contentHTML = tabsHTML + '<div class="space-y-6" id="product-content">';
+      let contentHTML = companionCardHTML + tabsHTML + '<div class="space-y-6" id="product-content">';
       
       allProducts.forEach((prod) => {
         // Gérer l'onglet communauté (toujours accessible)

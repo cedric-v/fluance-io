@@ -735,13 +735,15 @@ const _cachedContentDocs = {};
  * le contenu). Les lectures Firestore directes de protectedContent sont
  * désormais interdites par les règles de sécurité.
  */
-async function callGetProtectedContent(contentId = null) {
+async function callGetProtectedContent(contentId = null, options = {}) {
   try {
     await ensureFunctionsLoaded();
     const app = firebase.app();
     const functions = app.functions('europe-west1');
     const getProtectedContent = functions.httpsCallable('getProtectedContent');
-    const response = await getProtectedContent(contentId ? {contentId} : {});
+    const payload = Object.assign({}, options || {});
+    if (contentId) payload.contentId = contentId;
+    const response = await getProtectedContent(payload);
     return response.data;
   } catch (error) {
     console.error('[Protected Content] Erreur getProtectedContent:', error);
@@ -773,7 +775,7 @@ async function callGetProtectedContent(contentId = null) {
 /**
  * Charge le contenu protégé (vérification serveur des droits d'accès)
  */
-async function loadProtectedContent(contentId = null) {
+async function loadProtectedContent(contentId = null, options = {}) {
   try {
     const user = auth.currentUser;
     if (!user) {
@@ -929,7 +931,7 @@ async function loadProtectedContent(contentId = null) {
 
       // Fallback : le contenu n'est pas en cache → vérification serveur
       // (getProtectedContent vérifie la possession du produit ET la progression)
-      const serverResult = await callGetProtectedContent(contentId);
+      const serverResult = await callGetProtectedContent(contentId, options);
 
       if (!serverResult.success) {
         return serverResult;
@@ -964,7 +966,7 @@ async function loadProtectedContent(contentId = null) {
     // Sinon, charger la liste des contenus disponibles pour tous les produits
     // (vérification serveur des droits d'accès via getProtectedContent)
     try {
-      const serverResult = await callGetProtectedContent();
+      const serverResult = await callGetProtectedContent(null, options);
 
       if (!serverResult.success) {
         return serverResult;
@@ -1075,9 +1077,9 @@ async function loadProtectedContent(contentId = null) {
 /**
  * Charge un contenu protégé spécifique et l'affiche dans un élément
  */
-async function displayProtectedContent(contentId, containerElement) {
+async function displayProtectedContent(contentId, containerElement, options = {}) {
   try {
-    const result = await loadProtectedContent(contentId);
+    const result = await loadProtectedContent(contentId, options);
     
     if (!result.success) {
       let errorHTML = `
@@ -1558,7 +1560,7 @@ function getErrorMessage(errorCode) {
     'auth/wrong-password': 'Mot de passe incorrect. Si vous avez oublié votre mot de passe, utilisez le lien "Mot de passe oublié".',
     'auth/email-already-in-use': 'Cet email est déjà utilisé. Essayez de vous connecter ou utilisez "Mot de passe oublié" si vous ne vous souvenez plus de votre mot de passe.',
     'auth/weak-password': 'Le mot de passe est trop faible. Utilisez au moins 6 caractères.',
-    'auth/invalid-email': 'Format d\'email invalide. Vérifiez que l\'email est correct (exemple: nom@domaine.com).',
+    'auth/invalid-email': 'Format d\'email invalide. Vérifiez que l\'email est correct (exemple: nom@example.com).',
     'auth/too-many-requests': 'Trop de tentatives de connexion. Pour votre sécurité, veuillez attendre quelques minutes avant de réessayer.',
     'auth/network-request-failed': 'Erreur de connexion. Vérifiez votre connexion internet et réessayez.',
     'auth/user-disabled': 'Ce compte a été désactivé. Veuillez contacter le support pour plus d\'informations.',

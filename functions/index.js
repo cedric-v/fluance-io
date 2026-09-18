@@ -4243,7 +4243,7 @@ exports.createStripeCheckoutSession = onCall(
 
       // Validations par produit
       const VALID_VARIANTS = {
-        'complet': ['mensuel', 'trimestriel'],
+        'complet': ['mensuel', 'trimestriel', 'ma_pratique_mensuel', 'ma_pratique_annuel'],
         'rdv-clarte': ['unique', 'abonnement'],
         'focus-sos': ['unique', '3x'],
         'site-vitrine': ['5x'],
@@ -5264,7 +5264,7 @@ exports.getProtectedContent = onCall(
         throw new HttpsError('unauthenticated', 'Vous devez être connecté(e) pour accéder au contenu protégé.');
       }
 
-      const {contentId = null} = request.data || {};
+      const {contentId = null, startProgression = true} = request.data || {};
 
       // 1. Charger le document utilisateur (propriétaire du compte)
       const userDoc = await db.collection('users').doc(uid).get();
@@ -5291,7 +5291,10 @@ exports.getProtectedContent = onCall(
       // 🚀 Défi 21 jours : le décompte démarre au PREMIER accès à la formation.
       // Si un produit 21jours est marqué `started: false`, on fixe startDate = maintenant
       // dans une transaction (une seule fois, même en cas d'onglets simultanés).
-      if (userProducts.some((p) => p && p.name === '21jours' && p.started === false)) {
+      // `startProgression: false` permet à un appelant (ex. compagnon « Ma pratique »)
+      // de lister les contenus SANS démarrer le décompte du Défi 21 jours.
+      if (startProgression !== false &&
+          userProducts.some((p) => p && p.name === '21jours' && p.started === false)) {
         const userRef = db.collection('users').doc(uid);
         try {
           await db.runTransaction(async (tx) => {
@@ -6193,6 +6196,263 @@ exports.subscribeToNewsletter = onCall(
         console.error('Error subscribing to newsletter:', error);
         throw new HttpsError('internal', 'Error subscribing to newsletter: ' + error.message);
       }
+    });
+
+/**
+ * Création d'un compte gratuit (freemium « Ma pratique »).
+ *
+ * Fonction PUBLIQUE (aucune authentification requise) protégée par Turnstile
+ * + rate limiting. Elle crée :
+ *   1. un compte Firebase Auth (email + mot de passe) ;
+ *   2. un document Firestore users/{uid} marqué `plan: 'gratuit'` (AUCUN produit
+ *      payant n'est ajouté) ;
+ *   3. un contact MailJet dans la liste principale avec les properties
+ *      existantes (`statut: prospect`, `source_optin: inscription_gratuite`,
+ *      `est_client: False`, `langue`, `date_optin`, `firstname`).
+ *
+ * Le client se connecte ensuite avec Firebase Auth (signInWithEmailAndPassword).
+ * Aucune modification des webhooks, du checkout ou des fonctions existantes.
+ *
+ * Région : europe-west1
+ */
+exports.createFreeAccount = onCall(
+    {
+      region: 'europe-west1',
+      secrets: [
+        'MAILJET_API_KEY',
+        'MAILJET_API_SECRET',
+        'TURNSTILE_SECRET_KEY',
+      ],
+      cors: true, // Endpoint public (comme les opt-ins)
+    },
+    async (request) => {
+      const {email, password, firstName = '', turnstileToken, locale = 'fr'} = request.data || {};
+
+      if (!email || !password) {
+        throw new HttpsError('invalid-argument', 'Email et mot de passe requis.');
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const normalizedEmail = String(email).toLowerCase().trim();
+      if (!emailRegex.test(normalizedEmail)) {
+        throw new HttpsError('invalid-argument', 'Adresse email invalide.');
+      }
+      if (String(password).length < 6) {
+        throw new HttpsError('invalid-argument', 'Le mot de passe doit contenir au moins 6 caractères.');
+      }
+
+      // 🔒 Anti-spam : rate limiting par IP et par email
+      const clientIp = getClientIp(request.rawRequest);
+      const ipLimit = await checkRateLimit(`ip:${clientIp}`, 'createFreeAccount', 8, 3600);
+      if (ipLimit.limited) {
+        throw new HttpsError('resource-exhausted',
+            `Trop de demandes. Réessayez dans ${ipLimit.retryAfterSeconds} s.`);
+      }
+      const emailLimit = await checkRateLimit(normalizedEmail, 'createFreeAccount', 3, 3600);
+      if (emailLimit.limited) {
+        throw new HttpsError('resource-exhausted',
+            'Trop de demandes pour cette adresse. Réessayez plus tard.');
+      }
+
+      // 🔒 Turnstile : vérification obligatoire hors réseau privé (local).
+      const isLocal = isPrivateIp(clientIp);
+      if (!isLocal) {
+        const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+        if (!turnstileSecret) {
+          throw new HttpsError('failed-precondition', 'Bot protection is not configured');
+        }
+        if (!turnstileToken) {
+          throw new HttpsError('invalid-argument', 'Turnstile verification required');
+        }
+        try {
+          const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              secret: turnstileSecret,
+              response: turnstileToken,
+              remoteip: clientIp,
+            }),
+          });
+          const turnstileResult = await turnstileResponse.json();
+
+          if (!turnstileResult.success) {
+            console.error('Turnstile verification failed (free account):', turnstileResult);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+          if (turnstileResult.action !== 'free-signup') {
+            console.error('Turnstile action mismatch (free account):', turnstileResult.action);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+          const verifiedHostname = String(turnstileResult.hostname || '').toLowerCase();
+          if (!ALLOWED_TURNSTILE_HOSTNAMES.includes(verifiedHostname)) {
+            console.error('Turnstile hostname mismatch (free account):', verifiedHostname);
+            throw new HttpsError('permission-denied', 'Bot verification failed. Please try again.');
+          }
+        } catch (error) {
+          if (error instanceof HttpsError) throw error;
+          console.error('Error verifying Turnstile token (free account):', error);
+          throw new HttpsError('internal', 'Error verifying bot protection');
+        }
+      } else {
+        console.log('Skipping Turnstile verification for local/private IP:', clientIp);
+      }
+
+      const adminAuth = getAuth();
+
+      // 1. Le compte existe déjà ? → inviter à se connecter (pas d'usurpation)
+      try {
+        await adminAuth.getUserByEmail(normalizedEmail);
+        throw new HttpsError('already-exists',
+            'Un compte existe déjà avec cette adresse. Connectez-vous.');
+      } catch (lookupError) {
+        if (lookupError instanceof HttpsError) throw lookupError;
+        if (lookupError.code !== 'auth/user-not-found') {
+          console.error('Error checking existing user (free account):', lookupError);
+          throw new HttpsError('internal', 'Impossible de vérifier le compte.');
+        }
+        // auth/user-not-found → on continue
+      }
+
+      // 2. Créer le compte Firebase Auth
+      let userRecord;
+      try {
+        userRecord = await adminAuth.createUser({
+          email: normalizedEmail,
+          password: String(password),
+          ...(firstName ? {displayName: String(firstName).trim()} : {}),
+        });
+      } catch (createError) {
+        if (createError.code === 'auth/email-already-exists') {
+          throw new HttpsError('already-exists',
+              'Un compte existe déjà avec cette adresse. Connectez-vous.');
+        }
+        console.error('Error creating free account (auth):', createError);
+        throw new HttpsError('internal', 'Impossible de créer le compte. Réessayez.');
+      }
+
+      const langue = (String(locale).toLowerCase() === 'en') ? 'en' : 'fr';
+      const cleanFirstName = firstName ? capitalizeName(String(firstName).trim()) : '';
+
+      // 3. Document Firestore — AUCUN produit payant, marqueur `plan: gratuit`
+      try {
+        await db.collection('users').doc(userRecord.uid).set({
+          email: normalizedEmail,
+          firstName: cleanFirstName,
+          plan: 'gratuit',
+          freeAccount: true,
+          locale: langue,
+          source: 'ma-pratique',
+          registrationDate: FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, {merge: true});
+      } catch (firestoreError) {
+        console.error('Error creating free account (firestore):', firestoreError);
+        // Le compte Auth existe : on ne le supprime pas (l'utilisateur pourrait se
+        // connecter), mais on remonte l'erreur pour éviter un état incohérent.
+        throw new HttpsError('internal', 'Compte créé mais profil incomplet. Contactez le support.');
+      }
+
+      // 4. MailJet : contact + liste + properties. Ne jamais bloquer la création
+      // du compte si MailJet échoue.
+      try {
+        const mailjetAuth = Buffer.from(
+            `${process.env.MAILJET_API_KEY}:${process.env.MAILJET_API_SECRET}`,
+        ).toString('base64');
+        const contactUrl = `https://api.mailjet.com/v3/REST/contact/${encodeURIComponent(normalizedEmail)}`;
+
+        // Créer le contact s'il n'existe pas
+        const checkResponse = await fetch(contactUrl, {
+          method: 'GET',
+          headers: {'Authorization': `Basic ${mailjetAuth}`},
+        });
+        if (!checkResponse.ok) {
+          const createResponse = await fetch('https://api.mailjet.com/v3/REST/contact', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${mailjetAuth}`,
+            },
+            body: JSON.stringify({
+              Email: normalizedEmail,
+              ...(cleanFirstName ? {Name: cleanFirstName} : {}),
+              IsExcludedFromCampaigns: false,
+            }),
+          });
+          if (!createResponse.ok && createResponse.status !== 400) {
+            console.error('MailJet contact creation failed (free account):', await createResponse.text());
+          }
+        }
+
+        // Ajouter à la liste principale (10524140)
+        try {
+          const listResponse = await fetch('https://api.mailjet.com/v3/REST/listrecipient', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${mailjetAuth}`,
+            },
+            body: JSON.stringify({
+              IsUnsubscribed: false,
+              ContactAlt: normalizedEmail,
+              ListID: 10524140,
+            }),
+          });
+          if (!listResponse.ok) {
+            const errorText = await listResponse.text();
+            if (!(listResponse.status === 400 && errorText.includes('already'))) {
+              console.error('MailJet list add failed (free account):', errorText);
+            }
+          }
+        } catch (listError) {
+          console.error('MailJet list add error (free account):', listError);
+        }
+
+        // Fusionner source_optin avec la valeur existante
+        let sourceOptin = 'inscription_gratuite';
+        try {
+          const propsResponse = await fetch(
+              `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(normalizedEmail)}`,
+              {headers: {'Authorization': `Basic ${mailjetAuth}`}},
+          );
+          if (propsResponse.ok) {
+            const propsData = await propsResponse.json();
+            const existing = propsData?.Data?.[0]?.Data || [];
+            let current = '';
+            if (Array.isArray(existing)) {
+              const found = existing.find((d) => d.Name === 'source_optin');
+              current = found && found.Value ? found.Value : '';
+            }
+            const parts = String(current).split(',').map((s) => s.trim()).filter(Boolean);
+            if (!parts.includes('inscription_gratuite')) parts.push('inscription_gratuite');
+            sourceOptin = parts.join(',');
+          }
+        } catch (propReadError) {
+          console.error('MailJet properties read error (free account):', propReadError);
+        }
+
+        await updateMailjetContactProperties(
+            normalizedEmail,
+            {
+              statut: 'prospect',
+              source_optin: sourceOptin,
+              date_optin: new Date().toISOString(),
+              est_client: 'False',
+              langue: langue,
+              ...(cleanFirstName ? {firstname: cleanFirstName} : {}),
+            },
+            process.env.MAILJET_API_KEY,
+            process.env.MAILJET_API_SECRET,
+        );
+      } catch (mailjetError) {
+        console.error('MailJet error (free account, non bloquant):', mailjetError);
+      }
+
+      return {
+        success: true,
+        uid: userRecord.uid,
+        email: normalizedEmail,
+      };
     });
 
 /**

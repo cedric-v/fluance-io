@@ -84,6 +84,20 @@ const session = await stripe.checkout.sessions.create({
 | `21jours` | Fluance : 21 jours pour remettre du mouvement | `prod_TakXdTP0UcMy9J` | `price_1SdZ2X2Esx6PN6y1wnkrLfSu` | 19.00 CHF | One-time |
 | `complet` | Fluance en ligne - mensuel | `prod_TakZyjf0f1F5Ej` | `price_1SdZ4p2Esx6PN6y1bzRGQSC5` | 30.00 CHF/mois | Subscription (monthly) |
 | `complet` | Fluance en ligne - trimestriel | `prod_TakbVXK9sDba9F` | `price_1SdZ6E2Esx6PN6y11qme0Rde` | 75.00 CHF/trimestre | Subscription (every 3 months) |
+| `complet` (variant `ma_pratique_mensuel`) | Fluance Ma pratique - mensuel | auto (`fluance_complet_ma_pratique_mensuel`) | auto-provisionné | 14.90 CHF/mois | Subscription (monthly) |
+| `complet` (variant `ma_pratique_annuel`) | Fluance Ma pratique - annuel | auto (`fluance_complet_ma_pratique_annuel`) | auto-provisionné | 119.00 CHF/an | Subscription (yearly) |
+
+### Offres « Ma pratique » (freemium)
+
+Les deux offres de la landing `/decouvrir-ma-pratique/` utilisent le **même identifiant interne
+`complet`** (accès à l'ensemble des pratiques) avec les variants `ma_pratique_mensuel` et
+`ma_pratique_annuel`. Les prix sont **créés automatiquement dans Stripe au premier checkout**
+via `functions/services/stripePrices.js` (comme les autres produits récents).
+
+Pour figer un `priceId` existant, définir les secrets Firebase :
+`STRIPE_PRICE_ID_COMPLET_MA_PRATIQUE_MENSUEL` et `STRIPE_PRICE_ID_COMPLET_MA_PRATIQUE_ANNUEL`.
+
+Les abonnements historiques (30 / 75 CHF) restent actifs et coexistent avec les nouvelles offres.
 
 ---
 

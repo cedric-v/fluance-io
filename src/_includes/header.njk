@@ -114,6 +114,10 @@
             {% set targetUrl = '/en/create-account/' %}
           {% elif currentUrl == '/reinitialiser-mot-de-passe/' %}
             {% set targetUrl = '/en/reset-password/' %}
+          {% elif currentUrl == '/ma-pratique/' %}
+            {% set targetUrl = '/en/my-practice/' %}
+          {% elif currentUrl == '/decouvrir-ma-pratique/' %}
+            {% set targetUrl = '/en/discover-my-practice/' %}
           {% else %}
             {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
             {% if cleanUrl == '/' %}
@@ -133,6 +137,10 @@
             {% set targetUrl = '/creer-compte/' %}
           {% elif currentUrl == '/en/reset-password/' %}
             {% set targetUrl = '/reinitialiser-mot-de-passe/' %}
+          {% elif currentUrl == '/en/my-practice/' %}
+            {% set targetUrl = '/ma-pratique/' %}
+          {% elif currentUrl == '/en/discover-my-practice/' %}
+            {% set targetUrl = '/decouvrir-ma-pratique/' %}
           {% else %}
             {% set targetUrl = currentUrl | replace('/en/', '/') %}
           {% endif %}
@@ -232,6 +240,10 @@
             {% set targetUrl = '/en/create-account/' %}
           {% elif currentUrl == '/reinitialiser-mot-de-passe/' %}
             {% set targetUrl = '/en/reset-password/' %}
+          {% elif currentUrl == '/ma-pratique/' %}
+            {% set targetUrl = '/en/my-practice/' %}
+          {% elif currentUrl == '/decouvrir-ma-pratique/' %}
+            {% set targetUrl = '/en/discover-my-practice/' %}
           {% else %}
             {% set cleanUrl = currentUrl | replace('/fr/', '/') %}
             {% if cleanUrl == '/' %}
@@ -251,6 +263,10 @@
             {% set targetUrl = '/creer-compte/' %}
           {% elif currentUrl == '/en/reset-password/' %}
             {% set targetUrl = '/reinitialiser-mot-de-passe/' %}
+          {% elif currentUrl == '/en/my-practice/' %}
+            {% set targetUrl = '/ma-pratique/' %}
+          {% elif currentUrl == '/en/discover-my-practice/' %}
+            {% set targetUrl = '/decouvrir-ma-pratique/' %}
           {% else %}
             {% set targetUrl = currentUrl | replace('/en/', '/') %}
           {% endif %}

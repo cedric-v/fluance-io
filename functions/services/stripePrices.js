@@ -45,6 +45,23 @@ const PRICE_DEFINITIONS = {
     interval: {interval: 'month', interval_count: 3},
     existingPriceId: 'price_1SdZ6E2Esx6PN6y11qme0Rde',
   },
+  // Offres « Ma pratique » (freemium). Même produit interne `complet` (accès à
+  // l'ensemble des pratiques) → le webhook existant octroie bien l'accès.
+  // Auto-provisionnées dans Stripe au premier checkout (aucun priceId à créer
+  // manuellement). Pour figer un priceId existant, définir le secret
+  // STRIPE_PRICE_ID_COMPLET_MA_PRATIQUE_MENSUEL / _ANNUEL.
+  'complet_ma_pratique_mensuel': {
+    name: 'Fluance Ma pratique - mensuel',
+    description: 'Accès à l\'ensemble des pratiques Fluance, recommandations et nouveaux contenus — abonnement mensuel',
+    amount: 1490, // 14.90 CHF/mois
+    interval: {interval: 'month', interval_count: 1},
+  },
+  'complet_ma_pratique_annuel': {
+    name: 'Fluance Ma pratique - annuel',
+    description: 'Accès à l\'ensemble des pratiques Fluance, recommandations et nouveaux contenus — abonnement annuel',
+    amount: 11900, // 119 CHF/an
+    interval: {interval: 'year', interval_count: 1},
+  },
   'rdv-clarte_unique': {
     name: 'RDV Clarté - CedricV (paiement unique)',
     description: 'Rendez-vous mensuel en ligne pour retrouver la clarté dans votre activité professionnelle',

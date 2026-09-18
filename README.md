@@ -128,6 +128,33 @@ Stop the dev server with `Ctrl + C`.
 
 ---
 
+### Ma pratique (practice companion)
+
+The **Ma pratique** feature is an additive practice companion that lets a signed-in user pick a
+present need and start a short practice, without changing the existing programmes, checkout or
+member area. See **[docs/ma-pratique.md](docs/ma-pratique.md)** for the full reference.
+
+- App routes: `/ma-pratique/` (FR), `/en/my-practice/` (EN) — `noindex`, sign-in required.
+- Promotion landing: `/decouvrir-ma-pratique/` (FR), `/en/discover-my-practice/` (EN) — not in the menu.
+- **Free sign-up**: open registration via the public `createFreeAccount` Cloud Function
+  (Firebase Auth + `users/{uid}` marked `plan: 'gratuit'` + Mailjet contact with
+  `source_optin: inscription_gratuite`), protected by Turnstile + rate limiting. No paid
+  product is granted.
+- Catalogue: `src/_data/practices.json` (metadata only — it references existing practices, it does
+  **not** duplicate any video). Free practices are gated by sign-in; premium practices are resolved
+  through the existing `getProtectedContent` function, which remains the source of truth.
+- **Pricing**: the landing CTAs trigger `complet` variants `ma_pratique_mensuel` (CHF 14.90/month)
+  and `ma_pratique_annuel` (CHF 119/year), auto-provisioned in Stripe on first checkout
+  (`functions/services/stripePrices.js`). Existing 30/75 CHF subscriptions are unchanged.
+- Logic: `src/assets/js/practice-companion.mjs` · PWA: `src/sw.njk` + `src/ma-pratique.webmanifest`
+  (install prompt Android + iOS hint, app-shell cache only — never the videos).
+- Analytics events pushed to `dataLayer` (consent-gated): `companion_opened`, `need_selected`,
+  `recommendation_displayed`, `practice_started`, `practice_completed`, `free_account_created`.
+- The Défi 21 jours countdown is **not** started by the companion (`startProgression: false`).
+- No new npm dependency, no new backend, no Firestore schema change.
+
+---
+
 ### Available npm scripts
 
 From `package.json`:

@@ -1,0 +1,86 @@
+---
+permalink: /sw.js
+eleventyExcludeFromCollections: true
+---
+/*
+ * Service Worker Fluance — « Ma pratique »
+ *
+ * Portée volontairement minimale : app-shell uniquement.
+ *  - Ne met JAMAIS en cache les vidéos premium (Bunny Stream / mediadelivery),
+ *    ni les réponses de getProtectedContent, ni les requêtes cross-origin.
+ *  - Navigation : réseau d'abord, repli sur le cache (ou la page Ma pratique).
+ *  - Ressources statiques same-origin : cache d'abord + revalidation en arrière-plan.
+ *
+ * Le nom du cache est versionné par le build (hash git) : à chaque déploiement,
+ * l'ancien cache est supprimé et les fichiers sont re-téléchargés.
+ */
+const CACHE = 'fluance-shell-{{ version }}';
+const APP_SHELL = [
+  '/ma-pratique/',
+  '/en/my-practice/',
+  '/assets/css/styles.css',
+  '/assets/js/practice-companion.mjs',
+  '/assets/img/logo.png',
+  '/ma-pratique.webmanifest'
+];
+
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .catch(() => { /* un asset manquant ne doit pas bloquer l'installation */ })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
+  // Ne jamais intercepter le cross-origin (vidéos Bunny, Firebase, Stripe, GTM…).
+  if (url.origin !== self.location.origin) return;
+  // Ni les API dynamiques.
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/.well-known/')) return;
+
+  // Navigation : réseau d'abord, repli sur le cache.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('/ma-pratique/')))
+    );
+    return;
+  }
+
+  // Ressources statiques same-origin uniquement.
+  if (/\.(css|js|mjs|png|webp|avif|jpg|jpeg|svg|ico|woff2?|ttf|otf|webmanifest)$/.test(url.pathname)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const network = fetch(request)
+          .then((response) => {
+            if (response && response.status === 200) {
+              const copy = response.clone();
+              caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+            }
+            return response;
+          })
+          .catch(() => cached);
+        return cached || network;
+      })
+    );
+  }
+});

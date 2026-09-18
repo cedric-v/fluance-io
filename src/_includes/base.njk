@@ -360,8 +360,13 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{{ '/assets/img/favicon-16x16.png' | url }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/img/favicon-32x32.png' | url }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ '/assets/img/apple-touch-icon.png' | url }}">
-    <link rel="manifest" href="{{ '/site.webmanifest' | url }}">
+    <link rel="manifest" href="{{ (manifest or '/site.webmanifest') | url }}">
     <meta name="theme-color" content="#7A1F3D">
+    <!-- PWA : installation sur l'écran d'accueil (iOS + Android) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="{{ appTitle or 'Fluance' }}">
     
     <!-- Content Security Policy pour autoriser Turnstile et autres scripts -->
     <meta http-equiv="Content-Security-Policy" content="
@@ -717,7 +722,9 @@
 {% if page.url and (
   page.url.includes('/cours-en-ligne/21-jours-mouvement/') or
   page.url.includes('/cours-en-ligne/approche-fluance-complete/') or
-  page.url.includes('/en/cours-en-ligne/approche-fluance-complete/')
+  page.url.includes('/en/cours-en-ligne/approche-fluance-complete/') or
+  page.url == '/decouvrir-ma-pratique/' or
+  page.url == '/en/discover-my-practice/'
 ) %}
 <script src="/assets/js/payment.js?v={{ version }}"></script>
 {% endif %}
