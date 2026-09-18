@@ -54,7 +54,7 @@ const additionalContent = `
       </a>
     </li>
     <li data-hide-if-product="complet">
-      <a href="/cours-en-ligne/approche-fluance-complete/" class="text-fluance hover:underline font-medium">
+      <a href="/decouvrir-ma-pratique/" class="text-fluance hover:underline font-medium">
         → Rejoindre l'approche Fluance complète (14 jours offerts)
       </a>
     </li>

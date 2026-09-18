@@ -2121,7 +2121,7 @@ async function handlePaymentFailure(invoice, subscription, customerEmail, apiKey
         productName: productName,
         failureReason: failureReason,
         stripePaymentLink: stripePaymentLink ||
-          'https://fluance.io/cours-en-ligne/approche-fluance-complete/',
+          'https://fluance.io/decouvrir-ma-pratique/',
         paypalRequestLink: `mailto:${ADMIN_EMAIL}?subject=Demande%20lien%20PayPal&` +
           `body=Bonjour,%20je%20souhaite%20recevoir%20un%20lien%20de%20paiement%20PayPal%20pour%20mon%20abonnement.`,
         amount: `${amount} ${currency}`,
@@ -9194,7 +9194,7 @@ exports.sendNewContentEmails = onSchedule(
 
                     if (!emailSentDoc.exists) {
                       const baseUrl = 'https://fluance.io';
-                      const completUrl = `${baseUrl}/cours-en-ligne/approche-fluance-complete/`;
+                      const completUrl = `${baseUrl}/decouvrir-ma-pratique/`;
                       const namePart = firstName ? ` ${firstName}` : '';
 
                       let emailSubject;
@@ -9930,7 +9930,7 @@ exports.sendNewContentEmails = onSchedule(
 
                       if (!emailSentDoc.exists) {
                         const baseUrl = 'https://fluance.io';
-                        const completUrl = `${baseUrl}/cours-en-ligne/approche-fluance-complete/`;
+                        const completUrl = `${baseUrl}/decouvrir-ma-pratique/`;
                         const namePart = firstName ? ` ${firstName}` : '';
 
                         let emailSubject;
@@ -12808,7 +12808,7 @@ exports.sendPromotionalEmails = onSchedule(
                     email,
                     emailSubject,
                     emailHtml,
-                    `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/cours-en-ligne/approche-fluance-complete/`,
+                    `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
                     mailjetApiKey,
                     mailjetApiSecret,
                     'fluance@actu.fluance.io',
@@ -12875,7 +12875,7 @@ exports.sendPromotionalEmails = onSchedule(
                         email,
                         emailSubject,
                         emailHtml,
-                        `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/cours-en-ligne/approche-fluance-complete/`,
+                        `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
                         mailjetApiKey,
                         mailjetApiSecret,
                         'fluance@actu.fluance.io',
@@ -12916,7 +12916,7 @@ exports.sendPromotionalEmails = onSchedule(
                           email,
                           emailSubject,
                           emailHtml,
-                          `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/cours-en-ligne/approche-fluance-complete/`,
+                          `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
                           mailjetApiKey,
                           mailjetApiSecret,
                           'fluance@actu.fluance.io',
@@ -13036,7 +13036,7 @@ exports.sendPromotionalEmails = onSchedule(
                             email,
                             emailSubject,
                             emailHtml,
-                            `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/cours-en-ligne/approche-fluance-complete/`,
+                            `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
                             mailjetApiKey,
                             mailjetApiSecret,
                             'fluance@actu.fluance.io',

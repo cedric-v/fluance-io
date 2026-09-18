@@ -101,7 +101,7 @@ robots: noindex, nofollow
           Découvrir →
         </span>
       </a>
-      <a href="{{ '/cours-en-ligne/approche-fluance-complete/' | relativeUrl }}" class="block bg-white rounded-xl p-4 shadow hover:shadow-md transition-shadow">
+      <a href="{{ '/decouvrir-ma-pratique/' | relativeUrl }}" class="block bg-white rounded-xl p-4 shadow hover:shadow-md transition-shadow">
         <h3 class="font-semibold text-fluance">Du nouveau chaque semaine</h3>
         <p class="text-sm text-[#3E3A35]/70 mt-1">Une nouvelle mini-série chaque semaine, à réaliser depuis chez vous + accès illimité à toutes les pratiques passées, pour une transformation durable</p>
         <span class="text-fluance text-sm mt-2 inline-flex items-center gap-1">

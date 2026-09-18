@@ -95,7 +95,7 @@
     matches.push({
       id: 'complete-approach',
       title: locale === 'en' ? 'Complete Fluance approach' : 'Approche Fluance complète',
-      url: locale === 'en' ? '/en/cours-en-ligne/approche-fluance-complete/' : '/fr/cours-en-ligne/approche-fluance-complete/',
+      url: locale === 'en' ? '/en/discover-my-practice/' : '/fr/decouvrir-ma-pratique/',
     });
 
     return {

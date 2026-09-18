@@ -37,7 +37,7 @@ Ce guide vous explique comment configurer les webhooks Stripe et PayPal pour un 
 - **Montant mensuel** : 30 CHF/mois
 - **Montant trimestriel** : 75 CHF/trimestre
 - **Identifiant interne** : `complet`
-- **Page de vente** : https://fluance.io/cours-en-ligne/approche-fluance-complete/
+- **Page de vente** : https://fluance.io/decouvrir-ma-pratique/
 
 ---
 
@@ -294,7 +294,7 @@ Le webhook ajoute automatiquement le contact à la liste **10524140** (liste pri
 - Bouton : "Démarrer le challenge de 21 jours pour 19 CHF / équivalent €"
 - Actuellement : Lien vers `https://espace.fluance.io/par/21jours/bdc` (Ontraport)
 
-**Page "complet"** : https://fluance.io/cours-en-ligne/approche-fluance-complete/
+**Page "complet"** : https://fluance.io/decouvrir-ma-pratique/
 - Bouton mensuel : "S'abonner mensuellement"
 - Bouton trimestriel : "S'abonner trimestriellement"
 - Actuellement : Liens vers Ontraport

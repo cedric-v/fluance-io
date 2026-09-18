@@ -99,7 +99,7 @@ if (mode === 'subscription') {
 
 ### Pages de vente
 - `src/fr/cours-en-ligne/21-jours-mouvement.md` : Boutons mis à jour
-- `src/fr/cours-en-ligne/approche-fluance-complete.md` : Boutons mis à jour
+- `src/fr/decouvrir-ma-pratique.md` : Boutons mis à jour
 
 ## 🔗 Voir aussi
 

@@ -13,7 +13,7 @@ Fluance helps people release tension and regain fluidity through movement, breat
 - In-person weekly classes in the Fribourg region: https://fluance.io/presentiel/cours-hebdomadaires/
 - Book an in-person class: https://fluance.io/presentiel/reserver/
 - 21-day online journey: https://fluance.io/fr/cours-en-ligne/21-jours-mouvement/
-- Complete Fluance approach: https://fluance.io/fr/cours-en-ligne/approche-fluance-complete/
+- Complete Fluance approach: https://fluance.io/fr/decouvrir-ma-pratique/
 
 ## Agent-facing technical state
 

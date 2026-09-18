@@ -51,13 +51,13 @@ const PRICE_DEFINITIONS = {
   // manuellement). Pour figer un priceId existant, définir le secret
   // STRIPE_PRICE_ID_COMPLET_MA_PRATIQUE_MENSUEL / _ANNUEL.
   'complet_ma_pratique_mensuel': {
-    name: 'Fluance Ma pratique - mensuel',
+    name: 'Fluance Illimité - mensuel',
     description: 'Accès à l\'ensemble des pratiques Fluance, recommandations et nouveaux contenus — abonnement mensuel',
     amount: 1490, // 14.90 CHF/mois
     interval: {interval: 'month', interval_count: 1},
   },
   'complet_ma_pratique_annuel': {
-    name: 'Fluance Ma pratique - annuel',
+    name: 'Fluance Illimité - annuel',
     description: 'Accès à l\'ensemble des pratiques Fluance, recommandations et nouveaux contenus — abonnement annuel',
     amount: 11900, // 119 CHF/an
     interval: {interval: 'year', interval_count: 1},

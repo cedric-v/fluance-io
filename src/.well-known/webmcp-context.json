@@ -31,10 +31,10 @@
     },
     {
       "type": "subscription",
-      "id": "approche-fluance-complete",
-      "title": "Approche Fluance complète",
-      "url": { "fr": "/cours-en-ligne/approche-fluance-complete/", "en": "/en/cours-en-ligne/approche-fluance-complete/" },
-      "description": "Accès complet à tous les cours et pratiques Fluance, par abonnement mensuel ou trimestriel."
+      "id": "fluance-illimite",
+      "title": "Fluance Illimité",
+      "url": { "fr": "/decouvrir-ma-pratique/", "en": "/en/discover-my-practice/" },
+      "description": "Accès complet à toutes les pratiques Fluance (approche complète, 21 jours, Dos & nuques), par abonnement mensuel ou annuel."
     },
     {
       "type": "in-person",

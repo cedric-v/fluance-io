@@ -28,16 +28,18 @@ d'entrée ; l'accès complet payant est promu depuis l'app et depuis la landing 
 
 | Route FR | Route EN | Rôle | Indexation |
 |---|---|---|---|
-| `/ma-pratique/` | `/en/my-practice/` | Mini-app « Ma pratique » (connexion requise) | `noindex, nofollow` |
-| `/decouvrir-ma-pratique/` | `/en/discover-my-practice/` | Landing page de promotion | `noindex, follow` (voir §9) |
+| `/ma-pratique/` | `/en/my-practice/` | Mini-app **Ma pratique Fluance** | `noindex, nofollow` |
+| `/decouvrir-ma-pratique/` | `/en/discover-my-practice/` | Landing de l'offre **Fluance Illimité** | `index, follow` (SEO) |
 
 Fichiers :
 
 - `src/fr/ma-pratique.njk`, `src/en/my-practice.njk`
 - `src/fr/decouvrir-ma-pratique.njk`, `src/en/discover-my-practice.njk`
 
-La landing **n'est volontairement pas dans le menu** (header/footer inchangés) et n'est pas
-dans le sitemap tant qu'elle est en `noindex`.
+**Nommage** : l'expérience s'appelle **Ma pratique Fluance**, l'offre payante **Fluance
+Illimité**. La landing est désormais dans le menu et indexable ; l'ancienne page
+`/cours-en-ligne/approche-fluance-complete/` est **redirigée en 301** vers elle (voir §9). Le
+mot-clé SEO « approche Fluance complète » est conservé dans le title/description de la landing.
 
 ---
 
@@ -197,6 +199,19 @@ simple demande (sous-collection `practiceLog` + champ `favorites`).
 - Les produits `21jours` et `sos-dos-cervicales` restent **vendables à l'unité** pour les
   non-abonnés.
 
+### Bonus annuel : formulaire de question (client annuel)
+
+- La variante d'abonnement (`ma_pratique_mensuel` / `ma_pratique_annuel`) est mémorisée sur le
+  produit `complet` de l'utilisateur (`token → verifyToken → users.products[].variant`) et
+  renvoyée par la liste des contenus.
+- `/membre/` affiche une carte **« Une question ? Cédric vous répond »** (construite en DOM,
+  hors markdown) **uniquement** si `variant === 'ma_pratique_annuel'`.
+- Callable `sendAnnualQuestion` : auth + **éligibilité annuelle vérifiée côté serveur** + rate
+  limit (5/h). Envoie la question à l'adresse support (`ADMIN_EMAIL`) avec un objet préfixé
+  **`[Client offre annuelle]`**.
+- ⚠️ Les abonnés annuels **antérieurs** à ce changement n'ont pas de `variant` stocké → prévoir
+  un backfill (script ou requête Stripe) pour qu'ils voient le formulaire.
+
 ### Suivi, favoris et rappels
 
 Quatre fonctions callables (auth requise, `europe-west1`) :
@@ -315,13 +330,18 @@ Tout se fait dans `src/_data/practices.json` — **aucun déploiement de Cloud F
   nouveaux prix Stripe sont créés automatiquement au premier checkout.
 - Les URL statiques gardent le cache immuable + `?v=<hash>` (déjà en place).
 - **Désactiver la mini-app** sans toucher au reste :
-  1. retirer la carte « Ma pratique » dans `src/fr/membre.md` ;
+  1. retirer la carte « Ma pratique Fluance » dans `src/fr/membre.md` ;
   2. ajouter des redirections dans `src/_data/redirectRules.json`
      (`/ma-pratique/` → `/membre/`, `/en/my-practice/` → `/membre/`) ;
   3. éventuellement retirer les 2 routes et le service worker.
-- La landing étant `noindex`, elle n'affecte pas le SEO public tant qu'elle n'est pas promue
-  en `index`. Pour l'indexer plus tard : remplacer `robots: noindex, follow` par
-  `robots: index, follow` et retirer `eleventyExcludeFromCollections: true`.
+- **Migration de l'ancienne offre (faite)** :
+  - `/cours-en-ligne/approche-fluance-complete/` et `/en/cours-en-ligne/approche-fluance-complete/`
+    renvoient une **301** vers la landing (`redirectRules.json` → `_redirects` Cloudflare),
+    avec page de repli client-side générée par `src/redirects.njk`.
+  - L'ancienne page a été supprimée ; le mot-clé SEO « approche Fluance complète » est repris
+    dans le title/description de la landing (indexable).
+  - Tous les liens internes, emails (MJML) et séquences de `functions/index.js` pointent vers
+    la landing ; surfaces agents (`webmcp-context.json`, `discovery.generated.js`) régénérées.
 
 ---
 
@@ -359,7 +379,7 @@ Tout se fait dans `src/_data/practices.json` — **aucun déploiement de Cloud F
   `STRIPE_PRICE_ID_COMPLET_MA_PRATIQUE_MENSUEL` / `_ANNUEL`.
 - Les abonnements historiques (30 / 75 CHF) restent inchangés et coexistent.
 - À mesurer : conversion **gratuit → payant** et **rétention à 1, 3 et 6 mois** avant de figer.
-- La page `/cours-en-ligne/approche-fluance-complete/` pourra être remplacée plus tard par la
+- La page `/decouvrir-ma-pratique/` pourra être remplacée plus tard par la
   landing (redirection).
 - **Parcours gratuit → payant** : un utilisateur gratuit qui achète reçoit l'email
   « Créez votre compte » (mécanisme `registrationTokens` existant). La fonction `verifyToken`

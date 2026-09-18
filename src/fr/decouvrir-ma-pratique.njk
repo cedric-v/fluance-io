@@ -1,11 +1,11 @@
 ---
 layout: base.njk
-title: Ma pratique, votre compagnon Fluance
-description: Une pratique Fluance courte qui vous accompagne au quotidien. Commencez gratuitement, puis passez à l’expérience complète quand vous le souhaitez.
+title: Fluance Illimité — l’approche Fluance complète en ligne
+description: "L’approche Fluance complète en ligne : 39 pratiques courtes de mouvement, de souffle et de jeu. Abonnement mensuel ou annuel, 14 jours offerts."
 locale: fr
 permalink: /decouvrir-ma-pratique/
-robots: noindex, follow
-eleventyExcludeFromCollections: true
+robots: index, follow
+ogImage: assets/img/cedric-bord-mer.jpg
 ---
 
 <!-- Hero plein écran (image de fond) -->
@@ -16,13 +16,13 @@ eleventyExcludeFromCollections: true
     <div class="absolute inset-0 bg-black/30 md:bg-transparent"></div>
   </div>
   <div class="relative z-10 max-w-2xl text-[#F5F7F6] space-y-8 text-center md:text-left">
-    <p class="cta-pill bg-white/15 text-[#F5F7F6]">Fluance · Ma pratique</p>
+    <p class="cta-pill bg-white/15 text-[#F5F7F6]">Ma pratique Fluance</p>
     <h1 class="text-3xl sm:text-4xl md:text-5xl font-semibold leading-tight text-[#F5F7F6] drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] md:drop-shadow-none">
-      Une pratique qui vous accompagne au quotidien
+      L’approche Fluance complète en ligne
     </h1>
     <p class="text-lg md:text-xl text-[#F5F7F6] drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)] md:drop-shadow-none">
-      Vous n’avez pas toujours besoin d’une heure pour prendre soin de vous. Quelques minutes de mouvement,
-      de souffle et de présence suffisent pour relâcher les tensions et revenir à vous.
+      Ma pratique Fluance : quelques minutes de mouvement, de souffle et de présence suffisent
+      pour relâcher les tensions et revenir à vous.
     </p>
     <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
       <a href="/ma-pratique/" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] inline-flex items-center justify-center gap-2">
@@ -77,8 +77,8 @@ eleventyExcludeFromCollections: true
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-5.5 5.5-9.5 16-9.5C20 14 15.5 18.5 11 20Z"/><path d="M4 20c3.2-4.3 7.4-7.3 12.5-8.5"/></svg>
           </span>
           <div>
-            <p class="text-[0.68rem] uppercase tracking-[0.18em] font-semibold text-[#3E3A35]/45">Formule mensuelle</p>
-            <h3 class="text-xl font-semibold text-[#3E3A35] leading-tight">Fluance Mensuel</h3>
+            <p class="text-[0.68rem] uppercase tracking-[0.18em] font-semibold text-[#3E3A35]/45">Fluance Illimité</p>
+            <h3 class="text-xl font-semibold text-[#3E3A35] leading-tight">Formule mensuelle</h3>
           </div>
         </div>
         <p class="text-3xl font-semibold text-fluance mb-4">CHF 14.90 <span class="text-base font-normal text-[#3E3A35]/60">/ mois</span></p>
@@ -97,7 +97,7 @@ eleventyExcludeFromCollections: true
           <li>✓ Une pratique toujours accessible, où que vous soyez</li>
         </ul>
         <p class="text-sm text-[#3E3A35]/60 mb-6">14 jours offerts pour commencer · résiliable à tout moment.</p>
-        <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_mensuel','fr',event) : (window.location.href='/cours-en-ligne/approche-fluance-complete/')" class="btn-primary mt-auto text-center">Commencer avec Fluance</button>
+        <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_mensuel','fr',event) : (window.location.href='/decouvrir-ma-pratique/')" class="btn-primary mt-auto text-center">Commencer avec Fluance</button>
       </div>
 
       <!-- Annuel (recommandé) -->
@@ -110,8 +110,8 @@ eleventyExcludeFromCollections: true
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.6 6.9 6.9 2.6-6.9 2.6L12 21.5l-2.6-6.9L2.5 12l6.9-2.6L12 2.5Z"/></svg>
           </span>
           <div>
-            <p class="text-[0.68rem] uppercase tracking-[0.18em] font-semibold text-[#3E3A35]/45">Formule annuelle</p>
-            <h3 class="text-xl font-semibold text-[#3E3A35] leading-tight">Fluance Annuel</h3>
+            <p class="text-[0.68rem] uppercase tracking-[0.18em] font-semibold text-[#3E3A35]/45">Fluance Illimité</p>
+            <h3 class="text-xl font-semibold text-[#3E3A35] leading-tight">Formule annuelle</h3>
           </div>
         </div>
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-2 mb-4">
@@ -138,7 +138,7 @@ eleventyExcludeFromCollections: true
           <p class="text-sm text-[#3E3A35]">Cédric répond à vos questions pour vous aider à mieux appliquer les pratiques selon vos spécificités et vos besoins précis.</p>
         </div>
         <p class="text-sm font-medium text-fluance mb-6">Soit moins de CHF 10 par mois · 14 jours offerts pour commencer.</p>
-        <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_annuel','fr',event) : (window.location.href='/cours-en-ligne/approche-fluance-complete/')" class="btn-primary mt-auto text-center">Choisir l’abonnement annuel</button>
+        <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_annuel','fr',event) : (window.location.href='/decouvrir-ma-pratique/')" class="btn-primary mt-auto text-center">Choisir l’abonnement annuel</button>
       </div>
     </div>
   </section>
@@ -163,26 +163,26 @@ eleventyExcludeFromCollections: true
 
       <!-- Mensuel -->
       <div class="section-card bg-white p-7 flex flex-col">
-        <p class="text-xs font-bold tracking-wide text-[#3E3A35]/60 mb-2">FLUANCE</p>
+        <p class="text-xs font-bold tracking-wide text-[#3E3A35]/60 mb-2">FLUANCE ILLIMITÉ</p>
         <h3 class="text-lg font-semibold text-[#3E3A35] mb-1">Je veux pratiquer régulièrement</h3>
         <p class="text-2xl font-semibold text-fluance mb-3">CHF 14.90 <span class="text-sm font-normal text-[#3E3A35]/60">/ mois</span></p>
         <p class="text-[#3E3A35] mb-6">
           Toute la bibliothèque et tous les outils pour faire de Fluance une pratique régulière,
           sans engagement annuel.
         </p>
-        <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_mensuel','fr',event) : (window.location.href='/cours-en-ligne/approche-fluance-complete/')" class="mt-auto font-semibold text-fluance hover:underline text-left">→ Je commence maintenant</button>
+        <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_mensuel','fr',event) : (window.location.href='/decouvrir-ma-pratique/')" class="mt-auto font-semibold text-fluance hover:underline text-left">→ Je commence maintenant</button>
       </div>
 
       <!-- Annuel -->
       <div class="section-card bg-white p-7 flex flex-col ring-2 ring-[#E6B84A]">
-        <p class="text-xs font-bold tracking-wide text-fluance mb-2">ANNUEL · RECOMMANDÉ · −33 %</p>
+        <p class="text-xs font-bold tracking-wide text-fluance mb-2">FLUANCE ILLIMITÉ · ANNUEL · −33 %</p>
         <h3 class="text-lg font-semibold text-[#3E3A35] mb-1">Je sais que Fluance a sa place dans mon quotidien</h3>
         <p class="text-2xl font-semibold text-fluance mb-3">CHF 119 <span class="text-sm font-normal text-[#3E3A35]/60">/ an</span></p>
         <p class="text-[#3E3A35] mb-6">
           L’accès complet pendant un an, avec un tarif plus avantageux.
         </p>
         <p class="text-sm font-medium text-[#7A1F3D] mb-6">Bonus : Cédric répond à vos questions.</p>
-        <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_annuel','fr',event) : (window.location.href='/cours-en-ligne/approche-fluance-complete/')" class="mt-auto font-semibold text-fluance hover:underline text-left">→ Je choisis l’année</button>
+        <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_annuel','fr',event) : (window.location.href='/decouvrir-ma-pratique/')" class="mt-auto font-semibold text-fluance hover:underline text-left">→ Je choisis l’année</button>
       </div>
     </div>
   </section>

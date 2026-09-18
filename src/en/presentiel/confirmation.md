@@ -100,7 +100,7 @@ eleventyExcludeFromCollections: true
           Discover →
         </span>
       </a>
-      <a href="{{ '/en/cours-en-ligne/approche-fluance-complete/' | relativeUrl }}" class="block bg-white rounded-xl p-4 shadow hover:shadow-md transition-shadow">
+      <a href="{{ '/en/discover-my-practice/' | relativeUrl }}" class="block bg-white rounded-xl p-4 shadow hover:shadow-md transition-shadow">
         <h3 class="font-semibold text-fluance">New content every week</h3>
         <p class="text-sm text-[#3E3A35]/70 mt-1">A new mini-series every week to practice from home + unlimited access to all past content for lasting transformation</p>
         <span class="text-fluance text-sm mt-2 inline-flex items-center gap-1">

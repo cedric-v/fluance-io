@@ -128,24 +128,29 @@ Stop the dev server with `Ctrl + C`.
 
 ---
 
-### Ma pratique (practice companion)
+### Ma pratique Fluance / Fluance Illimité
 
-The **Ma pratique** feature is an additive practice companion that lets a signed-in user pick a
-present need and start a short practice, without changing the existing programmes, checkout or
-member area. See **[docs/ma-pratique.md](docs/ma-pratique.md)** for the full reference.
+The **Ma pratique Fluance** feature is an additive practice companion (free tier + **Fluance
+Illimité** subscription) that lets a signed-in user pick a present need and start a short
+practice, without changing the existing programmes, checkout or member area. See
+**[docs/ma-pratique.md](docs/ma-pratique.md)** for the full reference.
 
 - App routes: `/ma-pratique/` (FR), `/en/my-practice/` (EN) — `noindex`, sign-in required.
-- Promotion landing: `/decouvrir-ma-pratique/` (FR), `/en/discover-my-practice/` (EN) — not in the menu.
+- Offer landing: `/decouvrir-ma-pratique/` (FR), `/en/discover-my-practice/` (EN) — in the menu,
+  **indexable**; the old `/cours-en-ligne/approche-fluance-complete/` is **301-redirected** to it.
 - **Free sign-up**: open registration via the public `createFreeAccount` Cloud Function
   (Firebase Auth + `users/{uid}` marked `plan: 'gratuit'` + Mailjet contact with
   `source_optin: inscription_gratuite`), protected by Turnstile + rate limiting. No paid
-  product is granted.
+  product is granted. The first free practice can be played without an account.
 - Catalogue: `src/_data/practices.json` (metadata only — it references existing practices, it does
-  **not** duplicate any video). Free practices are gated by sign-in; premium practices are resolved
-  through the existing `getProtectedContent` function, which remains the source of truth.
+  **not** duplicate any video). A `complet` subscriber gets **full access** (`complet` + `21jours`
+  + `sos-dos-cervicales`) via `getProtectedContent` (`includeFullAccess`), which remains the source
+  of truth.
 - **Pricing**: the landing CTAs trigger `complet` variants `ma_pratique_mensuel` (CHF 14.90/month)
   and `ma_pratique_annuel` (CHF 119/year), auto-provisioned in Stripe on first checkout
   (`functions/services/stripePrices.js`). Existing 30/75 CHF subscriptions are unchanged.
+- **Annual bonus**: a question form in `/membre/`, shown only to annual subscribers, sends the
+  question to support with a subject prefixed `[Client offre annuelle]` (`sendAnnualQuestion`).
 - Logic: `src/assets/js/practice-companion.mjs` · PWA: `src/sw.njk` + `src/ma-pratique.webmanifest`
   (install prompt Android + iOS hint, app-shell cache only — never the videos).
 - Tracking (server-only writes): `logPractice`, `toggleFavorite`, `setNotificationOptIn`,

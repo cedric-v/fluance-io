@@ -345,7 +345,9 @@ export default function (eleventyConfig) {
       schemas.push(serviceSchema);
     }
 
-    if (pagePath.includes('/cours-en-ligne/')) {
+    if (pagePath.includes('/cours-en-ligne/') ||
+        pagePath.includes('/decouvrir-ma-pratique/') ||
+        pagePath.includes('/discover-my-practice/')) {
       let courseSchema = {
         "@context": "https://schema.org",
         "@type": "Course",
@@ -412,19 +414,20 @@ export default function (eleventyConfig) {
         schemas.push(videoSchema);
       }
 
-      if (pagePath.includes('approche-fluance-complete')) {
-        courseSchema.name = pageLocale === 'fr' ? "Approche Fluance Complète" : "Complete Fluance Approach";
+      if (pagePath.includes('/decouvrir-ma-pratique/') ||
+          pagePath.includes('/discover-my-practice/')) {
+        courseSchema.name = pageLocale === 'fr' ? "Fluance Illimité" : "Fluance Unlimited";
         courseSchema.description = pageLocale === 'fr'
-          ? "Accès complet à tous les cours et pratiques Fluance. Programme complet et régulier pour intégrer l'approche Fluance dans votre vie. Abonnement mensuel ou trimestriel."
-          : "Full access to all Fluance courses and practices. Complete and regular program to integrate the Fluance approach into your life. Monthly or quarterly subscription.";
-        courseSchema.courseCode = "FLUANCE-COMPLETE";
+          ? "L'approche Fluance complète en ligne : accès à toutes les pratiques (approche complète, 21 jours, Dos & nuques). Abonnement mensuel ou annuel, 14 jours offerts."
+          : "The complete Fluance approach online: access to all practices. Monthly or annual plan, 14 days free.";
+        courseSchema.courseCode = "FLUANCE-ILLIMITE";
         courseSchema.educationalLevel = "all";
         courseSchema.image = `${baseUrl}/assets/img/cedric-bord-mer.jpg`;
         courseSchema.offers = [
           {
             "@type": "Offer",
             "name": pageLocale === 'fr' ? "Abonnement mensuel" : "Monthly subscription",
-            "price": "30.00",
+            "price": "14.90",
             "priceCurrency": "CHF",
             "availability": "https://schema.org/InStock",
             "url": pageUrl,
@@ -433,13 +436,13 @@ export default function (eleventyConfig) {
           },
           {
             "@type": "Offer",
-            "name": pageLocale === 'fr' ? "Abonnement trimestriel" : "Quarterly subscription",
-            "price": "75.00",
+            "name": pageLocale === 'fr' ? "Abonnement annuel" : "Annual subscription",
+            "price": "119.00",
             "priceCurrency": "CHF",
             "availability": "https://schema.org/InStock",
             "url": pageUrl,
             "priceValidUntil": "2026-12-31",
-            "billingIncrement": "P3M"
+            "billingIncrement": "P1Y"
           }
         ];
       }

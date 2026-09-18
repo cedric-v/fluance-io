@@ -117,9 +117,9 @@
 - `{{firstName}}` : Prénom du contact
 
 ### URLs des CTAs
-- Email principal : `https://fluance.io/cours-en-ligne/approche-fluance-complete/`
-- Email relance : `https://fluance.io/cours-en-ligne/approche-fluance-complete/`
-- Email sommeil : `https://fluance.io/cours-en-ligne/approche-fluance-complete/`
+- Email principal : `https://fluance.io/decouvrir-ma-pratique/`
+- Email relance : `https://fluance.io/decouvrir-ma-pratique/`
+- Email sommeil : `https://fluance.io/decouvrir-ma-pratique/`
 
 ### Compilation
 Les templates sont compilés automatiquement lors de `npm run build:11ty` et copiés dans `functions/emails/`.

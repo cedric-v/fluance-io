@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {
           id: 'complet',
           name: 'Approche Fluance Complète',
-          url: 'https://fluance.io/cours-en-ligne/approche-fluance-complete/',
+          url: 'https://fluance.io/decouvrir-ma-pratique/',
           description: 'Accès à une <strong>nouvelle mini-série</strong> de pratiques <strong>chaque semaine.</strong><br><br>Pour <strong>garder l\'élan</strong> et <strong>continuer à prendre soin</strong> de votre <strong>corps</strong> et de <strong>vos ressentis</strong>.'
         },
         {
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="flex items-center gap-4">
             <span class="text-3xl" aria-hidden="true">🌿</span>
             <div class="flex-1">
-              <p class="text-lg font-semibold text-fluance">Ma pratique</p>
+              <p class="text-lg font-semibold text-fluance">Ma pratique Fluance</p>
               <p class="text-sm text-gray-700">Comment te sens-tu aujourd’hui ? Lance une pratique courte adaptée, 5 minutes suffisent.</p>
             </div>
             <span class="text-fluance text-xl" aria-hidden="true">→</span>
@@ -538,8 +538,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const pageLang = ((document.documentElement.getAttribute('lang') || 'fr').toLowerCase().startsWith('en')) ? 'en' : 'fr';
             const isEn = pageLang === 'en';
             const completUrl = isEn
-              ? 'https://fluance.io/en/cours-en-ligne/approche-fluance-complete/'
-              : 'https://fluance.io/cours-en-ligne/approche-fluance-complete/';
+              ? 'https://fluance.io/en/discover-my-practice/'
+              : 'https://fluance.io/decouvrir-ma-pratique/';
             const congratsTitle = isEn
               ? '🎉 Congratulations! You have completed the 21-Day Challenge.'
               : '🎉 Félicitations ! Vous avez terminé le Défi 21 jours.';

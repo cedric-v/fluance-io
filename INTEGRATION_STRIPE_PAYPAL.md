@@ -132,7 +132,7 @@ Remplacez les liens Ontraport par des appels aux fonctions JavaScript :
    - Remplacer les 3 liens `https://espace.fluance.io/par/21jours/bdc`
    - Par : `onclick="window.FluancePayment.redirectToStripe('21jours', null, 'fr')"`
 
-2. **`src/fr/cours-en-ligne/approche-fluance-complete.md`**
+2. **`src/fr/decouvrir-ma-pratique.md`**
    - Remplacer le lien mensuel : `https://espace.fluance.io/par/abo/bdc/mens`
    - Par : `onclick="window.FluancePayment.redirectToStripe('complet', 'mensuel', 'fr')"`
    - Remplacer le lien trimestriel : `https://espace.fluance.io/par/abo/bdc/tri`
@@ -141,7 +141,7 @@ Remplacez les liens Ontraport par des appels aux fonctions JavaScript :
 3. **`src/en/cours-en-ligne/21-jours-mouvement.md`** (version anglaise)
    - Même chose avec `locale: 'en'`
 
-4. **`src/en/cours-en-ligne/approche-fluance-complete.md`** (version anglaise)
+4. **`src/en/discover-my-practice.md`** (version anglaise)
    - Même chose avec `locale: 'en'`
 
 ### Scripts à charger

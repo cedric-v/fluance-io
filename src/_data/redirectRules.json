@@ -25,7 +25,15 @@
     },
     {
         "from": "/fr/cours-en-ligne/approche-fluance-complete",
-        "to": "/cours-en-ligne/approche-fluance-complete/"
+        "to": "/decouvrir-ma-pratique/"
+    },
+    {
+        "from": "/cours-en-ligne/approche-fluance-complete",
+        "to": "/decouvrir-ma-pratique/"
+    },
+    {
+        "from": "/en/cours-en-ligne/approche-fluance-complete",
+        "to": "/en/discover-my-practice/"
     },
     {
         "from": "/fr/cours-en-ligne/21-jours-mouvement",
