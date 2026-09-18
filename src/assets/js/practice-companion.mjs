@@ -60,6 +60,17 @@
       signupLoading: 'Création du compte…',
       install: 'Installer l’application',
       installIos: 'Pour installer : Partager → « Sur l’écran d’accueil »',
+      installTitle: 'Avoir Fluance sur votre téléphone',
+      installIntro: 'Comme une application : ouvrez Ma pratique d’un seul geste depuis l’écran d’accueil de votre téléphone, en plein écran, sans passer par le navigateur.',
+      installNow: 'Installer maintenant',
+      installIosTitle: 'Sur iPhone / iPad',
+      installIosSteps: '1. Ouvrez cette page dans Safari. 2. Touchez le bouton Partager (le carré avec une flèche vers le haut). 3. Faites défiler, touchez « Sur l’écran d’accueil », puis « Ajouter ».',
+      installAndroidTitle: 'Sur Android',
+      installAndroidSteps: 'Touchez « Installer maintenant » ci-dessus. Sinon : ouvrez le menu ⋮ en haut à droite, puis « Installer l’application » ou « Ajouter à l’écran d’accueil ».',
+      installDesktopTitle: 'Sur ordinateur',
+      installDesktopSteps: 'Cliquez sur l’icône d’installation dans la barre d’adresse de votre navigateur (un petit écran avec une flèche).',
+      installDismiss: 'Plus tard',
+      installFootnote: 'Facultatif : vous pouvez continuer à utiliser Fluance dans votre navigateur.',
       gateTitle: 'Crée ton accès pour lancer la pratique',
       gateText: 'Ta sélection est prête. Crée ton compte gratuit (aucun engagement) et lance la pratique tout de suite.',
       gateLaunchTitle: 'Crée ton accès pour continuer',
@@ -110,6 +121,17 @@
       signupLoading: 'Creating account…',
       install: 'Install the app',
       installIos: 'To install: Share → “Add to Home Screen”',
+      installTitle: 'Have Fluance on your phone',
+      installIntro: 'Like an app: open My practice in one tap from your phone’s home screen, full screen, without going through the browser.',
+      installNow: 'Install now',
+      installIosTitle: 'On iPhone / iPad',
+      installIosSteps: '1. Open this page in Safari. 2. Tap the Share button (the square with an arrow pointing up). 3. Scroll down, tap “Add to Home Screen”, then “Add”.',
+      installAndroidTitle: 'On Android',
+      installAndroidSteps: 'Tap “Install now” above. Otherwise: open the ⋮ menu at the top right, then “Install app” or “Add to Home screen”.',
+      installDesktopTitle: 'On a computer',
+      installDesktopSteps: 'Click the install icon in your browser’s address bar (a small screen with an arrow).',
+      installDismiss: 'Later',
+      installFootnote: 'Optional: you can keep using Fluance in your browser.',
       gateTitle: 'Create your access to start the practice',
       gateText: 'Your selection is ready. Create your free account (no commitment) and start right away.',
       gateLaunchTitle: 'Create your access to continue',
@@ -181,6 +203,9 @@
   let turnstileWidgetId = null;
   let turnstileLoading = null;
   let functionsLoading = null;
+  let deferredInstallPrompt = null;
+  let installCardEl = null;
+  let installButtonEl = null;
   let userStats = null;
   let pendingNeed = null;
   let pendingUnsubscribe = false;
@@ -913,46 +938,76 @@
     if (!mainEl) return;
     const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
     if (isStandalone) return;
+    try {
+      if (localStorage.getItem('fluance_install_dismissed') === '1') return;
+    } catch (_e) { /* stockage indisponible */ }
 
-    const wrap = document.createElement('div');
-    wrap.id = 'companion-install';
-    wrap.className = 'hidden mt-6 text-center';
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'text-sm font-medium text-fluance underline';
-    btn.textContent = T.install;
-    wrap.appendChild(btn);
+    const ua = navigator.userAgent || '';
+    const isIos = /iphone|ipad|ipod/i.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /android/i.test(ua);
 
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault();
-      deferredPrompt = e;
-      wrap.classList.remove('hidden');
+    const card = document.createElement('section');
+    card.id = 'companion-install';
+    card.className = 'mt-10 rounded-2xl border border-fluance/15 bg-white p-5 md:p-6';
+
+    const title = document.createElement('h2');
+    title.className = 'text-lg font-semibold text-[#3E3A35] mb-2';
+    title.textContent = T.installTitle;
+
+    const intro = document.createElement('p');
+    intro.className = 'text-sm text-[#3E3A35]/70 mb-4';
+    intro.textContent = T.installIntro;
+
+    const installBtn = document.createElement('button');
+    installBtn.type = 'button';
+    installBtn.className = 'btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A] hidden';
+    installBtn.textContent = T.installNow;
+    installBtn.addEventListener('click', function () {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const choice = deferredInstallPrompt.userChoice;
+      const reset = function () { deferredInstallPrompt = null; installBtn.classList.add('hidden'); };
+      if (choice && choice.finally) choice.finally(reset); else reset();
     });
-    btn.addEventListener('click', function () {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const choice = deferredPrompt.userChoice;
-        const reset = function () { deferredPrompt = null; wrap.classList.add('hidden'); };
-        if (choice && choice.finally) choice.finally(reset); else reset();
-      } else {
-        // iOS Safari : pas de beforeinstallprompt → on masque le rappel après lecture.
-        wrap.classList.add('hidden');
-      }
-    });
-    window.addEventListener('appinstalled', function () {
-      deferredPrompt = null;
-      wrap.classList.add('hidden');
+
+    const stepsTitle = isIos ? T.installIosTitle :
+      (isAndroid ? T.installAndroidTitle : T.installDesktopTitle);
+    const stepsText = isIos ? T.installIosSteps :
+      (isAndroid ? T.installAndroidSteps : T.installDesktopSteps);
+
+    const stepsHeading = document.createElement('p');
+    stepsHeading.className = 'mt-4 text-sm font-semibold text-[#3E3A35]';
+    stepsHeading.textContent = stepsTitle;
+    const stepsBody = document.createElement('p');
+    stepsBody.className = 'mt-1 text-sm text-[#3E3A35]/70';
+    stepsBody.textContent = stepsText;
+
+    const foot = document.createElement('p');
+    foot.className = 'mt-4 text-xs text-[#3E3A35]/50';
+    foot.textContent = T.installFootnote;
+
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button';
+    dismiss.className = 'mt-4 text-sm text-gray-500 hover:text-fluance underline';
+    dismiss.textContent = T.installDismiss;
+    dismiss.addEventListener('click', function () {
+      try { localStorage.setItem('fluance_install_dismissed', '1'); } catch (_e) { /* ignore */ }
+      card.remove();
     });
 
-    // iOS/Safari : pas d'événement d'installation → indice discret et non bloquant.
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    if (isIos) {
-      btn.textContent = T.installIos;
-      wrap.classList.remove('hidden');
-    }
+    card.appendChild(title);
+    card.appendChild(intro);
+    card.appendChild(installBtn);
+    card.appendChild(stepsHeading);
+    card.appendChild(stepsBody);
+    card.appendChild(foot);
+    card.appendChild(dismiss);
+    mainEl.appendChild(card);
 
-    mainEl.appendChild(wrap);
+    installCardEl = card;
+    installButtonEl = installBtn;
+    if (deferredInstallPrompt) installBtn.classList.remove('hidden');
   }
 
   function registerServiceWorker() {
@@ -973,6 +1028,19 @@
     wireSignup();
     handleUrlParams();
     registerServiceWorker();
+
+    // Capture l'événement d'installation dès le chargement : il peut se produire
+    // avant l'authentification, donc avant la création de la carte d'aide.
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      if (installButtonEl) installButtonEl.classList.remove('hidden');
+    });
+    window.addEventListener('appinstalled', function () {
+      deferredInstallPrompt = null;
+      if (installCardEl) installCardEl.remove();
+    });
+
     setVisible(pendingEl, true);
 
     // Le SDK Firebase est chargé dynamiquement par firebase-auth.mjs.

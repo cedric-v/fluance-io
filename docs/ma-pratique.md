@@ -294,12 +294,16 @@ Les tags/variables GTM correspondants sont à créer côté GTM (aucune modifica
     GTM, Clarity), `/api/*`, `/.well-known/*`, ni le HTML renvoyé par `getProtectedContent`.
   - Navigation : réseau d'abord, repli cache. Ressources statiques same-origin : cache d'abord.
 - Le CSP existant autorise `worker-src` via `default-src 'self'` : **aucun changement CSP**.
-- **Installation écran d'accueil** :
-  - Android/Chrome : bouton discret affiché uniquement après l'événement `beforeinstallprompt`
-    (jamais de bannière intrusive), puis `prompt()` au clic.
-  - iOS/Safari : pas d'événement d'installation → indice textuel discret
-    « Partager → Sur l'écran d'accueil », masquable.
-  - Masqué si l'app tourne déjà en `display-mode: standalone`.
+- **Installation écran d'accueil — carte d'aide pédagogique** :
+  - Une carte accessible (construite en DOM, en bas de la mini-app) explique **à quoi ça sert**
+    et **comment faire**, en langage simple, avec les étapes adaptées à l'appareil détecté
+    (iPhone/iPad, Android, ordinateur). Objectif : accessibilité pour un public peu à l'aise
+    avec la technologie.
+  - Android/Chrome : bouton « Installer maintenant » affiché seulement après
+    `beforeinstallprompt` (capturé dès le chargement), puis `prompt()` au clic.
+  - iOS/Safari : pas d'événement d'installation → étapes « Partager → Sur l'écran d'accueil ».
+  - Non intrusive : dismissible (« Plus tard »), mémorisée (`fluance_install_dismissed`),
+    jamais affichée si déjà installée (`display-mode: standalone`).
 - **Métadonnées iOS** : `apple-mobile-web-app-capable`, `mobile-web-app-capable`,
   `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title` (variable de page
   `appTitle`, défaut « Fluance »).
