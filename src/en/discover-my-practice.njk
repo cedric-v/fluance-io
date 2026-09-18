@@ -95,7 +95,7 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <li>✓ Your favourites and history</li>
           <li>✓ A practice always available, wherever you are</li>
         </ul>
-        <p class="text-sm text-[#3E3A35]/60 mb-6">14 days free to get started · cancel anytime.</p>
+        <p class="text-sm text-[#3E3A35]/60 mb-6">14 days free to get started · cancel in one click from your account.</p>
         <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_mensuel','en',event) : (window.location.href='/en/discover-my-practice/')" class="btn-primary mt-auto text-center">Start with Fluance</button>
       </div>
 
@@ -136,10 +136,42 @@ ogImage: assets/img/cedric-bord-mer.jpg
           <p class="text-xs uppercase tracking-[0.16em] font-semibold text-[#7A1F3D] mb-1">Annual bonus</p>
           <p class="text-sm text-[#3E3A35]">Cédric answers your questions to help you apply the practices better, according to your specific needs.</p>
         </div>
-        <p class="text-sm font-medium text-fluance mb-6">That’s less than CHF 10 per month · 14 days free to get started.</p>
+        <p class="text-sm font-medium text-fluance mb-6">That’s less than CHF 10 per month · 14 days free · cancel in one click.</p>
         <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_annuel','en',event) : (window.location.href='/en/discover-my-practice/')" class="btn-primary mt-auto text-center">Choose the annual plan</button>
       </div>
     </div>
+  </section>
+
+  <!-- Reassurance: zero friction -->
+  <section class="mt-16 space-y-6">
+    <h2 class="text-2xl md:text-3xl font-semibold text-[#3E3A35] text-center">No commitment, no hassle</h2>
+    <p class="text-center text-[#3E3A35]/70 max-w-2xl mx-auto">
+      You stay in control of your subscription at all times — no email, no justification needed.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+      <div class="section-card bg-white p-6 text-center">
+        <span class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-fluance/10 text-fluance mb-3" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>
+        </span>
+        <h3 class="font-semibold text-[#3E3A35] mb-2">Cancel in one click</h3>
+        <p class="text-sm text-[#3E3A35]/70">Directly from your account, instantly, with no email or justification.</p>
+      </div>
+      <div class="section-card bg-white p-6 text-center">
+        <span class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#E6B84A]/25 text-[#7A1F3D] mb-3" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></svg>
+        </span>
+        <h3 class="font-semibold text-[#3E3A35] mb-2">Pause instead of cancelling</h3>
+        <p class="text-sm text-[#3E3A35]/70">Pause your subscription for 1 to 3 months and resume whenever you like — automatically.</p>
+      </div>
+      <div class="section-card bg-white p-6 text-center">
+        <span class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#8bc34a]/15 text-[#5a7d2a] mb-3" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
+        </span>
+        <h3 class="font-semibold text-[#3E3A35] mb-2">Access until the end</h3>
+        <p class="text-sm text-[#3E3A35]/70">If you cancel, you keep access until the end of the period you already paid for.</p>
+      </div>
+    </div>
+    <p class="text-center text-sm text-[#3E3A35]/60 pt-2">No commitment · secure payment · invoices in your account.</p>
   </section>
 
   <p class="text-center text-[#3E3A35]/40 text-2xl my-12" aria-hidden="true">↓</p>
