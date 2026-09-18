@@ -133,6 +133,11 @@ simple demande (sous-collection `practiceLog` + champ `favorites`).
 
 ## 5. Règles d'accès
 
+0. **Valeur avant l'effort** : la question « Comment te sens-tu ? » et les **choix de besoins**
+   sont visibles **sans compte**. Un clic sur un besoin affiche l'**aperçu de la recommandation**
+   (titre, durée, pourquoi) puis révèle le formulaire d'inscription (« Gratuit · accès
+   immédiat »). Le clic sur « Lancer la pratique » ou sur un favori déclenche aussi le
+   formulaire, et la pratique choisie est **lancée automatiquement** après l'inscription.
 1. `practice-companion.mjs` attend l'état d'auth **confirmé** par Firebase (jamais de flash
    « connectez-vous » pendant la restauration de session).
 2. Non connecté → écran d'**inscription gratuite ouverte** (formulaire intégré) + lien vers

@@ -161,6 +161,8 @@
   let pendingNeed = null;
   let pendingUnsubscribe = false;
   let notificationMessage = '';
+  let authed = false;
+  let pendingPractice = null;
 
   // --- Utilitaires ---
 
@@ -467,6 +469,11 @@
 
   async function setFavorite(contentId, favorite) {
     if (!contentId) return;
+    if (!authed) {
+      revealSignup();
+      scrollToEl(authRequiredEl);
+      return;
+    }
     // Mise à jour optimiste de l'interface
     if (userStats) {
       const favs = Array.isArray(userStats.favorites) ? userStats.favorites.slice() : [];
@@ -543,6 +550,13 @@
 
   function startPractice(practice) {
     if (!practice || !playerSection || !playerContainer) return;
+    // Non connecté : l'inscription devient la dernière étape avant la pratique.
+    if (!authed) {
+      pendingPractice = practice;
+      revealSignup();
+      scrollToEl(authRequiredEl);
+      return;
+    }
     currentPractice = practice;
     if (playerDone) playerDone.disabled = false;
     setVisible(playerFeedback, false);
@@ -594,14 +608,35 @@
 
   // --- Auth ---
 
-  function showLogin() {
-    setVisible(pendingEl, false);
-    setVisible(mainEl, false);
+  // Affiche le formulaire d'inscription uniquement après une intention
+  // (clic sur un besoin ou sur « Lancer la pratique »).
+  function revealSignup() {
+    if (authed) return;
     setVisible(authRequiredEl, true);
     renderTurnstile();
   }
 
+  function scrollToEl(el) {
+    if (el && el.scrollIntoView) el.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+
+  function showLogin() {
+    // Anonyme : on affiche d'abord la question ET les choix (valeur avant l'effort).
+    authed = false;
+    setVisible(pendingEl, false);
+    setVisible(mainEl, true);
+    setVisible(authRequiredEl, false);
+    setVisible(trackingSection, false);
+    // Arrivée ciblée (?need=…) : afficher la recommandation sans mur d'inscription.
+    if (pendingNeed) {
+      const need = pendingNeed;
+      pendingNeed = null;
+      renderRecommendations(need);
+    }
+  }
+
   function showApp() {
+    authed = true;
     setVisible(pendingEl, false);
     setVisible(authRequiredEl, false);
     setVisible(mainEl, true);
@@ -623,9 +658,13 @@
         const need = pendingNeed;
         pendingNeed = null;
         renderRecommendations(need);
-        if (recSection && recSection.scrollIntoView) {
-          recSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        scrollToEl(recSection);
+      }
+      // Inscription depuis un clic « Lancer » : on démarre la pratique tout de suite.
+      if (pendingPractice) {
+        const practice = pendingPractice;
+        pendingPractice = null;
+        startPractice(practice);
       }
     });
     renderUpsell();
@@ -646,6 +685,11 @@
         const need = btn.getAttribute('data-need');
         track('need_selected', { need: need, lang: LANG });
         renderRecommendations(need);
+        // L'utilisateur a exprimé un besoin → on propose l'inscription, juste sous l'aperçu.
+        if (!authed) {
+          revealSignup();
+          scrollToEl(recSection);
+        }
       });
     });
   }

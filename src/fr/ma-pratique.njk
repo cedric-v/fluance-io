@@ -36,11 +36,60 @@ appTitle: Ma pratique
     </div>
   </div>
 
-  <!-- Non connecté : inscription gratuite (freemium) -->
-  <div id="companion-auth-required" class="hidden section-card bg-white p-6 md:p-8">
-    <h2 class="text-xl font-semibold text-[#3E3A35] mb-2">Commence gratuitement</h2>
+  <!-- Application : besoins + recommandations, visibles AVANT l'inscription -->
+  <div id="companion-main" class="hidden">
+    <div id="need-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8" role="group" aria-label="Choisir un besoin">
+      {% for need in practices.needs %}
+      <button
+        type="button"
+        data-need="{{ need.id }}"
+        aria-pressed="false"
+        class="flex items-center gap-3 text-left px-4 py-4 rounded-xl border border-fluance/15 bg-white hover:bg-fluance/5 transition-colors"
+      >
+        <span class="text-2xl" aria-hidden="true">{{ need.icon }}</span>
+        <span class="font-semibold text-[#3E3A35]">{{ need.label[locale] }}</span>
+      </button>
+      {% endfor %}
+    </div>
+
+    <section id="recommendation" class="hidden scroll-mt-28" aria-live="polite">
+      <h2 id="recommendation-title" class="text-lg font-semibold text-[#3E3A35] mb-4"></h2>
+      <div id="recommendation-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+    <section id="player-section" class="hidden mt-8" aria-live="polite">
+      <div class="section-card bg-white p-5 md:p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 id="player-title" class="text-xl font-semibold text-[#3E3A35]">Ta pratique</h2>
+          <div class="flex items-center gap-3">
+            <button type="button" id="player-favorite" class="text-2xl leading-none text-[#E6B84A] hover:opacity-80" aria-pressed="false" aria-label="Ajouter aux favoris">☆</button>
+            <button type="button" id="player-close" class="text-sm text-gray-500 hover:text-fluance underline">Fermer</button>
+          </div>
+        </div>
+        <div id="player-container" class="rounded-lg overflow-hidden bg-gray-100"></div>
+        <div id="player-feedback" class="hidden mt-4 text-center text-[#5a7d2a] font-medium" role="status"></div>
+        <div class="mt-5 flex flex-col sm:flex-row gap-3 sm:justify-end">
+          <button type="button" id="player-done" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]">J’ai pratiqué</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mon suivi : statistiques, favoris, historique, rappels (connecté) -->
+    <section id="companion-tracking" class="hidden mt-10 pt-8 border-t border-gray-200">
+      <h2 class="text-lg font-semibold text-[#3E3A35] mb-4">Mon suivi</h2>
+      <div id="companion-stats" class="grid grid-cols-3 gap-3 mb-6"></div>
+      <div id="companion-favorites" class="mb-6"></div>
+      <div id="companion-history" class="mb-6"></div>
+      <div id="companion-notifications"></div>
+    </section>
+  </div>
+
+  <!-- Inscription gratuite : n'apparaît qu'après une intention (clic sur un besoin / lancer) -->
+  <div id="companion-auth-required" class="hidden scroll-mt-28 section-card bg-white p-6 md:p-8 mt-8">
+    <p class="cta-pill bg-[#8bc34a]/15 text-[#5a7d2a] mb-3">Gratuit · accès immédiat</p>
+    <h2 class="text-xl font-semibold text-[#3E3A35] mb-2">Crée ton accès pour lancer la pratique</h2>
     <p class="text-[#3E3A35]/70 mb-5 text-sm">
-      Crée ton compte gratuit pour accéder à une sélection de pratiques. Aucun engagement.
+      Ta sélection est prête. Crée ton compte gratuit (aucun engagement) et lance la pratique tout de suite.
     </p>
     <form id="free-signup-form" class="space-y-3 text-left" novalidate>
       <input
@@ -80,54 +129,6 @@ appTitle: Ma pratique
       Déjà un compte ?
       <a href="/connexion-membre/?return=/ma-pratique/" class="text-fluance font-medium hover:underline">Se connecter</a>
     </p>
-  </div>
-
-  <!-- Application -->
-  <div id="companion-main" class="hidden">
-    <div id="need-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8" role="group" aria-label="Choisir un besoin">
-      {% for need in practices.needs %}
-      <button
-        type="button"
-        data-need="{{ need.id }}"
-        aria-pressed="false"
-        class="flex items-center gap-3 text-left px-4 py-4 rounded-xl border border-fluance/15 bg-white hover:bg-fluance/5 transition-colors"
-      >
-        <span class="text-2xl" aria-hidden="true">{{ need.icon }}</span>
-        <span class="font-semibold text-[#3E3A35]">{{ need.label[locale] }}</span>
-      </button>
-      {% endfor %}
-    </div>
-
-    <section id="recommendation" class="hidden" aria-live="polite">
-      <h2 id="recommendation-title" class="text-lg font-semibold text-[#3E3A35] mb-4"></h2>
-      <div id="recommendation-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-    </section>
-
-    <!-- Mon suivi : statistiques, favoris, historique, rappels -->
-    <section id="companion-tracking" class="hidden mt-10 pt-8 border-t border-gray-200">
-      <h2 class="text-lg font-semibold text-[#3E3A35] mb-4">Mon suivi</h2>
-      <div id="companion-stats" class="grid grid-cols-3 gap-3 mb-6"></div>
-      <div id="companion-favorites" class="mb-6"></div>
-      <div id="companion-history" class="mb-6"></div>
-      <div id="companion-notifications"></div>
-    </section>
-
-    <section id="player-section" class="hidden mt-8" aria-live="polite">
-      <div class="section-card bg-white p-5 md:p-6">
-        <div class="flex items-center justify-between gap-4 mb-4">
-          <h2 id="player-title" class="text-xl font-semibold text-[#3E3A35]">Ta pratique</h2>
-          <div class="flex items-center gap-3">
-            <button type="button" id="player-favorite" class="text-2xl leading-none text-[#E6B84A] hover:opacity-80" aria-pressed="false" aria-label="Ajouter aux favoris">☆</button>
-            <button type="button" id="player-close" class="text-sm text-gray-500 hover:text-fluance underline">Fermer</button>
-          </div>
-        </div>
-        <div id="player-container" class="rounded-lg overflow-hidden bg-gray-100"></div>
-        <div id="player-feedback" class="hidden mt-4 text-center text-[#5a7d2a] font-medium" role="status"></div>
-        <div class="mt-5 flex flex-col sm:flex-row gap-3 sm:justify-end">
-          <button type="button" id="player-done" class="btn-primary !text-[#7A1F3D] bg-[#E6B84A] hover:bg-[#E8C15A]">J’ai pratiqué</button>
-        </div>
-      </div>
-    </section>
   </div>
 </section>
 
