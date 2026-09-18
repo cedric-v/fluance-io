@@ -4287,7 +4287,17 @@ exports.createStripeCheckoutSession = onCall(
 
       // Déterminer le Price ID du produit principal
       // (auto-provisioning : créé automatiquement dans Stripe si nécessaire)
-      const priceId = await ensureStripePrice(stripe, db, product, variant);
+      let priceId;
+      try {
+        priceId = await ensureStripePrice(stripe, db, product, variant);
+      } catch (priceError) {
+        console.error(
+            'createStripeCheckoutSession — tarif Stripe indisponible:',
+            product, variant, priceError);
+        throw new HttpsError('internal',
+            `Tarif Stripe indisponible pour ${product}${variant ? ' / ' + variant : ''}. ` +
+            `Détail : ${priceError.message}`);
+      }
 
       // Déterminer le mode (payment pour one-time, subscription pour abonnements)
       const isSubscription = product === 'complet' ||
