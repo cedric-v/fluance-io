@@ -184,13 +184,21 @@ Quatre fonctions callables (auth requise, `europe-west1`) :
 
 - **Aucune nouvelle dépendance, aucune écriture client** : les règles Firestore refusent
   l'écriture ; la sous-collection `practiceLog` n'est lisible que par son propriétaire.
+- **Nature** : ce sont des **e-mails transactionnels** (API Mailjet `/v3.1/send`), pas des
+  notifications push. Le web push reste une amélioration future.
 - **Rappels** (`sendPracticeReminders`, planifié tous les jours à 9h Europe/Paris) :
   - cible les comptes avec `notificationOptIn == true`, inactifs ≥ 3 jours, et sans rappel
     depuis ≥ 7 jours (fréquence max 1/semaine, garde-fou 300 emails/exécution) ;
-  - texte localisé FR/EN, personnalisé avec le dernier besoin ;
-  - désinscription **en un clic** : `/ma-pratique/?notifications=off`
-    (ou `/en/my-practice/?notifications=off`) → la page désactive le rappel automatiquement ;
-  - en-tête `List-Unsubscribe` ajouté (délivrabilité).
+  - texte localisé FR/EN, personnalisé avec le dernier besoin.
+- **Désinscription ciblée** (ne touche **pas** la mailing list Mailjet globale) :
+  - jeton `reminderUnsubTokens/{token}` (64 hex) généré par utilisateur et réutilisé ;
+  - endpoint public `unsubscribePracticeReminders` (GET `?token=` ou POST *one-click*) qui met
+    uniquement `users/{uid}.notificationOptIn = false` ;
+  - en-têtes `List-Unsubscribe` + `List-Unsubscribe-Post: List-Unsubscribe=One-Click` ;
+  - le lien dans l'e-mail fonctionne **sans connexion** ;
+  - alternative in-app : `/ma-pratique/?notifications=off` (après connexion) ;
+  - **aucune API Mailjet d'unsubscribe n'est appelée** : le contact reste dans la liste
+    `10524140` et continue de recevoir les autres e-mails Fluance.
 - **Paramètre d'URL** `?need=<id>` : présélectionne un besoin dans le compagnon (utilisé par
   les rappels).
 
@@ -263,7 +271,7 @@ Tout se fait dans `src/_data/practices.json` — **aucun déploiement de Cloud F
   prix et le découplage de la date) :
 
   ```bash
-  firebase deploy --only functions:createFreeAccount,functions:getProtectedContent,functions:createStripeCheckoutSession,functions:logPractice,functions:toggleFavorite,functions:setNotificationOptIn,functions:getPracticeStats,functions:sendPracticeReminders
+  firebase deploy --only functions:createFreeAccount,functions:getProtectedContent,functions:createStripeCheckoutSession,functions:logPractice,functions:toggleFavorite,functions:setNotificationOptIn,functions:getPracticeStats,functions:sendPracticeReminders,functions:unsubscribePracticeReminders
   ```
 
   Les règles Firestore doivent aussi être déployées (nouvelle sous-collection

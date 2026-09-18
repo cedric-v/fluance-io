@@ -6751,7 +6751,22 @@ exports.sendPracticeReminders = onSchedule(
           'https://fluance.io/en/my-practice/' : 'https://fluance.io/ma-pratique/';
         const practiceUrl = lastNeed ?
           `${baseUrl}?need=${encodeURIComponent(lastNeed)}` : baseUrl;
-        const manageUrl = `${baseUrl}?notifications=off`;
+
+        // Jeton de désinscription CIBLÉE (rappels de pratique uniquement).
+        // N'affecte en rien la mailing list Mailjet globale : aucune API Mailjet
+        // d'unsubscribe n'est appelée.
+        let unsubToken = userData.reminderUnsubToken;
+        if (!unsubToken || typeof unsubToken !== 'string') {
+          unsubToken = generateUniqueToken();
+          await db.collection('reminderUnsubTokens').doc(unsubToken).set({
+            uid: userDoc.id,
+            email: email,
+            createdAt: FieldValue.serverTimestamp(),
+          });
+          await userDoc.ref.set({reminderUnsubToken: unsubToken}, {merge: true});
+        }
+        const manageUrl = 'https://europe-west1-fluance-protected-content.cloudfunctions.net/' +
+          `unsubscribePracticeReminders?token=${unsubToken}&lang=${locale}`;
 
         const copy = locale === 'en' ? {
           subject: 'A little moment for you?',
@@ -6798,7 +6813,10 @@ exports.sendPracticeReminders = onSchedule(
               mailjetApiSecret,
               undefined,
               undefined,
-              {'List-Unsubscribe': `<${manageUrl}>`},
+              {
+                'List-Unsubscribe': `<${manageUrl}>`,
+                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+              },
           );
           await userDoc.ref.set({
             lastPracticeReminderAt: Timestamp.now(),
@@ -6813,6 +6831,91 @@ exports.sendPracticeReminders = onSchedule(
       }
 
       console.log(`📧 Practice reminders — sent: ${sent}, skipped: ${skipped}, errors: ${errors}`);
+    });
+
+/**
+ * Désinscription ciblée des rappels de pratique (lien email / one-click).
+ *
+ * ⚠️ N'affecte QUE les rappels de pratique (`users/{uid}.notificationOptIn = false`).
+ * N'appelle AUCUNE API Mailjet : le contact reste dans la mailing list globale et
+ * continue de recevoir les autres emails Fluance. Accessible sans connexion
+ * (le jeton est la preuve d'autorisation). Accepte GET (?token=) et POST
+ * (List-Unsubscribe one-click).
+ *
+ * Région : europe-west1
+ */
+exports.unsubscribePracticeReminders = onRequest(
+    {
+      region: 'europe-west1',
+      cors: true,
+    },
+    async (req, res) => {
+      const token = (req.query && req.query.token) || (req.body && req.body.token) || '';
+      const locale = (req.query && req.query.lang === 'en') ? 'en' : 'fr';
+
+      const render = (status, title, text) => {
+        const cta = locale === 'en' ? 'Open My practice' : 'Ouvrir Ma pratique';
+        const appUrl = `https://fluance.io${locale === 'en' ? '/en/my-practice/' : '/ma-pratique/'}`;
+        res.status(status)
+            .set('Content-Type', 'text/html; charset=utf-8')
+            .set('Cache-Control', 'no-store')
+            .send('<!DOCTYPE html><html lang="' + locale + '"><head><meta charset="utf-8">' +
+              '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+              '<meta name="robots" content="noindex, nofollow">' +
+              '<title>Fluance</title></head>' +
+              '<body style="font-family: Arial, sans-serif; background:#fdfaf6; color:#3E3A35; ' +
+              'display:flex; min-height:100vh; align-items:center; justify-content:center; margin:0;">' +
+              '<div style="max-width:420px; background:#fff; border-radius:16px; padding:32px; ' +
+              'text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.06);">' +
+              '<p style="font-size:40px;margin:0 0 8px;">🌿</p>' +
+              '<h1 style="font-size:20px; margin:0 0 12px;">' + title + '</h1>' +
+              '<p style="margin:0 0 20px; opacity:.8;">' + text + '</p>' +
+              '<a href="' + appUrl + '" style="display:inline-block; background:#E6B84A; ' +
+              'color:#7A1F3D; font-weight:bold; text-decoration:none; padding:12px 24px; ' +
+              'border-radius:9999px;">' + cta + '</a>' +
+              '</div></body></html>');
+      };
+
+      if (!token || typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
+        render(400,
+            locale === 'en' ? 'Invalid link' : 'Lien invalide',
+            locale === 'en' ?
+              'This unsubscribe link is not valid.' :
+              'Ce lien de désinscription n’est pas valide.');
+        return;
+      }
+
+      try {
+        const tokenRef = db.collection('reminderUnsubTokens').doc(token);
+        const tokenDoc = await tokenRef.get();
+
+        if (tokenDoc.exists) {
+          const uid = tokenDoc.data().uid;
+          if (uid) {
+            // Désactive UNIQUEMENT les rappels de pratique (pas la mailing list Mailjet).
+            await db.collection('users').doc(uid).set({
+              notificationOptIn: false,
+              reminderUnsubToken: FieldValue.delete(),
+              updatedAt: FieldValue.serverTimestamp(),
+            }, {merge: true});
+          }
+          await tokenRef.delete();
+        }
+
+        // Idempotent : token déjà utilisé ou inconnu → on confirme la désactivation.
+        render(200,
+            locale === 'en' ? 'Reminders turned off' : 'Rappels désactivés',
+            locale === 'en' ?
+              'You will no longer receive practice reminder emails. Your other Fluance emails are unchanged.' :
+              'Tu ne recevras plus les emails de rappel de pratique. Tes autres emails Fluance restent inchangés.');
+      } catch (error) {
+        console.error('unsubscribePracticeReminders error:', error);
+        render(500,
+            locale === 'en' ? 'Something went wrong' : 'Une erreur est survenue',
+            locale === 'en' ?
+              'Please try again later.' :
+              'Merci de réessayer plus tard.');
+      }
     });
 
 /**
