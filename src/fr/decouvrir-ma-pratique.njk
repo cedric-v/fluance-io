@@ -133,6 +133,10 @@ eleventyExcludeFromCollections: true
           <li>✓ Favoris et historique</li>
           <li>✓ Accès à votre espace de pratique partout, sur ordinateur ou téléphone</li>
         </ul>
+        <div class="rounded-lg border border-[#E6B84A]/40 bg-[#E6B84A]/10 p-4 mb-6">
+          <p class="text-xs uppercase tracking-[0.16em] font-semibold text-[#7A1F3D] mb-1">Bonus annuel</p>
+          <p class="text-sm text-[#3E3A35]">Cédric répond à vos questions pour vous aider à mieux appliquer les pratiques selon vos spécificités et vos besoins précis.</p>
+        </div>
         <p class="text-sm font-medium text-fluance mb-6">Soit moins de CHF 10 par mois · 14 jours offerts pour commencer.</p>
         <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_annuel','fr',event) : (window.location.href='/cours-en-ligne/approche-fluance-complete/')" class="btn-primary mt-auto text-center">Choisir l’abonnement annuel</button>
       </div>
@@ -177,6 +181,7 @@ eleventyExcludeFromCollections: true
         <p class="text-[#3E3A35] mb-6">
           L’accès complet pendant un an, avec un tarif plus avantageux.
         </p>
+        <p class="text-sm font-medium text-[#7A1F3D] mb-6">Bonus : Cédric répond à vos questions.</p>
         <button type="button" onclick="window.FluancePayment ? window.FluancePayment.redirectToStripe('complet','ma_pratique_annuel','fr',event) : (window.location.href='/cours-en-ligne/approche-fluance-complete/')" class="mt-auto font-semibold text-fluance hover:underline text-left">→ Je choisis l’année</button>
       </div>
     </div>
