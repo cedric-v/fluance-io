@@ -47,7 +47,7 @@
     "fast-xml-parser": "5.11.1",
     "liquidjs": "10.29.0",
     "protobufjs": "8.8.0",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
     "uuid": "14.0.2",
     "ws": "8.21.3",
     "yaml": "2.9.1"
