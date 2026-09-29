@@ -164,17 +164,18 @@ practice, without changing the existing programmes, checkout or member area. See
 - Tracking (server-only writes): `logPractice`, `toggleFavorite`, `setNotificationOptIn`,
   `getPracticeStats`. History in `users/{uid}/practiceLog`, favourites in `users/{uid}.favorites`
   (see `firestore.rules`).
-- Reminders (transactional **emails**, not push): `sendPracticeReminders` (daily 9am
-  Europe/Paris, explicit opt-in, max 1/week) + `unsubscribePracticeReminders` (tokenized
-  one-click, disables reminders only — never the global Mailjet list). The opt-in is
-  configurable from the member area (`/membre/`) and from the mini-app ("Mon suivi"), via
-  `getNotificationPrefs` / `setNotificationOptIn`.
+- Reminders (daily 9am Europe/Paris, explicit opt-in, max 1/week): **emails** via
+  `sendPracticeReminders` + `unsubscribePracticeReminders` (tokenized one-click, disables
+  reminders only — never the global Mailjet list), and/or **Web Push** when the device is
+  subscribed. Email opt-in is configurable from the member area (`/membre/`) and the mini-app
+  (“Mon suivi”) via `getNotificationPrefs` / `setNotificationOptIn`.
 - Analytics events pushed to `dataLayer` (consent-gated): `companion_opened`, `need_selected`,
   `recommendation_displayed`, `practice_started`, `practice_completed`, `practice_favorited`,
   `practice_unfavorited`, `free_account_created`.
 - The Défi 21 jours countdown is **not** started by the companion (`startProgression: false`).
-- No new npm dependency, no new backend. Additive Firestore fields/subcollection only
-  (`users/{uid}.favorites`, `notificationOptIn`, `practiceLog/`), server-side rules.
+- Dependency added: `web-push` (functions). Additive Firestore fields/subcollections only
+  (`users/{uid}.favorites`, `notificationOptIn`, `practiceLog/`, `pushSubscriptions/`),
+  server-side rules.
 
 ---
 

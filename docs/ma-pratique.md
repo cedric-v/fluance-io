@@ -244,8 +244,9 @@ Quatre fonctions callables (auth requise, `europe-west1`) :
 
 - **Aucune nouvelle dépendance, aucune écriture client** : les règles Firestore refusent
   l'écriture ; la sous-collection `practiceLog` n'est lisible que par son propriétaire.
-- **Nature** : ce sont des **e-mails transactionnels** (API Mailjet `/v3.1/send`), pas des
-  notifications push. Le web push reste une amélioration future.
+- **Nature** : rappels envoyés par **email** (API Mailjet `/v3.1/send`) **et/ou par
+  notifications Web Push** selon les préférences de l'utilisateur. Voir aussi la section
+  « Notifications Web Push » ci-dessous.
 - **Rappels** (`sendPracticeReminders`, planifié tous les jours à 9h Europe/Paris) :
   - cible les comptes avec `notificationOptIn == true`, inactifs ≥ 3 jours, et sans rappel
     depuis ≥ 7 jours (fréquence max 1/semaine, garde-fou 300 emails/exécution) ;
@@ -418,9 +419,9 @@ Tout se fait dans `src/_data/practices.json` — **aucun déploiement de Cloud F
 - Fonction planifiée `sendPracticeReminders` (9h Europe/Paris) : inactivité ≥ 3 jours,
   fréquence max 1/semaine, opt-in explicite, personnalisation par dernier besoin, texte FR/EN,
   désinscription en un clic, en-tête `List-Unsubscribe`.
-- **Améliorations futures** : web push en complément de l'email ; déclenchement basé sur le
-  moment de la journée habituel de l'utilisateur ; A/B testing des objets ; pause automatique
-  si aucun retour après plusieurs rappels.
+- **Améliorations futures** : déclenchement basé sur le moment de la journée habituel de
+  l'utilisateur ; A/B testing des objets/notifications ; pause automatique si aucun retour
+  après plusieurs rappels.
 - **Interdit** : notifications agressives, streaks culpabilisants, badges, gamification.
 
 ### Priorité 3 — prix et offres

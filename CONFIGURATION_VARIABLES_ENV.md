@@ -20,6 +20,9 @@ FIREBASE_PROJECT_ID=...
 FIREBASE_STORAGE_BUCKET=...
 FIREBASE_MESSAGING_SENDER_ID=...
 FIREBASE_APP_ID=...
+
+# Notifications Web Push (clé publique VAPID, non secrète)
+WEBPUSH_PUBLIC_KEY=BBq...
 ```
 
 ### Étape 2 : Secrets GitHub (Déploiement)
@@ -37,6 +40,7 @@ Pour que ces valeurs soient injectées lors du déploiement automatique via GitH
 | `ELEVENTY_ENV` | `dev` ou `prod`. Impacte la minification et certains comportements. |
 | `STRIPE_PUBLISHABLE_KEY` | Clé publique pour initialiser Stripe Checkout. |
 | `FIREBASE_*` | Toute la configuration nécessaire au SDK Firebase Web. |
+| `WEBPUSH_PUBLIC_KEY` | Clé publique VAPID pour l'abonnement aux notifications push (non secrète). |
 | `BEXIO_API_TOKEN` | Jeton API Bexio (utilisé pour la vérification automatique hebdomadaire de l'expiration). |
 
 ---
@@ -71,6 +75,15 @@ Ajoutez les variables suivantes une par une :
 
 - **Nom** : `STRIPE_WEBHOOK_SECRET`  
   **Valeur** : Le secret de signature de votre webhook Stripe (commence par `whsec_`)
+
+#### Notifications Web Push (nécessaires pour les notifications push)
+- **Nom** : `WEBPUSH_PRIVATE_KEY`  
+  **Valeur** : la clé privée VAPID, générée par `node scripts/generate-vapid-keys.mjs`
+  (fichier `functions/.vapid-keys.json`, gitignoré).
+
+> La clé **publique** VAPID n'est pas un secret : elle est fournie en variable d'environnement
+> dans `functions/index.js` (`env.WEBPUSH_PUBLIC_KEY`) et injectée côté site via le secret GitHub
+> `WEBPUSH_PUBLIC_KEY`.
 
 #### Price IDs Stripe (auto-provisioning — aucune création manuelle requise)
 
