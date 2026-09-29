@@ -209,8 +209,11 @@ simple demande (sous-collection `practiceLog` + champ `favorites`).
 - Callable `sendAnnualQuestion` : auth + **éligibilité annuelle vérifiée côté serveur** + rate
   limit (5/h). Envoie la question à l'adresse support (`ADMIN_EMAIL`) avec un objet préfixé
   **`[Client offre annuelle]`**.
-- ⚠️ Les abonnés annuels **antérieurs** à ce changement n'ont pas de `variant` stocké → prévoir
-  un backfill (script ou requête Stripe) pour qu'ils voient le formulaire.
+- ⚠️ Les abonnés annuels **antérieurs** à ce changement n'ont pas de `variant` stocké →
+  utiliser le script `scripts/set-complet-variant.js` pour backfiller (`ma_pratique_annuel`),
+  ou une requête Stripe. Voir `CREER_COMPTES_DEMO.md` pour l'usage.
+- Le script `scripts/set-complet-variant.js` permet aussi de définir/retirer la variante d'un
+  compte de test afin de simuler l'offre annuelle (bonus) ou mensuelle.
 
 ### Gestion de l'abonnement (100 % native)
 

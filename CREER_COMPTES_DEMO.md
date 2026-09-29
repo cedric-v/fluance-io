@@ -44,6 +44,31 @@ Ils ne recevront aucun e-mail de :
 
 Les autres e-mails transactionnels ne sont pas impactés.
 
+## 🎟️ Simuler l'offre "Fluance Illimité" annuelle ou mensuelle
+
+Les comptes démo possèdent le produit `complet` (Fluance Illimité), ce qui donne accès à
+l'app PWA **Ma pratique** et à tous les contenus premium. Pour tester le **bonus annuel**
+(formulaire « Une question ? Cédric vous répond » dans `/membre/`), il faut définir la
+variante du produit `complet` :
+
+```bash
+# Bonus annuel (formulaire de question actif)
+node scripts/set-complet-variant.js demo1@example.com ma_pratique_annuel
+
+# Offre mensuelle (pas de bonus)
+node scripts/set-complet-variant.js demo1@example.com ma_pratique_mensuel
+
+# Retirer la variante
+node scripts/set-complet-variant.js demo1@example.com --clear
+```
+
+La variante est stockée dans `users/{uid}.products[]` sur l'entrée `{ name: 'complet' }` et
+vérifiée côté serveur par la callable `sendAnnualQuestion`. Voir `docs/ma-pratique.md`
+(§ « Bonus annuel ») pour le détail.
+
+> 💡 En local, sans `functions/serviceAccountKey.json`, lancer avec
+> `GOOGLE_CLOUD_QUOTA_PROJECT=fluance-protected-content` (l'ADC gcloud exige un quota project).
+
 ## 📝 Comptes démo actuels
 
 | Email | Mot de passe | Produits |
