@@ -328,7 +328,9 @@ node scripts/generate-vapid-keys.mjs          # génère functions/.vapid-keys.j
 ```
 
 1. Copier la **clé publique** dans `.env` **et** dans les GitHub secrets (`WEBPUSH_PUBLIC_KEY`) —
-   indispensable pour le build CI.
+   indispensable pour le build CI. Elle est aussi fournie en variable d'environnement de la
+   fonction `sendPracticeReminders` (`env.WEBPUSH_PUBLIC_KEY` dans `functions/index.js`), car ce
+   n'est pas une donnée secrète : **seule la clé privée est un secret Firebase**.
 2. Stocker la **clé privée** en secret Firebase :
    `node -e "process.stdout.write(require('./functions/.vapid-keys.json').privateKey)" | firebase functions:secrets:set WEBPUSH_PRIVATE_KEY`
 3. Déployer :

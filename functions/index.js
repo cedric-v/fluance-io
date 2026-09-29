@@ -7217,7 +7217,13 @@ exports.sendPracticeReminders = onSchedule(
     {
       schedule: '0 9 * * *', // Tous les jours à 9h
       timeZone: 'Europe/Paris',
-      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL', 'WEBPUSH_PUBLIC_KEY', 'WEBPUSH_PRIVATE_KEY'],
+      // La clé PRIVÉE VAPID est un secret. La clé PUBLIQUE n'est pas secrète :
+      // elle est fournie en variable d'environnement (doit correspondre à celle
+      // du front et au secret GitHub WEBPUSH_PUBLIC_KEY).
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL', 'WEBPUSH_PRIVATE_KEY'],
+      env: {
+        WEBPUSH_PUBLIC_KEY: 'BBqMBzCt3DwyPruC6Vg-m6dyp6_E6XfXOaxdCosru-B8GMG5zBrdTnfI1LsHQu7js6F22uCYHVN5RsmB_RfY7m8',
+      },
       region: 'europe-west1',
     },
     async () => {
