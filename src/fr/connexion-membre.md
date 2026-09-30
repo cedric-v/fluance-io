@@ -31,15 +31,6 @@ permalink: /connexion-membre/
         >
           Connexion par email
         </button>
-        <!-- Onglet passkey temporairement désactivé
-        <button
-          id="tab-passkey"
-          class="flex-1 py-3 px-4 text-center font-medium text-sm border-b-2 border-transparent text-[#1f1f1f]/60 hover:text-fluance hover:border-fluance/30"
-          data-tab="passkey"
-        >
-          🔐 Clé d'accès
-        </button>
-        -->
       </nav>
     </div>
 
@@ -57,9 +48,6 @@ permalink: /connexion-membre/
           class="w-full px-4 py-2 border border-fluance/20 rounded-lg focus:ring-2 focus:ring-fluance focus:border-fluance text-[#3E3A35]"
           placeholder="votre@email.com"
         />
-        <p id="passkey-info" class="hidden mt-2 text-sm text-[#1f1f1f]/60 italic">
-          Utilisez votre empreinte, votre visage ou le code de votre appareil pour vous connecter instantanément et en toute sécurité.
-        </p>
       </div>
 
       <div id="password-field">
@@ -163,10 +151,6 @@ permalink: /connexion-membre/
           <p>C'est la méthode de connexion sans mot de passe. Nous vous envoyons un e-mail contenant un lien unique, utilisable une seule fois, pour vous identifier. C'est simple et très sécurisé.</p>
         </div>
         <div>
-          <p class="font-semibold text-[#3E3A35] mb-1">Qu'est-ce qu'une « Clé d'accès » ?</p>
-          <p>Une clé d'accès vous permet de vous connecter instantanément et en toute sécurité en utilisant votre empreinte digitale, votre visage ou le code de votre appareil. C'est la méthode la plus simple et la plus sécurisée.</p>
-        </div>
-        <div>
           <p class="font-semibold text-[#3E3A35] mb-1">Encore besoin d'aide ?</p>
           <p><a href="/contact/" class="text-fluance hover:underline">Contactez-nous.</a></p>
         </div>
@@ -175,9 +159,6 @@ permalink: /connexion-membre/
   </div>
 </div>
 
-<!-- Bibliothèque browser officielle pour WebAuthn -->
-<!-- Note: Le package @firebase-web-authn/browser n'est peut-être pas disponible via CDN -->
-<!-- On utilise la méthode directe avec l'authentification anonyme -->
 <script type="module" src="/assets/js/firebase-auth.mjs?v={{ version }}"></script>
 <script>
 let currentTab = 'password';
@@ -240,13 +221,11 @@ function switchTab(tab) {
   currentTab = tab;
   const passwordTab = document.getElementById('tab-password');
   const passwordlessTab = document.getElementById('tab-passwordless');
-  // const passkeyTab = document.getElementById('tab-passkey'); // Temporairement désactivé
   const passwordField = document.getElementById('password-field');
   const passwordInput = document.getElementById('password');
   const buttonText = document.getElementById('button-text');
 
-  // Réinitialiser tous les onglets (seulement ceux qui sont visibles)
-  // const passkeyTab = document.getElementById('tab-passkey'); // Temporairement désactivé
+  // Réinitialiser tous les onglets
   [passwordTab, passwordlessTab].forEach(t => {
     if (t && !t.classList.contains('hidden')) {
       t.classList.remove('border-fluance', 'text-fluance');
@@ -254,19 +233,12 @@ function switchTab(tab) {
     }
   });
 
-  // Masquer l'info-bulle par défaut
-  const passkeyInfo = document.getElementById('passkey-info');
-  
   if (tab === 'password') {
     passwordTab.classList.add('border-fluance', 'text-fluance');
     passwordTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
     passwordField.style.display = 'block';
     passwordInput.required = true;
     buttonText.textContent = 'Se connecter';
-    // Masquer l'info-bulle pour l'onglet mot de passe
-    if (passkeyInfo) {
-      passkeyInfo.classList.add('hidden');
-    }
   } else if (tab === 'passwordless') {
     passwordlessTab.classList.add('border-fluance', 'text-fluance');
     passwordlessTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
@@ -274,26 +246,7 @@ function switchTab(tab) {
     passwordInput.required = false;
     passwordInput.value = '';
     buttonText.textContent = 'Envoyer le lien de connexion';
-    // Masquer l'info-bulle pour l'onglet passwordless
-    if (passkeyInfo) {
-      passkeyInfo.classList.add('hidden');
-    }
   }
-  // Temporairement désactivé - onglet passkey
-  /*
-  else if (tab === 'passkey') {
-    passkeyTab.classList.add('border-fluance', 'text-fluance');
-    passkeyTab.classList.remove('border-transparent', 'text-[#1f1f1f]/60');
-    passwordField.style.display = 'none';
-    passwordInput.required = false;
-    passwordInput.value = '';
-    buttonText.textContent = 'Se connecter avec une clé d\'accès';
-    // Afficher l'info-bulle uniquement pour l'onglet clé d'accès
-    if (passkeyInfo) {
-      passkeyInfo.classList.remove('hidden');
-    }
-  }
-  */
   
   hideError();
   hideSuccess();
@@ -315,7 +268,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Attacher les event listeners aux onglets
   const passwordTab = document.getElementById('tab-password');
   const passwordlessTab = document.getElementById('tab-passwordless');
-  // const passkeyTab = document.getElementById('tab-passkey'); // Temporairement désactivé
   
   if (passwordTab) passwordTab.addEventListener('click', () => switchTab('password'));
   if (passwordlessTab) passwordlessTab.addEventListener('click', () => switchTab('passwordless'));
@@ -327,7 +279,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   } else if (tabParam === 'password') {
     switchTab('password');
   }
-  // if (passkeyTab) passkeyTab.addEventListener('click', () => switchTab('passkey')); // Temporairement désactivé
   
   // Vérifier si un lien passwordless est présent dans l'URL
   try {
@@ -417,50 +368,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
           showError(result.error || 'Erreur lors de la connexion.', result);
         }
-      // Temporairement désactivé - onglet passkey
-      /*
-      } else if (currentTab === 'passkey') {
-        // Connexion avec clé d'accès
-        buttonText.textContent = 'Authentification...';
-        
-        // Vérifier si WebAuthn est supporté
-        if (!window.FluanceAuth.isWebAuthnSupported()) {
-          showError('Les clés d\'accès ne sont pas supportées par votre navigateur. Utilisez Chrome, Safari, Edge ou Firefox récent.');
-          return;
-        }
-
-        const result = await window.FluanceAuth.signInWithPasskey(email);
-
-        if (result.success) {
-          // Rediriger vers la page d'origine ou l'espace membre
-          const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
-          window.location.href = returnUrl;
-        } else {
-          // Si la clé d'accès n'existe pas, proposer de la créer
-          if (result.canCreate) {
-            const create = confirm('Aucune clé d\'accès trouvée pour cet email. Voulez-vous en créer une ? Cela créera un compte si vous n\'en avez pas encore.');
-            if (create) {
-              buttonText.textContent = 'Création de la clé d\'accès...';
-              const createResult = await window.FluanceAuth.createAccountWithPasskey(email);
-              if (createResult.success) {
-                const returnUrl = new URLSearchParams(window.location.search).get('return') || '/membre/';
-                window.location.href = returnUrl;
-              } else {
-                if (createResult.needsExtension) {
-                  showError('L\'extension Firebase WebAuthn n\'est pas encore installée. Veuillez utiliser une autre méthode de connexion pour le moment.');
-                } else {
-                  showError(createResult.error || 'Erreur lors de la création de la clé d\'accès.');
-                }
-              }
-            }
-          } else if (result.needsExtension) {
-            showError('L\'extension Firebase WebAuthn n\'est pas encore installée. Veuillez utiliser une autre méthode de connexion pour le moment.');
-          } else {
-            showError(result.error || 'Erreur lors de la connexion avec la clé d\'accès.', result);
-          }
-        }
-      } else {
-      */
       } else {
         // Envoi du lien passwordless
         console.log('[Connexion] Début de l\'envoi du lien passwordless');
@@ -495,8 +402,6 @@ document.addEventListener('DOMContentLoaded', async function() {
       submitButton.disabled = false;
       if (currentTab === 'password') {
         buttonText.textContent = 'Se connecter';
-      // } else if (currentTab === 'passkey') {
-      //   buttonText.textContent = 'Se connecter avec une clé d\'accès';
       } else {
         buttonText.textContent = 'Envoyer le lien de connexion';
       }

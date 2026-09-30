@@ -23,10 +23,6 @@
       ],
       "rewrites": [
         {
-          "source": "/firebase-web-authn-api",
-          "function": "ext-firebase-web-authn-fu06-api"
-        },
-        {
           "source": "/api/courses",
           "function": "getAvailableCourses"
         },
@@ -214,8 +210,5 @@
         }
       ]
     }
-  ],
-  "extensions": {
-    "firebase-web-authn-fu06": "gavinsawyer/firebase-web-authn@10.4.5"
-  }
+  ]
 }
