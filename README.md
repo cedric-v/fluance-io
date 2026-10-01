@@ -179,6 +179,16 @@ practice, without changing the existing programmes, checkout or member area. See
 
 ---
 
+### Authentication / passkeys (future option)
+
+Member auth currently uses **email/password** and **magic-link email** only. The former
+third-party Firebase WebAuthn extension was removed on 2026-09-30, and Firebase Auth still
+has no native passkey support. A future implementation path — **SimpleWebAuthn + Firebase
+custom tokens** (plus the “wait for native Firebase Auth” option) — is documented **for
+reference only** in **[docs/passkeys.md](docs/passkeys.md)**. Nothing is implemented.
+
+---
+
 ### Available npm scripts
 
 From `package.json`:
