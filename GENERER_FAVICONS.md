@@ -22,6 +22,25 @@ Le script génère automatiquement :
 - `android-chrome-192x192.png` (192x192)
 - `android-chrome-512x512.png` (512x512)
 
+### Icônes PWA « maskable » (Android)
+
+Android recadre les icônes installées (cercle, squircle, carré arrondi). Le logo « F »
+arrivant presque à ras du bord sur `android-chrome-*.png`, il faut une variante dédiée où il
+tient dans la **safe zone** (rayon ≤ 40 % du côté), sur fond plein (pas de coins transparents).
+
+```bash
+pip3 install Pillow
+python3 scripts/generate-maskable-icons.py
+```
+
+Génère :
+- `android-chrome-maskable-192x192.png`
+- `android-chrome-maskable-512x512.png`
+
+Elles sont référencées dans les manifests avec `"purpose": "maskable"`, à côté des icônes
+`"purpose": "any"` (les deux familles sont déclarées séparément : ne pas réutiliser une seule
+image pour `any maskable`).
+
 ## Méthode alternative : Outil en ligne
 
 1. Allez sur [realfavicongenerator.net](https://realfavicongenerator.net/)
@@ -60,6 +79,8 @@ Tous les fichiers doivent être placés dans `src/assets/img/` :
 - ✅ `icon-512.png` (512x512)
 - ✅ `android-chrome-192x192.png` (192x192)
 - ✅ `android-chrome-512x512.png` (512x512)
+- ✅ `android-chrome-maskable-192x192.png` (192x192, safe zone Android)
+- ✅ `android-chrome-maskable-512x512.png` (512x512, safe zone Android)
 
 ## Intégration
 
@@ -68,8 +89,9 @@ Les favicons sont déjà intégrés dans `src/_includes/base.njk` avec les bonne
 - ✅ Favicon classique (favicon.ico)
 - ✅ Favicons PNG avec tailles spécifiées (16x16, 32x32)
 - ✅ Apple Touch Icon (180x180)
-- ✅ Web Manifest pour PWA
-- ✅ Theme color (#82153e - couleur Fluance)
+- ✅ Web Manifest pour PWA (`src/site.webmanifest`, `src/ma-pratique.webmanifest`)
+- ✅ Icônes `any` + `maskable` déclarées séparément (bonne pratique Android)
+- ✅ Theme color (#7A1F3D - couleur Fluance)
 
 ## Bonnes pratiques implémentées
 

@@ -58,19 +58,19 @@
       signupExists: 'Un compte existe déjà avec cet email. Utilise le lien « Se connecter » ci-dessous.',
       signupError: 'Impossible de créer le compte pour le moment. Réessaie dans un instant.',
       signupLoading: 'Création du compte…',
-      install: 'Installer l’application',
-      installIos: 'Pour installer : Partager → « Sur l’écran d’accueil »',
-      installTitle: 'Avoir Fluance sur votre téléphone',
-      installIntro: 'Comme une application : ouvrez Ma pratique d’un seul geste depuis l’écran d’accueil de votre téléphone, en plein écran, sans passer par le navigateur.',
+      installTitle: 'Avoir Fluance sur ton téléphone',
+      installIntro: 'Comme une application : ouvre Ma pratique d’un seul geste depuis l’écran d’accueil de ton téléphone, en plein écran, sans passer par le navigateur.',
       installNow: 'Installer maintenant',
       installIosTitle: 'Sur iPhone / iPad',
-      installIosSteps: '1. Ouvrez cette page dans Safari. 2. Touchez le bouton Partager (le carré avec une flèche vers le haut). 3. Faites défiler, touchez « Sur l’écran d’accueil », puis « Ajouter ».',
+      installIosSteps: '1. Ouvre cette page dans Safari. 2. Touche le bouton Partager (le carré avec une flèche vers le haut). 3. Fais défiler, touche « Sur l’écran d’accueil », puis « Ajouter ».',
       installAndroidTitle: 'Sur Android',
-      installAndroidSteps: 'Touchez « Installer maintenant » ci-dessus. Sinon : ouvrez le menu ⋮ en haut à droite, puis « Installer l’application » ou « Ajouter à l’écran d’accueil ».',
+      installAndroidSteps: 'Ouvre le menu ⋮ de Chrome (en haut à droite), puis touche « Installer l’application » ou « Ajouter à l’écran d’accueil ».',
+      installAndroidStepsWithButton: 'Touche « Installer maintenant » ci-dessus. Tu peux aussi ouvrir le menu ⋮ de Chrome puis « Installer l’application ».',
       installDesktopTitle: 'Sur ordinateur',
-      installDesktopSteps: 'Cliquez sur l’icône d’installation dans la barre d’adresse de votre navigateur (un petit écran avec une flèche).',
+      installDesktopSteps: 'Ouvre le menu de ton navigateur puis « Installer… », ou clique sur l’icône d’installation dans la barre d’adresse.',
+      installDesktopStepsWithButton: 'Clique sur « Installer maintenant » ci-dessus, ou sur l’icône d’installation dans la barre d’adresse de ton navigateur.',
       installDismiss: 'Plus tard',
-      installFootnote: 'Facultatif : vous pouvez continuer à utiliser Fluance dans votre navigateur.',
+      installFootnote: 'Facultatif : tu peux continuer à utiliser Fluance dans ton navigateur.',
       pushTitle: 'Notifications sur votre téléphone',
       pushText: 'Recevoir « Un petit moment pour toi ? » directement sur cet appareil, en plus des emails. Vous pouvez les désactiver à tout moment.',
       pushOn: 'Activées',
@@ -128,17 +128,17 @@
       signupExists: 'An account already exists with this email. Use the “Sign in” link below.',
       signupError: 'The account could not be created right now. Please try again in a moment.',
       signupLoading: 'Creating account…',
-      install: 'Install the app',
-      installIos: 'To install: Share → “Add to Home Screen”',
       installTitle: 'Have Fluance on your phone',
       installIntro: 'Like an app: open My practice in one tap from your phone’s home screen, full screen, without going through the browser.',
       installNow: 'Install now',
       installIosTitle: 'On iPhone / iPad',
       installIosSteps: '1. Open this page in Safari. 2. Tap the Share button (the square with an arrow pointing up). 3. Scroll down, tap “Add to Home Screen”, then “Add”.',
       installAndroidTitle: 'On Android',
-      installAndroidSteps: 'Tap “Install now” above. Otherwise: open the ⋮ menu at the top right, then “Install app” or “Add to Home screen”.',
+      installAndroidSteps: 'Open Chrome’s ⋮ menu (top right), then tap “Install app” or “Add to Home screen”.',
+      installAndroidStepsWithButton: 'Tap “Install now” above. You can also open Chrome’s ⋮ menu and tap “Install app”.',
       installDesktopTitle: 'On a computer',
-      installDesktopSteps: 'Click the install icon in your browser’s address bar (a small screen with an arrow).',
+      installDesktopSteps: 'Open your browser menu and choose “Install…”, or click the install icon in the address bar.',
+      installDesktopStepsWithButton: 'Click “Install now” above, or click the install icon in your browser’s address bar.',
       installDismiss: 'Later',
       installFootnote: 'Optional: you can keep using Fluance in your browser.',
       pushTitle: 'Notifications on your phone',
@@ -224,6 +224,10 @@
   let deferredInstallPrompt = null;
   let installCardEl = null;
   let installButtonEl = null;
+  let installStepsEl = null;
+  let installStepsFor = null;
+  // Une invitation refusée n'est pas définitive : on la re-propose après 30 jours.
+  const INSTALL_DISMISS_MS = 30 * 24 * 60 * 60 * 1000;
   let pushSubscription = null;
   let pushMessage = '';
   let userStats = null;
@@ -452,7 +456,14 @@
   }
 
   function isStandalone() {
-    return !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    // iOS : lancé depuis l'écran d'accueil. Android/desktop : standalone,
+    // minimal-ui ou fullscreen selon le mode retenu par le navigateur.
+    if (typeof navigator !== 'undefined' && navigator.standalone === true) return true;
+    return !!(window.matchMedia && (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: minimal-ui)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches
+    ));
   }
 
   function isIosDevice() {
@@ -1100,10 +1111,10 @@
 
   function setupInstallPrompt() {
     if (!mainEl) return;
-    const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-    if (isStandalone) return;
+    if (isStandalone()) return;
     try {
-      if (localStorage.getItem('fluance_install_dismissed') === '1') return;
+      const dismissedAt = parseInt(localStorage.getItem('fluance_install_dismissed') || '0', 10);
+      if (dismissedAt && Date.now() - dismissedAt < INSTALL_DISMISS_MS) return;
     } catch (_e) { /* stockage indisponible */ }
 
     const ua = navigator.userAgent || '';
@@ -1131,21 +1142,27 @@
       if (!deferredInstallPrompt) return;
       deferredInstallPrompt.prompt();
       const choice = deferredInstallPrompt.userChoice;
-      const reset = function () { deferredInstallPrompt = null; installBtn.classList.add('hidden'); };
+      const reset = function () { deferredInstallPrompt = null; refreshInstallUi(); };
       if (choice && choice.finally) choice.finally(reset); else reset();
     });
 
     const stepsTitle = isIos ? T.installIosTitle :
       (isAndroid ? T.installAndroidTitle : T.installDesktopTitle);
-    const stepsText = isIos ? T.installIosSteps :
-      (isAndroid ? T.installAndroidSteps : T.installDesktopSteps);
+
+    // Le texte s'adapte à la présence du prompt natif : on n'indique pas
+    // « Touchez Installer maintenant » si le bouton n'est pas affiché.
+    installStepsFor = function () {
+      if (isIos) return T.installIosSteps;
+      if (isAndroid) return deferredInstallPrompt ? T.installAndroidStepsWithButton : T.installAndroidSteps;
+      return deferredInstallPrompt ? T.installDesktopStepsWithButton : T.installDesktopSteps;
+    };
 
     const stepsHeading = document.createElement('p');
     stepsHeading.className = 'mt-4 text-sm font-semibold text-[#3E3A35]';
     stepsHeading.textContent = stepsTitle;
     const stepsBody = document.createElement('p');
     stepsBody.className = 'mt-1 text-sm text-[#3E3A35]/70';
-    stepsBody.textContent = stepsText;
+    installStepsEl = stepsBody;
 
     const foot = document.createElement('p');
     foot.className = 'mt-4 text-xs text-[#3E3A35]/50';
@@ -1156,7 +1173,7 @@
     dismiss.className = 'mt-4 text-sm text-gray-500 hover:text-fluance underline';
     dismiss.textContent = T.installDismiss;
     dismiss.addEventListener('click', function () {
-      try { localStorage.setItem('fluance_install_dismissed', '1'); } catch (_e) { /* ignore */ }
+      try { localStorage.setItem('fluance_install_dismissed', String(Date.now())); } catch (_e) { /* ignore */ }
       card.remove();
     });
 
@@ -1171,7 +1188,14 @@
 
     installCardEl = card;
     installButtonEl = installBtn;
-    if (deferredInstallPrompt) installBtn.classList.remove('hidden');
+    refreshInstallUi();
+  }
+
+  // Met à jour le bouton et les étapes selon la disponibilité du prompt natif.
+  function refreshInstallUi() {
+    if (!installCardEl) return;
+    if (installStepsEl && installStepsFor) installStepsEl.textContent = installStepsFor();
+    if (installButtonEl) installButtonEl.classList.toggle('hidden', !deferredInstallPrompt);
   }
 
   function registerServiceWorker() {
@@ -1198,7 +1222,7 @@
     window.addEventListener('beforeinstallprompt', function (e) {
       e.preventDefault();
       deferredInstallPrompt = e;
-      if (installButtonEl) installButtonEl.classList.remove('hidden');
+      refreshInstallUi();
     });
     window.addEventListener('appinstalled', function () {
       deferredInstallPrompt = null;

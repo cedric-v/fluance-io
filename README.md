@@ -160,7 +160,8 @@ practice, without changing the existing programmes, checkout or member area. See
   app to be installed. Setup: `scripts/generate-vapid-keys.mjs` → `WEBPUSH_PUBLIC_KEY` (env +
   GitHub secret) + `WEBPUSH_PRIVATE_KEY` (Firebase secret).
 - Logic: `src/assets/js/practice-companion.mjs` · PWA: `src/sw.njk` + `src/ma-pratique.webmanifest`
-  (install prompt Android + iOS hint, app-shell cache only — never the videos).
+  (install prompt Android + iOS hint, app-shell cache only — never the videos). Manifests declare
+  separate `any` + `maskable` icons (`scripts/generate-maskable-icons.py`).
 - Tracking (server-only writes): `logPractice`, `toggleFavorite`, `setNotificationOptIn`,
   `getPracticeStats`. History in `users/{uid}/practiceLog`, favourites in `users/{uid}.favorites`
   (see `firestore.rules`).

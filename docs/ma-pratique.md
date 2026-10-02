@@ -291,23 +291,47 @@ Les tags/variables GTM correspondants sont à créer côté GTM (aucune modifica
 
 ## 7. PWA
 
-- `src/ma-pratique.webmanifest` : `start_url: /ma-pratique/`, `scope: /`, `display: standalone`.
-- `/sw.js` : service worker **minimal** enregistré uniquement depuis la mini-app, avec
-  `?v=<hash git>` pour un cache-busting correct.
+### Manifests
+
+- `src/ma-pratique.webmanifest` (mini-app) : `id: /ma-pratique/`, `start_url: /ma-pratique/`,
+  `scope: /` (volontaire : garde la connexion `/connexion-membre/` dans l'app), `display:
+  standalone`, `display_override: [standalone, minimal-ui]`, `lang: fr`, `dir: ltr`,
+  `theme_color: #7A1F3D`, `categories` + `shortcuts`.
+- `src/site.webmanifest` (site) : `id: /`, `lang: fr`, `display_override`, `theme_color:
+  #7A1F3D` (aligné sur le `<meta name="theme-color">`).
+- **Icônes** : deux familles déclarées séparément (`purpose: any` **et** `purpose: maskable`),
+  car une icône maskable est recadrée par Android (cercle, squircle…) :
+  - `android-chrome-192x192.png` / `-512x512.png` → `any` ;
+  - `android-chrome-maskable-192x192.png` / `-512x512.png` → `maskable`, logo réduit et
+    recentré pour tenir dans la **safe zone** (rayon ≤ 40 % du côté), fond plein sans liseré.
+  - Régénération : `python3 scripts/generate-maskable-icons.py` (voir `GENERER_FAVICONS.md`).
+
+### Service worker
+
+- `src/sw.njk` → `/sw.js` : service worker **minimal**, enregistré uniquement depuis la
+  mini-app, avec `?v=<hash git>` pour un cache-busting correct. Le nom du cache est versionné
+  et l'app-shell est pré-caché avec les **URLs versionnées** réellement demandées par la page.
   - **Ne met jamais en cache** : requêtes cross-origin (Bunny/mediadelivery, Firebase, Stripe,
     GTM, Clarity), `/api/*`, `/.well-known/*`, ni le HTML renvoyé par `getProtectedContent`.
-  - Navigation : réseau d'abord, repli cache. Ressources statiques same-origin : cache d'abord.
+  - Navigation : réseau d'abord, repli cache (repli FR `/ma-pratique/` ou EN
+    `/en/my-practice/` selon le chemin demandé). Ressources statiques same-origin : cache d'abord.
 - Le CSP existant autorise `worker-src` via `default-src 'self'` : **aucun changement CSP**.
-- **Installation écran d'accueil — carte d'aide pédagogique** :
-  - Une carte accessible (construite en DOM, en bas de la mini-app) explique **à quoi ça sert**
-    et **comment faire**, en langage simple, avec les étapes adaptées à l'appareil détecté
-    (iPhone/iPad, Android, ordinateur). Objectif : accessibilité pour un public peu à l'aise
-    avec la technologie.
-  - Android/Chrome : bouton « Installer maintenant » affiché seulement après
-    `beforeinstallprompt` (capturé dès le chargement), puis `prompt()` au clic.
-  - iOS/Safari : pas d'événement d'installation → étapes « Partager → Sur l'écran d'accueil ».
-  - Non intrusive : dismissible (« Plus tard »), mémorisée (`fluance_install_dismissed`),
-    jamais affichée si déjà installée (`display-mode: standalone`).
+
+### Installation écran d'accueil — carte d'aide pédagogique
+
+- Une carte accessible (construite en DOM, en bas de la mini-app) explique **à quoi ça sert**
+  et **comment faire**, en langage simple, avec les étapes adaptées à l'appareil détecté
+  (iPhone/iPad, Android, ordinateur). Objectif : accessibilité pour un public peu à l'aise
+  avec la technologie.
+- Android/Chrome : bouton « Installer maintenant » affiché seulement après
+  `beforeinstallprompt` (capturé dès le chargement), puis `prompt()` au clic. Si le prompt
+  natif n'est pas disponible (Samsung Internet, Firefox Android, critères non remplis), le
+  texte bascule automatiquement sur le **chemin manuel** (menu ⋮ → « Installer l'application »)
+  au lieu de renvoyer à un bouton absent.
+- iOS/Safari : pas d'événement d'installation → étapes « Partager → Sur l'écran d'accueil ».
+- Non intrusive : dismissible (« Plus tard ») ; le refus n'est **pas définitif** (re-proposé
+  après 30 jours, `fluance_install_dismissed` = horodatage). Jamais affichée si déjà installée
+  (`display-mode: standalone` / `minimal-ui` / `fullscreen`, ou `navigator.standalone` iOS).
 ### Notifications Web Push (implémenté)
 
 - Abonnement par appareil via le service worker (`pushManager.subscribe`), clé publique VAPID

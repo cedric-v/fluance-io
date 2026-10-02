@@ -18,8 +18,10 @@ const CACHE = 'fluance-shell-{{ version }}';
 const APP_SHELL = [
   '/ma-pratique/',
   '/en/my-practice/',
-  '/assets/css/styles.css',
-  '/assets/js/practice-companion.mjs',
+  // URLs versionnées : identiques à celles demandées par la page, sans quoi
+  // le repli hors-ligne ne trouverait pas la bonne entrée de cache.
+  '/assets/css/styles.css?v={{ version }}',
+  '/assets/js/practice-companion.mjs?v={{ version }}',
   '/assets/img/logo.png',
   '/ma-pratique.webmanifest'
 ];
@@ -61,7 +63,9 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
           return response;
         })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match('/ma-pratique/')))
+        .catch(() => caches.match(request).then((cached) =>
+          cached || caches.match(url.pathname.startsWith('/en/') ? '/en/my-practice/' : '/ma-pratique/')
+        ))
     );
     return;
   }
