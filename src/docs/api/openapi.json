@@ -2,74 +2,94 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Fluance Booking API",
-    "version": "1.0.0",
-    "description": "API used by fluance.io for in-person course discovery, pass lookup, and booking."
+    "version": "1.1.0",
+    "description": "Public API used by fluance.io and by agents/integrations for in-person class discovery, pass lookup and booking.\n\nPublic read operations (`/api/courses`, `/api/course-status`, `/api/status`) require no authentication. PII and transactional operations (`/api/pass-status`, `/api/bookings`, `/api/send-contact-email`) require an API key sent in the `X-API-Key` header (or `Authorization: Bearer flu_...`).\n\nAgent discovery resources:\n- `/.well-known/api-catalog`\n- `/.well-known/agent-card.json` (A2A)\n- `/.well-known/mcp/server-card.json`\n- `/.well-known/agent-skills/index.json`\n- `/llms.txt`",
+    "contact": {
+      "name": "Fluance support",
+      "url": "https://fluance.io/contact/",
+      "email": "support@fluance.io"
+    }
   },
   "servers": [
     {
-      "url": "https://fluance.io"
+      "url": "https://fluance.io",
+      "description": "Production (Cloudflare Worker façade in front of Firebase Cloud Functions)"
     }
   ],
+  "tags": [
+    { "name": "classes", "description": "In-person class discovery." },
+    { "name": "booking", "description": "PII and transactional operations requiring an API key." },
+    { "name": "system", "description": "Health and metadata." }
+  ],
+  "security": [],
   "paths": {
     "/api/courses": {
       "get": {
-        "summary": "List available Fluance courses",
+        "tags": ["classes"],
+        "summary": "List available Fluance classes",
+        "description": "Return upcoming in-person classes with date, time, location, price and remaining spots. Public, no authentication required.",
         "operationId": "listAvailableCourses",
+        "security": [],
         "responses": {
           "200": {
-            "description": "Available courses",
+            "description": "Available classes",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AvailableCoursesResponse"
-                }
+                "schema": { "$ref": "#/components/schemas/AvailableCoursesResponse" }
               }
             }
-          }
+          },
+          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
+          "500": { "$ref": "#/components/responses/ServerError" },
+          "502": { "$ref": "#/components/responses/UpstreamUnavailable" }
         }
       }
     },
     "/api/course-status": {
       "get": {
-        "summary": "Get the status of one course",
+        "tags": ["classes"],
+        "summary": "Get the status of one class",
+        "description": "Return the availability of a single class by identifier. Public, no authentication required.",
         "operationId": "getCourseStatus",
+        "security": [],
         "parameters": [
           {
             "name": "courseId",
             "in": "query",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "description": "Identifier returned by `listAvailableCourses`.",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
           "200": {
-            "description": "Course status",
+            "description": "Class status",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object"
-                }
+                "schema": { "$ref": "#/components/schemas/CourseStatusResponse" }
               }
             }
-          }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       }
     },
     "/api/pass-status": {
       "get": {
-        "summary": "Check whether a user has an active pass",
+        "tags": ["booking"],
+        "summary": "Check whether a person has an active pass",
+        "description": "Returns PII (name) and pass information. Requires an API key with the `pass:read` scope. Rate limited per IP and per email.",
         "operationId": "checkPassStatus",
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           {
             "name": "email",
             "in": "query",
             "required": true,
-            "schema": {
-              "type": "string",
-              "format": "email"
-            }
+            "description": "Email address to check.",
+            "schema": { "type": "string", "format": "email" }
           }
         ],
         "responses": {
@@ -77,26 +97,30 @@
             "description": "Pass status",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object"
-                }
+                "schema": { "$ref": "#/components/schemas/PassStatusResponse" }
               }
             }
-          }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/ApiKeyNotConfigured" }
         }
       }
     },
     "/api/bookings": {
       "post": {
+        "tags": ["booking"],
         "summary": "Create a Fluance booking",
+        "description": "Create a booking for a class, with or without a pass, and optionally start a payment. Requires an API key with the `booking:write` scope. When `usePass` is true, the upstream function additionally requires a Firebase ID token in the `Authorization: Bearer ...` header.",
         "operationId": "bookCourse",
+        "security": [{ "ApiKeyAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BookingRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/BookingRequest" }
             }
           }
         },
@@ -105,49 +129,102 @@
             "description": "Booking result",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object"
-                }
+                "schema": { "$ref": "#/components/schemas/BookingResponse" }
               }
             }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/ServerError" },
+          "503": { "$ref": "#/components/responses/ApiKeyNotConfigured" }
+        }
+      }
+    },
+    "/api/send-contact-email": {
+      "post": {
+        "tags": ["booking"],
+        "summary": "Send a contact request to support",
+        "description": "Relays a contact form submission to the Fluance support inbox. Requires an API key with the `contact:write` scope.",
+        "operationId": "sendContactEmail",
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContactRequest" }
+            }
           }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact request accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContactResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/ApiKeyNotConfigured" }
         }
       }
     },
     "/api/status": {
       "get": {
+        "tags": ["system"],
         "summary": "API health endpoint",
+        "description": "Lightweight health check used for automated discovery. Public, no authentication required.",
         "operationId": "apiStatus",
+        "security": [],
         "responses": {
           "200": {
             "description": "Health status",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiStatusResponse"
-                }
+                "schema": { "$ref": "#/components/schemas/ApiStatusResponse" }
               }
             }
-          }
+          },
+          "405": { "$ref": "#/components/responses/MethodNotAllowed" }
         }
       }
     }
   },
   "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key issued by Fluance. Scopes are attached server-side (`pass:read`, `booking:write`, `contact:write`)."
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Firebase ID token. Required in addition to the API key when booking with `usePass: true`."
+      }
+    },
     "schemas": {
       "Course": {
         "type": "object",
         "properties": {
           "id": { "type": "string" },
           "title": { "type": "string" },
-          "date": { "type": "string" },
-          "time": { "type": "string" },
+          "date": { "type": "string", "description": "Human-readable date (Europe/Zurich)." },
+          "time": { "type": "string", "description": "Human-readable time range." },
           "location": { "type": "string" },
-          "maxCapacity": { "type": "number" },
-          "spotsRemaining": { "type": "number" },
+          "maxCapacity": { "type": "integer" },
+          "spotsRemaining": { "type": "integer" },
           "isFull": { "type": "boolean" },
-          "price": { "type": "number" }
-        }
+          "price": { "type": "number", "description": "Price in CHF." }
+        },
+        "required": ["id", "title", "date", "time", "location", "maxCapacity", "spotsRemaining", "isFull"]
       },
       "AvailableCoursesResponse": {
         "type": "object",
@@ -157,7 +234,53 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/Course" }
           }
+        },
+        "required": ["success", "courses"]
+      },
+      "CourseStatusResponse": {
+        "type": "object",
+        "properties": {
+          "available": { "type": "boolean" },
+          "courseId": { "type": "string" },
+          "title": { "type": "string" },
+          "date": { "type": "string" },
+          "time": { "type": "string" },
+          "location": { "type": "string" },
+          "maxCapacity": { "type": "integer" },
+          "participantCount": { "type": "integer" },
+          "spotsRemaining": { "type": "integer" },
+          "isFull": { "type": "boolean" },
+          "isPast": { "type": "boolean" },
+          "price": { "type": "number" },
+          "error": { "type": "string", "description": "Present when the class does not exist (e.g. `COURSE_NOT_FOUND`)." },
+          "message": { "type": "string" }
         }
+      },
+      "PassStatusResponse": {
+        "type": "object",
+        "properties": {
+          "hasActivePass": { "type": "boolean" },
+          "isFirstVisit": { "type": "boolean" },
+          "canUseTrial": { "type": "boolean" },
+          "message": { "type": "string" },
+          "firstName": { "type": "string" },
+          "lastName": { "type": "string" },
+          "availablePasses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "passType": { "type": "string" },
+                "passName": { "type": "string" },
+                "sessionsRemaining": { "type": "integer" },
+                "expiryDate": { "type": "string", "format": "date-time" }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": ["hasActivePass"]
       },
       "BookingRequest": {
         "type": "object",
@@ -168,11 +291,49 @@
           "firstName": { "type": "string" },
           "lastName": { "type": "string" },
           "phone": { "type": "string" },
-          "paymentMethod": { "type": "string" },
-          "pricingOption": { "type": "string" },
+          "paymentMethod": { "type": "string", "description": "Payment method / provider." },
+          "pricingOption": { "type": "string", "description": "e.g. `single`, pass or partner pricing." },
           "usePass": { "type": "boolean" },
           "passId": { "type": "string" }
         }
+      },
+      "BookingResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "bookingId": { "type": "string" },
+          "requiresPayment": { "type": "boolean" },
+          "paymentUrl": { "type": "string", "format": "uri" },
+          "clientSecret": { "type": "string" },
+          "message": { "type": "string" },
+          "error": { "type": "string" }
+        },
+        "additionalProperties": true
+      },
+      "ContactRequest": {
+        "type": "object",
+        "required": ["email"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "name": { "type": "string", "description": "Full name (or use `firstname`/`lastname`)." },
+          "firstname": { "type": "string" },
+          "lastname": { "type": "string" },
+          "subject": { "type": "string" },
+          "message": { "type": "string" },
+          "site_id": {
+            "type": "string",
+            "description": "Source site identifier (e.g. `techniquesdemeditation`, `vie-explosive`, `devperso`)."
+          }
+        }
+      },
+      "ContactResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "error": { "type": "string" }
+        },
+        "required": ["success"]
       },
       "ApiStatusResponse": {
         "type": "object",
@@ -184,6 +345,69 @@
             "type": "array",
             "items": { "type": "string" }
           }
+        },
+        "required": ["ok", "service", "timestamp"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "message": { "type": "string" },
+          "required": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Missing or invalid parameter.",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid API key.",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      },
+      "Forbidden": {
+        "description": "The API key lacks the required scope.",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      },
+      "MethodNotAllowed": {
+        "description": "HTTP method not allowed for this route.",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      },
+      "RateLimited": {
+        "description": "Too many requests.",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      },
+      "ServerError": {
+        "description": "Unexpected server error.",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      },
+      "UpstreamUnavailable": {
+        "description": "The upstream API is unavailable.",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+        }
+      },
+      "ApiKeyNotConfigured": {
+        "description": "The API is not accepting keyed requests yet (no keys configured).",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
         }
       }
     }

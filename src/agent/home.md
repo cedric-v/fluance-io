@@ -21,8 +21,12 @@ Fluance helps people release tension and regain fluidity through movement, breat
 - Human API docs: https://fluance.io/docs/api/
 - OpenAPI: https://fluance.io/docs/api/openapi.json
 - Agent skills index: https://fluance.io/.well-known/agent-skills/index.json
+- A2A agent card: https://fluance.io/.well-known/agent-card.json
 - MCP server card: https://fluance.io/.well-known/mcp/server-card.json
-- Public routes exposed for agents: `GET /api/courses`, `GET /api/course-status`, `GET /api/pass-status`, `POST /api/bookings`, `GET /api/status`
+- Remote MCP endpoint (read-only, Streamable HTTP): `POST https://fluance.io/api/mcp`
+- A2A endpoint (JSON-RPC `message/send`): `POST https://fluance.io/api/a2a`
+- Public REST routes: `GET /api/courses`, `GET /api/course-status`, `GET /api/status`
+- Keyed REST routes (`X-API-Key`): `GET /api/pass-status` (`pass:read`), `POST /api/bookings` (`booking:write`), `POST /api/send-contact-email` (`contact:write`)
 
 ## Current limitations
 
@@ -30,7 +34,8 @@ Fluance helps people release tension and regain fluidity through movement, breat
 - The dynamic `/api/*` routes are handled by the same Cloudflare Worker.
 - Fluance publishes dedicated markdown resources for agents, but does not yet provide full `Accept: text/markdown` negotiation on the same HTML URLs.
 - The public website is served on Cloudflare Pages. The `/api/*` façade is handled by the separate Cloudflare Worker `fluance-api-proxy`, while Firebase Cloud Functions remain the backend.
-- No OAuth/OIDC discovery metadata is currently published for the public API surface.
+- No OAuth/OIDC discovery metadata is currently published for the public API surface. Account linking (needed by Meta AI Connectors) is a roadmap item.
+- The remote MCP server is read-only: booking and account actions stay on the website or go through the keyed REST routes.
 
 ## Contact
 

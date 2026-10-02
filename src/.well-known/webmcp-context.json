@@ -8,10 +8,13 @@
     "apiCatalogUrl": "https://fluance.io/.well-known/api-catalog",
     "mcpServerCardUrl": "https://fluance.io/.well-known/mcp/server-card.json",
     "agentSkillsIndexUrl": "https://fluance.io/.well-known/agent-skills/index.json",
+    "agentCardUrl": "https://fluance.io/.well-known/agent-card.json",
+    "mcpServerUrl": "https://fluance.io/api/mcp",
+    "a2aEndpointUrl": "https://fluance.io/api/a2a",
     "docsUrl": "https://fluance.io/docs/api/",
     "openApiUrl": "https://fluance.io/docs/api/openapi.json"
   },
-  "updatedAt": "2026-09-06",
+  "updatedAt": "2026-10-02",
   "languages": ["fr", "en"],
   "defaultLocale": "fr",
   "organization": {
@@ -77,11 +80,20 @@
   },
   "publicApi": {
     "baseUrl": "/api",
+    "auth": {
+      "type": "apiKey",
+      "header": "X-API-Key",
+      "description": "Les routes de lecture (cours, statut, santé) sont publiques. Les routes PII et transactionnelles (pass-status, bookings, send-contact-email) exigent une clé API avec le scope correspondant."
+    },
     "endpoints": [
-      { "path": "/api/courses", "description": "Liste des classes en présentiel avec dates, lieux, prix et places restantes." },
-      { "path": "/api/course-status", "description": "Statut d'une classe (complète, annulée, etc.)." },
-      { "path": "/api/bookings", "description": "Création et suivi des réservations." },
-      { "path": "/api/status", "description": "Statut de l'API." }
+      { "path": "/api/courses", "description": "Liste des classes en présentiel avec dates, lieux, prix et places restantes.", "auth": "public" },
+      { "path": "/api/course-status", "description": "Statut d'une classe (complète, annulée, etc.).", "auth": "public" },
+      { "path": "/api/pass-status", "description": "Vérifie si une personne dispose d'un pass actif (PII).", "auth": "pass:read" },
+      { "path": "/api/bookings", "description": "Création et suivi des réservations.", "auth": "booking:write" },
+      { "path": "/api/send-contact-email", "description": "Transmet une demande de contact au support.", "auth": "contact:write" },
+      { "path": "/api/status", "description": "Statut de l'API.", "auth": "public" },
+      { "path": "/api/mcp", "description": "Serveur MCP distant (Streamable HTTP), outils de lecture seule.", "auth": "public" },
+      { "path": "/api/a2a", "description": "Endpoint A2A (JSON-RPC message/send).", "auth": "public" }
     ],
     "openApiUrl": "https://fluance.io/docs/api/openapi.json"
   },
@@ -99,6 +111,7 @@
   "notes": [
     "Les pages françaises n'ont pas de préfixe /fr/ : la version FR est servie à la racine.",
     "WebMCP est une amélioration progressive : les outils ne sont exposés que dans les pages compatibles (par exemple /presentiel/reserver/).",
-    "Aucune authentification n'est requise pour la découverte ; la réservation effective est toujours confirmée par l'utilisateur."
+    "Aucune authentification n'est requise pour la découverte ni pour les outils MCP/A2A de lecture seule ; la réservation effective est toujours confirmée par l'utilisateur.",
+    "Le serveur MCP distant est en lecture seule. Les actions transactionnelles passent par les routes REST protégées par clé API."
   ]
 }

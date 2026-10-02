@@ -1,0 +1,46 @@
+{
+  "protocolVersion": "0.2.5",
+  "name": "Fluance",
+  "description": "Fluance aide à relâcher les tensions et à retrouver de la fluidité par le mouvement, le souffle et le jeu. Cours en présentiel à Fribourg (Suisse) et programmes en ligne.",
+  "url": "https://fluance.io/api/a2a",
+  "preferredTransport": "JSONRPC",
+  "version": "1.0.0",
+  "provider": {
+    "organization": "Instants Zen Sàrl / Fluance",
+    "url": "https://fluance.io"
+  },
+  "documentationUrl": "https://fluance.io/docs/api/",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["text/plain"],
+  "skills": [
+    {
+      "id": "list-fluance-classes",
+      "name": "List Fluance classes",
+      "description": "List currently available Fluance in-person classes with dates, locations, prices and remaining spots.",
+      "tags": ["booking", "classes", "wellness", "fribourg"],
+      "examples": [
+        "Quels cours Fluance sont disponibles ?",
+        "When is the next Fluance class?"
+      ],
+      "inputModes": ["text/plain"],
+      "outputModes": ["text/plain"]
+    },
+    {
+      "id": "present-fluance-offers",
+      "name": "Present Fluance offers",
+      "description": "Explain the Fluance offers: online 21-day programme, Fluance Illimité subscription, in-person classes in Fribourg.",
+      "tags": ["wellness", "online-course", "subscription"],
+      "examples": [
+        "Que propose Fluance ?",
+        "What does Fluance offer?"
+      ],
+      "inputModes": ["text/plain"],
+      "outputModes": ["text/plain"]
+    }
+  ]
+}

@@ -3,17 +3,22 @@
   "version": "1.0",
   "protocolVersion": "2025-06-18",
   "serverInfo": {
-    "name": "fluance-webmcp",
-    "title": "Fluance WebMCP",
+    "name": "fluance",
+    "title": "Fluance",
     "version": "1.0.0",
-    "description": "Browser-exposed WebMCP tools for discovering Fluance courses, evaluating fit, and opening the booking flow."
+    "description": "Read-only tools to discover Fluance classes and offers, plus browser-exposed WebMCP tools for the booking flow."
   },
-  "homepageUrl": "https://fluance.io/presentiel/reserver/",
+  "homepageUrl": "https://fluance.io/docs/api/",
   "transports": [
+    {
+      "type": "streamable-http",
+      "url": "https://fluance.io/api/mcp",
+      "description": "Stateless MCP server over Streamable HTTP (JSON responses). Read-only tools."
+    },
     {
       "type": "webmcp",
       "url": "https://fluance.io/presentiel/reserver/",
-      "description": "Requires a compatible browser agent with WebMCP support."
+      "description": "Browser-exposed WebMCP tools on the booking page. Requires a compatible browser agent."
     }
   ],
   "capabilities": {

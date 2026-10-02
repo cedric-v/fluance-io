@@ -6,7 +6,7 @@
       "type": "skill-md",
       "description": "Identify who Fluance can help, explain why, and suggest the most relevant Fluance format or course.",
       "url": "/.well-known/agent-skills/identify-fluance-fit/SKILL.md",
-      "digest": "sha256:3a3e4a2b4a85d7ec30f912858f43f7ab693372edef3fc6972a52d2fe51053399"
+      "digest": "sha256:36bbc7a0454088b29e5a1e79d59cab7107d702bb33a07eae466c058f8d2678ac"
     },
     {
       "name": "list-fluance-classes",

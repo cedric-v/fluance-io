@@ -325,14 +325,20 @@ Automatically build, smoke-test, and deploy the site on each push to `main` usin
 
 The API proxy is deliberately deployed separately from the Pages static site because the repository already uses `functions/` for Firebase Cloud Functions.
 
-- Source: `cloudflare/api-proxy/src/index.js`
+- Source: `cloudflare/api-proxy/src/` (`index.js` routing, `routes.js` route table, `auth.js`, `mcp.js`, `a2a.js`)
 - Configuration: `cloudflare/api-proxy/wrangler.toml`
-- Routes: `fluance.io/api/*` and `www.fluance.io/api/*`
+- Routes: `fluance.io/api/*` and `fluance.io/.well-known/*` (plus `www`)
 - Manual deployment workflow: **Deploy API proxy Worker** (`workflow_dispatch`)
+- Tests: `npm run test:worker` (Node test runner)
+- Contract validation: `npm run validate:api` (routes ↔ OpenAPI ↔ discovery), also run by `prebuild`
 
 The `CF_WORKER_API_TOKEN` used by that workflow must have permission to deploy Workers and manage the matching Workers routes: **Account → Workers Scripts → Edit**, plus **Zone → Workers Routes → Edit** and **Zone → Zone → Read** for `fluance.io`. It is intentionally separate from the Pages-only `CF_API_TOKEN`.
 
 The Worker does not replace the Firebase endpoints: it provides stable same-origin public URLs for agents and browser clients. Dynamic API responses are explicitly marked `Cache-Control: no-store`.
+
+**Authentication.** Public reads (`/api/courses`, `/api/course-status`, `/api/status`, `/api/mcp`, `/api/a2a`) are open. PII and transactional routes (`/api/pass-status`, `/api/bookings`, `/api/send-contact-email`) require an API key with a matching scope, stored in the Worker secret `FLUANCE_API_KEYS` (set with `wrangler secret put`, never committed). Without the secret, those routes return `503`. The key is stripped before proxying and never reaches the Cloud Function.
+
+**Agent endpoints.** `POST /api/mcp` exposes a stateless, read-only MCP server over Streamable HTTP. `POST /api/a2a` answers A2A `message/send` requests, with an agent card at `/.well-known/agent-card.json`. See `src/agent/gpt-action.md` and `src/agent/meta-ai-connector.md` for the GPT Action and Meta AI Connectors paths.
 
 #### Manual or other hosts (Netlify, S3, etc.)
 

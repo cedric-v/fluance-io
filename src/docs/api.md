@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: API Fluance
-description: Documentation humaine de l’API Fluance pour discovery agent, WebMCP et réservation de cours.
+description: Documentation humaine de l’API Fluance pour discovery agent, MCP, A2A, WebMCP et réservation de cours.
 locale: fr
 permalink: /docs/api/
 robots: noindex,follow
@@ -13,29 +13,45 @@ robots: noindex,follow
     <h1 class="text-4xl font-semibold text-[#3E3A35]">API Fluance</h1>
     <p class="text-lg text-[#3E3A35]/80">
       Cette API expose le planning des cours Fluance, le statut d’un pass et la réservation d’une séance.
-      Elle est utilisée par le site et par les outils WebMCP déclarés côté navigateur.
+      Elle alimente le site, les outils WebMCP du navigateur, un serveur MCP distant et un endpoint A2A.
     </p>
   </header>
 
   <article class="section-card p-8 bg-white space-y-6">
     <h2 class="text-2xl font-semibold text-fluance">Endpoints principaux</h2>
     <ul class="space-y-3 text-[#3E3A35]">
-      <li><code>GET /api/courses</code> : liste des cours disponibles avec date, heure, lieu et places restantes.</li>
-      <li><code>GET /api/course-status?courseId=...</code> : statut détaillé d’un cours.</li>
-      <li><code>GET /api/pass-status?email=...</code> : vérifie si une personne dispose d’un pass actif.</li>
-      <li><code>POST /api/bookings</code> : crée une réservation, avec ou sans pass, et peut initier un paiement si nécessaire.</li>
-      <li><code>GET /api/status</code> : endpoint santé léger pour discovery automatisée.</li>
+      <li><code>GET /api/courses</code> : liste des cours disponibles avec date, heure, lieu et places restantes. <strong>Public.</strong></li>
+      <li><code>GET /api/course-status?courseId=...</code> : statut détaillé d’un cours. <strong>Public.</strong></li>
+      <li><code>GET /api/status</code> : endpoint santé léger pour discovery automatisée. <strong>Public.</strong></li>
+      <li><code>GET /api/pass-status?email=...</code> : vérifie si une personne dispose d’un pass actif (PII). <strong>Clé API (<code>pass:read</code>).</strong></li>
+      <li><code>POST /api/bookings</code> : crée une réservation, avec ou sans pass. <strong>Clé API (<code>booking:write</code>).</strong></li>
+      <li><code>POST /api/send-contact-email</code> : transmet une demande de contact au support. <strong>Clé API (<code>contact:write</code>).</strong></li>
+    </ul>
+    <p class="text-[#3E3A35]/80">
+      Les routes protégées attendent la clé dans l’en-tête <code>X-API-Key</code> (ou
+      <code>Authorization: Bearer flu_...</code>). Sans clé configurée côté Worker, ces routes
+      répondent <code>503</code> ; avec une clé invalide, <code>401</code> ; sans le bon scope, <code>403</code>.
+    </p>
+  </article>
+
+  <article class="section-card p-8 bg-white space-y-6">
+    <h2 class="text-2xl font-semibold text-fluance">Plateformes d’agents</h2>
+    <ul class="space-y-3 text-[#3E3A35]">
+      <li><strong>MCP</strong> : <code>POST /api/mcp</code> — serveur MCP distant (Streamable HTTP, JSON), outils en lecture seule.</li>
+      <li><strong>A2A</strong> : <code>POST /api/a2a</code> — JSON-RPC <code>message/send</code>, agent card sur <code>/.well-known/agent-card.json</code>.</li>
+      <li><strong>GPT Actions</strong> : importer <a class="text-fluance underline" href="{{ '/docs/api/openapi.json' | relativeUrl }}">openapi.json</a> (opérations de lecture en priorité).</li>
+      <li><strong>Meta AI Connectors</strong> : s’appuie sur l’API REST (OpenAPI) et l’onboarding MCP ; OAuth pour l’account linking (roadmap).</li>
     </ul>
   </article>
 
   <article class="section-card p-8 bg-white space-y-6">
-    <h2 class="text-2xl font-semibold text-fluance">État actuel</h2>
+    <h2 class="text-2xl font-semibold text-fluance">Ressources de découverte</h2>
     <ul class="space-y-3 text-[#3E3A35]">
-      <li>Les ressources de discovery <code>/.well-known/api-catalog</code>, <code>/.well-known/agent-skills/index.json</code> et <code>/.well-known/mcp/server-card.json</code> sont publiées sur le site public.</li>
-      <li>Les routes publiques same-origin <code>/api/*</code> sont servies par le Worker Cloudflare <code>fluance-api-proxy</code> et sont documentées pour les humains, les agents et la discovery automatique.</li>
-      <li>Le Worker ne contient pas la logique métier : il proxyfie les appels vers les Cloud Functions Firebase, qui restent la source réelle d’exécution.</li>
-      <li>Le frontend de réservation peut continuer à appeler directement les Cloud Functions ; les URLs <code>/api/*</code> constituent la façade publique stable pour les agents et les intégrations externes.</li>
-      <li>Les réponses dynamiques de l’API ne doivent pas être mises en cache par Cloudflare.</li>
+      <li><code>/.well-known/api-catalog</code></li>
+      <li><code>/.well-known/agent-card.json</code> (A2A)</li>
+      <li><code>/.well-known/mcp/server-card.json</code></li>
+      <li><code>/.well-known/agent-skills/index.json</code> et les <code>SKILL.md</code></li>
+      <li><code>/.well-known/webmcp-context.json</code></li>
     </ul>
   </article>
 
@@ -60,14 +76,13 @@ robots: noindex,follow
   </article>
 
   <article class="section-card p-8 bg-white space-y-6">
-    <h2 class="text-2xl font-semibold text-fluance">Limites connues</h2>
+    <h2 class="text-2xl font-semibold text-fluance">État actuel et limites</h2>
     <ul class="space-y-3 text-[#3E3A35]">
-      <li>Les pages statiques restent servies par Cloudflare Pages ; les routes dynamiques <code>/api/*</code> sont traitées séparément par le Worker Cloudflare.</li>
-      <li>Les ressources de discovery et les réponses API doivent conserver des en-têtes adaptés, notamment le type MIME JSON et l’absence de cache pour les données dynamiques.</li>
-      <li>Le site publie des ressources markdown dédiées pour les agents, mais ne fait pas encore de vraie négociation de contenu sur les pages HTML via <code>Accept: text/markdown</code>.</li>
-      <li>Aucun endpoint OAuth/OIDC de discovery n’est publié pour l’instant, car l’API exposée publiquement ne repose pas encore sur un vrai serveur OAuth/OIDC dédié.</li>
-      <li>Le server card MCP publié décrit la surface WebMCP navigateur. Il ne décrit pas un serveur MCP distant autonome en transport HTTP/SSE.</li>
-      <li>Le site public est servi par Cloudflare Pages. Les rewrites Firebase Hosting définis dans <code>firebase.json</code> ne s’appliquent donc pas au site public ; le routage <code>/api/*</code> est assuré séparément par le Worker Cloudflare.</li>
+      <li>Les pages statiques sont servies par Cloudflare Pages ; les routes <code>/api/*</code> et <code>/.well-known/*</code> sont servies par le Worker Cloudflare <code>fluance-api-proxy</code>, tandis que les Cloud Functions Firebase restent le backend de référence.</li>
+      <li>Les réponses dynamiques de l’API ne sont pas mises en cache.</li>
+      <li>Le serveur MCP est volontairement en lecture seule ; la réservation passe par les routes REST protégées.</li>
+      <li>Aucun endpoint OAuth/OIDC n’est encore publié. C’est un prérequis pour l’account linking (Meta AI Connectors) et les actions authentifiées au nom d’un utilisateur.</li>
+      <li>Le site publie des ressources markdown dédiées aux agents, sans négociation de contenu <code>Accept: text/markdown</code> sur les pages HTML.</li>
     </ul>
   </article>
 </section>

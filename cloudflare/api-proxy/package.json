@@ -1,0 +1,10 @@
+{
+  "name": "fluance-api-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker: public REST facade and agent discovery for fluance.io",
+  "scripts": {
+    "test": "node --test test/"
+  }
+}

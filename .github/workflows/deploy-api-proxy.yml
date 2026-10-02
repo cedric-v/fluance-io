@@ -13,6 +13,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Unit tests
+        run: npm --prefix cloudflare/api-proxy test
+
+      - name: Validate API contract
+        run: node scripts/validate-api-contract.mjs
+
       - name: Generate discovery resources for the Worker
         run: node scripts/generate-api-proxy-discovery.mjs
 
