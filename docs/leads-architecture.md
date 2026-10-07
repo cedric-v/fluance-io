@@ -117,7 +117,7 @@ Les proprietes Mailjet sont statiques. Pour eviter la rafale de 21 appels
 
 ## Pilotage operationnel
 
-Deux mecanismes d'exploitation existent en plus des journaux Firestore:
+Plusieurs mecanismes d'exploitation existent en plus des journaux Firestore:
 
 - digest mensuel `sendBlogLeadsMonthlyDigest`
 - rapport quotidien des soucis `sendBlogLeadsIssueReport`
@@ -170,6 +170,7 @@ Collections Firestore associees:
 - `newsletterConfirmations`
 - `journal_alertes_ops`
 - `digest_ops_history`
+- `config/mailjetLeadProperties` (marqueur de schema des proprietes Mailjet)
 
 Le code est separe en deux:
 
