@@ -11460,6 +11460,38 @@ exports.cleanupOpsJournals = onSchedule(
     },
 );
 
+/**
+ * Rafraichit (re)cree les proprietes Mailjet des leads hors du chemin de
+ * requete. Hebdomadaire: evite que chaque cold start de `captureLead` ne
+ * refasse la rafale d'appels `contactmetadata`.
+ * Apres ajout d'une propriete, incrementer
+ * `MAILJET_PROPERTIES_SCHEMA_VERSION` dans blogLeadHub.js.
+ */
+exports.refreshMailjetLeadProperties = onSchedule(
+    {
+      schedule: '0 4 * * 1',
+      timeZone: 'Europe/Zurich',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+      region: 'europe-west1',
+    },
+    async (_event) => {
+      const mailjetApiKey = process.env.MAILJET_API_KEY;
+      const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+
+      if (!mailjetApiKey || !mailjetApiSecret) {
+        console.error('❌ refreshMailjetLeadProperties: Mailjet credentials not configured');
+        return;
+      }
+
+      await blogLeadHub.helpers.ensureMailjetProperties({
+        apiKey: mailjetApiKey,
+        apiSecret: mailjetApiSecret,
+        force: true,
+      });
+      console.log('✅ Mailjet lead properties refreshed');
+    },
+);
+
 exports.sendBlogLeadOpsAlerts = onSchedule(
     {
       schedule: '*/15 * * * *',
@@ -11517,15 +11549,24 @@ exports.sendBlogLeadOpsAlerts = onSchedule(
         }
       });
 
+      // Fenetre alignee sur un bucket de 15 min: l'identifiant d'alerte reste
+      // stable sur le bucket, ce qui rend le dedoublonnage reellement efficace.
+      const serverErrorWindowStart = new Date(
+          Math.floor(now.getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000),
+      );
+
       for (const [siteSource, count] of Object.entries(serverErrorsBySite)) {
-        if (count >= 5) {
+        if (count >= 1) {
           await sendBlogOpsAlert({
             alertType: 'server-errors-15m',
             siteSource,
-            windowStart: since15m,
+            windowStart: serverErrorWindowStart,
             windowEnd: now,
             count,
-            lines: [`${count} erreurs serveur sur les 15 dernieres minutes pour ${siteSource}.`],
+            lines: [
+              `${count} erreur(s) serveur sur les 15 dernieres minutes pour ${siteSource} ` +
+              '(lead potentiellement perdu).',
+            ],
             mailjetApiKey,
             mailjetApiSecret,
           });

@@ -17,11 +17,18 @@ Lecture des erreurs:
   cause reelle (ex. `fetch failed (ECONNRESET, read)`) : la cause est conservee,
   plus seulement `fetch failed`
 - un `ECONNRESET` / `ETIMEDOUT` isole est generalement transitoire (cold start);
-  les appels Mailjet et Turnstile sont maintenant re-essaies automatiquement
+  les appels Mailjet et Turnstile sont re-essaies automatiquement (avec delai
+  maximal par tentative), et l'envoi d'email limite les re-essais pour eviter
+  les doublons
 - si l'erreur persiste au-dela des re-essais, verifier cote Mailjet (statut API,
   quota, liste) et les logs Firebase Functions (`captureLead`)
-- les erreurs serveur repetees declenchent une alerte ops automatique
-  (`>= 5` sur `15 min`, fonction `sendBlogLeadOpsAlerts`)
+- toute erreur serveur (`capture_lead_internal_error`, `send_contact_internal_error`,
+  `doi_reminder_processing_error`) declenche une alerte ops automatique des la
+  premiere occurrence (`>= 1` sur `15 min`, fonction `sendBlogLeadOpsAlerts`),
+  car elle correspond a un lead potentiellement perdu
+- les proprietes Mailjet sont (re)creees hors du chemin de requete par la tache
+  `refreshMailjetLeadProperties` (lundi 04:00); en cas d'ajout de propriete,
+  incrementer `MAILJET_PROPERTIES_SCHEMA_VERSION` dans `blogLeadHub.js`
 
 ## Que faire si un formulaire contact ne fonctionne pas
 

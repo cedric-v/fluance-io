@@ -83,12 +83,32 @@ d'une instance):
   Turnstile par `fetchWithRetry`: re-essais exponentiels avec jitter sur les
   erreurs reseau (`ECONNRESET`, `ECONNREFUSED`, `ETIMEDOUT`, `ENOTFOUND`,
   `EAI_AGAIN`, `EPIPE`, `UND_ERR_*`) et sur les reponses `429/5xx`
-- `ensureMailjetProperties` (creation idempotente des proprietes Mailjet) est
-  memoise par instance et ne s'execute plus a chaque opt-in; le succes n'est
-  memorise que si tous les appels ont abouti, sinon la requete suivante re-essaie
+- chaque tentative a un delai maximal (`AbortSignal.timeout`, 10 s par defaut):
+  une connexion qui ne repond jamais declenche un re-essai au lieu de consommer
+  le timeout complet de la fonction et de perdre le lead
+- l'envoi d'email (`POST /v3.1/send`, non idempotent) passe par
+  `mailjetSendFetch`: il ne re-essaie que les erreurs de connexion survenues
+  avant traitement (jamais les `5xx` ni les timeouts, ambigus, pour limiter le
+  risque de doublon)
+- `ensureMailjetContact` tolere un `400 already exists` a la creation du contact,
+  cas normal si un re-essai suit une reponse perdue
 - les erreurs journalisees dans `journal_evenements_leads` conservent la cause
   reelle via `describeFetchError` (ex. `fetch failed (ECONNRESET, read)` et non
-  un simple `fetch failed`)
+  un simple `fetch failed`), et sont attribuees au site resolu (meme sans
+  `site_id` dans le formulaire)
+
+### Proprietes Mailjet hors du chemin de requete
+
+Les proprietes Mailjet sont statiques. Pour eviter la rafale de 21 appels
+`contactmetadata` a chaque cold start:
+
+- `ensureMailjetProperties` lit d'abord un marqueur Firestore
+  (`config/mailjetLeadProperties`, champ `schemaVersion`) et ne travaille que si
+  le schema change; il est aussi memoise par instance
+- la tache planifiee `refreshMailjetLeadProperties` (lundi `04:00`
+  `Europe/Zurich`) force la (re)creation des proprietes hors du chemin de requete
+- apres ajout d'une propriete, incrementer `MAILJET_PROPERTIES_SCHEMA_VERSION`
+  dans `blogLeadHub.js`
 
 ## Pilotage operationnel
 
@@ -97,6 +117,7 @@ Deux mecanismes d'exploitation existent en plus des journaux Firestore:
 - digest mensuel `sendBlogLeadsMonthlyDigest`
 - rapport quotidien des soucis `sendBlogLeadsIssueReport`
 - alertes critiques `sendBlogLeadOpsAlerts`
+- rafraichissement des proprietes Mailjet `refreshMailjetLeadProperties`
 - purge des journaux `cleanupOpsJournals`
 
 Digest mensuel:
@@ -129,9 +150,11 @@ Alertes critiques (temps reel):
 
 - cadence: toutes les `15 minutes`
 - destination: `support@fluance.io`
-- dedoublonnage Firestore dans `journal_alertes_ops`
-- seuils initiaux:
-  - `>= 5` erreurs serveur sur `15 min`
+- dedoublonnage Firestore dans `journal_alertes_ops` (fenetre alignee sur des
+  buckets de `15 min` pour un identifiant d'alerte stable)
+- seuils:
+  - `>= 1` erreur serveur sur `15 min` (une perte de lead est un signal fort,
+    meme isolee)
   - `> 10` echecs Turnstile sur `1 h` pour un blog
   - tout echec Mailjet critique sur DOI, relance DOI ou email contact
 

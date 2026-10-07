@@ -220,26 +220,44 @@ const RETRYABLE_FETCH_CODES = new Set([
   'UND_ERR_CONNECT_TIMEOUT',
   'UND_ERR_HEADERS_TIMEOUT',
 ]);
+
+// Sous-ensemble sur: erreurs survenues avant que la requete n'ait pu etre
+// traitee par le serveur. Pour les POST non idempotents (envoi d'email) ou un
+// re-essai aveugle pourrait creer un doublon.
+const SAFE_RETRY_FETCH_CODES = new Set([
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'UND_ERR_CONNECT_TIMEOUT',
+]);
+
 const RETRYABLE_FETCH_STATUS = new Set([429, 500, 502, 503, 504]);
+const DEFAULT_FETCH_TIMEOUT_MS = 10000;
 
 /**
  * Rend un message d'erreur fetch exploitable: la cause reelle (ECONNRESET,
- * ETIMEDOUT, ...) est cachee dans `error.cause` et sinon perdue dans le
- * journal d'evenements.
+ * ETIMEDOUT, timeout, ...) est cachee dans `error.cause` et sinon perdue dans
+ * le journal d'evenements.
  */
 function describeFetchError(error) {
   if (!error) return 'unknown';
   const cause = error.cause || {};
-  const code = cause.code || cause.errno || '';
+  const name = error.name || cause.name || '';
+  if (name === 'TimeoutError') {
+    return 'fetch failed (timeout)';
+  }
+  const code = cause.code || cause.errno || error.code || '';
   const syscall = cause.syscall ? `, ${cause.syscall}` : '';
   if (!code) return error.message || 'unknown';
   return `${error.message || 'fetch failed'} (${code}${syscall})`;
 }
 
-function isRetryableFetchError(error) {
+function isRetryableFetchError(error, retryCodes = RETRYABLE_FETCH_CODES, retryOnTimeout = true) {
   if (!error) return false;
+  const name = error.name || (error.cause && error.cause.name);
+  if (name === 'TimeoutError' || name === 'AbortError') return retryOnTimeout;
   const code = error.code || (error.cause && error.cause.code);
-  return Boolean(code && RETRYABLE_FETCH_CODES.has(code));
+  return Boolean(code && retryCodes.has(code));
 }
 
 function sleep(ms) {
@@ -247,23 +265,48 @@ function sleep(ms) {
 }
 
 /**
+ * Applique un delai maximal a une requete fetch pour qu'une connexion qui ne
+ * repond jamais declenche un re-essai au lieu de consommer le timeout complet
+ * de la fonction (et de perdre le lead).
+ */
+function withRequestTimeout(options, timeoutMs) {
+  if (!timeoutMs || options.signal) {
+    return options;
+  }
+  return {...options, signal: AbortSignal.timeout(timeoutMs)};
+}
+
+/**
  * fetch() avec re-essais exponentiels sur les erreurs reseau transitoires et
  * les reponses 429/5xx. Evite qu'un hoquet reseau (cold start) fasse echouer
  * toute la capture d'un lead.
+ *
+ * `retryOnStatus: false` et `retryCodes: SAFE_RETRY_FETCH_CODES` sont utilises
+ * pour les appels non idempotents (envoi d'email) afin de limiter le risque de
+ * doublon.
  */
-async function fetchWithRetry(url, options = {}, {retries = 3, baseDelayMs = 250} = {}) {
+async function fetchWithRetry(url, options = {}, {
+  retries = 3,
+  baseDelayMs = 250,
+  retryOnStatus = true,
+  retryOnTimeout = true,
+  retryCodes = RETRYABLE_FETCH_CODES,
+  timeoutMs = DEFAULT_FETCH_TIMEOUT_MS,
+} = {}) {
   let lastError = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const response = await fetch(url, options);
-      if (!RETRYABLE_FETCH_STATUS.has(response.status) || attempt === retries) {
+      const response = await fetch(url, withRequestTimeout(options, timeoutMs));
+      if (!retryOnStatus || !RETRYABLE_FETCH_STATUS.has(response.status) || attempt === retries) {
         return response;
       }
       lastError = new Error(`fetch failed (HTTP ${response.status})`);
+      // Libere la connexion avant de re-essayer.
+      await response.arrayBuffer().catch(() => {});
     } catch (error) {
       lastError = error;
-      if (!isRetryableFetchError(error) || attempt === retries) {
+      if (!isRetryableFetchError(error, retryCodes, retryOnTimeout) || attempt === retries) {
         throw error;
       }
     }
@@ -279,14 +322,60 @@ function mailjetFetch(url, options = {}) {
   return fetchWithRetry(url, options, {retries: 3, baseDelayMs: 250});
 }
 
-// Les proprietes Mailjet sont statiques: on ne les cree qu'une fois par
-// instance (et non a chaque opt-in), pour limiter les appels et les risques
-// d'erreur reseau en rafale.
+// Envoi d'email (non idempotent): on ne re-essaie que sur des erreurs de
+// connexion survenues avant traitement (jamais 5xx ni timeout, ambigus, pour
+// limiter le risque de doublon).
+function mailjetSendFetch(url, options = {}) {
+  return fetchWithRetry(url, options, {
+    retries: 2,
+    baseDelayMs: 250,
+    retryOnStatus: false,
+    retryOnTimeout: false,
+    retryCodes: SAFE_RETRY_FETCH_CODES,
+  });
+}
+
+// Les proprietes Mailjet sont statiques. On ne les (re)cree qu'une fois par
+// schema: un marqueur Firestore partage evite que chaque instance (donc chaque
+// cold start) ne refasse la rafale d'appels. La tache planifiee
+// `refreshMailjetLeadProperties` force la recreation apres un ajout de
+// propriete (bump de MAILJET_PROPERTIES_SCHEMA_VERSION).
+const MAILJET_PROPERTIES_SCHEMA_VERSION = 1;
+const MAILJET_PROPERTIES_CONFIG_DOC = 'config/mailjetLeadProperties';
 let mailjetPropertiesEnsured = false;
 
-async function ensureMailjetProperties(apiKey, apiSecret) {
+async function readMailjetPropertiesMarker() {
+  try {
+    const doc = await db.doc(MAILJET_PROPERTIES_CONFIG_DOC).get();
+    return doc.exists ? doc.data() : null;
+  } catch (error) {
+    console.error('❌ [blogLeadHub] Unable to read Mailjet properties marker:', describeFetchError(error));
+    return null;
+  }
+}
+
+async function writeMailjetPropertiesMarker() {
+  try {
+    await db.doc(MAILJET_PROPERTIES_CONFIG_DOC).set({
+      schemaVersion: MAILJET_PROPERTIES_SCHEMA_VERSION,
+      ensuredAt: FieldValue.serverTimestamp(),
+    }, {merge: true});
+  } catch (error) {
+    console.error('❌ [blogLeadHub] Unable to write Mailjet properties marker:', error.message);
+  }
+}
+
+async function ensureMailjetProperties({apiKey, apiSecret, force = false} = {}) {
   if (mailjetPropertiesEnsured) {
     return;
+  }
+
+  if (!force) {
+    const marker = await readMailjetPropertiesMarker();
+    if (marker && marker.schemaVersion === MAILJET_PROPERTIES_SCHEMA_VERSION) {
+      mailjetPropertiesEnsured = true;
+      return;
+    }
   }
 
   const auth = getMailjetAuth(apiKey, apiSecret);
@@ -347,6 +436,9 @@ async function ensureMailjetProperties(apiKey, apiSecret) {
   // On ne memorise le succes que si tout est passe: en cas de panne reseau
   // transitoire, la prochaine requete de cette instance re-essaiera.
   mailjetPropertiesEnsured = !hadError;
+  if (!hadError) {
+    await writeMailjetPropertiesMarker();
+  }
 }
 
 async function fetchMailjetContactProperties(email, apiKey, apiSecret) {
@@ -465,7 +557,11 @@ async function ensureMailjetContact(email, name, apiKey, apiSecret) {
 
   if (!createResponse.ok) {
     const responseText = await createResponse.text();
-    throw new Error(`Mailjet contact error: ${createResponse.status} - ${responseText}`);
+    // Un re-essai apres une reponse perdue peut retomber sur un contact deja
+    // cree: ce n'est pas un echec.
+    if (!(createResponse.status === 400 && responseText.includes('already'))) {
+      throw new Error(`Mailjet contact error: ${createResponse.status} - ${responseText}`);
+    }
   }
 }
 
@@ -533,7 +629,7 @@ async function sendMailjetEmail(params) {
     };
   }
 
-  const response = await mailjetFetch('https://api.mailjet.com/v3.1/send', {
+  const response = await mailjetSendFetch('https://api.mailjet.com/v3.1/send', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -889,6 +985,10 @@ exports.captureLead = onRequest(
         return sendJson(response, {success: false, error: 'Method Not Allowed'}, 405, corsHeaders);
       }
 
+      // Site resolu hors du try pour pouvoir l'attribuer meme en cas d'erreur
+      // (y compris si le formulaire n'envoie pas de `site_id`).
+      let resolvedSite = null;
+
       try {
         const email = normalizeEmail(getFormValue(request, 'email'));
         const name = normalizeName(
@@ -912,6 +1012,7 @@ exports.captureLead = onRequest(
             '',
         );
         const site = getSiteConfig({siteId, origin});
+        resolvedSite = site;
 
         if (!site) {
           return sendJson(response, {success: false, error: 'Site non reconnu'}, 400, corsHeaders);
@@ -1011,7 +1112,7 @@ exports.captureLead = onRequest(
         const mailjetApiSecret = process.env.MAILJET_API_SECRET;
         const listId = parseInt(process.env.MAILJET_LIST_ID || `${DEFAULT_LIST_ID}`, 10);
 
-        await ensureMailjetProperties(mailjetApiKey, mailjetApiSecret);
+        await ensureMailjetProperties({apiKey: mailjetApiKey, apiSecret: mailjetApiSecret});
         await ensureMailjetContact(email, name, mailjetApiKey, mailjetApiSecret);
         await addContactToMailjetList(email, listId, mailjetApiKey, mailjetApiSecret);
 
@@ -1086,8 +1187,8 @@ exports.captureLead = onRequest(
         console.error('❌ [blogLeadHub] captureLead error:', error);
         try {
           await logLeadEvent('capture_lead_internal_error', {
-            site_source: truncate(getFormValue(request, 'site_id') || '', 80),
-            blog_source: '',
+            site_source: resolvedSite?.siteId || truncate(getFormValue(request, 'site_id') || '', 80),
+            blog_source: resolvedSite?.blogSource || '',
             formulaire_source: truncate(
                 getFormValue(request, 'form-name') || getFormValue(request, 'form_name') || '',
                 120,
@@ -1132,6 +1233,9 @@ exports.sendContactEmail = onRequest(
         return sendJson(response, {success: false, error: 'Method Not Allowed'}, 405, corsHeaders);
       }
 
+      // Site resolu hors du try pour pouvoir l'attribuer meme en cas d'erreur.
+      let resolvedSite = null;
+
       try {
         const email = normalizeEmail(getFormValue(request, 'email'));
         const phone = truncate(getFormValue(request, 'phone') || getFormValue(request, 'telephone') || '', 40);
@@ -1150,6 +1254,7 @@ exports.sendContactEmail = onRequest(
         const contactStartedAt = Number(getFormValue(request, 'contact_started_at') || 0);
         const turnstileToken = String(getFormValue(request, 'cf-turnstile-response') || '');
         const site = getSiteConfig({siteId, origin});
+        resolvedSite = site;
         const optinUrl = String(getFormValue(request, 'optin_url') || getHeader(request, 'Referer') || '');
 
         if (!site) {
@@ -1375,8 +1480,8 @@ exports.sendContactEmail = onRequest(
         console.error('❌ [blogLeadHub] sendContactEmail error:', error);
         try {
           await logLeadEvent('send_contact_internal_error', {
-            site_source: truncate(getFormValue(request, 'site_id') || '', 80),
-            blog_source: '',
+            site_source: resolvedSite?.siteId || truncate(getFormValue(request, 'site_id') || '', 80),
+            blog_source: resolvedSite?.blogSource || '',
             formulaire_source: 'contact',
             email: normalizeEmail(getFormValue(request, 'email')),
             error_message: truncate(describeFetchError(error), 1000),
@@ -1405,6 +1510,10 @@ module.exports.helpers = {
   buildOptInEmailHtml,
   buildOptInEmailText,
   SITE_CONFIGS,
+  MAILJET_PROPERTIES_SCHEMA_VERSION,
+  ensureMailjetProperties,
+  fetchWithRetry,
+  describeFetchError,
   fetchMailjetContactProperties,
   updateMailjetContactProperties,
   sendMailjetEmail,
