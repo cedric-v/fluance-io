@@ -28,9 +28,17 @@ function response(status, body = '') {
   };
 }
 
+function makeWrappedTimeoutError() {
+  const cause = Object.assign(new Error('timeout'), {name: 'TimeoutError'});
+  const error = new TypeError('fetch failed');
+  error.cause = cause;
+  return error;
+}
+
 test('describeFetchError expose la cause reseau reelle', () => {
   assert.equal(describeFetchError(makeFetchError('ECONNRESET')), 'fetch failed (ECONNRESET, read)');
   assert.equal(describeFetchError({name: 'TimeoutError', message: 'timeout'}), 'fetch failed (timeout)');
+  assert.equal(describeFetchError(makeWrappedTimeoutError()), 'fetch failed (timeout)');
   assert.equal(describeFetchError({message: 'boom'}), 'boom');
   assert.equal(describeFetchError(null), 'unknown');
 });
@@ -123,6 +131,23 @@ test('fetchWithRetry re-essaie un timeout par defaut', async () => {
   global.fetch = async () => {
     calls++;
     if (calls === 1) throw Object.assign(new Error('timeout'), {name: 'TimeoutError'});
+    return response(200);
+  };
+  try {
+    const res = await fetchWithRetry('https://example.test', {}, {baseDelayMs: 1});
+    assert.equal(res.status, 200);
+    assert.equal(calls, 2);
+  } finally {
+    global.fetch = original;
+  }
+});
+
+test('fetchWithRetry re-essaie un timeout encapsule dans un TypeError', async () => {
+  const original = global.fetch;
+  let calls = 0;
+  global.fetch = async () => {
+    calls++;
+    if (calls === 1) throw makeWrappedTimeoutError();
     return response(200);
   };
   try {

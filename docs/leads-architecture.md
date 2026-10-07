@@ -92,6 +92,8 @@ d'une instance):
   risque de doublon)
 - `ensureMailjetContact` tolere un `400 already exists` a la creation du contact,
   cas normal si un re-essai suit une reponse perdue
+- `captureLead` tourne avec `timeoutSeconds: 120` (au lieu de 60 s par defaut)
+  pour laisser le `catch` journaliser l'evenement meme apres plusieurs re-essais
 - les erreurs journalisees dans `journal_evenements_leads` conservent la cause
   reelle via `describeFetchError` (ex. `fetch failed (ECONNRESET, read)` et non
   un simple `fetch failed`), et sont attribuees au site resolu (meme sans
@@ -105,6 +107,9 @@ Les proprietes Mailjet sont statiques. Pour eviter la rafale de 21 appels
 - `ensureMailjetProperties` lit d'abord un marqueur Firestore
   (`config/mailjetLeadProperties`, champ `schemaVersion`) et ne travaille que si
   le schema change; il est aussi memoise par instance
+- la creation des proprietes utilise un budget court (timeout 5 s, 2 re-essais)
+  et s'arrete au premier echec reseau pour ne pas epuiser le timeout de la
+  fonction; le marqueur n'est ecrit qu'en cas de succes complet
 - la tache planifiee `refreshMailjetLeadProperties` (lundi `04:00`
   `Europe/Zurich`) force la (re)creation des proprietes hors du chemin de requete
 - apres ajout d'une propriete, incrementer `MAILJET_PROPERTIES_SCHEMA_VERSION`

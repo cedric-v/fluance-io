@@ -242,8 +242,8 @@ const DEFAULT_FETCH_TIMEOUT_MS = 10000;
 function describeFetchError(error) {
   if (!error) return 'unknown';
   const cause = error.cause || {};
-  const name = error.name || cause.name || '';
-  if (name === 'TimeoutError') {
+  const names = [error.name, cause.name].filter(Boolean);
+  if (names.includes('TimeoutError')) {
     return 'fetch failed (timeout)';
   }
   const code = cause.code || cause.errno || error.code || '';
@@ -254,8 +254,10 @@ function describeFetchError(error) {
 
 function isRetryableFetchError(error, retryCodes = RETRYABLE_FETCH_CODES, retryOnTimeout = true) {
   if (!error) return false;
-  const name = error.name || (error.cause && error.cause.name);
-  if (name === 'TimeoutError' || name === 'AbortError') return retryOnTimeout;
+  const names = [error.name, error.cause && error.cause.name];
+  if (names.includes('TimeoutError') || names.includes('AbortError')) {
+    return retryOnTimeout;
+  }
   const code = error.code || (error.cause && error.cause.code);
   return Boolean(code && retryCodes.has(code));
 }
@@ -406,7 +408,11 @@ async function ensureMailjetProperties({apiKey, apiSecret, force = false} = {}) 
 
   for (const property of properties) {
     try {
-      const response = await mailjetFetch('https://api.mailjet.com/v3/REST/contactmetadata', {
+      // Non critique et appele en rafale: budget court, et on s'arrete des le
+      // premier echec reseau (Mailjet indisponible) pour ne pas epuiser le
+      // timeout de la fonction. Le marqueur n'est pas ecrit, donc un prochain
+      // appel re-essaiera.
+      const response = await fetchWithRetry('https://api.mailjet.com/v3/REST/contactmetadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -416,7 +422,7 @@ async function ensureMailjetProperties({apiKey, apiSecret, force = false} = {}) 
           Name: property,
           Datatype: 'str',
         }),
-      });
+      }, {retries: 2, baseDelayMs: 250, timeoutMs: 5000});
 
       if (!response.ok) {
         const responseText = await response.text();
@@ -430,6 +436,7 @@ async function ensureMailjetProperties({apiKey, apiSecret, force = false} = {}) 
           `❌ [blogLeadHub] Exception creating Mailjet property ${property}:`,
           describeFetchError(error),
       );
+      break;
     }
   }
 
@@ -963,6 +970,9 @@ exports.captureLead = onRequest(
     {
       region: 'europe-west1',
       cors: true,
+      // Marge pour les re-essais reseau: garantir que le catch journalise
+      // l'evenement au lieu d'etre tue par le timeout par defaut (60 s).
+      timeoutSeconds: 120,
       secrets: [
         'MAILJET_API_KEY',
         'MAILJET_API_SECRET',
