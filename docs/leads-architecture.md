@@ -73,6 +73,23 @@ Important:
 
 - un formulaire de contact ne doit jamais inscrire un contact dans la liste marketing
 
+## Resilience reseau (Mailjet / Turnstile)
+
+Les appels sortants du hub (`functions/blogLeadHub.js`) sont tolerants aux
+incidents reseau transitoires (typiquement un `ECONNRESET` au demarrage a froid
+d'une instance):
+
+- tous les appels Mailjet passent par `mailjetFetch`, et la verification
+  Turnstile par `fetchWithRetry`: re-essais exponentiels avec jitter sur les
+  erreurs reseau (`ECONNRESET`, `ECONNREFUSED`, `ETIMEDOUT`, `ENOTFOUND`,
+  `EAI_AGAIN`, `EPIPE`, `UND_ERR_*`) et sur les reponses `429/5xx`
+- `ensureMailjetProperties` (creation idempotente des proprietes Mailjet) est
+  memoise par instance et ne s'execute plus a chaque opt-in; le succes n'est
+  memorise que si tous les appels ont abouti, sinon la requete suivante re-essaie
+- les erreurs journalisees dans `journal_evenements_leads` conservent la cause
+  reelle via `describeFetchError` (ex. `fetch failed (ECONNRESET, read)` et non
+  un simple `fetch failed`)
+
 ## Pilotage operationnel
 
 Deux mecanismes d'exploitation existent en plus des journaux Firestore:

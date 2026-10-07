@@ -10,6 +10,19 @@ Verifier:
 4. que `MAILJET_API_KEY`, `MAILJET_API_SECRET` et `MAILJET_LIST_ID` sont presents
 5. que l'evenement apparait dans `journal_evenements_leads`
 
+Lecture des erreurs:
+
+- depuis le durcissement reseau de `blogLeadHub`, les evenements
+  `capture_lead_internal_error` / `send_contact_internal_error` contiennent la
+  cause reelle (ex. `fetch failed (ECONNRESET, read)`) : la cause est conservee,
+  plus seulement `fetch failed`
+- un `ECONNRESET` / `ETIMEDOUT` isole est generalement transitoire (cold start);
+  les appels Mailjet et Turnstile sont maintenant re-essaies automatiquement
+- si l'erreur persiste au-dela des re-essais, verifier cote Mailjet (statut API,
+  quota, liste) et les logs Firebase Functions (`captureLead`)
+- les erreurs serveur repetees declenchent une alerte ops automatique
+  (`>= 5` sur `15 min`, fonction `sendBlogLeadOpsAlerts`)
+
 ## Que faire si un formulaire contact ne fonctionne pas
 
 Verifier:

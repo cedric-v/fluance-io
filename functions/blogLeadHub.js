@@ -207,7 +207,88 @@ function getMailjetAuth(apiKey, apiSecret) {
   return Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
 }
 
+// Erreurs reseau generiques remontees par fetch/undici (ex: ECONNRESET juste
+// apres un cold start). Elles sont transitoires: on re-essaie avant d'abandonner.
+const RETRYABLE_FETCH_CODES = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EPIPE',
+  'UND_ERR_SOCKET',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+]);
+const RETRYABLE_FETCH_STATUS = new Set([429, 500, 502, 503, 504]);
+
+/**
+ * Rend un message d'erreur fetch exploitable: la cause reelle (ECONNRESET,
+ * ETIMEDOUT, ...) est cachee dans `error.cause` et sinon perdue dans le
+ * journal d'evenements.
+ */
+function describeFetchError(error) {
+  if (!error) return 'unknown';
+  const cause = error.cause || {};
+  const code = cause.code || cause.errno || '';
+  const syscall = cause.syscall ? `, ${cause.syscall}` : '';
+  if (!code) return error.message || 'unknown';
+  return `${error.message || 'fetch failed'} (${code}${syscall})`;
+}
+
+function isRetryableFetchError(error) {
+  if (!error) return false;
+  const code = error.code || (error.cause && error.cause.code);
+  return Boolean(code && RETRYABLE_FETCH_CODES.has(code));
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * fetch() avec re-essais exponentiels sur les erreurs reseau transitoires et
+ * les reponses 429/5xx. Evite qu'un hoquet reseau (cold start) fasse echouer
+ * toute la capture d'un lead.
+ */
+async function fetchWithRetry(url, options = {}, {retries = 3, baseDelayMs = 250} = {}) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      if (!RETRYABLE_FETCH_STATUS.has(response.status) || attempt === retries) {
+        return response;
+      }
+      lastError = new Error(`fetch failed (HTTP ${response.status})`);
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableFetchError(error) || attempt === retries) {
+        throw error;
+      }
+    }
+
+    const delay = (baseDelayMs * (2 ** attempt)) + Math.floor(Math.random() * 100);
+    await sleep(delay);
+  }
+
+  throw lastError || new Error('fetch failed');
+}
+
+function mailjetFetch(url, options = {}) {
+  return fetchWithRetry(url, options, {retries: 3, baseDelayMs: 250});
+}
+
+// Les proprietes Mailjet sont statiques: on ne les cree qu'une fois par
+// instance (et non a chaque opt-in), pour limiter les appels et les risques
+// d'erreur reseau en rafale.
+let mailjetPropertiesEnsured = false;
+
 async function ensureMailjetProperties(apiKey, apiSecret) {
+  if (mailjetPropertiesEnsured) {
+    return;
+  }
+
   const auth = getMailjetAuth(apiKey, apiSecret);
   const properties = [
     'site_source',
@@ -232,9 +313,11 @@ async function ensureMailjetProperties(apiKey, apiSecret) {
     'firstname',
   ];
 
+  let hadError = false;
+
   for (const property of properties) {
     try {
-      const response = await fetch('https://api.mailjet.com/v3/REST/contactmetadata', {
+      const response = await mailjetFetch('https://api.mailjet.com/v3/REST/contactmetadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -253,14 +336,22 @@ async function ensureMailjetProperties(apiKey, apiSecret) {
         }
       }
     } catch (error) {
-      console.error(`❌ [blogLeadHub] Exception creating Mailjet property ${property}:`, error.message);
+      hadError = true;
+      console.error(
+          `❌ [blogLeadHub] Exception creating Mailjet property ${property}:`,
+          describeFetchError(error),
+      );
     }
   }
+
+  // On ne memorise le succes que si tout est passe: en cas de panne reseau
+  // transitoire, la prochaine requete de cette instance re-essaiera.
+  mailjetPropertiesEnsured = !hadError;
 }
 
 async function fetchMailjetContactProperties(email, apiKey, apiSecret) {
   const auth = getMailjetAuth(apiKey, apiSecret);
-  const response = await fetch(
+  const response = await mailjetFetch(
       `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email)}`,
       {
         method: 'GET',
@@ -310,7 +401,7 @@ async function updateMailjetContactProperties(email, properties, apiKey, apiSecr
     Value: String(mergedProperties[key]),
   }));
 
-  const response = await fetch(
+  const response = await mailjetFetch(
       `https://api.mailjet.com/v3/REST/contactdata/${encodeURIComponent(email)}`,
       {
         method: 'PUT',
@@ -342,7 +433,7 @@ async function ensureMailjetContact(email, name, apiKey, apiSecret) {
     payload.Name = name;
   }
 
-  const existingResponse = await fetch(contactUrl, {
+  const existingResponse = await mailjetFetch(contactUrl, {
     method: 'GET',
     headers: {
       'Authorization': `Basic ${auth}`,
@@ -351,7 +442,7 @@ async function ensureMailjetContact(email, name, apiKey, apiSecret) {
 
   if (existingResponse.ok) {
     if (name) {
-      await fetch(contactUrl, {
+      await mailjetFetch(contactUrl, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -363,7 +454,7 @@ async function ensureMailjetContact(email, name, apiKey, apiSecret) {
     return;
   }
 
-  const createResponse = await fetch('https://api.mailjet.com/v3/REST/contact', {
+  const createResponse = await mailjetFetch('https://api.mailjet.com/v3/REST/contact', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -380,7 +471,7 @@ async function ensureMailjetContact(email, name, apiKey, apiSecret) {
 
 async function addContactToMailjetList(email, listId, apiKey, apiSecret) {
   const auth = getMailjetAuth(apiKey, apiSecret);
-  const response = await fetch('https://api.mailjet.com/v3/REST/listrecipient', {
+  const response = await mailjetFetch('https://api.mailjet.com/v3/REST/listrecipient', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -442,7 +533,7 @@ async function sendMailjetEmail(params) {
     };
   }
 
-  const response = await fetch('https://api.mailjet.com/v3.1/send', {
+  const response = await mailjetFetch('https://api.mailjet.com/v3.1/send', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -458,7 +549,7 @@ async function sendMailjetEmail(params) {
 }
 
 async function verifyTurnstile(token, secret, remoteIp, expectedAction = '') {
-  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+  const response = await fetchWithRetry('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -970,7 +1061,7 @@ exports.captureLead = onRequest(
             blog_source: site.blogSource,
             formulaire_source: formName,
             email,
-            error_message: truncate(error.message || 'unknown', 1000),
+            error_message: truncate(describeFetchError(error), 1000),
           });
           throw error;
         });
@@ -1002,7 +1093,7 @@ exports.captureLead = onRequest(
                 120,
             ),
             email: normalizeEmail(getFormValue(request, 'email')),
-            error_message: truncate(error.message || 'unknown', 1000),
+            error_message: truncate(describeFetchError(error), 1000),
           });
         } catch (logError) {
           console.error('❌ [blogLeadHub] captureLead error logging failed:', logError);
@@ -1255,7 +1346,7 @@ exports.sendContactEmail = onRequest(
             blog_source: site.blogSource,
             formulaire_source: 'contact',
             email,
-            error_message: truncate(error.message || 'unknown', 1000),
+            error_message: truncate(describeFetchError(error), 1000),
           });
           throw error;
         });
@@ -1288,7 +1379,7 @@ exports.sendContactEmail = onRequest(
             blog_source: '',
             formulaire_source: 'contact',
             email: normalizeEmail(getFormValue(request, 'email')),
-            error_message: truncate(error.message || 'unknown', 1000),
+            error_message: truncate(describeFetchError(error), 1000),
           });
         } catch (logError) {
           console.error('❌ [blogLeadHub] sendContactEmail error logging failed:', logError);
