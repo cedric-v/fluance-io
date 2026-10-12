@@ -43,7 +43,7 @@
     "tailwindcss": "^4.3.0"
   },
   "overrides": {
-    "@grpc/grpc-js": "1.14.5",
+    "@grpc/grpc-js": "1.14.6",
     "@tootallnate/once": "3.0.1",
     "@protobufjs/utf8": "1.1.2",
     "brace-expansion@1": "1.1.21",
@@ -53,9 +53,9 @@
     "fast-xml-parser": "5.11.2",
     "liquidjs": "10.30.0",
     "markdown-it": "14.3.2",
-    "protobufjs": "8.8.0",
+    "protobufjs": "8.8.1",
     "sharp": "0.35.5",
-    "uuid": "14.0.2",
+    "uuid": "14.0.3",
     "ws": "8.22.0",
     "yaml": "2.9.1"
   }
