@@ -2435,6 +2435,11 @@ exports.webhookStripe = onRequest(
       // Gérer les événements de paiement réussi
       if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
         const session = event.data.object;
+        // Les réservations de cours et achats de pass sont confirmés directement
+        // par le PaymentIntent (Stripe Elements), sans passer par une Checkout Session.
+        const isCourseBookingOrPass =
+          session.metadata?.type === 'course_booking' ||
+          Boolean(session.metadata?.passType);
 
         // ============================================================
         // AMÉLIORATION : Ignorer payment_intent.succeeded pour les produits en ligne
@@ -2445,8 +2450,9 @@ exports.webhookStripe = onRequest(
         if (event.type === 'payment_intent.succeeded') {
           const system = session.metadata?.system;
 
-          // Si c'est un produit en ligne (system=firebase), on attend checkout.session.completed
-          if (system === 'firebase') {
+          // Si c'est un produit en ligne (system=firebase), on attend checkout.session.completed.
+          // Exception : réservations / pass, qui n'ont pas de Checkout Session.
+          if (system === 'firebase' && !isCourseBookingOrPass) {
             console.log(
                 `⏭️  Ignoring payment_intent.succeeded for Firebase system ` +
             `(email: ${session.receipt_email || 'N/A'})`,
@@ -2468,8 +2474,13 @@ exports.webhookStripe = onRequest(
         // GESTION DES RÉSERVATIONS DE COURS ET PASS
         // ============================================================
         // Vérifier si c'est une réservation de cours ou un achat de pass
-        // On filtre strictement par system === 'firebase' pour éviter les collisions avec d'autres apps Stripe
-        if (session.metadata?.system === 'firebase' && (session.metadata?.type === 'course_booking' || session.metadata?.passType)) {
+        // On filtre par system === 'firebase' pour éviter les collisions avec d'autres apps Stripe.
+        // On accepte aussi les anciens PaymentIntents sans marqueur `system` s'ils portent
+        // explicitement les métadonnées de réservation / pass de Fluance.
+        if (
+          (session.metadata?.system === 'firebase' || isCourseBookingOrPass) &&
+          (session.metadata?.type === 'course_booking' || session.metadata?.passType)
+        ) {
           if (bookingService || passService) {
             const paymentIntent = session;
             const bookingId = paymentIntent.metadata?.bookingId;
