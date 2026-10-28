@@ -8,15 +8,12 @@
     <link rel="preconnect" href="{{ pc.href }}"{% if pc.crossorigin %} crossorigin{% endif %}>
     {%- endfor %}
     {%- endif %}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Précharger les polices critiques pour réduire le CLS -->
-    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2" as="font" type="font/woff2" crossorigin>
-    
-    <!-- Charger les fonts de manière asynchrone pour ne pas bloquer le rendu (économise ~760ms) -->
-    <!-- Utiliser display=optional pour éviter le CLS (pas de basculement de police si le chargement est lent) -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=optional" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&display=optional" rel="stylesheet"></noscript>
+    <!-- Polices auto-hébergées : aucun appel à Google Fonts
+         (pas de transmission d'IP visiteurs à Google — RGPD). -->
+    <link rel="preload" href="{{ '/assets/fonts/inter-normal-100-to-900-latin.c9407645.woff2' | url }}" as="font" type="font/woff2" crossorigin>
+    <!-- display:optional (défini dans fonts.css) pour éviter le CLS : pas de basculement
+         de police si le chargement est lent. -->
+    <link rel="stylesheet" href="{{ '/assets/css/fonts.css' | url }}">
 
     {% if title %}
     <title>{{ title }} | Fluance</title>
@@ -384,10 +381,8 @@
         https://*.doubleclick.net
         https://www.googleadservices.com
         https://www.clarity.ms;
-      style-src 'self' 'unsafe-inline' 
-        https://fonts.googleapis.com;
-      font-src 'self' 
-        https://fonts.gstatic.com;
+      style-src 'self' 'unsafe-inline';
+      font-src 'self';
       img-src 'self' data: https: blob:;
       connect-src 'self' 
         https://www.google-analytics.com 

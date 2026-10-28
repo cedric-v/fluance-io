@@ -696,6 +696,9 @@ export default function (eleventyConfig) {
   });
 
   eleventyConfig.addPassthroughCopy({ "src/assets/img": "assets/img" });
+  // Polices auto-hébergées (self-hosted fonts, cf. tools/selfhost-fonts.mjs)
+  eleventyConfig.addPassthroughCopy({ "src/assets/fonts": "assets/fonts" });
+  eleventyConfig.addPassthroughCopy({ "src/assets/css/fonts.css": "assets/css/fonts.css" });
   // Copie des fichiers JS statiques uniquement (les .njk de src/assets/js sont
   // déjà rendus par Eleventy : payment.njk → payment.js). Les .mjs sont servis
   // tels quels (modules ES natifs).

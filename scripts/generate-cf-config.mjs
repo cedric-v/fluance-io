@@ -96,5 +96,12 @@ for (const ext of ASSET_TYPES) {
   headerLines.push('');
 }
 
+// Les polices sont versionnées par hash de contenu (immutable OK), mais
+// fonts.css garde un nom stable : il doit être revalidé pour qu'une mise à
+// jour des polices se propage. Règle placée en dernier pour primer sur *.css.
+headerLines.push('/assets/css/fonts.css');
+headerLines.push('  Cache-Control: public, max-age=86400, must-revalidate');
+headerLines.push('');
+
 writeFileSync(resolve(siteDir, '_headers'), headerLines.join('\n') + '\n', 'utf-8');
 console.log(`✅ Generated _headers with ${staticHeaders.length} path-specific rules + glob rules`);
