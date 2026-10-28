@@ -48,7 +48,7 @@ The site includes several performance optimizations to ensure fast loading and s
 #### Core Web Vitals
 
 The site is optimized for Google's Core Web Vitals:
-- **LCP (Largest Contentful Paint)**: Optimized with eager loading and preconnect hints
+- **LCP (Largest Contentful Paint)**: Optimized with eager loading and preloaded self-hosted fonts
 - **FID/INP (First Input Delay / Interaction to Next Paint)**: Reduced with passive event listeners and optimized JavaScript
 - **CLS (Cumulative Layout Shift)**: Minimized with explicit image dimensions and stable font loading
 
