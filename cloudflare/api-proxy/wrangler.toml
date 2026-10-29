@@ -19,3 +19,25 @@ BACKEND_ORIGIN = "https://europe-west1-fluance-protected-content.cloudfunctions.
 #   FLUANCE_API_KEYS -> JSON list of API keys and scopes for the protected routes.
 #                       Without it, /api/pass-status, /api/bookings and
 #                       /api/send-contact-email return 503.
+
+# ── Cloudflare Observability (Workers Logs) ────────────────────────────────
+# Le 1er décembre 2026, Cloudflare passe l'Observability à une tarification
+# au volume : le plan gratuit offre 0,5 Go d'ingestion par jour (7 jours de
+# rétention). Au-delà, l'ingestion se met en pause (aucun site en panne, mais
+# plus de logs).
+#
+# On déclare donc explicitement la configuration plutôt que de subir le
+# défaut Cloudflare (logs activés à 100 % pour les Workers récents) :
+#   - head_sampling_rate = 0.1  → 10 % des requêtes sont loggées ;
+#   - invocation_logs = false   → supprime le log automatique par requête
+#     (c'était le double du volume : 1 log d'invocation + 1 console.log).
+# Les console.error / console.warn métier sont conservés : ce sont eux qui
+# servent au débogage.
+#
+# Référence : tools/docs/cloudflare-observability.md
+[observability]
+enabled = true
+head_sampling_rate = 0.1
+
+[observability.logs]
+invocation_logs = false
