@@ -144,9 +144,42 @@ Diagnostic:
 - cold starts: logs Cloud Run, service `capturelead`, texte `Starting new instance`
 - kills memoire: meme filtre, texte `Memory limit` (si cela reapparait a
   512 MiB, identifier ce qui grossit avant de monter a `1GiB`)
-- un redeploiement Firebase reecrit ces valeurs depuis le code: les options
-  doivent rester dans `blogLeadHub.js` (c'est pour cela que `maxInstances` y est
-  explicite, il avait ete perdu au premier redeploiement)
+- un redeploiement Firebase reecrit ces valeurs depuis le code: elles sont
+  declarees dans `functions/runtimeConfig.js` (ne pas les remettre en dur
+  ailleurs) et controlees par `npm run verify:functions`
+
+## Verification du dimensionnement deploye
+
+Les valeurs de memoire / instances sont declarees une seule fois dans
+`functions/runtimeConfig.js` (utilise par `blogLeadHub.js` et par le script de
+verification). Apres chaque deploiement de functions:
+
+    npm run verify:functions
+
+Le script lit l'API Cloud Functions v2 et compare `availableMemory`,
+`minInstanceCount` et `maxInstanceCount` aux valeurs declarees. Code de sortie
+`1` en cas d'ecart. Authentification: Application Default Credentials en local
+(`gcloud auth application-default login`), Workload Identity Federation en CI.
+
+Un redeploiement qui ne declare pas une option la remet au defaut GCP: c'est
+ainsi que `maxInstanceCount` etait repasse de 20 a 100 le 1er novembre 2026.
+
+## Rollback
+
+Functions (gen2 = Cloud Run: bascule instantanee, sans rebuild):
+
+    gcloud run revisions list --service capturelead --region europe-west1
+    gcloud run services update-traffic capturelead \
+      --region europe-west1 --to-revisions=<revision>=100
+
+Meme principe pour `sendcontactemail`. Rappel: le rollback de trafic ne change
+pas les options declarees (memoire, instances), seulement la revision servie.
+
+Site: Cloudflare Pages > Deployments > "Rollback to this deployment".
+
+Code: `git revert <sha> && git push` (le deploiement du site repart de `main`),
+puis redeployer les functions si le revert les concerne et relancer
+`npm run verify:functions`.
 
 ## Cas particulier important
 

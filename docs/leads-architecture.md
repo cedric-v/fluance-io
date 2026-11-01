@@ -136,6 +136,10 @@ raison du choix:
   un ping de maintien a chaud (toutes les 10 min, ~0,01 CHF/mois) plutot que
   des instances minimales.
 
+Source de verite: `functions/runtimeConfig.js` (consomme par `blogLeadHub.js`
+et par `scripts/verify-functions-runtime.mjs`, qui compare apres deploiement la
+configuration reellement deployee; `npm run verify:functions`).
+
 ## Pilotage operationnel
 
 Plusieurs mecanismes d'exploitation existent en plus des journaux Firestore:

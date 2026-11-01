@@ -71,7 +71,9 @@ For contact transactional emails:
 ## Runtime sizing (do not remove)
 
 `captureLead` and `sendContactEmail` are deployed with `memory: '512MiB'`,
-`maxInstances: 20` and `minInstances: 0` (see `functions/blogLeadHub.js`).
+`maxInstances: 20` and `minInstances: 0`, declared once in
+`functions/runtimeConfig.js` (consumed by `blogLeadHub.js` and checked against
+the deployed config by `npm run verify:functions`).
 Reasons, measured in November 2026:
 
 - 256 MiB (the GCP default) was exceeded on cold start (`Memory limit of 256
@@ -83,6 +85,11 @@ Reasons, measured in November 2026:
 - `minInstances` stays at 0: 30-day measurement was 355 invocations, 118 cold
   starts, median boot 5.0 s, for a cost around 0.005 CHF/month; one warm
   instance would cost ~4.5 CHF/month.
+
+CI: the `functions` job in `.github/workflows/ci.yml` (lint + tests) is a
+required check on `main`; the same lint + tests also run locally on `pre-push`
+when the push touches `functions/`. Functions are still deployed manually, so
+the post-deploy runtime check is the guard against config drift.
 
 ## Future improvements already anticipated
 
