@@ -112,6 +112,42 @@ Note migration (terminee): l'ancienne fonction `sendBlogLeadsDailyDigest`
 (digest quotidien systematique) a ete supprimee au profit du rapport
 conditionnel `sendBlogLeadsIssueReport` et du digest mensuel.
 
+## Dimensionnement des fonctions (memoire / instances)
+
+Reglages de `captureLead` et `sendContactEmail` (`functions/blogLeadHub.js`),
+verifies apres deploiement (API Cloud Functions: `availableMemory`,
+`minInstanceCount`, `maxInstanceCount`):
+
+- `memory: '512MiB'` (defaut GCP: 256 MiB)
+- `maxInstances: 20` (garde-fou de cout; plafond Cloud Run par defaut: 100)
+- `minInstances: 0` (aucune instance chaude)
+
+Pourquoi 512 MiB: en octobre 2026, quatre `Memory limit of 256 MiB exceeded`
+(3, 7, 10 et 13/10, pic observe 268 MiB). Un kill memoire peut tuer une
+requete en cours sans rien ecrire dans `journal_evenements_leads`: c'est un
+angle mort pour le rapport quotidien et le digest mensuel.
+
+Pourquoi aucune instance minimale: mesure sur 30 jours (novembre 2026), 355
+invocations, 118 cold starts, demarrage median 5,0 s (max 16,1 s), pour un cout
+de l'ordre de 0,005 CHF/mois. Une instance minimale a 512 MiB couterait ~4,5
+CHF/mois (memoire + CPU au tarif "min-instance", europe-west1). `minInstances`
+est le seul reglage qui facture a l'arret: ne pas l'activer sans besoin mesure.
+
+Si la latence de demarrage devient genante (ex. envoi de campagne): preferer un
+ping de maintien a chaud (toutes les 10 min pendant la fenetre concernee,
+~0,01 CHF/mois) a des instances minimales. Un `POST` vide sur `capture-lead` est
+rejete (`400 Email requis`) avant toute ecriture, donc un ping ne pollue ni les
+journaux ni les digests.
+
+Diagnostic:
+
+- cold starts: logs Cloud Run, service `capturelead`, texte `Starting new instance`
+- kills memoire: meme filtre, texte `Memory limit` (si cela reapparait a
+  512 MiB, identifier ce qui grossit avant de monter a `1GiB`)
+- un redeploiement Firebase reecrit ces valeurs depuis le code: les options
+  doivent rester dans `blogLeadHub.js` (c'est pour cela que `maxInstances` y est
+  explicite, il avait ete perdu au premier redeploiement)
+
 ## Cas particulier important
 
 Si un visiteur soumet plusieurs fois le meme opt-in avant confirmation:

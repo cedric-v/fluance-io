@@ -68,6 +68,22 @@ For contact transactional emails:
   - deduplicated alert documents in `journal_alertes_ops`
   - digest and issue report history in `digest_ops_history` (with `type`: `issue_report` or `monthly_digest`, and `sent` flag)
 
+## Runtime sizing (do not remove)
+
+`captureLead` and `sendContactEmail` are deployed with `memory: '512MiB'`,
+`maxInstances: 20` and `minInstances: 0` (see `functions/blogLeadHub.js`).
+Reasons, measured in November 2026:
+
+- 256 MiB (the GCP default) was exceeded on cold start (`Memory limit of 256
+  MiB exceeded`, up to 268 MiB used), which can kill an in-flight request
+  without leaving any event in `journal_evenements_leads`.
+- the instance cap of 20 was previously set out of band on the deployed
+  service and got lost on redeploy; it is now explicit in code to keep a cost
+  ceiling during traffic spikes.
+- `minInstances` stays at 0: 30-day measurement was 355 invocations, 118 cold
+  starts, median boot 5.0 s, for a cost around 0.005 CHF/month; one warm
+  instance would cost ~4.5 CHF/month.
+
 ## Future improvements already anticipated
 
 - lightweight preference center

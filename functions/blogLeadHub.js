@@ -970,6 +970,17 @@ exports.captureLead = onRequest(
     {
       region: 'europe-west1',
       cors: true,
+      // 512 MiB: le demarrage a froid depassait la limite par defaut de
+      // 256 MiB (kills "Memory limit of 256 MiB exceeded"), qui peuvent tuer
+      // une requete en cours sans laisser d'evenement dans le journal.
+      memory: '512MiB',
+      // Garde-fou cout: plafond d'instances (valeur deja appliquee sur le
+      // service deploye; rendue explicite ici pour ne plus la perdre).
+      maxInstances: 20,
+      // Pas d'instance minimale: trafic tres bas (~12 requetes/jour), une
+      // instance chaude couterait ~4.5 CHF/mois pour economiser ~5 s de
+      // demarrage a froid (mesure: 118 cold starts / 30 j, mediane 5.0 s).
+      minInstances: 0,
       // Marge pour les re-essais reseau: garantir que le catch journalise
       // l'evenement au lieu d'etre tue par le timeout par defaut (60 s).
       timeoutSeconds: 120,
@@ -1221,6 +1232,10 @@ exports.sendContactEmail = onRequest(
     {
       region: 'europe-west1',
       cors: true,
+      // Meme marge memoire que captureLead (defaut 256 MiB trop juste).
+      memory: '512MiB',
+      maxInstances: 20,
+      minInstances: 0,
       secrets: [
         'MAILJET_API_KEY',
         'MAILJET_API_SECRET',
