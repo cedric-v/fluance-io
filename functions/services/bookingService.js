@@ -443,6 +443,9 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
             currency: 'chf',
             payment_method_types: ['card', 'twint'], // TWINT OK pour paiements uniques
             metadata: {
+              // Marqueur utilisé par webhookStripe pour filtrer les événements
+              // provenant de Fluance (réservations, achats de pass).
+              system: 'firebase',
               bookingId: bookingId,
               courseId: courseId,
               email: userData.email,

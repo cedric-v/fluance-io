@@ -34,9 +34,10 @@ The site includes several performance optimizations to ensure fast loading and s
 
 #### Font loading
 
-- **Preconnect**: Early connection to Google Fonts and external resources
-- **Preload**: Critical Inter font is preloaded for faster rendering
-- **Font-display**: Uses `font-display: optional` to prevent layout shifts
+- **Self-hosted**: Playfair Display and Inter (variable) are served from `/assets/fonts` — no request to Google Fonts, so no visitor IP is shared with Google (GDPR/LPD)
+- **Preload**: The critical Inter `.woff2` is preloaded for faster rendering
+- **Font-display**: `optional` to prevent layout shifts
+- **Subset**: latin only, with `unicode-range` so the browser downloads only what it needs
 
 #### CSS and resource loading
 
@@ -47,7 +48,7 @@ The site includes several performance optimizations to ensure fast loading and s
 #### Core Web Vitals
 
 The site is optimized for Google's Core Web Vitals:
-- **LCP (Largest Contentful Paint)**: Optimized with eager loading and preconnect hints
+- **LCP (Largest Contentful Paint)**: Optimized with eager loading and preloaded self-hosted fonts
 - **FID/INP (First Input Delay / Interaction to Next Paint)**: Reduced with passive event listeners and optimized JavaScript
 - **CLS (Cumulative Layout Shift)**: Minimized with explicit image dimensions and stable font loading
 
@@ -558,15 +559,6 @@ To keep the project healthy over time:
   > **Security overrides**: transitive vulnerabilities that cannot be fixed
   > upstream yet are pinned in the `overrides` field of `package.json`
   > (root and `functions/`), e.g. `js-yaml`, `protobufjs`, `ws`.
-
-- **Automated Bexio Token Monitoring:**
-
-  The project includes a weekly check for the Bexio API token expiration to prevent service interruptions.
-
-  - **Mechanism**: A GitHub Action (`.github/workflows/bexio-token-check.yml`) runs every Monday.
-  - **Logic**: It decodes the JWT token and exits with an error if it expires within 15 days.
-  - **Notification**: GitHub automatically sends an email notification if the Action fails.
-  - **Secret required**: Ensure the `BEXIO_API_TOKEN` is added to **GitHub Repository Secrets**.
 
 - **Rebuild Tailwind and Eleventy after changes:**
 

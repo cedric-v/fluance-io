@@ -43,9 +43,12 @@ function wrapHtml(title, body) {
     <div style="background:#ffffff;padding:24px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;font-size:16px;line-height:1.65;color:#333333;">
       ${body}
     </div>
-    <div style="text-align:center;padding:20px;font-size:12px;color:#666666;">
-      Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
-      <a href="https://fluance.io" style="color:#648ED8;">fluance.io</a>
+    <div style="text-align:center;padding:20px;font-size:11px;line-height:1.5;color:#666666;">
+      Vous pouvez vous opposer gratuitement à la réception de communications promotionnelles<br>
+      et vous désinscrire à tout moment :
+      <a href="https://fluance.io/desinscription/" style="color:#648ED8;text-decoration:underline;">Se désinscrire</a>.<br><br>
+      Instants Zen Sàrl — Case postale, 1782 Belfaux, Suisse<br>
+      <a href="https://fluance.io/mentions-legales/" style="color:#648ED8;">Mentions légales et politique de confidentialité</a>
     </div>
   </div>
 </body>
@@ -62,9 +65,9 @@ function button(link, label) {
  * Email A — ré-engagement des contacts au double opt-in confirmé.
  * Objectif : relancer vers les 5 jours offerts (1 clic → jour 1).
  */
-function buildEmailA(firstName, ctaUrl) {
+function buildEmailA(firstName, ctaUrl, unsubscribeUrl) {
   const name = firstName || '';
-  return {
+  const mail = {
     subject: `${name}, vos 5 jours offerts vous attendent toujours`,
     text: `Bonjour ${name},
 
@@ -89,15 +92,21 @@ Fluance : le mouvement qui éveille et apaise`,
       <p>À très vite,<br>Cédric</p>`,
     ),
   };
+  mail.text += `\n\nVous pouvez vous opposer gratuitement à la réception de communications promotionnelles et vous désinscrire à tout moment : ${unsubscribeUrl}\nInstants Zen Sàrl — Case postale, 1782 Belfaux, Suisse`;
+  mail.html = mail.html.replace(
+      'https://fluance.io/desinscription/',
+      unsubscribeUrl,
+  );
+  return mail;
 }
 
 /**
  * Email B — contacts sans double opt-in confirmé : cadeau + nouvelle confirmation.
  * Le bénéfice est mis en avant dès l'intro (contacts « froids », mois sans contact).
  */
-function buildEmailB(firstName, ctaUrl) {
+function buildEmailB(firstName, ctaUrl, unsubscribeUrl) {
   const name = firstName || '';
-  return {
+  const mail = {
     subject: `${name}, votre cadeau vous attend. Il reste une confirmation`,
     text: `Bonjour ${name},
 
@@ -122,15 +131,21 @@ Fluance : le mouvement qui éveille et apaise`,
       <p>À très vite,<br>Cédric</p>`,
     ),
   };
+  mail.text += `\n\nVous pouvez vous opposer gratuitement à la réception de communications promotionnelles et vous désinscrire à tout moment : ${unsubscribeUrl}\nInstants Zen Sàrl — Case postale, 1782 Belfaux, Suisse`;
+  mail.html = mail.html.replace(
+      'https://fluance.io/desinscription/',
+      unsubscribeUrl,
+  );
+  return mail;
 }
 
 /**
  * Email C — relance J+14 pour les non-cliqueurs (segment A).
  * Angle : rappel doux, la place est toujours là, angle rentrée.
  */
-function buildEmailC(firstName, ctaUrl) {
+function buildEmailC(firstName, ctaUrl, unsubscribeUrl) {
   const name = firstName || '';
-  return {
+  const mail = {
     subject: `${name}, on garde une place pour vous ? (5 jours offerts)`,
     text: `Bonjour ${name},
 
@@ -152,6 +167,12 @@ Fluance : le mouvement qui éveille et apaise`,
       <p>À très vite,<br>Cédric</p>`,
     ),
   };
+  mail.text += `\n\nVous pouvez vous opposer gratuitement à la réception de communications promotionnelles et vous désinscrire à tout moment : ${unsubscribeUrl}\nInstants Zen Sàrl — Case postale, 1782 Belfaux, Suisse`;
+  mail.html = mail.html.replace(
+      'https://fluance.io/desinscription/',
+      unsubscribeUrl,
+  );
+  return mail;
 }
 
 module.exports = {buildReengageUrl, buildEmailA, buildEmailB, buildEmailC};

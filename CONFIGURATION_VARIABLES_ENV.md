@@ -41,7 +41,6 @@ Pour que ces valeurs soient injectées lors du déploiement automatique via GitH
 | `STRIPE_PUBLISHABLE_KEY` | Clé publique pour initialiser Stripe Checkout. |
 | `FIREBASE_*` | Toute la configuration nécessaire au SDK Firebase Web. |
 | `WEBPUSH_PUBLIC_KEY` | Clé publique VAPID pour l'abonnement aux notifications push (non secrète). |
-| `BEXIO_API_TOKEN` | Jeton API Bexio (utilisé pour la vérification automatique hebdomadaire de l'expiration). |
 
 ---
 
@@ -105,22 +104,8 @@ prix existant) :
 > Secret Manager : un secret déclaré mais inexistant fait **échouer le déploiement**.
 > Par défaut, laissez l'auto-provisioning gérer les prix.
 
-#### Variables Bexio (comptabilité automatique)
-- **Nom** : `BEXIO_API_TOKEN`  
-  **Valeur** : Votre token API Bexio (déclaré dans `webhookStripe` — actif)
-
-- **Nom** : `BEXIO_ACCOUNT_FEES`  
-  **Valeur** : Compte frais Stripe (défaut : **6941**) — déclaré dans `webhookStripe` — actif
-
-> ⚠️ **Comptes par défaut (hardcodés, non surchargeables sans déclaration)** :
-> - Caisse Stripe : **1023** (secret `BEXIO_ACCOUNT_STRIPE`, non déclaré → défaut utilisé)
-> - Ventes Suisse : **3400** (`BEXIO_ACCOUNT_SALES_CH`)
-> - Ventes International : **3410** (`BEXIO_ACCOUNT_SALES_INTL`)
-> - TVA : **14** (CH 8.1%) / **4** (Intl 0%) (`BEXIO_TAX_ID_CH` / `BEXIO_TAX_ID_INTL`)
->
-> Pour personnaliser un compte, créez le secret puis ajoutez-le à la liste `secrets` de
-> `webhookStripe` dans `functions/index.js` (⚠️ un secret déclaré mais inexistant fait
-> échouer le déploiement).
+> ℹ️ **Comptabilité** : l'intégration Bexio a été supprimée (la comptabilité est
+> désormais tenue sur Odoo, sans API). Aucune variable `BEXIO_*` n'est utilisée par le code.
 
 #### Variables PayPal (si vous utilisez PayPal)
 - **Nom** : `PAYPAL_CLIENT_ID`  

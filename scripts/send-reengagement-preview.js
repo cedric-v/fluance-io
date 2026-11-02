@@ -57,8 +57,9 @@ function toMailjetShape(m) {
   return {Subject: m.subject, TextPart: m.text, HTMLPart: m.html};
 }
 
-const emailA = toMailjetShape(buildEmailA(NAME, CTA_A));
-const emailB = toMailjetShape(buildEmailB(NAME, CTA_B));
+const PREVIEW_UNSUBSCRIBE_URL = 'https://fluance.io/desinscription/';
+const emailA = toMailjetShape(buildEmailA(NAME, CTA_A, PREVIEW_UNSUBSCRIBE_URL));
+const emailB = toMailjetShape(buildEmailB(NAME, CTA_B, PREVIEW_UNSUBSCRIBE_URL));
 
 function sendMail(emailData, label) {
   return new Promise((resolve, reject) => {
@@ -102,7 +103,7 @@ function sendMail(emailData, label) {
 
 (async () => {
   if (RELANCE) {
-    const emailC = toMailjetShape(buildEmailC(NAME, CTA_A));
+    const emailC = toMailjetShape(buildEmailC(NAME, CTA_A, PREVIEW_UNSUBSCRIBE_URL));
     await sendMail(emailC, 'Email C (relance J+14 non-cliqueurs)');
     console.log('\nVérifie ta boîte mail : l\'email de relance est en route.');
     return;

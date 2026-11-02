@@ -101,7 +101,7 @@ Les webhooks Stripe et PayPal gèrent les annulations et échecs de paiement :
 
 1. Les abonnements sont créés **directement** via Stripe Checkout (`mode: 'subscription'`)
 2. Stripe gère seul les prélèvements suivants
-3. Le webhook `invoice.paid` gère la comptabilité Bexio et les échéances limitées
+3. Le webhook `invoice.paid` gère les renouvellements et les échéances limitées
 4. Les abonnements à durée limitée (Focus SOS 3x, Site Vitrine 5x) sont **automatiquement annulés** après le N-ième paiement (`cancel_at_period_end: true`) — compteur stocké dans Firestore (`subscriptionPayments`)
 
 ### Annulation depuis le dashboard Stripe

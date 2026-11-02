@@ -115,6 +115,31 @@ Les proprietes Mailjet sont statiques. Pour eviter la rafale de 21 appels
 - apres ajout d'une propriete, incrementer `MAILJET_PROPERTIES_SCHEMA_VERSION`
   dans `blogLeadHub.js`
 
+### Dimensionnement des instances (memoire, min/max)
+
+Reglages de `captureLead` et `sendContactEmail` (`functions/blogLeadHub.js`) et
+raison du choix:
+
+- `memory: '512MiB'`: le demarrage a froid depassait le defaut de 256 MiB
+  (`Memory limit of 256 MiB exceeded`, 4 occurrences en octobre 2026, pic
+  observe 268 MiB). Un kill memoire peut tuer une requete en cours *sans*
+  laisser d'evenement dans `journal_evenements_leads`: c'est un angle mort.
+- `maxInstances: 20`: garde-fou de cout en cas de pic (valeur deja appliquee
+  hors code sur le service; rendue explicite pour survivre aux redeploiements).
+- `minInstances` non defini (= 0): c'est deja l'optimum de cout. Une instance
+  chaude reviendrait a ~4,5 CHF/mois a 512 MiB (memoire + CPU au tarif
+  "min-instance", europe-west1) pour environ 4 demarrages a froid par jour.
+- mesure de reference (30 jours, novembre 2026): 355 invocations, 118 cold
+  starts, demarrage median 5,0 s (max 16,1 s). Le cout de ces cold starts reste
+  de l'ordre de 0,005 CHF/mois: le palier gratuit couvre largement la charge.
+- si la latence de demarrage devient genante (ex. envoi de campagne), preferer
+  un ping de maintien a chaud (toutes les 10 min, ~0,01 CHF/mois) plutot que
+  des instances minimales.
+
+Source de verite: `functions/runtimeConfig.js` (consomme par `blogLeadHub.js`
+et par `scripts/verify-functions-runtime.mjs`, qui compare apres deploiement la
+configuration reellement deployee; `npm run verify:functions`).
+
 ## Pilotage operationnel
 
 Plusieurs mecanismes d'exploitation existent en plus des journaux Firestore:
@@ -153,12 +178,12 @@ Rapport quotidien des soucis:
 
 Alertes critiques (temps reel):
 
-- cadence: toutes les `15 minutes`
+- cadence: toutes les `30 minutes`
 - destination: `support@fluance.io`
 - dedoublonnage Firestore dans `journal_alertes_ops` (fenetre alignee sur des
-  buckets de `15 min` pour un identifiant d'alerte stable)
+  buckets de `30 min` pour un identifiant d'alerte stable)
 - seuils:
-  - `>= 1` erreur serveur sur `15 min` (une perte de lead est un signal fort,
+  - `>= 1` erreur serveur sur `30 min` (une perte de lead est un signal fort,
     meme isolee)
   - `> 10` echecs Turnstile sur `1 h` pour un blog
   - tout echec Mailjet critique sur DOI, relance DOI ou email contact

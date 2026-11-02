@@ -1,6 +1,7 @@
 const {onRequest} = require('firebase-functions/v2/https');
 const {getFirestore, FieldValue} = require('firebase-admin/firestore');
 const crypto = require('crypto');
+const {HTTP_FUNCTION_RUNTIME} = require('./runtimeConfig');
 
 const db = getFirestore();
 
@@ -968,6 +969,9 @@ function buildPendingMailjetProperties({site, formName, optinUrl, name, existing
 
 exports.captureLead = onRequest(
     {
+      // Memoire / instances: functions/runtimeConfig.js (verifie apres
+      // deploiement par scripts/verify-functions-runtime.mjs).
+      ...HTTP_FUNCTION_RUNTIME.captureLead,
       region: 'europe-west1',
       cors: true,
       // Marge pour les re-essais reseau: garantir que le catch journalise
@@ -1219,6 +1223,9 @@ exports.captureLead = onRequest(
 
 exports.sendContactEmail = onRequest(
     {
+      // Memoire / instances: functions/runtimeConfig.js (verifie apres
+      // deploiement par scripts/verify-functions-runtime.mjs).
+      ...HTTP_FUNCTION_RUNTIME.sendContactEmail,
       region: 'europe-west1',
       cors: true,
       secrets: [
