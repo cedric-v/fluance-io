@@ -214,8 +214,8 @@ test('formatOpsDigestHtml sans erreur ni avertissement affiche le message par de
 
 test('formatOpsAlertText inclut les liens utilitaires en fin de message', () => {
   const text = formatOpsAlertText({
-    title: 'Alerte ops blogs - Techniques de Méditation - server-errors-15m',
-    lines: ['5 erreurs serveur sur les 15 dernieres minutes pour techniquesdemeditation.'],
+    title: 'Alerte ops blogs - Techniques de Méditation - server-errors-30m',
+    lines: ['5 erreurs serveur sur les 30 dernieres minutes pour techniquesdemeditation.'],
     footerLinks: [{label: 'Logs de la fonction', url: 'https://example.com/logs'}],
   });
 

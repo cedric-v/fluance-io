@@ -11,3 +11,11 @@ repos:
         entry: bash scripts/check-no-pii.sh
         language: system
         stages: [pre-commit]
+      - id: functions-lint-test
+        name: Functions (lint + tests)
+        description: Vérifie le hub leads/contact quand un push touche functions/
+        entry: bash -c 'npm --prefix functions run lint && npm --prefix functions test'
+        language: system
+        files: ^functions/
+        pass_filenames: false
+        stages: [pre-push]
