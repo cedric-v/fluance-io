@@ -24,7 +24,7 @@ Lecture des erreurs:
   quota, liste) et les logs Firebase Functions (`captureLead`)
 - toute erreur serveur (`capture_lead_internal_error`, `send_contact_internal_error`,
   `doi_reminder_processing_error`) declenche une alerte ops automatique des la
-  premiere occurrence (`>= 1` sur `15 min`, fonction `sendBlogLeadOpsAlerts`),
+  premiere occurrence (`>= 1` sur `30 min`, fonction `sendBlogLeadOpsAlerts`),
   car elle correspond a un lead potentiellement perdu
 - les proprietes Mailjet sont (re)creees hors du chemin de requete par la tache
   `refreshMailjetLeadProperties` (lundi 04:00); en cas d'ajout de propriete,
@@ -111,6 +111,106 @@ Si une alerte arrive:
 Note migration (terminee): l'ancienne fonction `sendBlogLeadsDailyDigest`
 (digest quotidien systematique) a ete supprimee au profit du rapport
 conditionnel `sendBlogLeadsIssueReport` et du digest mensuel.
+
+## Dimensionnement des fonctions (memoire / instances)
+
+Reglages de `captureLead` et `sendContactEmail` (`functions/blogLeadHub.js`),
+verifies apres deploiement (API Cloud Functions: `availableMemory`,
+`minInstanceCount`, `maxInstanceCount`):
+
+- `memory: '512MiB'` (defaut GCP: 256 MiB)
+- `maxInstances: 20` (garde-fou de cout; plafond Cloud Run par defaut: 100)
+- `minInstances: 0` (aucune instance chaude)
+
+Pourquoi 512 MiB: en octobre 2026, quatre `Memory limit of 256 MiB exceeded`
+(3, 7, 10 et 13/10, pic observe 268 MiB). Un kill memoire peut tuer une
+requete en cours sans rien ecrire dans `journal_evenements_leads`: c'est un
+angle mort pour le rapport quotidien et le digest mensuel.
+
+Pourquoi aucune instance minimale: mesure sur 30 jours (novembre 2026), 355
+invocations, 118 cold starts, demarrage median 5,0 s (max 16,1 s), pour un cout
+de l'ordre de 0,005 CHF/mois. Une instance minimale a 512 MiB couterait ~4,5
+CHF/mois (memoire + CPU au tarif "min-instance", europe-west1). `minInstances`
+est le seul reglage qui facture a l'arret: ne pas l'activer sans besoin mesure.
+
+Si la latence de demarrage devient genante (ex. envoi de campagne): preferer un
+ping de maintien a chaud (toutes les 10 min pendant la fenetre concernee,
+~0,01 CHF/mois) a des instances minimales. Un `POST` vide sur `capture-lead` est
+rejete (`400 Email requis`) avant toute ecriture, donc un ping ne pollue ni les
+journaux ni les digests.
+
+Diagnostic:
+
+- cold starts: logs Cloud Run, service `capturelead`, texte `Starting new instance`
+- kills memoire: meme filtre, texte `Memory limit` (si cela reapparait a
+  512 MiB, identifier ce qui grossit avant de monter a `1GiB`)
+- un redeploiement Firebase reecrit ces valeurs depuis le code: elles sont
+  declarees dans `functions/runtimeConfig.js` (ne pas les remettre en dur
+  ailleurs) et controlees par `npm run verify:functions`
+
+## Verification du dimensionnement deploye
+
+Les valeurs de memoire / instances sont declarees une seule fois dans
+`functions/runtimeConfig.js` (utilise par `blogLeadHub.js` et par le script de
+verification). Apres chaque deploiement de functions:
+
+    npm run verify:functions
+
+Le script lit l'API Cloud Functions v2 et compare `availableMemory`,
+`minInstanceCount` et `maxInstanceCount` aux valeurs declarees. Code de sortie
+`1` en cas d'ecart. Authentification: Application Default Credentials en local
+(`gcloud auth application-default login`), Workload Identity Federation en CI.
+
+Un redeploiement qui ne declare pas une option la remet au defaut GCP: c'est
+ainsi que `maxInstanceCount` etait repasse de 20 a 100 le 1er novembre 2026.
+
+## Deploiement des functions (CI + WIF)
+
+Les functions se deployent desormais depuis la CI
+(`.github/workflows/deploy-functions.yml`):
+
+- push sur `main` touchant `functions/`, `src/emails/` ou
+  `scripts/build-email-templates.js` -> deploiement automatique
+- `workflow_dispatch` -> deploiement manuel (input `functions` pour cibler,
+  ex. `functions:captureLead,functions:sendContactEmail`)
+- avant deploiement: `npm ci`, lint, tests unitaires, build des templates email
+- apres deploiement: `npm run verify:functions` (garde-fou anti-derive)
+
+Authentification par **Workload Identity Federation**: aucune cle JSON de
+compte de service n'est stockee dans GitHub. Le jeton OIDC GitHub est echange
+contre des credentials GCP temporaires.
+
+- pool: `github` (global), provider OIDC `github`, condition
+  `assertion.repository == 'cedric-v/fluance-io'`
+- compte de service: `github-deployer@fluance-protected-content.iam.gserviceaccount.com`
+  (roles: cloudfunctions, run, artifactregistry, cloudbuild, cloudscheduler,
+  storage, secretmanager, firebase, serviceusage)
+- binding `roles/iam.workloadIdentityUser` sur le `principalSet` du depot
+- variables de depot (non secretes): `GCP_PROJECT_ID`,
+  `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_DEPLOY_SERVICE_ACCOUNT`
+- environnement GitHub `production` (protection rules vide: ajouter une
+  approbation si un deploiement doit passer par une validation humaine)
+
+Deploiement manuel depuis le laptop (toujours possible):
+`firebase deploy --only functions:captureLead,functions:sendContactEmail`
+puis `npm run verify:functions`.
+
+## Rollback
+
+Functions (gen2 = Cloud Run: bascule instantanee, sans rebuild):
+
+    gcloud run revisions list --service capturelead --region europe-west1
+    gcloud run services update-traffic capturelead \
+      --region europe-west1 --to-revisions=<revision>=100
+
+Meme principe pour `sendcontactemail`. Rappel: le rollback de trafic ne change
+pas les options declarees (memoire, instances), seulement la revision servie.
+
+Site: Cloudflare Pages > Deployments > "Rollback to this deployment".
+
+Code: `git revert <sha> && git push` (le deploiement du site repart de `main`),
+puis redeployer les functions si le revert les concerne et relancer
+`npm run verify:functions`.
 
 ## Cas particulier important
 

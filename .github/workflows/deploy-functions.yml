@@ -1,0 +1,150 @@
+name: Deploy functions
+
+# Deploiement des Cloud Functions depuis la CI (au lieu du laptop).
+#
+# Pourquoi:
+# - la configuration deployee est toujours celle du code (un `maxInstances`
+#   oublie dans le code repasse au defaut GCP: c'est arrive le 1er novembre
+#   2026, voir docs/leads-runbook.md);
+# - aucun secret long-duree dans GitHub: authentification par Workload
+#   Identity Federation (jeton OIDC GitHub echange contre des credentials
+#   GCP temporaires). Aucune cle JSON de compte de service n'est stockee.
+#
+# declenchement:
+# - push sur main qui touche functions/ (ou les templates d'emails) -> deploiement
+# - workflow_dispatch -> deploiement manuel (utile pour un rollback ou apres
+#   un changement hors git)
+#
+# Securite:
+# - `id-token: write` est requis pour OIDC, `contents: read` suffit pour le reste
+# - l'eligibilite du compte de service est restreinte au depot
+#   (attribut `repository=cedric-v/fluance-io`) cote Google Cloud
+# - l'environnement `production` peut exiger une approbation (voir README du
+#   runbook) sans bloquer les deploiements automatiques si non configure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'functions/**'
+      - 'src/emails/**'
+      - 'scripts/build-email-templates.js'
+  workflow_dispatch:
+    inputs:
+      functions:
+        description: 'Fonctions a deploiement (vide = toutes)'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-functions-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy functions
+    runs-on: ubuntu-latest
+    # Environnement protege: facultatif cote GitHub, mais c'est le bon
+    # endroit pour une approbation manuelle avant deploiement en production.
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install dependencies (functions)
+        run: npm ci --prefix functions
+
+      - name: "Install dependencies (racine: scripts de build des emails)"
+        run: npm ci
+
+      - name: Lint
+        run: npm --prefix functions run lint
+
+      - name: Unit tests
+        run: npm --prefix functions test
+
+      # Workload Identity Federation: echange du jeton OIDC GitHub contre des
+      # credentials GCP temporaires. `create_credentials_file` produit un
+      # fichier que la CLI Firebase et gcloud utilisent via
+      # GOOGLE_APPLICATION_CREDENTIALS.
+      - name: Authenticate to Google Cloud (WIF)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Build email templates
+        run: npm run build:email-templates
+
+      # Cible de deploiement la plus etroite possible:
+      # - seul functions/blogLeadHub.js ou functions/runtimeConfig.js change
+      #   -> les 2 fonctions HTTP du hub
+      # - functions/index.js ou un autre fichier de functions/ (emails, services)
+      #   -> toutes les functions (les emails sont utilises par de nombreuses
+      #      fonctions, les services par toutes)
+      # - rien d'exploitable -> toutes (plus prudent)
+      # L'input manuel `functions` du workflow_dispatch reste prioritaire.
+      - name: Compute deployment targets
+        id: targets
+        run: |
+          if [ -n "${{ inputs.functions }}" ]; then
+            echo "targets=${{ inputs.functions }}" >> "$GITHUB_OUTPUT"
+            echo "Cible (manuelle): ${{ inputs.functions }}"
+            exit 0
+          fi
+          CHANGED="$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- functions/ 2>/dev/null || true)"
+          if [ -z "$CHANGED" ]; then
+            CHANGED="$(git diff --name-only HEAD~1 HEAD -- functions/ 2>/dev/null || true)"
+          fi
+          echo "Fichiers modifies: $CHANGED"
+          ONLY_HUB=1
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              functions/blogLeadHub.js|functions/runtimeConfig.js) ;;
+              *) ONLY_HUB=0 ;;
+            esac
+          done <<< "$CHANGED"
+          if [ -z "$CHANGED" ]; then
+            echo "targets=functions" >> "$GITHUB_OUTPUT"
+            echo "Cible: toutes les functions (aucun diff exploitable)"
+          elif [ "$ONLY_HUB" = "1" ]; then
+            echo "targets=functions:captureLead,functions:sendContactEmail" >> "$GITHUB_OUTPUT"
+            echo "Cible: fonctions HTTP du hub (blogLeadHub.js/runtimeConfig.js)"
+          else
+            echo "targets=functions" >> "$GITHUB_OUTPUT"
+            echo "Cible: toutes les functions (autre fichier de functions/ modifie)"
+          fi
+
+      - name: Deploy functions
+        env:
+          FIREBASE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          TARGETS: ${{ steps.targets.outputs.targets }}
+        run: |
+          if [ "$TARGETS" = "functions" ]; then
+            npx --yes firebase-tools@15.30.2 deploy --only functions --project "$FIREBASE_PROJECT" --non-interactive
+          else
+            npx --yes firebase-tools@15.30.2 deploy --only "$TARGETS" --project "$FIREBASE_PROJECT" --non-interactive
+          fi
+
+      # Verifie que la configuration REELLEMENT deployee (memoire, min/max
+      # instances) correspond a functions/runtimeConfig.js. C'est le garde-fou
+      # contre la derive de configuration.
+      - name: Verify deployed runtime
+        env:
+          GCLOUD_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+        run: node scripts/verify-functions-runtime.mjs --project "${{ vars.GCP_PROJECT_ID }}"

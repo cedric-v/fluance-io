@@ -43,6 +43,7 @@
  */
 
 const https = require('https');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
@@ -258,7 +259,7 @@ async function updateMailjetProperties(email, properties) {
 }
 
 /** Envoi transactionnel v3.1. */
-async function sendMailjetEmail(to, subject, html, text) {
+async function sendMailjetEmail(to, subject, html, text, headers = {}) {
   const payload = {
     Messages: [{
       From: {Email: 'fluance@actu.fluance.io', Name: 'Cédric de Fluance'},
@@ -266,6 +267,7 @@ async function sendMailjetEmail(to, subject, html, text) {
       Subject: subject,
       TextPart: text,
       HTMLPart: html,
+      ...(headers && Object.keys(headers).length ? {Headers: headers} : {}),
     }],
   };
   const r = await mailjetRetry('POST', '/v3.1/send', payload);
@@ -275,6 +277,18 @@ async function sendMailjetEmail(to, subject, html, text) {
 }
 
 // ---------------------------------------------------------------- exclusions
+async function createMarketingUnsubscribeUrl(db, email) {
+  const normalized = email.toLowerCase().trim();
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = Timestamp.fromMillis(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  await db.collection('marketingUnsubscribeTokens').doc(token).set({
+    email: normalized,
+    createdAt: FieldValue.serverTimestamp(),
+    expiresAt,
+  });
+  return `https://europe-west1-fluance-protected-content.cloudfunctions.net/unsubscribeMarketing?token=${token}`;
+}
+
 function isInternalOrTest(email) {
   const e = email.toLowerCase();
   if (e.endsWith('@fluance.io') || e.endsWith('@actu.fluance.io')) return true;
@@ -315,6 +329,16 @@ async function buildPlan(db, mailjetContacts) {
     }
   });
 
+  // Personnes désinscrites des communications promotionnelles → jamais recontactées.
+  const unsubscribedEmails = new Set();
+  const unsubscribedSnap = await db.collection('marketingUnsubscribes').get();
+  unsubscribedSnap.forEach((d) => {
+    const data = d.data();
+    if (data.unsubscribed === true && data.email) {
+      unsubscribedEmails.add(data.email.toLowerCase().trim());
+    }
+  });
+
   // Clients (produits achetés) → jamais ré-engagés
   const clientEmails = new Set();
   const usersSnap = await db.collection('users').get();
@@ -343,6 +367,7 @@ async function buildPlan(db, mailjetContacts) {
 
   for (const [email, tok] of Object.entries(tokensByEmail)) {
     if (isInternalOrTest(email)) continue;
+    if (unsubscribedEmails.has(email)) continue;
     if (clientEmails.has(email)) continue;
 
     const mc = byEmail.get(email);
@@ -425,10 +450,16 @@ async function sendCampaign(db, plan) {
   for (const rec of all) {
     try {
       const cta = buildReengageUrl(rec.email, rec.firstname);
+      const unsubscribeUrl = await createMarketingUnsubscribeUrl(db, rec.email);
       const mail = WAVE === 1
-        ? (rec.segment === 'A' ? buildEmailA(rec.firstname, cta) : buildEmailB(rec.firstname, cta))
-        : buildEmailC(rec.firstname, cta);
-      await sendMailjetEmail(rec.email, mail.subject, mail.html, mail.text);
+        ? (rec.segment === 'A'
+          ? buildEmailA(rec.firstname, cta, unsubscribeUrl)
+          : buildEmailB(rec.firstname, cta, unsubscribeUrl))
+        : buildEmailC(rec.firstname, cta, unsubscribeUrl);
+      await sendMailjetEmail(rec.email, mail.subject, mail.html, mail.text, {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      });
 
       // Marquage vague (jamais re-ciblé deux fois dans la même vague)
       await updateMailjetProperties(rec.email, {

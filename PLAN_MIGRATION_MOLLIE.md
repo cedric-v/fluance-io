@@ -7,7 +7,7 @@
 >
 > ⚠️ **Exceptions conservées (TRANSITION)** : `webhookMollie` + `processMolliePayment`
 > restent actifs pour traiter les **abonnements Mollie encore en cours**
-> (comptabilité Bexio, renouvellements). Ils seront supprimés quand tous les abonnements
+> (renouvellements, pass). Ils seront supprimés quand tous les abonnements
 > Mollie existants seront terminés. Ce document est conservé à titre historique.
 
 ---
@@ -39,6 +39,9 @@ Actuellement, `booking.js` monte un formulaire Stripe dans la modale.
 3.  **Retour** :
     *   L'utilisateur revient sur `/booking-confirmed` (comme actuellement).
     *   Mollie notifie le webhook pour valider l'écriture comptable (déjà implémenté).
+        > ⚠️ Depuis nov. 2026, l'écriture comptable Bexio n'existe plus (comptabilité
+        > tenue sur Odoo, sans API) : les webhooks Mollie ne font que confirmer les
+        > paiements, renouveler les pass et arrêter les abonnements à échéances limitées.
 
 ### B. Remplacement de Stripe Checkout (Produits : 21 jours, Complet)
 Actuellement, `payment.njk` redirige vers Stripe Checkout.

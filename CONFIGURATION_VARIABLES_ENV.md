@@ -41,7 +41,6 @@ Pour que ces valeurs soient injectées lors du déploiement automatique via GitH
 | `STRIPE_PUBLISHABLE_KEY` | Clé publique pour initialiser Stripe Checkout. |
 | `FIREBASE_*` | Toute la configuration nécessaire au SDK Firebase Web. |
 | `WEBPUSH_PUBLIC_KEY` | Clé publique VAPID pour l'abonnement aux notifications push (non secrète). |
-| `BEXIO_API_TOKEN` | Jeton API Bexio (utilisé pour la vérification automatique hebdomadaire de l'expiration). |
 
 ---
 
@@ -105,22 +104,22 @@ prix existant) :
 > Secret Manager : un secret déclaré mais inexistant fait **échouer le déploiement**.
 > Par défaut, laissez l'auto-provisioning gérer les prix.
 
-#### Variables Bexio (comptabilité automatique)
-- **Nom** : `BEXIO_API_TOKEN`  
-  **Valeur** : Votre token API Bexio (déclaré dans `webhookStripe` — actif)
+#### Comptabilité (Odoo)
 
-- **Nom** : `BEXIO_ACCOUNT_FEES`  
-  **Valeur** : Compte frais Stripe (défaut : **6941**) — déclaré dans `webhookStripe` — actif
+**Aucune variable d'environnement, aucun secret.** L'intégration Bexio (création
+d'écritures manuelles depuis `webhookStripe` et `processMolliePayment`) a été
+supprimée en novembre 2026 : la comptabilité est tenue sur **Odoo**
+(plan gratuit odoo.com, sans API pour l'instant), donc en saisie manuelle.
 
-> ⚠️ **Comptes par défaut (hardcodés, non surchargeables sans déclaration)** :
-> - Caisse Stripe : **1023** (secret `BEXIO_ACCOUNT_STRIPE`, non déclaré → défaut utilisé)
-> - Ventes Suisse : **3400** (`BEXIO_ACCOUNT_SALES_CH`)
-> - Ventes International : **3410** (`BEXIO_ACCOUNT_SALES_INTL`)
-> - TVA : **14** (CH 8.1%) / **4** (Intl 0%) (`BEXIO_TAX_ID_CH` / `BEXIO_TAX_ID_INTL`)
->
-> Pour personnaliser un compte, créez le secret puis ajoutez-le à la liste `secrets` de
-> `webhookStripe` dans `functions/index.js` (⚠️ un secret déclaré mais inexistant fait
-> échouer le déploiement).
+- Aucune variable `BEXIO_*` n'est lue par le code.
+- Les secrets `BEXIO_API_TOKEN`, `BEXIO_ACCOUNT_*` et `BEXIO_USER_ID` ont été
+  supprimés de Secret Manager ainsi que le secret GitHub `BEXIO_API_TOKEN`.
+- Les données de vente restent disponibles pour la compta, en saisie manuelle :
+  collection Firestore `audit_payments` (email, `products`, `amount`, `currency`,
+  `gateway` stripe/mollie, `status`, `timestamp`) et logs des functions.
+  L'export automatique vers un Google Sheet de ventes (`GOOGLE_SHEET_ID_SALES`)
+  n'est **pas** implémenté : le code se contente d'un `TODO` dans
+  `processMolliePayment`, et la variable n'est donc pas nécessaire.
 
 #### Variables PayPal (si vous utilisez PayPal)
 - **Nom** : `PAYPAL_CLIENT_ID`  
