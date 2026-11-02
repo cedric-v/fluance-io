@@ -67,7 +67,7 @@ jobs:
       - name: Install dependencies (functions)
         run: npm ci --prefix functions
 
-      - name: Install dependencies (racine: scripts de build des emails)
+      - name: "Install dependencies (racine: scripts de build des emails)"
         run: npm ci
 
       - name: Lint
