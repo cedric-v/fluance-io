@@ -44,22 +44,26 @@ Le palier CPU est le seul compteur a surveiller. Repartition des 80 000 vCPU-s:
 | `captureLead` | 1 614 | a la demande |
 
 Ces trois fonctions planifiees consomment 82 % du CPU pour 0 lead: ce sont des
-demarrages a froid repetes (chaque tick = une instance neuve = ~5 s de CPU).
-Marge actuelle: 100 000 vCPU-s/mois, soit 2,2x la conso actuelle. Au-dela, le
-surplus est facture ~0,000024 USD/vCPU-s (europe-west1), soit ~1,40 USD/mois
-pour 60 000 vCPU-s supplementaires. Impact financier faible, mais les
-`free tier` restent le vrai levier.
+demarrages a froid repetes (chaque tick = une instance neuve).
 
-Optimisations possibles (arbitraires fonctionnels, a decider):
+**Le CPU est un cout par invocation, pas par seconde de calcul.** Les trois
+fonctions executent 0,3 a 2,3 s de travail reel, mais leur instance reste
+allouee le temps du demarrage a froid et de la fenetre de scale-down (7 a 21 s
+factures par tick). Le seul levier efficace est donc le nombre d'invocations.
 
-- `syncPlanning` toutes les 30 min -> toutes les heures: -14 700 vCPU-s/mois
-  (la sync calendrier n'a pas besoin d'une demi-heure de latence)
-- `sendCartAbandonmentEmails` horaire -> 4 h: -11 600 vCPU-s/mois
-- `sendBlogLeadOpsAlerts` 15 min -> 30 min: -10 300 vCPU-s/mois, mais la
-  detection d'incident passe de 15 a 30 min (alerte plus tardive)
+Optimisations appliquees le 2 novembre 2026 (resultat mesure : ~44 000 vCPU-s
+par mois, soit 24 % du palier, marge x4):
 
-Les trois together rameneraient l'usage CPU a ~44 000 vCPU-s/mois (24 % du
-palier) et augmenteraient la marge x4.
+| Fonction | Cadence avant | Cadence apres | Gain vCPU-s/mois | Impact fonctionnel |
+|---|---|---|---|---|
+| `syncPlanning` | 30 min | 1 h | -14 700 | sync calendrier 1 h au lieu de 30 min (cours planifies des semaines a l'avance) |
+| `sendCartAbandonmentEmails` | 1 h | 2 h | -7 700 | relance 1 dans [2 h, 4 h[, relance 2 dans [20 h, 22 h[ (toujours avant expiration de la session Stripe a 24 h) |
+| `sendBlogLeadOpsAlerts` | 15 min | 30 min | -10 300 | fenetre de detection passee de 15 a 30 min (le rapport quotidien de 08:00 reste le filet de securite sur 24 h) |
+
+Note: pour `sendCartAbandonmentEmails`, une cadence de 4 h aurait ete plus
+economique (-11 600) mais aurait pousse la relance 2 dans [20 h, 24 h[, c'est-a-dire
+a la limite de l'expiration de la session Stripe: le gain ne valait pas le
+risque de perdre une relance.
 
 ### Firestore
 

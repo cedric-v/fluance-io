@@ -178,12 +178,12 @@ Rapport quotidien des soucis:
 
 Alertes critiques (temps reel):
 
-- cadence: toutes les `15 minutes`
+- cadence: toutes les `30 minutes`
 - destination: `support@fluance.io`
 - dedoublonnage Firestore dans `journal_alertes_ops` (fenetre alignee sur des
-  buckets de `15 min` pour un identifiant d'alerte stable)
+  buckets de `30 min` pour un identifiant d'alerte stable)
 - seuils:
-  - `>= 1` erreur serveur sur `15 min` (une perte de lead est un signal fort,
+  - `>= 1` erreur serveur sur `30 min` (une perte de lead est un signal fort,
     meme isolee)
   - `> 10` echecs Turnstile sur `1 h` pour un blog
   - tout echec Mailjet critique sur DOI, relance DOI ou email contact

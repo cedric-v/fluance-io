@@ -11694,21 +11694,28 @@ exports.refreshMailjetLeadProperties = onSchedule(
 
 exports.sendBlogLeadOpsAlerts = onSchedule(
     {
-      schedule: '*/15 * * * *',
+      // Toutes les 30 min (au lieu de 15).
+      // Chaque tick coute ~7 vCPU-s d'instance (demarrage a froid + fenetre de
+      // scale-down) pour ~0,3 s de travail reel: le CPU est un cout par
+      // invocation. La fenetre de detection suit la meme cadence (30 min) et
+      // les buckets de dedoublonnage sont alignes sur 30 min: aucune erreur
+      // n'est donc perdue, seule la latence de detection double.
+      // Le rapport quotidien de 08:00 reste le filet de securite (24 h).
+      schedule: '*/30 * * * *',
       timeZone: 'Europe/Zurich',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       region: 'europe-west1',
     },
     async (_event) => {
       const now = new Date();
-      const since15m = new Date(now.getTime() - (15 * 60 * 1000));
+      const since30m = new Date(now.getTime() - (30 * 60 * 1000));
       const since1h = new Date(now.getTime() - (60 * 60 * 1000));
       const mailjetApiKey = process.env.MAILJET_API_KEY;
       const mailjetApiSecret = process.env.MAILJET_API_SECRET;
 
-      const [leadEvents15m, leadEvents1h, contacts1h] = await Promise.all([
+      const [leadEvents30m, leadEvents1h, contacts1h] = await Promise.all([
         db.collection('journal_evenements_leads')
-            .where('createdAt', '>=', Timestamp.fromDate(since15m))
+            .where('createdAt', '>=', Timestamp.fromDate(since30m))
             .get(),
         db.collection('journal_evenements_leads')
             .where('createdAt', '>=', Timestamp.fromDate(since1h))
@@ -11722,7 +11729,7 @@ exports.sendBlogLeadOpsAlerts = onSchedule(
       const turnstileFailuresBySite = {};
       const mailjetFailures = [];
 
-      leadEvents15m.docs.forEach((doc) => {
+      leadEvents30m.docs.forEach((doc) => {
         const data = doc.data();
         const siteSource = data.site_source || 'global';
         if (['capture_lead_internal_error', 'send_contact_internal_error', 'doi_reminder_processing_error'].includes(data.type_evenement)) {
@@ -11749,22 +11756,22 @@ exports.sendBlogLeadOpsAlerts = onSchedule(
         }
       });
 
-      // Fenetre alignee sur un bucket de 15 min: l'identifiant d'alerte reste
+      // Fenetre alignee sur un bucket de 30 min: l'identifiant d'alerte reste
       // stable sur le bucket, ce qui rend le dedoublonnage reellement efficace.
       const serverErrorWindowStart = new Date(
-          Math.floor(now.getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000),
+          Math.floor(now.getTime() / (30 * 60 * 1000)) * (30 * 60 * 1000),
       );
 
       for (const [siteSource, count] of Object.entries(serverErrorsBySite)) {
         if (count >= 1) {
           await sendBlogOpsAlert({
-            alertType: 'server-errors-15m',
+            alertType: 'server-errors-30m',
             siteSource,
             windowStart: serverErrorWindowStart,
             windowEnd: now,
             count,
             lines: [
-              `${count} erreur(s) serveur sur les 15 dernieres minutes pour ${siteSource} ` +
+              `${count} erreur(s) serveur sur les 30 dernieres minutes pour ${siteSource} ` +
               '(lead potentiellement perdu).',
             ],
             mailjetApiKey,
@@ -11792,7 +11799,7 @@ exports.sendBlogLeadOpsAlerts = onSchedule(
         await sendBlogOpsAlert({
           alertType: failure.type_evenement,
           siteSource: failure.site_source || 'global',
-          windowStart: since15m,
+          windowStart: since30m,
           windowEnd: now,
           count: 1,
           lines: [
@@ -13182,7 +13189,14 @@ async function sendTrialFollowUpsLogic() {
  */
 exports.sendCartAbandonmentEmails = onSchedule(
     {
-      schedule: 'every 1 hours', // Toutes les heures
+      // Toutes les 2 h (au lieu de 1 h).
+      // Chaque tick coute ~21 vCPU-s d'instance (demarrage a froid + fenetre
+      // de scale-down) pour ~0,7 s de travail reel: le CPU est un cout par
+      // invocation. Les seuils de relance (2 h et 20 h) restent garantis:
+      // avec une grille de 2 h, la relance 1 part dans [2 h, 4 h[ et la
+      // relance 2 dans [20 h, 22 h[, donc toujours avant l'expiration de la
+      // session Stripe a 24 h.
+      schedule: 'every 2 hours',
       timeZone: 'Europe/Zurich',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       region: 'europe-west1',
@@ -13827,7 +13841,13 @@ exports.sendPromotionalEmails = onSchedule(
 
 exports.syncPlanning = onSchedule(
     {
-      schedule: 'every 30 minutes',
+      // Toutes les heures (au lieu de toutes les 30 min).
+      // Chaque tick coute ~20 vCPU-s d'instance (demarrage a froid + fenetre
+      // de scale-down) pour ~2 s de travail reel: le CPU est un cout par
+      // invocation, pas par seconde de calcul. Les cours sont planifies des
+      // semaines a l'avance, un delai de synchro d'1 h est indifferent.
+      // Declenchement manuel disponible: syncPlanningManual.
+      schedule: 'every 1 hours',
       region: 'europe-west1',
       secrets: ['GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_CALENDAR_ID'],
     },

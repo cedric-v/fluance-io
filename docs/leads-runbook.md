@@ -24,7 +24,7 @@ Lecture des erreurs:
   quota, liste) et les logs Firebase Functions (`captureLead`)
 - toute erreur serveur (`capture_lead_internal_error`, `send_contact_internal_error`,
   `doi_reminder_processing_error`) declenche une alerte ops automatique des la
-  premiere occurrence (`>= 1` sur `15 min`, fonction `sendBlogLeadOpsAlerts`),
+  premiere occurrence (`>= 1` sur `30 min`, fonction `sendBlogLeadOpsAlerts`),
   car elle correspond a un lead potentiellement perdu
 - les proprietes Mailjet sont (re)creees hors du chemin de requete par la tache
   `refreshMailjetLeadProperties` (lundi 04:00); en cas d'ajout de propriete,

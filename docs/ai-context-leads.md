@@ -63,7 +63,7 @@ For contact transactional emails:
 - operational monitoring now includes:
   - `sendBlogLeadsMonthlyDigest` at `08:00 Europe/Zurich` on the 1st of each month (30-day summary, always sent)
   - `sendBlogLeadsIssueReport` daily at `08:00 Europe/Zurich` (sent only when critical issues occurred in the last 24h)
-  - `sendBlogLeadOpsAlerts` every `15 minutes`
+  - `sendBlogLeadOpsAlerts` every `30 minutes`
   - `refreshMailjetLeadProperties` weekly (Mailjet lead properties created out of the request path)
   - deduplicated alert documents in `journal_alertes_ops`
   - digest and issue report history in `digest_ops_history` (with `type`: `issue_report` or `monthly_digest`, and `sent` flag)
