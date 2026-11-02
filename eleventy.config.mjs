@@ -690,6 +690,11 @@ export default function (eleventyConfig) {
         collapseWhitespace: true,
         minifyCSS: true,
         minifyJS: false,
+        // Depuis html-minifier-next 9, la compression du contenu des
+        // <script type="application/ld+json"> (JSON-LD, importmap...) est une
+        // option explicite, desactivee par defaut. Sans elle, le JSON-LD
+        // revient indente (~+1 Ko par page). Sortie identique a v8 avec elle.
+        minifyJSON: true,
       });
     }
     return content;
