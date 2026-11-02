@@ -104,8 +104,22 @@ prix existant) :
 > Secret Manager : un secret déclaré mais inexistant fait **échouer le déploiement**.
 > Par défaut, laissez l'auto-provisioning gérer les prix.
 
-> ℹ️ **Comptabilité** : l'intégration Bexio a été supprimée (la comptabilité est
-> désormais tenue sur Odoo, sans API). Aucune variable `BEXIO_*` n'est utilisée par le code.
+#### Comptabilité (Odoo)
+
+**Aucune variable d'environnement, aucun secret.** L'intégration Bexio (création
+d'écritures manuelles depuis `webhookStripe` et `processMolliePayment`) a été
+supprimée en novembre 2026 : la comptabilité est tenue sur **Odoo**
+(plan gratuit odoo.com, sans API pour l'instant), donc en saisie manuelle.
+
+- Aucune variable `BEXIO_*` n'est lue par le code.
+- Les secrets `BEXIO_API_TOKEN`, `BEXIO_ACCOUNT_*` et `BEXIO_USER_ID` ont été
+  supprimés de Secret Manager ainsi que le secret GitHub `BEXIO_API_TOKEN`.
+- Les données de vente restent disponibles pour la compta, en saisie manuelle :
+  collection Firestore `audit_payments` (email, `products`, `amount`, `currency`,
+  `gateway` stripe/mollie, `status`, `timestamp`) et logs des functions.
+  L'export automatique vers un Google Sheet de ventes (`GOOGLE_SHEET_ID_SALES`)
+  n'est **pas** implémenté : le code se contente d'un `TODO` dans
+  `processMolliePayment`, et la variable n'est donc pas nécessaire.
 
 #### Variables PayPal (si vous utilisez PayPal)
 - **Nom** : `PAYPAL_CLIENT_ID`  

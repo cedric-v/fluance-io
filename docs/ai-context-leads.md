@@ -88,7 +88,10 @@ Reasons, measured in November 2026:
 
 CI: the `functions` job in `.github/workflows/ci.yml` (lint + tests) is a
 required check on `main`; the same lint + tests also run locally on `pre-push`
-when the push touches `functions/`. Functions are deployed from CI
+when the push touches `functions/`. It also runs `npm run verify:requires`, which
+fails if a relative `require()`/`import` in `functions/` points to a missing file
+(a partially committed deletion otherwise passes lint + tests and only breaks the
+deployment with `MODULE_NOT_FOUND`). Functions are deployed from CI
 (`.github/workflows/deploy-functions.yml`) with Workload Identity Federation:
 no long-lived service account key is stored in GitHub. The deployed runtime is
 re-checked after each deploy by `npm run verify:functions`.

@@ -86,9 +86,11 @@ Les webhooks Stripe et PayPal gèrent les annulations et échecs de paiement :
 
 > ⚠️ **Abonnements Mollie encore actifs (transition)** : les abonnements créés avant le
 > retour à Stripe (ex: site-vitrine 5x en cours de paiement) continuent d'être prélevés par
-> Mollie. Ils sont gérés depuis le dashboard Mollie (https://my.mollie.com/dashboard/) et
-> leur comptabilité passe par les webhooks transitoires `webhookMollie`/`processMolliePayment`
-> (section « TRANSITION MOLLIE » de `functions/index.js`).
+> Mollie. Ils sont gérés depuis le dashboard Mollie (https://my.mollie.com/dashboard/) ;
+> les webhooks transitoires `webhookMollie`/`processMolliePayment` (section « TRANSITION
+> MOLLIE » de `functions/index.js`) assurent les renouvellements et l'arrêt automatique.
+> Aucune écriture comptable n'est générée : la comptabilité est tenue sur Odoo (voir
+> `CONFIGURATION_VARIABLES_ENV.md`).
 >
 > **Arrêt des abonnements Mollie à durée limitée** : le paramètre `times` de Mollie
 > (4 pour site-vitrine 5x, 2 pour focus-sos 3x) limite normalement les prélèvements et

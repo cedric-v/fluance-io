@@ -236,6 +236,18 @@ From `package.json`:
   node scripts/validate-frontmatter.mjs
   ```
 
+- **`npm run verify:requires`**
+
+  Checks that every relative `require()` / `import` under `functions/` resolves to an
+  existing file. It catches partial commits that delete a module while another file still
+  imports it — the CI would otherwise pass (lint + tests) and the **deployment** would fail
+  during code analysis with `MODULE_NOT_FOUND` (this happened on 2 Nov 2026 with
+  `bexioService`). Requires no installed dependency and runs in CI before `npm ci`:
+
+  ```bash
+  node scripts/check-function-requires.mjs
+  ```
+
 - **`npm run build:11ty`**
 
   ```bash

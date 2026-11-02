@@ -11,6 +11,16 @@ repos:
         entry: bash scripts/check-no-pii.sh
         language: system
         stages: [pre-commit]
+      - id: functions-requires-ok
+        name: Functions (require/import locaux résolvent)
+        description: >
+          Bloque un commit partiel qui supprime un module encore require()
+          ailleurs (sinon le déploiement échoue en MODULE_NOT_FOUND)
+        entry: node scripts/check-function-requires.mjs
+        language: system
+        files: ^functions/
+        pass_filenames: false
+        stages: [pre-commit, pre-push]
       - id: functions-lint-test
         name: Functions (lint + tests)
         description: Vérifie le hub leads/contact quand un push touche functions/
