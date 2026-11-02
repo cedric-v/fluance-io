@@ -115,6 +115,7 @@
 
 ### Variables disponibles
 - `{{firstName}}` : Prénom du contact
+- `{{unsubscribeUrl}}` : lien de désinscription personnel, injecté automatiquement par la fonction d’envoi
 
 ### URLs des CTAs
 - Email principal : `https://fluance.io/decouvrir-ma-pratique/`
@@ -123,6 +124,20 @@
 
 ### Compilation
 Les templates sont compilés automatiquement lors de `npm run build:11ty` et copiés dans `functions/emails/`.
+
+### Conformité RGPD / nLPD et droit suisse de la publicité
+
+Tous les e-mails promotionnels doivent être identifiables comme tels et comporter, de manière visible :
+
+1. un lien permettant de s’opposer gratuitement et immédiatement aux communications promotionnelles ;
+2. l’identité de l’expéditeur et son adresse postale ;
+3. un lien vers les mentions légales et la politique de confidentialité.
+
+Le pied de page légal est ajouté aux templates promotionnels et à leur version texte. La fonction d’envoi ajoute également les en-têtes `List-Unsubscribe` et `List-Unsubscribe-Post` pour la désinscription en un clic. Les envois automatiques consultent la liste de suppression Firestore avant chaque message promotionnel.
+
+Le lien de désinscription ne bloque que les communications promotionnelles : les e-mails transactionnels nécessaires au compte, aux achats, aux réservations et aux abonnements restent envoyés. Un nouveau double opt-in confirmé réactive les communications promotionnelles.
+
+> En Suisse, l’obligation d’un moyen simple de s’opposer à la publicité provient notamment de la loi contre la concurrence déloyale (LCD/UWG, art. 3 al. 1 let. o), tandis que la nLPD règle la transparence et la protection des données. Le pied de page couvre les deux exigences.
 
 ### Fonction scheduled
 La fonction `sendPromotionalEmails` s'exécute **quotidiennement à 8h (Europe/Paris)** et gère automatiquement :

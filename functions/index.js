@@ -757,6 +757,273 @@ function loadEmailTemplate(templateName, variables = {}) {
   return html;
 }
 
+// ============================================================
+// Désinscription des communications promotionnelles
+// ============================================================
+
+const MARKETING_UNSUBSCRIBE_FUNCTION_URL =
+  'https://europe-west1-fluance-protected-content.cloudfunctions.net/unsubscribeMarketing';
+const MARKETING_UNSUBSCRIBE_TOKENS_COLLECTION = 'marketingUnsubscribeTokens';
+const MARKETING_UNSUBSCRIBES_COLLECTION = 'marketingUnsubscribes';
+const MAILJET_PRIMARY_LIST_ID = 10524140;
+
+function normalizeMarketingEmail(email) {
+  return String(email || '').toLowerCase().trim();
+}
+
+function marketingUnsubscribedDocId(email) {
+  return crypto
+      .createHash('sha256')
+      .update(normalizeMarketingEmail(email))
+      .digest('hex');
+}
+
+/**
+ * Indique si une adresse s'est désinscrite des communications promotionnelles.
+ * Cette liste de suppression est indépendante des e-mails transactionnels
+ * (compte, paiement, réservation), qui restent nécessaires à la relation
+ * contractuelle avec la personne.
+ */
+async function isMarketingUnsubscribed(email) {
+  const normalized = normalizeMarketingEmail(email);
+  if (!normalized) return true;
+
+  const doc = await db
+      .collection(MARKETING_UNSUBSCRIBES_COLLECTION)
+      .doc(marketingUnsubscribedDocId(normalized))
+      .get();
+
+  return doc.exists && doc.data().unsubscribed === true;
+}
+
+/**
+ * Crée un lien de désinscription à usage personnel pour un e-mail promotionnel.
+ * Le lien est monoposte et ne révèle pas l'adresse e-mail.
+ *
+ * @param {string} email
+ * @returns {Promise<{unsubscribeUrl: string, headers: Object}|null>}
+ *   null si l'adresse s'est déjà désinscrite.
+ */
+async function createMarketingUnsubscribeContext(email) {
+  const normalized = normalizeMarketingEmail(email);
+  if (!normalized || await isMarketingUnsubscribed(normalized)) return null;
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = Timestamp.fromMillis(Date.now() + 365 * 24 * 60 * 60 * 1000);
+
+  await db.collection(MARKETING_UNSUBSCRIBE_TOKENS_COLLECTION).doc(token).set({
+    email: normalized,
+    createdAt: FieldValue.serverTimestamp(),
+    expiresAt,
+  });
+
+  const unsubscribeUrl = `${MARKETING_UNSUBSCRIBE_FUNCTION_URL}?token=${token}`;
+  return {
+    unsubscribeUrl,
+    headers: {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    },
+  };
+}
+
+/** Ajoute le pied de page légal aux e-mails promotionnels construits en HTML brut. */
+function appendMarketingLegalFooterHtml(html, unsubscribeUrl) {
+  return `${html}\n` +
+    `<p style="margin:24px 0 0;font-size:11px;line-height:1.5;color:#666;text-align:center;">` +
+    `Vous pouvez vous opposer gratuitement à la réception de communications promotionnelles ` +
+    `et vous désinscrire à tout moment : ` +
+    `<a href="${unsubscribeUrl}" style="color:#648ED8;">Se désinscrire</a>.<br>` +
+    `Instants Zen Sàrl — Case postale, 1782 Belfaux, Suisse<br>` +
+    `<a href="https://fluance.io/mentions-legales/" style="color:#648ED8;">` +
+    `Mentions légales et politique de confidentialité</a></p>`;
+}
+
+/** Ajoute le pied de page légal aux parties texte des e-mails promotionnels. */
+function appendMarketingLegalFooterText(text, unsubscribeUrl) {
+  return `${text}\n\n` +
+    `Vous pouvez vous opposer gratuitement à la réception de communications promotionnelles ` +
+    `et vous désinscrire à tout moment : ${unsubscribeUrl}\n` +
+    `Instants Zen Sàrl — Case postale, 1782 Belfaux, Suisse`;
+}
+
+/**
+ * Réactive les communications promotionnelles après un nouveau consentement
+ * explicite (double opt-in confirmé). Les e-mails transactionnels n'ont jamais
+ * été bloqués par ce mécanisme.
+ */
+async function resumeMarketingEmailsAfterOptIn(email) {
+  const normalized = normalizeMarketingEmail(email);
+  if (!normalized) return;
+
+  await db
+      .collection(MARKETING_UNSUBSCRIBES_COLLECTION)
+      .doc(marketingUnsubscribedDocId(normalized))
+      .delete();
+
+  // Invalide les anciens liens : un lien reçu avant le nouveau consentement
+  // ne doit pas pouvoir désinscrire à nouveau la personne plus tard.
+  const oldTokens = await db
+      .collection(MARKETING_UNSUBSCRIBE_TOKENS_COLLECTION)
+      .where('email', '==', normalized)
+      .limit(1000)
+      .get();
+  await Promise.all(oldTokens.docs.map((doc) => doc.ref.update({
+    revokedAt: FieldValue.serverTimestamp(),
+  })));
+
+  const apiKey = process.env.MAILJET_API_KEY;
+  const apiSecret = process.env.MAILJET_API_SECRET;
+  if (!apiKey || !apiSecret) return;
+
+  try {
+    const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
+    const response = await fetch(
+        `https://api.mailjet.com/v3/REST/contactslist/${MAILJET_PRIMARY_LIST_ID}/managecontact`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${auth}`,
+          },
+          body: JSON.stringify({
+            Email: normalized,
+            Action: 'addforce',
+          }),
+        },
+    );
+    if (!response.ok) {
+      console.warn(
+          `⚠️ Réactivation Mailjet incomplète pour ${normalized}: ${response.status}`,
+      );
+    }
+  } catch (error) {
+    console.warn(`⚠️ Réactivation Mailjet impossible pour ${normalized}: ${error.message}`);
+  }
+}
+
+/**
+ * Désinscription globale des communications promotionnelles.
+ *
+ * GET  : lien visible dans le corps de l'e-mail, avec redirection vers la page
+ *        de confirmation.
+ * POST : désinscription RFC 8058 en un clic (List-Unsubscribe-Post).
+ */
+exports.unsubscribeMarketing = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
+    },
+    async (req, res) => {
+      const token = String(req.query?.token || req.body?.token || '').trim();
+      const isOneClickPost = req.method === 'POST';
+
+      if (!/^[a-f0-9]{64}$/.test(token)) {
+        if (isOneClickPost) {
+          return res.status(400).json({success: false, error: 'INVALID_TOKEN'});
+        }
+        return res.redirect(302, 'https://fluance.io/desinscription/?status=invalid');
+      }
+
+      try {
+        const tokenRef = db
+            .collection(MARKETING_UNSUBSCRIBE_TOKENS_COLLECTION)
+            .doc(token);
+        const tokenDoc = await tokenRef.get();
+
+        if (!tokenDoc.exists) {
+          if (isOneClickPost) {
+            return res.status(404).json({success: false, error: 'INVALID_TOKEN'});
+          }
+          return res.redirect(302, 'https://fluance.io/desinscription/?status=invalid');
+        }
+
+        const tokenData = tokenDoc.data();
+        if (tokenData.revokedAt) {
+          if (isOneClickPost) {
+            return res.status(410).json({success: false, error: 'REVOKED_TOKEN'});
+          }
+          return res.redirect(302, 'https://fluance.io/desinscription/?status=invalid');
+        }
+        const expiresAt = tokenData.expiresAt?.toDate?.();
+        if (expiresAt && expiresAt.getTime() < Date.now()) {
+          if (isOneClickPost) {
+            return res.status(410).json({success: false, error: 'EXPIRED_TOKEN'});
+          }
+          return res.redirect(302, 'https://fluance.io/desinscription/?status=expired');
+        }
+
+        const email = normalizeMarketingEmail(tokenData.email);
+        if (!email) {
+          if (isOneClickPost) {
+            return res.status(400).json({success: false, error: 'INVALID_TOKEN'});
+          }
+          return res.redirect(302, 'https://fluance.io/desinscription/?status=invalid');
+        }
+
+        await db
+            .collection(MARKETING_UNSUBSCRIBES_COLLECTION)
+            .doc(marketingUnsubscribedDocId(email))
+            .set({
+              email,
+              unsubscribed: true,
+              unsubscribedAt: FieldValue.serverTimestamp(),
+              source: 'email',
+            }, {merge: true});
+
+        await tokenRef.update({
+          usedAt: FieldValue.serverTimestamp(),
+        });
+
+        // Synchronise également Mailjet. En cas d'échec Mailjet, la suppression
+        // Firestore reste effective et protège tous les envois automatisés.
+        const apiKey = process.env.MAILJET_API_KEY;
+        const apiSecret = process.env.MAILJET_API_SECRET;
+        if (apiKey && apiSecret) {
+          try {
+            const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
+            const response = await fetch(
+                `https://api.mailjet.com/v3/REST/contactslist/${MAILJET_PRIMARY_LIST_ID}/managecontact`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${auth}`,
+                  },
+                  body: JSON.stringify({
+                    Email: email,
+                    Action: 'unsub',
+                  }),
+                },
+            );
+            if (!response.ok) {
+              console.warn(
+                  `⚠️ Synchronisation de la désinscription Mailjet incomplète pour ${email}: ${response.status}`,
+              );
+            }
+          } catch (mailjetError) {
+            console.warn(
+                `⚠️ Synchronisation de la désinscription Mailjet impossible pour ${email}: ${mailjetError.message}`,
+            );
+          }
+        }
+
+        console.log(`✅ Désinscription marketing confirmée pour ${email}`);
+
+        if (isOneClickPost) {
+          return res.status(200).json({success: true});
+        }
+        return res.redirect(302, 'https://fluance.io/desinscription/?status=confirmed');
+      } catch (error) {
+        console.error('❌ Erreur lors de la désinscription marketing:', error);
+        if (isOneClickPost) {
+          return res.status(500).json({success: false, error: 'UNSUBSCRIBE_FAILED'});
+        }
+        return res.redirect(302, 'https://fluance.io/desinscription/?status=error');
+      }
+    },
+);
+
 // Email admin pour les notifications (configuré via secret Firebase ADMIN_EMAIL)
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'support@fluance.io';
 
@@ -1142,6 +1409,12 @@ async function sendCartAbandonmentEmail(
     apiSecret,
 ) {
   try {
+    const marketingContext = await createMarketingUnsubscribeContext(email);
+    if (!marketingContext) {
+      console.log(`⏭️ Cart abandonment marketing email skipped (unsubscribed): ${email}`);
+      return true;
+    }
+
     const amountStr = amount ? `${(amount / 100).toFixed(2)} CHF` : 'Gratuit';
     const bookingUrl = clientSecret ?
       `https://fluance.io/presentiel/reserver/?booking=${bookingId}&retry=true` :
@@ -1178,6 +1451,13 @@ async function sendCartAbandonmentEmail(
           </div>
           <p style="margin: 10px 0; font-size: 14px; color: #666;">Ce lien est valable pendant 48 heures.</p>
         </div>
+        <p style="margin: 24px 0 0; font-size: 11px; line-height: 1.5; color: #666; text-align: center;">
+          Vous pouvez vous opposer gratuitement à la réception de communications promotionnelles
+          et vous désinscrire à tout moment :
+          <a href="${marketingContext.unsubscribeUrl}" style="color: #648ED8;">Se désinscrire</a>.<br>
+          Instants Zen Sàrl — Case postale, 1782 Belfaux, Suisse<br>
+          <a href="https://fluance.io/mentions-legales/" style="color: #648ED8;">Mentions légales et politique de confidentialité</a>
+        </p>
       </div>
     `;
 
@@ -1190,7 +1470,10 @@ async function sendCartAbandonmentEmail(
       `Heure: ${courseTime}\n` +
       `Montant: ${amountStr}\n\n` +
       `Finaliser ma réservation : ${bookingUrl}\n\n` +
-      `Ce lien est valable pendant 48 heures.`;
+      `Ce lien est valable pendant 48 heures.\n\n` +
+      `Vous pouvez vous opposer gratuitement à la réception de communications promotionnelles ` +
+      `et vous désinscrire à tout moment : ${marketingContext.unsubscribeUrl}\n` +
+      `Instants Zen Sàrl — Case postale, 1782 Belfaux, Suisse`;
 
     await sendMailjetEmail(
         email,
@@ -1203,6 +1486,7 @@ async function sendCartAbandonmentEmail(
       apiSecret,
       'support@actu.fluance.io',
       'Fluance',
+      marketingContext.headers,
     );
     console.log(`✅ Cart abandonment email sent to ${email} (reason: ${reason})`);
   } catch (error) {
@@ -1236,6 +1520,12 @@ async function sendOnlineCartAbandonmentEmail(
       return;
     }
 
+    const marketingContext = await createMarketingUnsubscribeContext(email);
+    if (!marketingContext) {
+      console.log(`⏭️ Online cart abandonment email skipped (unsubscribed): ${email}`);
+      return;
+    }
+
     // URL de reprise : page produit (la session Stripe expire ~24h, on ne peut
     // donc pas y renvoyer directement après ce délai).
     const productUrl = 'https://fluance.io/cours-en-ligne/21-jours-mouvement/';
@@ -1250,6 +1540,7 @@ async function sendOnlineCartAbandonmentEmail(
       firstName: firstName || '',
       reminderNumber: String(reminderNumber || 1),
       ctaUrl: productUrl,
+      unsubscribeUrl: marketingContext.unsubscribeUrl,
     });
 
     const textContent = `Bonjour${firstName ? ' ' + firstName : ''},\n\n` +
@@ -1257,7 +1548,10 @@ async function sendOnlineCartAbandonmentEmail(
       `(2 à 5 minutes par jour, depuis chez vous).\n\n` +
       `Si c'est toujours le bon moment pour vous, vous pouvez reprendre ` +
       `votre commande ici : ${productUrl}\n\n` +
-      `À très vite,\nCédric - Fluance`;
+      `À très vite,\nCédric - Fluance\n\n` +
+      `Vous pouvez vous opposer gratuitement à la réception de communications promotionnelles ` +
+      `et vous désinscrire à tout moment : ${marketingContext.unsubscribeUrl}\n` +
+      `Instants Zen Sàrl — Case postale, 1782 Belfaux, Suisse`;
 
     await sendMailjetEmail(
         email,
@@ -1268,6 +1562,7 @@ async function sendOnlineCartAbandonmentEmail(
         apiSecret,
         'fluance@actu.fluance.io',
         'Cédric de Fluance',
+        marketingContext.headers,
     );
     console.log(`✅ Online cart abandonment email (${reminderNumber}) sent to ${email} for ${product}`);
   } catch (error) {
@@ -5898,17 +6193,35 @@ exports.sendNewsletter = onCall(
         const batch = emails.slice(i, i + batchSize);
 
         try {
+          // Prépare un lien de désinscription personnel pour chaque destinataire
+          // et respecte la liste de suppression.
+          const preparedRecipients = [];
+          for (const email of batch) {
+            const marketingContext = await createMarketingUnsubscribeContext(email);
+            if (!marketingContext) continue;
+            preparedRecipients.push({email, marketingContext});
+          }
+
+          if (preparedRecipients.length === 0) continue;
+
           const url = 'https://api.mailjet.com/v3.1/send';
           const body = {
-            Messages: batch.map((email) => ({
+            Messages: preparedRecipients.map(({email, marketingContext}) => ({
               From: {
                 Email: 'fluance@actu.fluance.io',
                 Name: 'Fluance',
               },
               To: [{Email: email}],
               Subject: subject,
-              TextPart: textContent || subject,
-              HTMLPart: htmlContent,
+              TextPart: appendMarketingLegalFooterText(
+                  textContent || subject,
+                  marketingContext.unsubscribeUrl,
+              ),
+              HTMLPart: appendMarketingLegalFooterHtml(
+                  htmlContent,
+                  marketingContext.unsubscribeUrl,
+              ),
+              Headers: marketingContext.headers,
             })),
           };
 
@@ -5923,7 +6236,7 @@ exports.sendNewsletter = onCall(
           });
 
           if (response.ok) {
-            results.push(...batch);
+            results.push(...preparedRecipients.map(({email}) => email));
           } else {
             const errorText = await response.text();
             errors.push({batch, error: errorText});
@@ -7941,6 +8254,10 @@ exports.confirmNewsletterOptIn = onCall(
           confirmedAt: FieldValue.serverTimestamp(),
         });
 
+        // Un nouveau consentement explicite réactive les communications
+        // promotionnelles si la personne s'était désinscrite auparavant.
+        await resumeMarketingEmailsAfterOptIn(email);
+
         if (tokenData.siteSource || tokenData.blogSource || tokenData.formulaireSource) {
           await blogLeadHub.helpers.logLeadEvent('optin_confirmed', {
             site_source: tokenData.siteSource || '',
@@ -8827,8 +9144,11 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
           }
 
           // Envoyer l'email de redirection vers les opt-ins
+          const marketingContext = await createMarketingUnsubscribeContext(normalizedEmail);
+          const unsubscribeUrl = marketingContext?.unsubscribeUrl ||
+            'https://fluance.io/desinscription/';
           const emailSubject = 'Bienvenue sur Fluance : découvrez nos offres gratuites';
-          const emailHtml = loadEmailTemplate('non-client-connexion', {});
+          const emailHtml = loadEmailTemplate('non-client-connexion', {unsubscribeUrl});
           const emailText = `Bienvenue sur Fluance\n\n` +
           `Bonjour,\n\n` +
           `Vous avez demandé à réinitialiser votre mot de passe, ` +
@@ -8840,7 +9160,10 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
           `Vous êtes déjà client ? Vérifiez que vous utilisez bien l'adresse email ` +
           `associée à votre achat. Si le problème persiste, contactez-nous à ` +
           `${ADMIN_EMAIL}.\n\n` +
-          `Cordialement,\nL'équipe Fluance`;
+          `Cordialement,\nL'équipe Fluance\n\n` +
+          `Vous pouvez vous opposer gratuitement à la réception de communications promotionnelles ` +
+          `et vous désinscrire à tout moment : ${unsubscribeUrl}\n` +
+          `Instants Zen Sàrl — Case postale, 1782 Belfaux, Suisse`;
 
           console.log(`[Password Reset] Sending redirect email to ${normalizedEmail}`);
 
@@ -8851,6 +9174,9 @@ exports.sendPasswordResetEmailViaMailjet = onCall(
               emailText,
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
+              'fluance@actu.fluance.io',
+              'Cédric de Fluance',
+              marketingContext?.headers,
           );
 
           console.log(`[Password Reset] Non-client redirect email sent via Mailjet to ${normalizedEmail}`);
@@ -9200,8 +9526,11 @@ exports.sendSignInLinkViaMailjet = onCall(
           }
 
           // Envoyer l'email de redirection vers les opt-ins
+          const marketingContext = await createMarketingUnsubscribeContext(normalizedEmail);
+          const unsubscribeUrl = marketingContext?.unsubscribeUrl ||
+            'https://fluance.io/desinscription/';
           const emailSubject = 'Bienvenue sur Fluance : découvrez nos offres gratuites';
-          const emailHtml = loadEmailTemplate('non-client-connexion', {});
+          const emailHtml = loadEmailTemplate('non-client-connexion', {unsubscribeUrl});
           const emailText = `Bienvenue sur Fluance\n\n` +
           `Bonjour,\n\n` +
           `Vous avez demandé à vous connecter à votre compte Fluance, ` +
@@ -9213,7 +9542,10 @@ exports.sendSignInLinkViaMailjet = onCall(
           `Vous êtes déjà client ? Vérifiez que vous utilisez bien l'adresse email ` +
           `associée à votre achat. Si le problème persiste, contactez-nous à ` +
           `${ADMIN_EMAIL}.\n\n` +
-          `Cordialement,\nL'équipe Fluance`;
+          `Cordialement,\nL'équipe Fluance\n\n` +
+          `Vous pouvez vous opposer gratuitement à la réception de communications promotionnelles ` +
+          `et vous désinscrire à tout moment : ${unsubscribeUrl}\n` +
+          `Instants Zen Sàrl — Case postale, 1782 Belfaux, Suisse`;
 
           console.log(`[Non-client] Sending redirect email to ${normalizedEmail}`);
 
@@ -9224,6 +9556,9 @@ exports.sendSignInLinkViaMailjet = onCall(
               emailText,
               process.env.MAILJET_API_KEY,
               process.env.MAILJET_API_SECRET,
+              'fluance@actu.fluance.io',
+              'Cédric de Fluance',
+              marketingContext?.headers,
           );
 
           console.log(`Non-client redirect email sent via Mailjet to ${normalizedEmail}`);
@@ -9574,6 +9909,9 @@ exports.sendNewContentEmails = onSchedule(
                   let emailSubject;
                   let emailHtml;
                   const isBonusDay = currentDay === 22;
+                  const marketingContext = isBonusDay ?
+                    await createMarketingUnsubscribeContext(email) :
+                    null;
 
                   let textIntro;
 
@@ -9604,10 +9942,12 @@ exports.sendNewContentEmails = onSchedule(
                     '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
                     '<p>Offrez-vous encore quelques minutes aujourd\'hui pour ' +
                     'integrer ce que vous avez explore ces dernieres semaines.</p>' +
-                    '<p>Demain, je vous enverrai un email pour vous montrer ' +
-                    'comment <strong>continuer sur votre lancee</strong> avec ' +
-                    'l\'<strong>approche Fluance complete</strong>, qui vous ' +
-                    'propose une nouvelle mini-serie de pratiques chaque semaine.</p>' +
+                    (marketingContext ?
+                      '<p>Demain, je vous enverrai un email pour vous montrer ' +
+                      'comment <strong>continuer sur votre lancee</strong> avec ' +
+                      'l\'<strong>approche Fluance complete</strong>, qui vous ' +
+                      'propose une nouvelle mini-serie de pratiques chaque semaine.</p>' :
+                      '') +
                     '<p>Pour l\'instant, profitez pleinement de ce bonus :</p>' +
                     '<p><a href="https://fluance.io/membre/">' +
                     'Acceder a votre bonus dans votre espace membre</a></p>';
@@ -9619,12 +9959,20 @@ exports.sendNewContentEmails = onSchedule(
                   await sendMailjetEmail(
                       email,
                       emailSubject,
-                      emailHtml,
-                      `${textIntro}\n\nAccedez a votre contenu : https://fluance.io/membre/`,
+                      isBonusDay && marketingContext ?
+                        appendMarketingLegalFooterHtml(emailHtml, marketingContext.unsubscribeUrl) :
+                        emailHtml,
+                      isBonusDay && marketingContext ?
+                        appendMarketingLegalFooterText(
+                            `${textIntro}\n\nAccedez a votre contenu : https://fluance.io/membre/`,
+                            marketingContext.unsubscribeUrl,
+                        ) :
+                        `${textIntro}\n\nAccedez a votre contenu : https://fluance.io/membre/`,
                       mailjetApiKey,
                       mailjetApiSecret,
                       'support@actu.fluance.io',
                       'Cédric de Fluance',
+                      isBonusDay ? marketingContext?.headers : undefined,
                   );
 
                   // Marquer l'email comme envoyé
@@ -9651,19 +9999,23 @@ exports.sendNewContentEmails = onSchedule(
                         .doc(emailSentDocId).get();
 
                     if (!emailSentDoc.exists) {
-                      const baseUrl = 'https://fluance.io';
-                      const completUrl = `${baseUrl}/decouvrir-ma-pratique/`;
-                      const namePart = firstName ? ` ${firstName}` : '';
+                      const marketingContext = await createMarketingUnsubscribeContext(email);
+                      if (!marketingContext) {
+                        console.log(`⏭️ Post-21jours marketing email skipped (unsubscribed): ${email}`);
+                      } else {
+                        const baseUrl = 'https://fluance.io';
+                        const completUrl = `${baseUrl}/decouvrir-ma-pratique/`;
+                        const namePart = firstName ? ` ${firstName}` : '';
 
-                      let emailSubject;
-                      let emailHtml;
-                      let emailText;
+                        let emailSubject;
+                        let emailHtml;
+                        let emailText;
 
-                      if (daysAfterEnd === 1) {
-                        emailSubject =
+                        if (daysAfterEnd === 1) {
+                          emailSubject =
                         'Et maintenant, comment continuer sur votre lancee ?';
 
-                        emailHtml =
+                          emailHtml =
                         '<p>Bonjour' + namePart + ',</p>' +
                         '<p>Felicitations pour avoir termine le defi ' +
                         '<strong>21 jours pour remettre du mouvement</strong>.</p>' +
@@ -9689,44 +10041,44 @@ exports.sendNewContentEmails = onSchedule(
                         '<p><a href="' + completUrl + '">' +
                         'Decouvrir l\'approche Fluance complete</a></p>';
 
-                        emailText = [
-                          `Bonjour${namePart},`,
-                          '',
-                          'Felicitations pour avoir termine le defi ' +
+                          emailText = [
+                            `Bonjour${namePart},`,
+                            '',
+                            'Felicitations pour avoir termine le defi ' +
                         '"21 jours pour remettre du mouvement".',
-                          '',
-                          'Vous avez pose des bases importantes pour votre ' +
+                            '',
+                            'Vous avez pose des bases importantes pour votre ' +
                         'corps : plus de mobilite, plus de conscience, ' +
                         'plus de respiration.',
-                          '',
-                          'Saviez-vous que l\'activite physique reguliere ' +
+                            '',
+                            'Saviez-vous que l\'activite physique reguliere ' +
                         'reduit le risque d\'Alzheimer de 30 a 40% ? ' +
                         'La cle, c\'est la continuite.',
-                          '',
-                          'La question maintenant : comment garder cet elan ' +
+                            '',
+                            'La question maintenant : comment garder cet elan ' +
                         'dans la duree ?',
-                          '',
-                          'L\'approche Fluance complete vous propose une ' +
+                            '',
+                            'L\'approche Fluance complete vous propose une ' +
                         'nouvelle mini-serie de pratiques chaque semaine, ' +
                         'toujours courtes, pour continuer a entretenir ' +
                         'votre dos, vos epaules et votre energie.',
-                          '',
-                          'Avec l\'approche complete, vous continuez a honorer ' +
+                            '',
+                            'Avec l\'approche complete, vous continuez a honorer ' +
                         'votre corps, sans forcer. Une nouvelle pratique ' +
                         'chaque semaine, toujours dans cette approche respectueuse.',
-                          '',
-                          'Les 14 premiers jours sont offerts : vous pouvez ' +
+                            '',
+                            'Les 14 premiers jours sont offerts : vous pouvez ' +
                         'tester sans engagement et decider ensuite si vous ' +
                         'souhaitez continuer.',
-                          '',
-                          'Decouvrez la suite naturelle de votre parcours :',
-                          completUrl,
-                        ].join('\n');
-                      } else if (daysAfterEnd === 4) {
-                        emailSubject =
+                            '',
+                            'Decouvrez la suite naturelle de votre parcours :',
+                            completUrl,
+                          ].join('\n');
+                        } else if (daysAfterEnd === 4) {
+                          emailSubject =
                         'Vous aimeriez continuer... mais vous hesitez ?';
 
-                        emailHtml =
+                          emailHtml =
                         '<p>Bonjour' + namePart + ',</p>' +
                         '<p>Vous avez deja montre que vous pouviez vous ' +
                         'offrir quelques minutes par jour pour votre corps.</p>' +
@@ -9752,43 +10104,43 @@ exports.sendNewContentEmails = onSchedule(
                         '<p><a href="' + completUrl + '">' +
                         'Voir l\'approche Fluance complete</a></p>';
 
-                        emailText = [
-                          `Bonjour${namePart},`,
-                          '',
-                          'Vous avez deja montre que vous pouviez vous offrir ' +
+                          emailText = [
+                            `Bonjour${namePart},`,
+                            '',
+                            'Vous avez deja montre que vous pouviez vous offrir ' +
                         'quelques minutes par jour pour votre corps.',
-                          '',
-                          'Vous hesitez peut-etre a continuer : manque de ' +
+                            '',
+                            'Vous hesitez peut-etre a continuer : manque de ' +
                         'temps, peur de ne pas tenir, doute sur ' +
                         'l\'utilite sur le long terme.',
-                          '',
-                          'Avec l\'approche Fluance complete, vous recevez ' +
+                            '',
+                            'Avec l\'approche Fluance complete, vous recevez ' +
                         'chaque semaine une nouvelle mini-serie. Les ' +
                         'seances restent simples, courtes, et pensees ' +
                         'pour s\'integrer a un quotidien charge.',
-                          '',
-                          'Les 14 premiers jours sont offerts : testez sans ' +
+                            '',
+                            'Les 14 premiers jours sont offerts : testez sans ' +
                         'engagement et decidez ensuite si vous souhaitez ' +
                         'continuer.',
-                          '',
-                          'L\'approche complete ne vous demande pas d\'etre ' +
+                            '',
+                            'L\'approche complete ne vous demande pas d\'etre ' +
                         'plus discipline(e). Elle vous invite a continuer ' +
                         'a honorer votre corps, a votre rythme, sans forcer.',
-                          '',
-                          'Les 14 premiers jours sont offerts : testez sans ' +
+                            '',
+                            'Les 14 premiers jours sont offerts : testez sans ' +
                         'engagement et decidez ensuite si vous souhaitez ' +
                         'continuer.',
-                          '',
-                          'Pour voir comment cela peut soutenir votre corps ' +
+                            '',
+                            'Pour voir comment cela peut soutenir votre corps ' +
                         'dans les prochaines semaines :',
-                          completUrl,
-                        ].join('\n');
-                      } else {
-                        emailSubject =
+                            completUrl,
+                          ].join('\n');
+                        } else {
+                          emailSubject =
                         'Dernier rappel pour continuer avec ' +
                         'l\'approche Fluance complete';
 
-                        emailHtml =
+                          emailHtml =
                         '<p>Bonjour' + namePart + ',</p>' +
                         '<p>Il y a quelques jours, vous avez termine le ' +
                         'defi <strong>21 jours pour remettre du mouvement' +
@@ -9816,62 +10168,64 @@ exports.sendNewContentEmails = onSchedule(
                         '<p><a href="' + completUrl + '">' +
                         'Rejoindre l\'approche Fluance complete</a></p>';
 
-                        emailText = [
-                          `Bonjour${namePart},`,
-                          '',
-                          'Il y a quelques jours, vous avez termine le defi ' +
+                          emailText = [
+                            `Bonjour${namePart},`,
+                            '',
+                            'Il y a quelques jours, vous avez termine le defi ' +
                         '"21 jours pour remettre du mouvement".',
-                          '',
-                          'Votre liberte de mouvement est un pilier de votre ' +
+                            '',
+                            'Votre liberte de mouvement est un pilier de votre ' +
                         'sante. Prenez-en soin.',
-                          '',
-                          'Comment se sent votre corps aujourd\'hui ? Et ' +
+                            '',
+                            'Comment se sent votre corps aujourd\'hui ? Et ' +
                         'comment aimeriez-vous qu\'il se sente dans 3 ou ' +
                         '6 mois ?',
-                          '',
-                          'Si vous souhaitez garder cet elan, l\'approche ' +
+                            '',
+                            'Si vous souhaitez garder cet elan, l\'approche ' +
                         'Fluance complete peut devenir votre rituel ' +
                         'hebdomadaire : une nouvelle mini-serie de ' +
                         'pratiques chaque semaine, pour continuer a ' +
                         'delier, renforcer et apaiser.',
-                          '',
-                          'Fluance n\'est pas une methode qui vous force a ' +
+                            '',
+                            'Fluance n\'est pas une methode qui vous force a ' +
                         'changer. C\'est un espace ou votre corps peut ' +
                         'enfin se sentir en securite pour lacher prise, ' +
                         'semaine apres semaine.',
-                          '',
-                          'Les 14 premiers jours sont offerts : testez sans ' +
+                            '',
+                            'Les 14 premiers jours sont offerts : testez sans ' +
                         'engagement et decidez ensuite si vous souhaitez ' +
                         'continuer.',
-                          '',
-                          'Ceci est un dernier rappel doux : si c\'est le ' +
+                            '',
+                            'Ceci est un dernier rappel doux : si c\'est le ' +
                         'bon moment pour vous, vous pouvez rejoindre ' +
                         'l\'approche complete ici :',
-                          completUrl,
-                        ].join('\n');
+                            completUrl,
+                          ].join('\n');
+                        }
+
+                        await sendMailjetEmail(
+                            email,
+                            emailSubject,
+                            appendMarketingLegalFooterHtml(emailHtml, marketingContext.unsubscribeUrl),
+                            appendMarketingLegalFooterText(emailText, marketingContext.unsubscribeUrl),
+                            mailjetApiKey,
+                            mailjetApiSecret,
+                            'fluance@actu.fluance.io',
+                            'Cédric de Fluance',
+                            marketingContext.headers,
+                        );
+
+                        await db.collection('contentEmailsSent').doc(emailSentDocId).set({
+                          userId: userId,
+                          email: email,
+                          type: 'marketing_21jours_to_complet',
+                          day: daysAfterEnd,
+                          sentAt: FieldValue.serverTimestamp(),
+                        });
+
+                        console.log(`✅ Post-21jours email (J+${daysAfterEnd}) sent to ${email} for approche complète`);
+                        emailsSent++;
                       }
-
-                      await sendMailjetEmail(
-                          email,
-                          emailSubject,
-                          emailHtml,
-                          emailText,
-                          mailjetApiKey,
-                          mailjetApiSecret,
-                          'fluance@actu.fluance.io',
-                          'Cédric de Fluance',
-                      );
-
-                      await db.collection('contentEmailsSent').doc(emailSentDocId).set({
-                        userId: userId,
-                        email: email,
-                        type: 'marketing_21jours_to_complet',
-                        day: daysAfterEnd,
-                        sentAt: FieldValue.serverTimestamp(),
-                      });
-
-                      console.log(`✅ Post-21jours email (J+${daysAfterEnd}) sent to ${email} for approche complète`);
-                      emailsSent++;
                     }
                   }
                 }
@@ -10089,20 +10443,28 @@ exports.sendNewContentEmails = onSchedule(
                       .doc(emailSentDocId).get();
 
                   if (!emailSentDoc.exists) {
+                    const marketingContext = await createMarketingUnsubscribeContext(email);
+                    if (!marketingContext) continue;
+
                     const emailSubject = '5 pratiques offertes pour libérer les tensions';
                     const emailHtml = loadEmailTemplate('promotion-5jours', {
                       firstName: firstName || '',
+                      unsubscribeUrl: marketingContext.unsubscribeUrl,
                     });
 
                     await sendMailjetEmail(
                         email,
                         emailSubject,
                         emailHtml,
-                        `${emailSubject}\n\nDécouvrez les 5 jours offerts : https://fluance.io/#5jours`,
+                        appendMarketingLegalFooterText(
+                            `${emailSubject}\n\nDécouvrez les 5 jours offerts : https://fluance.io/#5jours`,
+                            marketingContext.unsubscribeUrl,
+                        ),
                         mailjetApiKey,
                         mailjetApiSecret,
                         'fluance@actu.fluance.io',
                         'Cédric de Fluance',
+                        marketingContext.headers,
                     );
 
                     await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -10146,6 +10508,9 @@ exports.sendNewContentEmails = onSchedule(
                         .doc(emailSentDocId).get();
 
                     if (!emailSentDoc.exists) {
+                      const marketingContext = await createMarketingUnsubscribeContext(email);
+                      if (!marketingContext) continue;
+
                       let emailSubject;
                       let templateName;
 
@@ -10162,16 +10527,21 @@ exports.sendNewContentEmails = onSchedule(
 
                       const emailHtml = loadEmailTemplate(templateName, {
                         firstName: firstName || '',
+                        unsubscribeUrl: marketingContext.unsubscribeUrl,
                       });
                       await sendMailjetEmail(
                           email,
                           emailSubject,
                           emailHtml,
-                          `${emailSubject}\n\nDécouvrez le défi 21 jours : https://fluance.io/cours-en-ligne/21-jours-mouvement/`,
+                          appendMarketingLegalFooterText(
+                              `${emailSubject}\n\nDécouvrez le défi 21 jours : https://fluance.io/cours-en-ligne/21-jours-mouvement/`,
+                              marketingContext.unsubscribeUrl,
+                          ),
                           mailjetApiKey,
                           mailjetApiSecret,
                           'fluance@actu.fluance.io',
                           'Cédric de Fluance',
+                          marketingContext.headers,
                       );
 
                       await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -10209,20 +10579,28 @@ exports.sendNewContentEmails = onSchedule(
                           .doc(emailSentDocId).get();
 
                       if (!emailSentDoc.exists) {
+                        const marketingContext = await createMarketingUnsubscribeContext(email);
+                        if (!marketingContext) continue;
+
                         const emailSubject = 'Découvrez les 5 jours de pratiques offertes';
                         const emailHtml = loadEmailTemplate('relance-5jours', {
                           firstName: firstName || '',
+                          unsubscribeUrl: marketingContext.unsubscribeUrl,
                         });
 
                         await sendMailjetEmail(
                             email,
                             emailSubject,
                             emailHtml,
-                            `${emailSubject}\n\nDécouvrez les 5 jours offerts : https://fluance.io/#5jours`,
+                            appendMarketingLegalFooterText(
+                                `${emailSubject}\n\nDécouvrez les 5 jours offerts : https://fluance.io/#5jours`,
+                                marketingContext.unsubscribeUrl,
+                            ),
                             mailjetApiKey,
                             mailjetApiSecret,
                             'fluance@actu.fluance.io',
                             'Cédric de Fluance',
+                            marketingContext.headers,
                         );
 
                         await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -10262,6 +10640,9 @@ exports.sendNewContentEmails = onSchedule(
                         .doc(emailSentDocId).get();
 
                     if (!emailSentDoc.exists) {
+                      const marketingContext = await createMarketingUnsubscribeContext(email);
+                      if (!marketingContext) continue;
+
                       let emailSubject;
                       let templateName;
 
@@ -10275,17 +10656,22 @@ exports.sendNewContentEmails = onSchedule(
 
                       const emailHtml = loadEmailTemplate(templateName, {
                         firstName: firstName || '',
+                        unsubscribeUrl: marketingContext.unsubscribeUrl,
                       });
 
                       await sendMailjetEmail(
                           email,
                           emailSubject,
                           emailHtml,
-                          `${emailSubject}\n\nDécouvrez le défi 21 jours : https://fluance.io/cours-en-ligne/21-jours-mouvement/`,
+                          appendMarketingLegalFooterText(
+                              `${emailSubject}\n\nDécouvrez le défi 21 jours : https://fluance.io/cours-en-ligne/21-jours-mouvement/`,
+                              marketingContext.unsubscribeUrl,
+                          ),
                           mailjetApiKey,
                           mailjetApiSecret,
                           'fluance@actu.fluance.io',
                           'Cédric de Fluance',
+                          marketingContext.headers,
                       );
 
                       await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -10387,6 +10773,9 @@ exports.sendNewContentEmails = onSchedule(
                           .doc(emailSentDocId).get();
 
                       if (!emailSentDoc.exists) {
+                        const marketingContext = await createMarketingUnsubscribeContext(email);
+                        if (!marketingContext) continue;
+
                         const baseUrl = 'https://fluance.io';
                         const completUrl = `${baseUrl}/decouvrir-ma-pratique/`;
                         const namePart = firstName ? ` ${firstName}` : '';
@@ -10584,12 +10973,13 @@ exports.sendNewContentEmails = onSchedule(
                         await sendMailjetEmail(
                             email,
                             emailSubject,
-                            emailHtml,
-                            emailText,
+                            appendMarketingLegalFooterHtml(emailHtml, marketingContext.unsubscribeUrl),
+                            appendMarketingLegalFooterText(emailText, marketingContext.unsubscribeUrl),
                             mailjetApiKey,
                             mailjetApiSecret,
                             'fluance@actu.fluance.io',
                             'Cédric de Fluance',
+                            marketingContext.headers,
                         );
 
                         await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -10670,6 +11060,9 @@ exports.sendNewContentEmails = onSchedule(
                     .doc(emailSentDocId).get();
 
                 if (!emailSentDoc.exists) {
+                  const marketingContext = await createMarketingUnsubscribeContext(email);
+                  if (!marketingContext) continue;
+
                   const namePart = firstName ? ` ${firstName}` : '';
                   const emailSubject = 'Fluance : on se retrouve sur les reseaux sociaux ?';
                   const emailHtml =
@@ -10710,12 +11103,13 @@ exports.sendNewContentEmails = onSchedule(
                   await sendMailjetEmail(
                       email,
                       emailSubject,
-                      emailHtml,
-                      emailText,
+                      appendMarketingLegalFooterHtml(emailHtml, marketingContext.unsubscribeUrl),
+                      appendMarketingLegalFooterText(emailText, marketingContext.unsubscribeUrl),
                       mailjetApiKey,
                       mailjetApiSecret,
                       'fluance@actu.fluance.io',
                       'Cédric de Fluance',
+                      marketingContext.headers,
                   );
 
                   await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -10829,6 +11223,9 @@ exports.sendNewContentEmails = onSchedule(
                         .doc(emailSentDocId).get();
 
                     if (!emailSentDoc.exists) {
+                      const marketingContext = await createMarketingUnsubscribeContext(email);
+                      if (!marketingContext) continue;
+
                       const namePart = firstName ? ` ${firstName}` : '';
                       const emailSubject = 'Fluance : on se retrouve sur les reseaux sociaux ?';
                       const emailHtml =
@@ -10869,12 +11266,13 @@ exports.sendNewContentEmails = onSchedule(
                       await sendMailjetEmail(
                           email,
                           emailSubject,
-                          emailHtml,
-                          emailText,
+                          appendMarketingLegalFooterHtml(emailHtml, marketingContext.unsubscribeUrl),
+                          appendMarketingLegalFooterText(emailText, marketingContext.unsubscribeUrl),
                           mailjetApiKey,
                           mailjetApiSecret,
                           'fluance@actu.fluance.io',
                           'Cédric de Fluance',
+                          marketingContext.headers,
                       );
 
                       await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -12939,6 +13337,16 @@ async function sendTrialFollowUpsLogic() {
       }
 
       try {
+        const marketingContext = await createMarketingUnsubscribeContext(email);
+        if (!marketingContext) {
+          console.log(`⏭️ Trial follow-up skipped (unsubscribed): ${email}`);
+          await bookingDoc.ref.update({
+            trialFollowUpSent: true,
+            trialFollowUpSentAt: FieldValue.serverTimestamp(),
+          });
+          continue;
+        }
+
         // Envoyer l'email via la collection 'mail' (extension Trigger Email)
         await db.collection('mail').add({
           to: booking.email,
@@ -12946,6 +13354,7 @@ async function sendTrialFollowUpsLogic() {
             name: 'trial-follow-up',
             data: {
               firstName: booking.firstName || '',
+              unsubscribeUrl: marketingContext.unsubscribeUrl,
             },
           },
         });
@@ -13298,20 +13707,28 @@ exports.sendPromotionalEmails = onSchedule(
                   .doc(emailSentDocId).get();
 
               if (!emailSentDoc.exists) {
+                const marketingContext = await createMarketingUnsubscribeContext(email);
+                if (!marketingContext) continue;
+
                 const emailSubject = 'Se réveiller à 2h du matin ne signifie pas que vous êtes cassé·e';
                 const emailHtml = loadEmailTemplate('promotion-complet-sommeil', {
                   firstName: firstName || '',
+                  unsubscribeUrl: marketingContext.unsubscribeUrl,
                 });
 
                 await sendMailjetEmail(
                     email,
                     emailSubject,
                     emailHtml,
-                    `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
+                    appendMarketingLegalFooterText(
+                        `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
+                        marketingContext.unsubscribeUrl,
+                    ),
                     mailjetApiKey,
                     mailjetApiSecret,
                     'fluance@actu.fluance.io',
                     'Cédric de Fluance',
+                    marketingContext.headers,
                 );
 
                 await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -13365,20 +13782,28 @@ exports.sendPromotionalEmails = onSchedule(
                       .doc(emailSentDocId).get();
 
                   if (!emailSentDoc.exists) {
+                    const marketingContext = await createMarketingUnsubscribeContext(email);
+                    if (!marketingContext) continue;
+
                     const emailSubject = 'Quand votre corps vous dit qu\'il en a assez';
                     const emailHtml = loadEmailTemplate('promotion-complet-somatique', {
                       firstName: firstName || '',
+                      unsubscribeUrl: marketingContext.unsubscribeUrl,
                     });
 
                     await sendMailjetEmail(
                         email,
                         emailSubject,
                         emailHtml,
-                        `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
+                        appendMarketingLegalFooterText(
+                            `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
+                            marketingContext.unsubscribeUrl,
+                        ),
                         mailjetApiKey,
                         mailjetApiSecret,
                         'fluance@actu.fluance.io',
                         'Cédric de Fluance',
+                        marketingContext.headers,
                     );
 
                     await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -13406,20 +13831,28 @@ exports.sendPromotionalEmails = onSchedule(
                         .doc(emailSentDocId).get();
 
                     if (!emailSentDoc.exists) {
-                      const emailSubject = 'Bouger à partir de son ressenti';
+                      const marketingContext = await createMarketingUnsubscribeContext(email);
+                      if (!marketingContext) continue;
+
+                      const emailSubject = 'Bouger à partir de son ressent';
                       const emailHtml = loadEmailTemplate('promotion-complet-somatique-relance', {
                         firstName: firstName || '',
+                        unsubscribeUrl: marketingContext.unsubscribeUrl,
                       });
 
                       await sendMailjetEmail(
                           email,
                           emailSubject,
                           emailHtml,
-                          `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
+                          appendMarketingLegalFooterText(
+                              `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
+                              marketingContext.unsubscribeUrl,
+                          ),
                           mailjetApiKey,
                           mailjetApiSecret,
                           'fluance@actu.fluance.io',
                           'Cédric de Fluance',
+                          marketingContext.headers,
                       );
 
                       await db.collection('contentEmailsSent').doc(emailSentDocId).set({
@@ -13526,20 +13959,28 @@ exports.sendPromotionalEmails = onSchedule(
                           .doc(emailSentDocId).get();
 
                       if (!emailSentDoc.exists) {
+                        const marketingContext = await createMarketingUnsubscribeContext(email);
+                        if (!marketingContext) continue;
+
                         const emailSubject = 'Quand votre corps vous dit qu\'il en a assez';
                         const emailHtml = loadEmailTemplate('promotion-complet-somatique', {
                           firstName: firstName || '',
+                          unsubscribeUrl: marketingContext.unsubscribeUrl,
                         });
 
                         await sendMailjetEmail(
                             email,
                             emailSubject,
                             emailHtml,
-                            `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
+                            appendMarketingLegalFooterText(
+                                `${emailSubject}\n\nDécouvrez Fluance : https://fluance.io/decouvrir-ma-pratique/`,
+                                marketingContext.unsubscribeUrl,
+                            ),
                             mailjetApiKey,
                             mailjetApiSecret,
                             'fluance@actu.fluance.io',
                             'Cédric de Fluance',
+                            marketingContext.headers,
                         );
 
                         await db.collection('contentEmailsSent')

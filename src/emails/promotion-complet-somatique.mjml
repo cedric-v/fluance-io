@@ -83,9 +83,12 @@ permalink: /emails/promotion-complet-somatique.html
     </mj-section>
     <mj-section background-color="#f9f9f9" padding="20px 20px 10px 20px">
       <mj-column>
-        <mj-text align="center" font-size="12px" color="#666666" padding="0">
-          Cédric<br>Fluance : le mouvement qui éveille et apaise<br>
-          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        <mj-text align="center" font-size="11px" color="#666666" padding="0">
+          Vous pouvez vous opposer gratuitement à la réception de communications promotionnelles<br>
+          et vous désinscrire à tout moment :
+          <a href="{{unsubscribeUrl}}" style="color: #648ED8; text-decoration: underline;">Se désinscrire</a>.<br><br>
+          Instants Zen Sàrl — Case postale, 1782 Belfaux, Suisse<br>
+          <a href="https://fluance.io/mentions-legales/" style="color: #648ED8;">Mentions légales et politique de confidentialité</a>
         </mj-text>
       </mj-column>
     </mj-section>
