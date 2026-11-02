@@ -33,6 +33,13 @@
       "enabled": false
     },
     {
+      "description": "Node majeur dans functions/ : Cloud Functions ne supporte que nodejs20/22/24 (firebase-tools 15.x). Le bump des engines casserait `firebase deploy` — a faire a la main quand le runtime sera dispo. Les workflows CI peuvent continuer a suivre.",
+      "matchDatasources": ["node-version"],
+      "matchFileNames": ["functions/package.json"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "matchUpdateTypes": ["minor", "patch"],
       "matchCurrentVersion": "!/^0/",
       "groupName": "non-major dependencies",
