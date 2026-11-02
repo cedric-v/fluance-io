@@ -90,15 +90,44 @@ jobs:
       - name: Build email templates
         run: npm run build:email-templates
 
+      # Cible de deploiement la plus etroite possible:
+      # - functions/index.js touche -> toutes les functions (71 exports)
+      # - uniquement blogLeadHub.js / runtimeConfig.js -> les 2 fonctions HTTP
+      # - autre chose dans functions/ -> toutes (plus prudent)
+      # L'input manuel `functions` du workflow_dispatch reste prioritaire.
+      - name: Compute deployment targets
+        id: targets
+        run: |
+          if [ -n "${{ inputs.functions }}" ]; then
+            echo "targets=${{ inputs.functions }}" >> "$GITHUB_OUTPUT"
+            echo "Cible (manuelle): ${{ inputs.functions }}"
+            exit 0
+          fi
+          CHANGED="$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- functions/ 2>/dev/null || true)"
+          if [ -z "$CHANGED" ]; then
+            CHANGED="$(git diff --name-only HEAD~1 HEAD -- functions/ 2>/dev/null || true)"
+          fi
+          echo "Fichiers modifies: $CHANGED"
+          if echo "$CHANGED" | grep -q 'functions/index.js'; then
+            echo "targets=functions" >> "$GITHUB_OUTPUT"
+            echo "Cible: toutes les functions (index.js modifie)"
+          elif [ -n "$CHANGED" ]; then
+            echo "targets=functions:captureLead,functions:sendContactEmail" >> "$GITHUB_OUTPUT"
+            echo "Cible: fonctions HTTP du hub (blogLeadHub.js/runtimeConfig.js)"
+          else
+            echo "targets=functions" >> "$GITHUB_OUTPUT"
+            echo "Cible: toutes les functions (aucun diff exploitable)"
+          fi
+
       - name: Deploy functions
         env:
           FIREBASE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          TARGETS: ${{ steps.targets.outputs.targets }}
         run: |
-          TARGETS="${{ inputs.functions }}"
-          if [ -z "$TARGETS" ]; then
-            npx --yes firebase-tools@latest deploy --only functions --project "$FIREBASE_PROJECT" --non-interactive
+          if [ "$TARGETS" = "functions" ]; then
+            npx --yes firebase-tools@15.30.2 deploy --only functions --project "$FIREBASE_PROJECT" --non-interactive
           else
-            npx --yes firebase-tools@latest deploy --only "$TARGETS" --project "$FIREBASE_PROJECT" --non-interactive
+            npx --yes firebase-tools@15.30.2 deploy --only "$TARGETS" --project "$FIREBASE_PROJECT" --non-interactive
           fi
 
       # Verifie que la configuration REELLEMENT deployee (memoire, min/max
