@@ -16,7 +16,8 @@
     "build:css": "cross-env NODE_ENV=production npx postcss ./src/assets/css/styles.css -o ./_site/assets/css/styles.css",
     "build:js": "terser src/assets/js/booking.js -c -m --ecma 2020 -o _site/assets/js/booking.js",
     "build:email-templates": "node scripts/build-email-templates.js",
-    "verify:functions": "node scripts/verify-functions-runtime.mjs"
+    "verify:functions": "node scripts/verify-functions-runtime.mjs",
+    "verify:requires": "node scripts/check-function-requires.mjs"
   },
   "keywords": [],
   "author": "Instants Zen Sàrl / Fluance",
