@@ -164,6 +164,37 @@ Le script lit l'API Cloud Functions v2 et compare `availableMemory`,
 Un redeploiement qui ne declare pas une option la remet au defaut GCP: c'est
 ainsi que `maxInstanceCount` etait repasse de 20 a 100 le 1er novembre 2026.
 
+## Deploiement des functions (CI + WIF)
+
+Les functions se deployent desormais depuis la CI
+(`.github/workflows/deploy-functions.yml`):
+
+- push sur `main` touchant `functions/`, `src/emails/` ou
+  `scripts/build-email-templates.js` -> deploiement automatique
+- `workflow_dispatch` -> deploiement manuel (input `functions` pour cibler,
+  ex. `functions:captureLead,functions:sendContactEmail`)
+- avant deploiement: `npm ci`, lint, tests unitaires, build des templates email
+- apres deploiement: `npm run verify:functions` (garde-fou anti-derive)
+
+Authentification par **Workload Identity Federation**: aucune cle JSON de
+compte de service n'est stockee dans GitHub. Le jeton OIDC GitHub est echange
+contre des credentials GCP temporaires.
+
+- pool: `github` (global), provider OIDC `github`, condition
+  `assertion.repository == 'cedric-v/fluance-io'`
+- compte de service: `github-deployer@fluance-protected-content.iam.gserviceaccount.com`
+  (roles: cloudfunctions, run, artifactregistry, cloudbuild, cloudscheduler,
+  storage, secretmanager, firebase, serviceusage)
+- binding `roles/iam.workloadIdentityUser` sur le `principalSet` du depot
+- variables de depot (non secretes): `GCP_PROJECT_ID`,
+  `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_DEPLOY_SERVICE_ACCOUNT`
+- environnement GitHub `production` (protection rules vide: ajouter une
+  approbation si un deploiement doit passer par une validation humaine)
+
+Deploiement manuel depuis le laptop (toujours possible):
+`firebase deploy --only functions:captureLead,functions:sendContactEmail`
+puis `npm run verify:functions`.
+
 ## Rollback
 
 Functions (gen2 = Cloud Run: bascule instantanee, sans rebuild):

@@ -88,8 +88,10 @@ Reasons, measured in November 2026:
 
 CI: the `functions` job in `.github/workflows/ci.yml` (lint + tests) is a
 required check on `main`; the same lint + tests also run locally on `pre-push`
-when the push touches `functions/`. Functions are still deployed manually, so
-the post-deploy runtime check is the guard against config drift.
+when the push touches `functions/`. Functions are deployed from CI
+(`.github/workflows/deploy-functions.yml`) with Workload Identity Federation:
+no long-lived service account key is stored in GitHub. The deployed runtime is
+re-checked after each deploy by `npm run verify:functions`.
 
 ## Future improvements already anticipated
 

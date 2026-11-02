@@ -22,6 +22,9 @@ ALLOWED_PATTERNS=(
   # dépréciation du paquet glob, intégré aux métadonnées de package-lock.json
   # (pas une donnée client).
   'i@izs\.me'
+  # Comptes de service Google Cloud (adresses de robots, pas des personnes):
+  # le compte de service de deploiement CI est documente dans le runbook.
+  '@[A-Za-z0-9-]+\.iam\.gserviceaccount\.com'
 )
 
 EMAIL_REGEX='[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
