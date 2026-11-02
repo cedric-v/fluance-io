@@ -7,7 +7,7 @@
 >
 > ⚠️ **Exceptions conservées (TRANSITION)** : `webhookMollie` + `processMolliePayment`
 > restent actifs pour traiter les **abonnements Mollie encore en cours**
-> (comptabilité Bexio, renouvellements). Ils seront supprimés quand tous les abonnements
+> (renouvellements, pass). Ils seront supprimés quand tous les abonnements
 > Mollie existants seront terminés. Ce document est conservé à titre historique.
 
 ---

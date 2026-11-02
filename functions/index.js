@@ -39,7 +39,6 @@ const {sendAdminAlert} = require('./services/adminAlerts');
 const blogLeadHub = require('./blogLeadHub');
 
 // Import services nouveaux
-const {bexioService} = require('./services/bexioService');
 const {ensureStripePrice} = require('./services/stripePrices');
 
 // ⚠️ TRANSITION MOLLIE : services utilisés uniquement pour traiter les
@@ -244,124 +243,6 @@ function getStripeMaxPayments(product, variant) {
   if (product === 'focus-sos' && variant === '3x') return 3;
   if (product === 'site-vitrine' && variant === '5x') return 5;
   return null;
-}
-
-/**
- * Crée les écritures comptables Bexio pour un paiement Stripe encaissé.
- * Logique identique à celle utilisée avec Mollie (Manual Entries), mais avec
- * le compte caisse Stripe (1023 par défaut) et les frais réels Stripe
- * (issus du balance_transaction).
- * @param {Object} opts
- * @param {string} opts.reference - ID de référence (payment_intent / charge / invoice)
- * @param {number} opts.amountGross - Montant brut en CHF (unités)
- * @param {number} opts.amountFee - Frais Stripe en CHF (unités)
- * @param {string} opts.date - Date YYYY-MM-DD
- * @param {string} opts.description - Description de la vente
- * @param {string|null} opts.countryCode - Code pays (CH par défaut)
- * @returns {Promise<void>}
- */
-async function recordStripeBexioEntries({reference, amountGross, amountFee, date, description, countryCode = 'CH'}) {
-  const isSwiss = countryCode === 'CH' || countryCode === 'LI';
-
-  // Comptes (Stripe Logic du projet de référence)
-  // Caisse Stripe : 1023
-  const debitAccount = process.env.BEXIO_ACCOUNT_STRIPE ? parseInt(process.env.BEXIO_ACCOUNT_STRIPE) : 1023;
-  const creditAccountCH =
-    process.env.BEXIO_ACCOUNT_SALES_CH ? parseInt(process.env.BEXIO_ACCOUNT_SALES_CH) : 3400;
-  const creditAccountIntl =
-    process.env.BEXIO_ACCOUNT_SALES_INTL ? parseInt(process.env.BEXIO_ACCOUNT_SALES_INTL) : 3410;
-  const creditAccount = isSwiss ? creditAccountCH : creditAccountIntl;
-
-  // TVA : 14 (CH 8.1%) / 4 (Intl 0% CSE) — configurable
-  const taxId = isSwiss ?
-    (process.env.BEXIO_TAX_ID_CH ? parseInt(process.env.BEXIO_TAX_ID_CH) : 14) :
-    (process.env.BEXIO_TAX_ID_INTL ? parseInt(process.env.BEXIO_TAX_ID_INTL) : 4);
-
-  const entryDate = date || new Date().toISOString().split('T')[0];
-
-  // 1. Écriture de vente (montant brut)
-  await bexioService.createManualEntry({
-    date: entryDate,
-    debit_account_id: debitAccount,
-    credit_account_id: creditAccount,
-    amount: amountGross,
-    text: `Stripe Payment ${reference} - ${description}`,
-    reference,
-    tax_id: taxId,
-  });
-
-  // 2. Écriture de frais (commission Stripe) si détectée
-  if (amountFee > 0) {
-    const feeAccount = process.env.BEXIO_ACCOUNT_FEES ? parseInt(process.env.BEXIO_ACCOUNT_FEES) : 6941;
-    await bexioService.createManualEntry({
-      date: entryDate,
-      debit_account_id: feeAccount,
-      credit_account_id: debitAccount, // On déduit du compte Caisse Stripe
-      amount: amountFee,
-      text: `Commission Stripe ${reference} - ${description}`,
-      reference,
-      tax_id: 3, // Sans influence TVA (0%)
-      tax_account_id: feeAccount,
-    });
-  }
-
-  console.log(`📊 Bexio entries created for Stripe payment ${reference} (gross ${amountGross}, fee ${amountFee})`);
-}
-
-/**
- * Crée les écritures Bexio pour un PaymentIntent Stripe (charge + balance_transaction).
- * Non bloquant : les erreurs sont loggées sans faire échouer le webhook.
- * @param {Object} stripe - Instance Stripe
- * @param {string} paymentIntentId - ID du Payment Intent
- * @param {string} reference - Référence de l'écriture (généralement l'ID du PI)
- * @param {string} description - Description de la vente
- * @param {string} [date] - Date YYYY-MM-DD
- * @returns {Promise<void>}
- */
-async function recordBexioForPaymentIntent(stripe, paymentIntentId, reference, description, date) {
-  if (!paymentIntentId || !stripe) return;
-  try {
-    const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
-      expand: ['charges.data.balance_transaction'],
-    });
-    const charge = pi?.charges?.data?.[0] || null;
-    const {fee, country} = getStripeFeeAndCountry(charge);
-    const amountGross = pi.amount ? pi.amount / 100 : 0;
-    if (amountGross > 0) {
-      await recordStripeBexioEntries({
-        reference: reference || paymentIntentId,
-        amountGross,
-        amountFee: fee,
-        date: date || (pi.created ? new Date(pi.created * 1000).toISOString().split('T')[0] : undefined),
-        description,
-        countryCode: country,
-      });
-    }
-  } catch (error) {
-    console.error('❌ Error in Stripe Bexio integration (payment intent):', error.message);
-  }
-}
-
-/**
- * Calcule la commission Stripe réelle à partir d'une charge (balance_transaction).
- * @param {Object} charge - Objet charge Stripe (expand balance_transaction)
- * @returns {{fee: number, country: string}}
- */
-function getStripeFeeAndCountry(charge) {
-  const balanceTx = charge?.balance_transaction;
-  let fee = 0;
-  if (balanceTx && typeof balanceTx === 'object' && balanceTx.fee) {
-    // fee en centimes dans la devise du compte (CHF) — convertir en unités
-    fee = balanceTx.fee / 100;
-  }
-
-  // Pays de la carte pour la TVA
-  let country = 'CH';
-  const cardCountry = charge?.payment_method_details?.card?.country;
-  if (cardCountry) country = cardCountry;
-  else if (charge?.billing_details?.address?.country) country = charge.billing_details.address.country;
-
-  return {fee, country};
 }
 
 // Configuration Mailjet (via secrets Firebase - méthode moderne)
@@ -2614,8 +2495,6 @@ exports.webhookStripe = onRequest(
         'MAILJET_API_SECRET',
         'STRIPE_WEBHOOK_SECRET',
         'STRIPE_SECRET_KEY',
-        'BEXIO_API_TOKEN',
-        'BEXIO_ACCOUNT_FEES',
       ],
     },
     async (req, res) => {
@@ -2794,21 +2673,6 @@ exports.webhookStripe = onRequest(
                     paymentIntent.id || session.id,
                 );
                 console.log('Confirmation result:', result);
-
-                // Comptabilité Bexio pour le paiement de la réservation
-                try {
-                  if (process.env.STRIPE_SECRET_KEY) {
-                    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-                    await recordBexioForPaymentIntent(
-                        stripe,
-                        paymentIntent.id || session.id,
-                        paymentIntent.id || session.id,
-                        `Booking ${bookingId} (${paymentIntent.metadata?.pricingOption || 'single'})`,
-                    );
-                  }
-                } catch (bexioError) {
-                  console.error('❌ Error in Stripe Bexio integration (booking):', bexioError.message);
-                }
 
                 // Envoyer notification admin pour réservation à l'unité
                 try {
@@ -3175,25 +3039,6 @@ exports.webhookStripe = onRequest(
           }
         } catch (abandonError) {
           console.error('❌ Error marking abandoned checkout completed:', abandonError.message);
-        }
-
-        // ============================================================
-        // COMPTABILITÉ BEXIO (Stripe) — écritures vente + commission
-        // Non bloquant : un échec comptable ne doit pas empêcher le reste
-        // ============================================================
-        try {
-          if (process.env.STRIPE_SECRET_KEY && session.payment_intent) {
-            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-            await recordBexioForPaymentIntent(
-                stripe,
-                typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id,
-                session.payment_intent || session.id,
-                `${product}${session.metadata?.variant ? ' ' + session.metadata.variant : ''}`,
-                new Date().toISOString().split('T')[0],
-            );
-          }
-        } catch (bexioError) {
-          console.error('❌ Error in Stripe Bexio integration:', bexioError.message);
         }
 
         // Pour le RDV Clarté (cedricv.com), pas besoin de créer un token ni d'envoyer d'email
@@ -3674,8 +3519,8 @@ Session: ${session.id}
       }
 
       // Gérer les renouvellements d'abonnement des produits en ligne
-      // (complet, rdv-clarte, focus-sos, site-vitrine) : comptabilité Bexio
-      // + annulation automatique des échéances limitées (focus-sos 3x, site-vitrine 5x)
+      // (complet, rdv-clarte, focus-sos, site-vitrine) :
+      // annulation automatique des échéances limitées (focus-sos 3x, site-vitrine 5x)
       if (event.type === 'invoice.paid') {
         const invoice = event.data.object;
         const subscriptionId = invoice.subscription;
@@ -3698,30 +3543,8 @@ Session: ${session.id}
 
           // Seuls les abonnements Firebase (produits en ligne) sont traités ici
           if (system === 'firebase' && product) {
-            // 1. Comptabilité Bexio pour la facture payée (renouvellement)
-            //    ⚠️ On saute la facture de création (subscription_create) : le premier
-            //    paiement est déjà comptabilisé via checkout.session.completed.
-            if (invoice.billing_reason !== 'subscription_create') {
-              try {
-                if (invoice.payment_intent && process.env.STRIPE_SECRET_KEY) {
-                  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-                  await recordBexioForPaymentIntent(
-                      stripe,
-                      typeof invoice.payment_intent === 'string' ?
-                      invoice.payment_intent :
-                      invoice.payment_intent.id,
-                      invoice.payment_intent || invoice.id,
-                      `Renouvellement ${product}${variant ? ' ' + variant : ''}`,
-                      invoice.created ? new Date(invoice.created * 1000).toISOString().split('T')[0] : undefined,
-                  );
-                }
-              } catch (bexioError) {
-                console.error('❌ Error in Stripe Bexio integration (invoice.paid):', bexioError.message);
-              }
-            }
-
-            // 2. Échéances limitées (focus-sos 3x, site-vitrine 5x) :
-            //    compter les paiements et annuler après le N-ième
+            // Échéances limitées (focus-sos 3x, site-vitrine 5x) :
+            // compter les paiements et annuler après le N-ième
             const maxPayments = getStripeMaxPayments(product, variant);
             if (maxPayments) {
               const countRef = db.collection('subscriptionPayments').doc(subscriptionId);
@@ -3816,21 +3639,6 @@ Session: ${session.id}
                 phone: phone,
               });
               console.log(`✅ Semester Pass created: ${pass.passId}`);
-
-              // Comptabilité Bexio pour le premier paiement du Pass Semestriel
-              try {
-                if (invoice.payment_intent && process.env.STRIPE_SECRET_KEY) {
-                  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-                  await recordBexioForPaymentIntent(
-                      stripe,
-                      typeof invoice.payment_intent === 'string' ? invoice.payment_intent : invoice.payment_intent.id,
-                      invoice.payment_intent,
-                      'Pass Semestriel (premier paiement)',
-                  );
-                }
-              } catch (bexioError) {
-                console.error('❌ Error in Stripe Bexio integration (semester pass):', bexioError.message);
-              }
 
               // Si un courseId est présent dans les métadonnées, créer automatiquement la réservation
               if (courseId && bookingService) {
@@ -4077,23 +3885,6 @@ Session: ${session.id}
             console.log(`✅ Semester Pass renewed for ${customerEmail}`);
             try {
               await passService.renewSemesterPass(db, subscriptionId);
-
-              // Comptabilité Bexio pour le renouvellement
-              try {
-                if (invoice.payment_intent && process.env.STRIPE_SECRET_KEY) {
-                  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-                  await recordBexioForPaymentIntent(
-                      stripe,
-                      typeof invoice.payment_intent === 'string' ?
-                      invoice.payment_intent :
-                      invoice.payment_intent.id,
-                      invoice.payment_intent,
-                      'Pass Semestriel (renouvellement)',
-                  );
-                }
-              } catch (bexioError) {
-                console.error('❌ Error in Stripe Bexio integration (semester pass renewal):', bexioError.message);
-              }
             } catch (renewError) {
               console.error('Error renewing Semester Pass:', renewError);
             }
@@ -15722,9 +15513,8 @@ exports.getHealthStats = onCall(
  * encore actifs (ex: site-vitrine 5x avec échéances restantes,
  * abonnements complet / rdv-clarte / focus-sos / semester_pass
  * créés avant le retour à Stripe). Mollie continue de prélever
- * automatiquement ces abonnements : ces webhooks assurent la
- * comptabilité Bexio et les renouvellements de pass pendant la
- * transition.
+ * automatiquement ces abonnements : ces webhooks assurent les
+ * renouvellements de pass pendant la transition.
  *
  * ➜ À supprimer une fois que TOUS les abonnements Mollie
  *   existants sont terminés (plus aucun prélèvement attendu).
@@ -15795,7 +15585,7 @@ exports.processMolliePayment = onMessagePublished(
     {
       topic: 'process-mollie-payment',
       region: 'europe-west1',
-      secrets: ['MOLLIE_API_KEY', 'BEXIO_API_TOKEN', 'GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_SHEET_ID_SALES', 'BEXIO_ACCOUNT_DEBIT', 'BEXIO_ACCOUNT_CREDIT', 'BEXIO_ACCOUNT_FEES', 'MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
+      secrets: ['MOLLIE_API_KEY', 'GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_SHEET_ID_SALES', 'MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       // Timeout plus long pour les opérations externes
       timeoutSeconds: 300,
     },
@@ -15875,84 +15665,8 @@ exports.processMolliePayment = onMessagePublished(
 
         let mollieSubscriptionId = null;
 
-        // 3. Logique Bexio (Manual Entry - Stripe Logic)
-        try {
-        // Determine Country for VAT
-        // Priority: Metadata -> Payment Locale -> Default CH
-          let countryCode = 'CH';
-          if (metadata.country) {
-            countryCode = metadata.country;
-          } else if (payment.details?.countryCode) {
-            countryCode = payment.details.countryCode;
-          } else if (payment.locale) {
-          // e.g. fr_CH, de_DE
-            const parts = payment.locale.split('_');
-            if (parts.length > 1) countryCode = parts[1];
-          }
-
-          const isSwiss = countryCode === 'CH' || countryCode === 'LI'; // Liechtenstein uses Swiss VAT usually
-
-          // Accounts Config
-          // Defaults based on "Stripe Logic" from reference project
-          // Caisse: 1023 (Stripe) -> Here we use 1027 (Mollie) or whatever variable provided
-          const debitAccount = process.env.BEXIO_ACCOUNT_MOLLIE ? parseInt(process.env.BEXIO_ACCOUNT_MOLLIE) : 1027;
-
-          // Sales: 3400 (CH) / 3410 (Intl)
-          const creditAccountCH = process.env.BEXIO_ACCOUNT_SALES_CH ?
-          parseInt(process.env.BEXIO_ACCOUNT_SALES_CH) :
-          3400;
-          const creditAccountIntl = process.env.BEXIO_ACCOUNT_SALES_INTL ?
-          parseInt(process.env.BEXIO_ACCOUNT_SALES_INTL) :
-          3410;
-          const creditAccount = isSwiss ? creditAccountCH : creditAccountIntl;
-
-          // Taxes: 14 (CH 8.1%) / 3 (Intl 0%) - Note: Tax IDs might change over time, 14 is typical for 8.1%
-          // Reference project: 8.1% -> 14. 0% -> 3.
-          const taxId = isSwiss ? 14 : 3;
-
-          const amountGross = parseFloat(payment.amount.value);
-          const amountSettlement = payment.settlementAmount ? parseFloat(payment.settlementAmount.value) : amountGross;
-          const amountFee = Math.round((amountGross - amountSettlement) * 100) / 100;
-
-          console.log(`📊 Booking Manual Entry: Gross ${amountGross}, Net ${amountSettlement}, ` +
-          `Fee ${amountFee}, Country ${countryCode}, TaxID ${taxId}`);
-
-          // 1. Écriture de Vente (Montant Brut)
-          // On utilise le montant Brut pour le CA (Suisse et International)
-          await bexioService.createManualEntry({
-            date: payment.paidAt ? payment.paidAt.split('T')[0] : new Date().toISOString().split('T')[0],
-            debit_account_id: debitAccount,
-            credit_account_id: creditAccount,
-            amount: amountGross,
-            text: `Mollie Payment ${paymentId} - ${payment.description}`,
-            reference: paymentId,
-            tax_id: taxId,
-          });
-
-          // 2. Écriture de Commission (Frais Mollie)
-          // On crée une écriture séparée si des frais sont détectés
-          if (amountFee > 0) {
-            const feeAccount = process.env.BEXIO_ACCOUNT_FEES ? parseInt(process.env.BEXIO_ACCOUNT_FEES) : 6941;
-            console.log(`📊 Booking Fee Entry: Amount ${amountFee}, Account ${feeAccount}`);
-
-            await bexioService.createManualEntry({
-              date: payment.paidAt ? payment.paidAt.split('T')[0] : new Date().toISOString().split('T')[0],
-              debit_account_id: feeAccount,
-              credit_account_id: debitAccount, // On déduit du compte Caisse Mollie
-              amount: amountFee,
-              text: `Commission Mollie ${paymentId} - ${payment.description}`,
-              reference: paymentId,
-              tax_id: 3, // Sans influence TVA (0%)
-              tax_account_id: feeAccount,
-            });
-          }
-        } catch (bexioError) {
-          console.error('❌ Error in Bexio integration:', bexioError);
-        }
-
-        // 3b. Gestion des abonnements (Subscription Creation)
-        // Découplé de Bexio: un échec comptable ne doit jamais empêcher
-        // la création d'une souscription récurrente.
+        // 3. Gestion des abonnements (Subscription Creation)
+        // Un échec ne doit jamais empêcher le traitement du paiement.
         if (metadata.type === 'subscription_first' && payment.customerId) {
           try {
             console.log(`🔄 Creating subscription for payment ${paymentId} (Customer: ${payment.customerId})`);
@@ -16062,7 +15776,7 @@ exports.processMolliePayment = onMessagePublished(
           }
         }
 
-        // 3c. Échéances limitées — annulation explicite de sécurité (site-vitrine 5x, focus-sos 3x)
+        // 4. Échéances limitées — annulation explicite de sécurité (site-vitrine 5x, focus-sos 3x)
         // ⚠️ Mollie dispose normalement d'un arrêt automatique via le paramètre `times`
         // (le subscription a été créé avec times: 4 pour site-vitrine / times: 2 pour focus-sos).
         // Ce bloc est un filet de sécurité : quand le dernier renouvellement attendu est
@@ -16119,7 +15833,7 @@ exports.processMolliePayment = onMessagePublished(
           }
         }
 
-        // 4. Logique Google Sheets
+        // 5. Logique Google Sheets
         try {
           const sheetId = process.env.GOOGLE_SHEET_ID_SALES;
           if (sheetId && googleService) {
@@ -16129,7 +15843,7 @@ exports.processMolliePayment = onMessagePublished(
           console.error('❌ Error in Google Sheets integration:', sheetError);
         }
 
-        // 4b. Produits en ligne (Online Products) - Envoi d'email et Audit
+        // 6. Produits en ligne (Online Products) - Envoi d'email et Audit
         if (metadata.type === 'order' || metadata.type === 'subscription_first') {
           // Si c'est un produit en ligne (focus-sos, complet, 21jours etc)
           const isOnlineProduct = metadata.product === 'focus-sos' || metadata.product === 'complet' || metadata.product === '21jours';
@@ -16269,7 +15983,7 @@ Paiement Mollie: ${paymentId}
           }
         }
 
-        // 5. Confirmer la réservation (Booking) si applicable
+        // 7. Confirmer la réservation (Booking) si applicable
         if (payment.metadata && payment.metadata.bookingId) {
           const bookingId = payment.metadata.bookingId;
           console.log(`🎫 Confirming Booking ${bookingId} for Payment ${paymentId}`);
@@ -16283,7 +15997,7 @@ Paiement Mollie: ${paymentId}
           }
         }
 
-        // 6. Gestion des Pass (Flow Pass & Semester Pass)
+        // 8. Gestion des Pass (Flow Pass & Semester Pass)
         // On détecte si c'est un achat de pass via les métadonnées
         const isFlowPassPurchase = (metadata.passType === 'flow_pass' || metadata.product === 'flow_pass') && metadata.type !== 'subscription_renewal';
         const isSemesterPassPurchase = (metadata.product === 'semester_pass') && (metadata.type === 'subscription_first' || metadata.type === 'semester_pass');
