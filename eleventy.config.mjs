@@ -10,10 +10,15 @@ const PATH_PREFIX = process.env.ELEVENTY_ENV === 'prod' ? "" : "";
 
 export default function (eleventyConfig) {
 
-  eleventyConfig.addShortcode("responsiveImage", async function (src, alt, sizes = "100vw", cls = "", loading = "lazy", width = null, height = null) {
+  // `options` (optionnel) permet d'ajuster les images héros plein écran :
+  //   { widths: [...], quality: { webp: 72, avif: 45, jpeg: 72 } }
+  eleventyConfig.addShortcode("responsiveImage", async function (src, alt, sizes = "100vw", cls = "", loading = "lazy", width = null, height = null, options = {}) {
     if (alt === undefined) {
       throw new Error(`Missing \`alt\` on responsive image from: ${src}`);
     }
+
+    const opts = options || {};
+    const quality = Object.assign({ webp: 55, avif: 35, jpeg: 55 }, opts.quality || {});
 
     let inputPath = src;
     if (src.startsWith('/assets/')) {
@@ -23,19 +28,19 @@ export default function (eleventyConfig) {
     }
 
     let metadata = await EleventyImage(inputPath, {
-      widths: [150, 300, 450, 600, 750, 900, 1050, 1200, 1400, 1600],
+      widths: opts.widths || [150, 300, 450, 600, 750, 900, 1050, 1200, 1400, 1600],
       formats: ["avif", "webp", "jpeg"],
       outputDir: "./_site/assets/img/",
       urlPath: "/assets/img/",
       sharpWebpOptions: {
-        quality: 55,
+        quality: quality.webp,
         smartSubsample: true
       },
       sharpAvifOptions: {
-        quality: 35
+        quality: quality.avif
       },
       sharpJpegOptions: {
-        quality: 55
+        quality: quality.jpeg
       }
     });
 
