@@ -24,7 +24,7 @@
     "google-auth-library": "^11.0.2",
     "googleapis": "^189.0.0",
     "stripe": "^23.0.0",
-    "web-push": "^3.6.7"
+    "web-push": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
