@@ -136,9 +136,9 @@ jobs:
           TARGETS: ${{ steps.targets.outputs.targets }}
         run: |
           if [ "$TARGETS" = "functions" ]; then
-            npx --yes firebase-tools@15.30.2 deploy --only functions --project "$FIREBASE_PROJECT" --non-interactive
+            npx --yes firebase-tools@15.35.0 deploy --only functions --project "$FIREBASE_PROJECT" --non-interactive
           else
-            npx --yes firebase-tools@15.30.2 deploy --only "$TARGETS" --project "$FIREBASE_PROJECT" --non-interactive
+            npx --yes firebase-tools@15.35.0 deploy --only "$TARGETS" --project "$FIREBASE_PROJECT" --non-interactive
           fi
 
       # Verifie que la configuration REELLEMENT deployee (memoire, min/max
