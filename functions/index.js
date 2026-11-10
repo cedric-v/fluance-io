@@ -15,6 +15,7 @@ const {onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {setGlobalOptions} = require('firebase-functions/v2');
 const {HttpsError} = require('firebase-functions/v2/https');
+const {HTTP_FUNCTION_RUNTIME, SCHEDULED_FUNCTION_RUNTIME} = require('./runtimeConfig');
 const admin = require('firebase-admin');
 const {getFirestore, Timestamp, FieldValue} = require('firebase-admin/firestore');
 const {getAuth} = require('firebase-admin/auth');
@@ -2489,6 +2490,7 @@ async function removeProductFromUser(email, productName) {
  */
 exports.webhookStripe = onRequest(
     {
+      ...HTTP_FUNCTION_RUNTIME.webhookStripe,
       region: 'europe-west1',
       secrets: [
         'MAILJET_API_KEY',
@@ -5395,6 +5397,7 @@ exports.verifyToken = onCall(
  */
 exports.getProtectedContent = onCall(
     {
+      ...HTTP_FUNCTION_RUNTIME.getProtectedContent,
       region: 'europe-west1',
     },
     async (request) => {
@@ -6866,6 +6869,7 @@ exports.setNotificationOptIn = onCall(
  */
 exports.getNotificationPrefs = onCall(
     {
+      ...HTTP_FUNCTION_RUNTIME.getNotificationPrefs,
       region: 'europe-west1',
     },
     async (request) => {
@@ -7330,6 +7334,7 @@ exports.removePushSubscription = onCall(
  */
 exports.sendPracticeReminders = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '0 9 * * *', // Tous les jours à 9h
       timeZone: 'Europe/Paris',
       // La clé PRIVÉE VAPID est un secret. La clé PUBLIQUE n'est pas secrète :
@@ -7979,6 +7984,7 @@ exports.subscribeToStagesWaitingList = onCall(
  */
 exports.confirmNewsletterOptIn = onCall(
     {
+      ...HTTP_FUNCTION_RUNTIME.confirmNewsletterOptIn,
       region: 'europe-west1',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
       cors: true, // Autoriser CORS pour toutes les origines
@@ -9209,6 +9215,7 @@ exports.checkPasswordResetToken = onCall(
  */
 exports.sendSignInLinkViaMailjet = onCall(
     {
+      ...HTTP_FUNCTION_RUNTIME.sendSignInLinkViaMailjet,
       region: 'europe-west1',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL', 'WEB_API_KEY'],
       cors: true,
@@ -9558,6 +9565,7 @@ function escapeHtml(text) {
  */
 exports.sendNewContentEmails = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '0 8 * * *', // Tous les jours à 8h
       timeZone: 'Europe/Paris',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
@@ -11164,6 +11172,7 @@ exports.sendNewContentEmails = onSchedule(
  */
 exports.processPendingSuspensions = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '0 10 * * *', // Tous les jours à 10h
       timeZone: 'Europe/Paris',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
@@ -11440,6 +11449,7 @@ async function buildOpsFreshnessWarnings(now, windowDays, summaries) {
  */
 exports.sendBlogLeadsIssueReport = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '0 8 * * *',
       timeZone: 'Europe/Zurich',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
@@ -11523,6 +11533,7 @@ exports.sendBlogLeadsIssueReport = onSchedule(
  */
 exports.sendBlogLeadsMonthlyDigest = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '0 8 1 * *',
       timeZone: 'Europe/Zurich',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
@@ -11614,6 +11625,7 @@ exports.sendBlogLeadsMonthlyDigest = onSchedule(
  */
 exports.cleanupOpsJournals = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '30 4 * * *',
       timeZone: 'Europe/Zurich',
       secrets: [],
@@ -11669,6 +11681,7 @@ exports.cleanupOpsJournals = onSchedule(
  */
 exports.refreshMailjetLeadProperties = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '0 4 * * 1',
       timeZone: 'Europe/Zurich',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET'],
@@ -11694,6 +11707,7 @@ exports.refreshMailjetLeadProperties = onSchedule(
 
 exports.sendBlogLeadOpsAlerts = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       // Toutes les 30 min (au lieu de 15).
       // Chaque tick coute ~7 vCPU-s d'instance (demarrage a froid + fenetre de
       // scale-down) pour ~0,3 s de travail reel: le CPU est un cout par
@@ -11821,6 +11835,7 @@ exports.sendBlogLeadOpsAlerts = onSchedule(
  */
 exports.sendOptInReminders = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '0 9 * * *', // Tous les jours à 9h
       timeZone: 'Europe/Paris',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
@@ -12746,6 +12761,7 @@ exports.resendBookingOptInConfirmation = onCall(
  */
 exports.sendCourseReminders = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '0 9 * * *', // Tous les jours à 9h
       timeZone: 'Europe/Zurich',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
@@ -12762,6 +12778,7 @@ exports.sendCourseReminders = onSchedule(
  */
 exports.sendTrialFollowUps = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '0 10 * * *', // Tous les jours à 10h
       timeZone: 'Europe/Zurich',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
@@ -13189,6 +13206,7 @@ async function sendTrialFollowUpsLogic() {
  */
 exports.sendCartAbandonmentEmails = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       // Toutes les 2 h (au lieu de 1 h).
       // Chaque tick coute ~21 vCPU-s d'instance (demarrage a froid + fenetre
       // de scale-down) pour ~0,7 s de travail reel: le CPU est un cout par
@@ -13404,6 +13422,7 @@ exports.sendCartAbandonmentEmails = onSchedule(
  */
 exports.sendPromotionalEmails = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       schedule: '0 8 * * *', // Tous les jours à 8h
       timeZone: 'Europe/Paris',
       secrets: ['MAILJET_API_KEY', 'MAILJET_API_SECRET', 'ADMIN_EMAIL'],
@@ -13841,6 +13860,7 @@ exports.sendPromotionalEmails = onSchedule(
 
 exports.syncPlanning = onSchedule(
     {
+      ...SCHEDULED_FUNCTION_RUNTIME,
       // Toutes les heures (au lieu de toutes les 30 min).
       // Chaque tick coute ~20 vCPU-s d'instance (demarrage a froid + fenetre
       // de scale-down) pour ~2 s de travail reel: le CPU est un cout par
@@ -13984,6 +14004,7 @@ function writeCoursesCache(key, payload) {
  */
 exports.getAvailableCourses = onRequest(
     {
+      ...HTTP_FUNCTION_RUNTIME.getAvailableCourses,
       region: 'europe-west1',
       cors: ALLOWED_WEB_ORIGINS,
     },
@@ -14070,6 +14091,7 @@ exports.getAvailableCourses = onRequest(
  */
 exports.apiStatus = onRequest(
     {
+      ...HTTP_FUNCTION_RUNTIME.apiStatus,
       region: 'europe-west1',
       cors: ALLOWED_WEB_ORIGINS,
     },

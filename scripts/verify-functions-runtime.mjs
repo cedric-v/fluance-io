@@ -1,8 +1,16 @@
 #!/usr/bin/env node
 /**
- * Verifie que le dimensionnement REELLEMENT deploye des fonctions HTTP du hub
- * leads/contact correspond a ce qui est declare dans le code
- * (`functions/runtimeConfig.js`).
+ * Verifie que le dimensionnement REELLEMENT deploye des fonctions correspond a
+ * ce qui est declare dans le code (`functions/runtimeConfig.js`).
+ *
+ * Cibles:
+ * - les fonctions HTTP explicitement dimensionnees dans runtimeConfig.js
+ *   (hub leads/contact + API de reservation + quelques fonctions ou un OOM a
+ *   ete mesure);
+ * - TOUTES les fonctions planifiees (`onSchedule`), detectees dans le code
+ *   source: sans option `memory` explicite, elles retombent sur le defaut GCP
+ *   de 256 Mi, depasse au demarrage a froid -> le tick planifie echoue
+ *   ("Memory limit of 256 MiB exceeded" puis "failed the readiness check").
  *
  * Motif: un redeploiement Firebase reecrit memoire / instances depuis les
  * options du code. Une option oubliee repasse silencieusement au defaut GCP
@@ -23,6 +31,7 @@ import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
+import {scanDeployedFunctions} from './lib/deployed-functions.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..');
@@ -32,7 +41,7 @@ const functionsDir = path.join(repoRoot, 'functions');
 // functions/ : on resout depuis ce dossier.
 const requireFromFunctions = createRequire(path.join(functionsDir, 'package.json'));
 const {GoogleAuth} = requireFromFunctions('google-auth-library');
-const {HTTP_FUNCTION_RUNTIME} = requireFromFunctions('./runtimeConfig');
+const {HTTP_FUNCTION_RUNTIME, SCHEDULED_FUNCTION_RUNTIME} = requireFromFunctions('./runtimeConfig');
 
 function argValue(flag, fallback) {
   const index = process.argv.indexOf(flag);
@@ -140,12 +149,23 @@ async function main() {
     process.exit(1);
   }
 
-  const entries = Object.entries(HTTP_FUNCTION_RUNTIME);
+  // Cibles:
+  // - les fonctions HTTP explicitement dimensionnees dans runtimeConfig.js
+  // - TOUTES les fonctions planifiees (detectees dans le code source): une
+  //   fonction planifiee sans option `memory` retombe silencieusement sur le
+  //   defaut GCP de 256 Mi, qui est depasse au demarrage a froid (OOM).
+  const scheduled = scanDeployedFunctions({functionsDir}).scheduled;
+  const entries = [
+    ...Object.entries(HTTP_FUNCTION_RUNTIME).map(([name, expected]) => ({name, expected})),
+    ...scheduled.map((entry) => ({name: entry.name, expected: SCHEDULED_FUNCTION_RUNTIME})),
+  ];
   let failures = 0;
 
   console.log(`Verification du runtime deploye (${project} / ${region})\n`);
+  console.log(`${entries.length} fonctions verifiees ` +
+    `(${Object.keys(HTTP_FUNCTION_RUNTIME).length} HTTP + ${scheduled.length} planifiees)\n`);
 
-  for (const [functionName, expected] of entries) {
+  for (const {name: functionName, expected} of entries) {
     let deployed;
     try {
       deployed = await fetchDeployedConfig({project, region, functionName, token});

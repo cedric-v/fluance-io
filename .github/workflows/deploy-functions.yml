@@ -21,6 +21,10 @@ name: Deploy functions
 #   (attribut `repository=cedric-v/fluance-io`) cote Google Cloud
 # - l'environnement `production` peut exiger une approbation (voir README du
 #   runbook) sans bloquer les deploiements automatiques si non configure
+#
+# Le deploiement est decoupe en lots (voir l'etape "Deploy functions"): le
+# quota GCP de mutations par minute et par region est depasse si les 75
+# fonctions sont mises a jour d'un seul coup (incident du 10 novembre 2026).
 
 on:
   push:
@@ -29,6 +33,7 @@ on:
       - 'functions/**'
       - 'src/emails/**'
       - 'scripts/build-email-templates.js'
+      - 'scripts/lib/deployed-functions.mjs'
   workflow_dispatch:
     inputs:
       functions:
@@ -91,10 +96,11 @@ jobs:
         run: npm run build:email-templates
 
       # Cible de deploiement la plus etroite possible:
-      # - seul functions/blogLeadHub.js ou functions/runtimeConfig.js change
-      #   -> les 2 fonctions HTTP du hub
+      # - seul functions/blogLeadHub.js change -> les 2 fonctions HTTP du hub
+      # - functions/runtimeConfig.js change -> toutes les fonctions (il porte
+      #   le dimensionnement global)
       # - functions/index.js ou un autre fichier de functions/ (emails, services)
-      #   -> toutes les functions (les emails sont utilises par de nombreuses
+      #   -> toutes les fonctions (les emails sont utilises par de nombreuses
       #      fonctions, les services par toutes)
       # - rien d'exploitable -> toutes (plus prudent)
       # L'input manuel `functions` du workflow_dispatch reste prioritaire.
@@ -112,34 +118,115 @@ jobs:
           fi
           echo "Fichiers modifies: $CHANGED"
           ONLY_HUB=1
+          ALL_FUNCTIONS=0
           while IFS= read -r f; do
             [ -z "$f" ] && continue
             case "$f" in
-              functions/blogLeadHub.js|functions/runtimeConfig.js) ;;
+              # runtimeConfig.js porte le dimensionnement de TOUTES les
+              # fonctions (hub, API de reservation, fonctions planifiees):
+              # un changement ici impose un deploiement complet.
+              functions/runtimeConfig.js) ALL_FUNCTIONS=1 ;;
+              functions/blogLeadHub.js) ;;
               *) ONLY_HUB=0 ;;
             esac
           done <<< "$CHANGED"
           if [ -z "$CHANGED" ]; then
             echo "targets=functions" >> "$GITHUB_OUTPUT"
             echo "Cible: toutes les functions (aucun diff exploitable)"
+          elif [ "$ALL_FUNCTIONS" = "1" ]; then
+            echo "targets=functions" >> "$GITHUB_OUTPUT"
+            echo "Cible: toutes les functions (runtimeConfig.js modifie)"
           elif [ "$ONLY_HUB" = "1" ]; then
             echo "targets=functions:captureLead,functions:sendContactEmail" >> "$GITHUB_OUTPUT"
-            echo "Cible: fonctions HTTP du hub (blogLeadHub.js/runtimeConfig.js)"
+            echo "Cible: fonctions HTTP du hub (blogLeadHub.js)"
           else
             echo "targets=functions" >> "$GITHUB_OUTPUT"
             echo "Cible: toutes les functions (autre fichier de functions/ modifie)"
           fi
 
+      # Deploiement par lots (et non en un seul `firebase deploy --only functions`).
+      #
+      # Pourquoi: le quota GCP "Per project mutation requests per minute per
+      # region" est atteint quand les 75 fonctions sont mises a jour d'un coup.
+      # Le deploiement echoue alors avec `429 Quota exceeded`, et le job Cloud
+      # Scheduler d'une fonction peut etre mis a jour avec une URI vide
+      # (`400 URL cannot be empty`) -> le run est en echec alors que le
+      # deploiement est fonctionnel (incident du 10 novembre 2026).
+      #
+      # Le deploiement est donc decoupe en lots de 15 fonctions, avec une
+      # pause entre les lots (le quota est par minute) et 3 tentatives par
+      # lot en cas d'erreur transitoire.
       - name: Deploy functions
         env:
           FIREBASE_PROJECT: ${{ vars.GCP_PROJECT_ID }}
           TARGETS: ${{ steps.targets.outputs.targets }}
+          FIREBASE_TOOLS_VERSION: '15.35.0'
+          BATCH_SIZE: '15'
+          BATCH_PAUSE_SECONDS: '45'
+          DEPLOY_RETRIES: '3'
         run: |
-          if [ "$TARGETS" = "functions" ]; then
-            npx --yes firebase-tools@15.35.0 deploy --only functions --project "$FIREBASE_PROJECT" --non-interactive
-          else
-            npx --yes firebase-tools@15.35.0 deploy --only "$TARGETS" --project "$FIREBASE_PROJECT" --non-interactive
+          set -uo pipefail
+
+          deploy_batch() {
+            local targets="$1"
+            local attempt=1
+            while true; do
+              echo "::group::firebase deploy --only ${targets} (tentative ${attempt}/${DEPLOY_RETRIES})"
+              if npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" deploy \
+                  --only "$targets" \
+                  --project "$FIREBASE_PROJECT" \
+                  --non-interactive; then
+                echo "::endgroup::"
+                return 0
+              fi
+              echo "::endgroup::"
+              if [ "$attempt" -ge "$DEPLOY_RETRIES" ]; then
+                echo "❌ Echec du deploiement de ${targets} apres ${attempt} tentatives"
+                return 1
+              fi
+              attempt=$((attempt + 1))
+              echo "⏳ Nouvelle tentative dans $((60 * attempt)) s (quota par minute)..."
+              sleep $((60 * attempt))
+            done
+          }
+
+          if [ "$TARGETS" != "functions" ]; then
+            # Cible manuelle (ou hub seul): un seul appel suffit.
+            deploy_batch "$TARGETS" || exit 1
+            exit 0
           fi
+
+          ALL="$(node scripts/lib/deployed-functions.mjs --format csv)"
+          if [ -z "$ALL" ]; then
+            echo "❌ Aucune fonction detectee dans functions/."
+            exit 1
+          fi
+          IFS=',' read -r -a NAMES <<< "$ALL"
+          TOTAL="${#NAMES[@]}"
+          echo "📦 ${TOTAL} fonctions a deployer, par lots de ${BATCH_SIZE}"
+
+          index=0
+          lot=1
+          while [ "$index" -lt "$TOTAL" ]; do
+            chunk=("${NAMES[@]:index:BATCH_SIZE}")
+            targets=""
+            for name in "${chunk[@]}"; do
+              targets="${targets}functions:${name},"
+            done
+            targets="${targets%,}"
+
+            echo "➡️  Lot ${lot} (${#chunk[@]} fonctions): ${chunk[*]}"
+            deploy_batch "$targets" || exit 1
+
+            index=$((index + BATCH_SIZE))
+            lot=$((lot + 1))
+            if [ "$index" -lt "$TOTAL" ]; then
+              echo "⏸️  Pause de ${BATCH_PAUSE_SECONDS} s (quota de mutations par minute)"
+              sleep "$BATCH_PAUSE_SECONDS"
+            fi
+          done
+
+          echo "✅ ${TOTAL} fonctions deployees en $((lot - 1)) lot(s)"
 
       # Verifie que la configuration REELLEMENT deployee (memoire, min/max
       # instances) correspond a functions/runtimeConfig.js. C'est le garde-fou

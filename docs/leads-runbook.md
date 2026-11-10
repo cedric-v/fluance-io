@@ -127,6 +127,53 @@ Pourquoi 512 MiB: en octobre 2026, quatre `Memory limit of 256 MiB exceeded`
 requete en cours sans rien ecrire dans `journal_evenements_leads`: c'est un
 angle mort pour le rapport quotidien et le digest mensuel.
 
+### Fonctions planifiees (incident du 3 au 10 novembre 2026)
+
+Toutes les fonctions `onSchedule` sont dimensionnees dans
+`functions/runtimeConfig.js` (`SCHEDULED_FUNCTION_RUNTIME`):
+
+- `memory: '512MiB'`
+- `minInstances: 0`
+- `maxInstances: 1` (Cloud Scheduler declenche une requete a la fois)
+
+Symptome observe: `Memory limit of 256 MiB exceeded with 260 MiB used` suivi de
+`The request failed because the instance failed the readiness check`. Le tick
+planifie **echoue completement** (rien n'est traite, pas de rejeu: le tick
+suivant repart de zero). Compteur des OOM sur 30 jours avant correction:
+
+| Fonction | OOM/jour | Cadence |
+|---|---|---|
+| `sendBlogLeadOpsAlerts` | ~46 | toutes les 30 min (quasi 100 % des runs) |
+| `syncPlanning` | ~23 | horaire |
+| `sendCartAbandonmentEmails` | ~12 | toutes les 2 h |
+| `sendNewContentEmails` | 1 | quotidienne |
+| les 10 autres planifiees | ~1 chacune | quotidienne |
+
+Cause: le runtime Node charge `firebase-admin` + `googleapis` -> ~260 Mi des le
+demarrage a froid, soit au-dessus du plafond de 256 Mi (defaut GCP). Le meme
+symptome affectait `getAvailableCourses` (18 OOM sur 30 jours) et, de facon
+ponctuelle, `getProtectedContent`, `getNotificationPrefs`,
+`confirmNewsletterOptIn`, `sendSignInLinkViaMailjet`, `apiStatus` et
+`webhookStripe`: ces 6 fonctions sont passees a 512 MiB aussi.
+
+Garde-fous:
+
+- `functions/test/runtimeConfig.test.js` echoue si une fonction planifiee
+  n'applique pas `...SCHEDULED_FUNCTION_RUNTIME` (test unitaires CI)
+- `npm run verify:functions` compare le runtime REELLEMENT deploye (memoire,
+  instances) aux valeurs declarees, pour les 9 fonctions HTTP dimensionnees et
+  pour **toutes** les fonctions planifiees (detectees dans le code source)
+- toute nouvelle fonction planifiee est automatiquement incluse dans la
+  verification (liste derivee du code, pas de liste a tenir a la main)
+
+Diagnostic d'un tick perdu:
+
+    gcloud logging read 'resource.labels.service_name="syncplanning" \
+      AND textPayload:"Memory limit"' --freshness=1d
+
+Si un OOM reapparait a 512 MiB, identifier ce qui grossit (chargement de
+librairies) avant de monter a `1GiB`.
+
 Pourquoi aucune instance minimale: mesure sur 30 jours (novembre 2026), 355
 invocations, 118 cold starts, demarrage median 5,0 s (max 16,1 s), pour un cout
 de l'ordre de 0,005 CHF/mois. Une instance minimale a 512 MiB couterait ~4,5
@@ -151,8 +198,8 @@ Diagnostic:
 ## Verification du dimensionnement deploye
 
 Les valeurs de memoire / instances sont declarees une seule fois dans
-`functions/runtimeConfig.js` (utilise par `blogLeadHub.js` et par le script de
-verification). Apres chaque deploiement de functions:
+`functions/runtimeConfig.js` (utilise par `blogLeadHub.js`, `index.js` et par
+le script de verification). Apres chaque deploiement de functions:
 
     npm run verify:functions
 
@@ -160,6 +207,10 @@ Le script lit l'API Cloud Functions v2 et compare `availableMemory`,
 `minInstanceCount` et `maxInstanceCount` aux valeurs declarees. Code de sortie
 `1` en cas d'ecart. Authentification: Application Default Credentials en local
 (`gcloud auth application-default login`), Workload Identity Federation en CI.
+
+La liste des fonctions a verifier est derivee du code source
+(`scripts/lib/deployed-functions.mjs`): toute fonction `onSchedule` declaree
+dans `functions/` est verifiee automatiquement.
 
 Un redeploiement qui ne declare pas une option la remet au defaut GCP: c'est
 ainsi que `maxInstanceCount` etait repasse de 20 a 100 le 1er novembre 2026.
@@ -175,6 +226,20 @@ Les functions se deployent desormais depuis la CI
   ex. `functions:captureLead,functions:sendContactEmail`)
 - avant deploiement: `npm ci`, lint, tests unitaires, build des templates email
 - apres deploiement: `npm run verify:functions` (garde-fou anti-derive)
+
+### Deploiement par lots (incident du 10 novembre 2026)
+
+Le deploiement est decoupe en lots de 15 fonctions (pause de 45 s entre les
+lots, 3 tentatives par lot). Pourquoi: le quota GCP `Per project mutation
+requests per minute per region` est atteint quand les 75 fonctions sont mises a
+jour d'un seul coup. Symptoms: `429 Quota exceeded`, puis mise a jour d'un job
+Cloud Scheduler avec une URI vide (`400 URL cannot be empty`) -> le run de CI
+echoue alors que le deploiement est fonctionnel.
+
+La liste des fonctions a deployer est derivee du code source
+(`node scripts/lib/deployed-functions.mjs --format csv`). Un changement de
+`functions/runtimeConfig.js` impose un deploiement complet (il porte le
+dimensionnement de toutes les fonctions).
 
 Authentification par **Workload Identity Federation**: aucune cle JSON de
 compte de service n'est stockee dans GitHub. Le jeton OIDC GitHub est echange
