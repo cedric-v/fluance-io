@@ -83,13 +83,14 @@ Les chiffres proviennent de builds locaux frais. Ils ne constituent pas un audit
 - l'audit statique, le manifeste, le smoke et la CI sont actifs ;
 - la pagination `/page/2/` à `/page/42/`, les programmes `/jour-1/` à `/jour-7/`, les pages `/sp-*`, `/inscription-validee/`, `/questions/` et `/top13/` sont `noindex` ;
 - les chemins historiques conservent leurs redirections pour les entrées externes ;
-- les liens internes ont été remplacés par leurs destinations finales.
+- les liens internes ont été remplacés par leurs destinations finales ;
+- les H1 multiples ont été normalisés sous le H1 du layout ;
+- les 245 pages qui utilisaient la description générique ont reçu une description propre.
 
 **Reste à faire :**
 
 1. migrer le déploiement Wrangler manuel vers un artefact CI unique et une preview ;
-2. analyser les H1 multiples et descriptions génériques encore signalés ;
-3. automatiser le rollback après validation de l'API Cloudflare.
+2. automatiser le rollback après validation de l'API Cloudflare.
 
 ### `../devperso.org`
 
@@ -115,7 +116,7 @@ Les chiffres proviennent de builds locaux frais. Ils ne constituent pas un audit
 
 1. configurer les credentials Search Console des cinq propriétés ;
 2. migrer `../techniquesdemeditation.com`, `../vie-explosive` et `../devperso.org` vers un déploiement GitHub Actions avec artifact unique et preview ;
-3. améliorer les descriptions génériques restantes sur Vie Explosive et Techniques de Méditation ;
+3. améliorer les descriptions génériques restantes sur Techniques de Méditation ;
 4. mettre en place le crawl Discover hors sitemap si le volume le justifie ;
 5. créer un outillage SEO partagé pour éviter les copies divergentes ;
 6. automatiser le rollback après validation de l'API Cloudflare.
