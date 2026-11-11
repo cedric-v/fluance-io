@@ -1,0 +1,79 @@
+name: Preview (pull request)
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-preview:
+    runs-on: ubuntu-latest
+    env:
+      PAGES_PROJECT: fluance-io
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build audité
+        env:
+          ELEVENTY_ENV: prod
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          WEBPUSH_PUBLIC_KEY: ${{ secrets.WEBPUSH_PUBLIC_KEY }}
+        run: npm run build
+
+      - name: Deploy preview to Cloudflare Pages
+        run: |
+          npx --yes wrangler@4.156.2 pages deploy _site \
+            --project-name="$PAGES_PROJECT" \
+            --branch="preview-${{ github.event.pull_request.number }}"
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Smoke SEO sur la preview
+        run: node scripts/seo-smoke.mjs --base-url "https://preview-${{ github.event.pull_request.number }}.fluance-io.pages.dev" --dist _site --concurrency 8 --retries 6
+
+      - name: Report the preview URL as a GitHub Deployment
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const sha = context.payload.pull_request.head.sha;
+            const url = `https://preview-${context.payload.pull_request.number}.${process.env.PAGES_PROJECT}.pages.dev`;
+            const { data: dep } = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+              environment: 'preview',
+              auto_merge: false,
+              required_contexts: [],
+            });
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: dep.id,
+              state: 'success',
+              environment_url: url,
+              description: `Preview: ${url}`,
+            });
+            console.log(`Preview: ${url}`);

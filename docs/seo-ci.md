@@ -53,6 +53,8 @@ Le workflow `.github/workflows/deploy.yml` :
 
 Le smoke production tolère la propagation Cloudflare et réessaie les erreurs HTTP temporaires.
 
+Le workflow `.github/workflows/preview.yml` déploie chaque pull request sur une branche Cloudflare Pages, utilise exactement le build audité et exécute le smoke SEO sur la preview avant de publier son URL dans GitHub Deployments.
+
 ## surveillance planifiée
 
 Le workflow `.github/workflows/seo-weekly.yml` exécute chaque semaine :
@@ -70,7 +72,6 @@ Search Console utilise le secret `GSC_SERVICE_ACCOUNT_JSON_B64` et la variable `
 Ces éléments ne bloquent pas le quotidien et sont décrits dans `docs/seo-follow-up.md` :
 
 - crawl Discover hors sitemap ;
-- preview Cloudflare pour `fluance-io` ;
 - rollback automatisé, uniquement après validation de l'API Cloudflare.
 
 ## mise à jour volontaire des routes
