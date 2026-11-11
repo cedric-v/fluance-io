@@ -496,6 +496,9 @@ if (!config.skipInternalLinks) {
       }
       if (url.origin !== SITE.origin) continue;
       const route = decodeURIComponent(url.pathname || '/');
+      if ((config.ignoreLinkPrefixes || []).some((prefix) => route.startsWith(prefix))) {
+        continue;
+      }
       const target = routeToHtmlPath(route);
       const directFile = join(DIST, route.replace(/^\//, ''));
       if (!existsSync(target) && !existsSync(directFile)) {

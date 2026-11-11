@@ -1,0 +1,59 @@
+name: SEO planifié
+
+on:
+  schedule:
+    # Crawl, Lighthouse, Schema.org et Search Console, une fois par semaine.
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seo-weekly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  seo:
+    name: Audit et surveillance SEO
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build et audit statique
+        run: npm run build
+
+      - name: Crawl HTTP du sitemap en production
+        run: node scripts/seo-smoke.mjs --base-url https://fluance.io --dist _site --concurrency 8 --retries 6
+
+      - name: Mesurer les budgets Lighthouse
+        run: npx --yes @lhci/cli@0.16.0 autorun --config=lighthouserc.cjs
+
+      - name: Valider les données structurées
+        run: npm run seo:schema
+
+      - name: Contrôler l'indexation Search Console
+        env:
+          GSC_SERVICE_ACCOUNT_JSON_B64: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON_B64 }}
+          GSC_SITE_URL: ${{ vars.GSC_SITE_URL }}
+        run: npm run seo:gsc
+
+      - name: Conserver les rapports Lighthouse
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .lighthouseci
+          if-no-files-found: ignore
+          retention-days: 7

@@ -22,7 +22,9 @@
     "seo:manifest": "node scripts/seo-audit.mjs --write-baseline",
     "seo:smoke": "node scripts/seo-smoke.mjs",
     "verify:functions": "node scripts/verify-functions-runtime.mjs",
-    "verify:requires": "node scripts/check-function-requires.mjs"
+    "verify:requires": "node scripts/check-function-requires.mjs",
+    "seo:schema": "node scripts/seo-schema.mjs",
+    "seo:gsc": "node scripts/gsc-inspect.mjs"
   },
   "keywords": [],
   "author": "Instants Zen Sàrl / Fluance",

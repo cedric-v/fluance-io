@@ -53,13 +53,22 @@ Le workflow `.github/workflows/deploy.yml` :
 
 Le smoke production tolère la propagation Cloudflare et réessaie les erreurs HTTP temporaires.
 
+## surveillance planifiée
+
+Le workflow `.github/workflows/seo-weekly.yml` exécute chaque semaine :
+
+- le build et l'audit statique ;
+- le crawl HTTP de toutes les URL du sitemap en production ;
+- les budgets Lighthouse mobiles ;
+- la validation Schema.org externe ;
+- le contrôle Search Console lorsque les credentials sont configurées.
+
+Search Console utilise le secret `GSC_SERVICE_ACCOUNT_JSON_B64` et la variable `GSC_SITE_URL`. Sans credentials, le contrôle est ignoré proprement.
+
 ## reste à planifier
 
 Ces éléments ne bloquent pas le quotidien et sont décrits dans `docs/seo-follow-up.md` :
 
-- monitoring Search Console ;
-- Lighthouse CI mobile hebdomadaire ;
-- validation Schema.org externe ;
 - crawl Discover hors sitemap ;
 - preview Cloudflare pour `fluance-io` ;
 - rollback automatisé, uniquement après validation de l'API Cloudflare.
