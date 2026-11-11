@@ -1,5 +1,8 @@
 #!/usr/bin/env node
-
+// >>> seo-guard:vendor v1.0.0 sha256:d2f88d9efa3a
+// Source de vérité : tools/seo-guard/gsc-inspect.mjs — cette copie est générée.
+// Ne pas éditer ici : corriger l'amont puis resynchroniser (`npm run sync`).
+// <<< seo-guard:vendor
 /**
  * Contrôle Search Console URL Inspection.
  *
@@ -45,7 +48,7 @@ async function getAccessToken(credentials) {
       aud: 'https://oauth2.googleapis.com/token',
       iat: issuedAt,
       exp: issuedAt + 3600,
-    }),
+    })
   );
   const unsigned = `${header}.${claims}`;
   const signature = createSign('RSA-SHA256')
@@ -84,7 +87,7 @@ async function inspect(accessToken, inspectionUrl) {
         languageCode: config.languageCode,
       }),
       signal: AbortSignal.timeout(30_000),
-    },
+    }
   );
   const payload = await response.json();
   if (!response.ok) {

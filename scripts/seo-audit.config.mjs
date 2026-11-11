@@ -13,5 +13,19 @@ export default {
   requireOpenGraph: true,
   requireXDefault: true,
   skipInternalLinks: false,
+  /**
+   * Gravité des contrôles réglables (voir tools/seo-guard) : `fail`, `warn` ou
+   * `off`. Les défauts bloquants sont les doublons de titre/description et les
+   * H1 multiples — ce sont des signaux d'auto-génération, pas des détails.
+   */
+  severity: {
+    // Le JSON-LD Person pointe volontairement vers cedricv.com (auteur).
+    jsonLdForeignUrl: 'off',
+  },
+  /**
+   * Vérifie que la copie vendue de seo-guard n'a pas été éditée localement.
+   * `fail` = garde-fou ; `off` pour un dépôt qui assume un fork.
+   */
+  vendorGuard: 'fail',
   report: 'seo-report.json',
 };

@@ -1,5 +1,8 @@
 #!/usr/bin/env node
-
+// >>> seo-guard:vendor v1.0.0 sha256:027184ff29a9
+// Source de vérité : tools/seo-guard/seo-schema.mjs — cette copie est générée.
+// Ne pas éditer ici : corriger l'amont puis resynchroniser (`npm run sync`).
+// <<< seo-guard:vendor
 /**
  * Validation externe des données structurées via Schema.org Validator.
  *
@@ -63,7 +66,7 @@ for (const url of config.urls) {
   const result = await validate(url);
   if (result.unavailable) {
     console.warn(
-      `⚠️ ${result.url} — service indisponible : ${result.reason}. Contrôle ignoré pour les URL suivantes.`,
+      `⚠️ ${result.url} — service indisponible : ${result.reason}. Contrôle ignoré pour les URL suivantes.`
     );
     break;
   } else if (result.errors.length > 0) {
@@ -71,7 +74,7 @@ for (const url of config.urls) {
     console.error(`❌ ${result.url} — ${result.errors.length} erreur(s).`);
   } else {
     console.log(
-      `✅ ${result.url} — ${result.objects} objet(s), ${result.warnings} avertissement(s).`,
+      `✅ ${result.url} — ${result.objects} objet(s), ${result.warnings} avertissement(s).`
     );
   }
 }

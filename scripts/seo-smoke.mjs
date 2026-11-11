@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-
+// >>> seo-guard:vendor v1.0.0 sha256:53d225f5400d
+// Source de vérité : tools/seo-guard/seo-smoke.mjs — cette copie est générée.
+// Ne pas éditer ici : corriger l'amont puis resynchroniser (`npm run sync`).
+// <<< seo-guard:vendor
 /**
  * Smoke test SEO après déploiement.
  *
- * Vérifie les URL du sitemap audité sur l'URL réellement déployée, ainsi que
- * le canonical et la présence de JSON-LD. Utilisable sur une prévisualisation
- * Cloudflare comme sur la production.
+ * Vérifie les URL du sitemap audité sur l'URL réellement déployée : code HTTP,
+ * `noindex`, canonical attendu et présence de JSON-LD.
  *
  * Usage :
  *   node scripts/seo-smoke.mjs --base-url https://... --dist dist
@@ -27,6 +29,8 @@ const defaultSitemap = existsSync(join(dist, 'sitemap-index.xml'))
 const sitemapName = getArg('--sitemap', defaultSitemap);
 const concurrency = Number(getArg('--concurrency', '4'));
 const retries = Number(getArg('--retries', '5'));
+// Identifiant de robot propre au site (jamais un domaine tiers).
+const userAgent = getArg('--user-agent', process.env.SEO_SMOKE_USER_AGENT || 'SeoGuard/1.0');
 
 if (!baseUrl) {
   console.error('❌ --base-url ou SMOKE_TEST_URL est obligatoire.');
@@ -84,10 +88,7 @@ async function fetchWithRetry(path) {
     try {
       const response = await fetch(new URL(path, absoluteBase), {
         redirect: 'follow',
-        headers: {
-          'user-agent':
-            'Mozilla/5.0 (compatible; FluanceSEO/1.0; +https://cedricv.com/)',
-        },
+        headers: { 'user-agent': `Mozilla/5.0 (compatible; ${userAgent})` },
         signal: AbortSignal.timeout(20_000),
       });
       if (!RETRYABLE_STATUS.has(response.status) || attempt === retries) return response;
@@ -118,13 +119,13 @@ async function worker() {
         failures.push(`${path} : page indexable renvoyée avec robots noindex.`);
       } else {
         const canonicalTag = html.match(
-          /<link\b[^>]*\brel=["'][^"']*canonical[^"']*["'][^>]*>/i,
+          /<link\b[^>]*\brel=["'][^"']*canonical[^"']*["'][^>]*>/i
         )?.[0];
         const canonical = getAttribute(canonicalTag || '', 'href');
         const expectedCanonical = expectedPages.get(path);
         if (canonical !== expectedCanonical) {
           failures.push(
-            `${path} : canonical ${canonical || 'absent'} (attendu ${expectedCanonical}).`,
+            `${path} : canonical ${canonical || 'absent'} (attendu ${expectedCanonical}).`
           );
         }
         if (!/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>/i.test(html)) {
