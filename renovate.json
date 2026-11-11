@@ -1,26 +1,37 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":automergeRequireAllStatusChecks"
   ],
-  "automerge": true,
   "automergeType": "pr",
   "platformAutomerge": true,
   "automergeStrategy": "squash",
   "dependencyDashboard": true,
-  "labels": ["dependencies"],
-  "schedule": ["on monday"],
+  "labels": [
+    "dependencies"
+  ],
+  "schedule": [
+    "on monday"
+  ],
   "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
     "enabled": true,
-    "labels": ["security"],
-    "schedule": ["at any time"],
+    "labels": [
+      "security"
+    ],
+    "schedule": [
+      "at any time"
+    ],
     "automerge": true
   },
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true,
-    "schedule": ["before 4am on monday"]
+    "schedule": [
+      "before 4am on monday"
+    ]
   },
   "major": {
     "automerge": false
@@ -28,23 +39,44 @@
   "packageRules": [
     {
       "description": "js-yaml v5 casse gray-matter (safeLoad/safeDump supprimés depuis v4) — ignorer le major",
-      "matchPackageNames": ["js-yaml"],
-      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "js-yaml"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "enabled": false
     },
     {
       "description": "Node majeur dans functions/ : Cloud Functions ne supporte que nodejs20/22/24 (firebase-tools 15.x). Le bump des engines casserait `firebase deploy` — a faire a la main quand le runtime sera dispo. Les workflows CI peuvent continuer a suivre.",
-      "matchDatasources": ["node-version"],
-      "matchFileNames": ["functions/package.json"],
-      "matchUpdateTypes": ["major"],
+      "matchDatasources": [
+        "node-version"
+      ],
+      "matchFileNames": [
+        "functions/package.json"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "enabled": false
     },
     {
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "matchCurrentVersion": "!/^0/",
       "groupName": "non-major dependencies",
       "groupSlug": "non-major",
       "automerge": true
+    },
+    {
+      "description": "Majeures : revue humaine obligatoire (rupture possible)",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false
     }
-  ]
+  ],
+  "minimumReleaseAge": "7 days"
 }
