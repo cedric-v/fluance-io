@@ -44,7 +44,9 @@ jobs:
 
       - name: Deploy preview to Cloudflare Pages
         run: |
-          npx --yes wrangler@4.156.2 pages deploy _site \
+          # wrangler vient de la devDependency (version du lockfile) : un
+          # `npx --yes wrangler@x` figeait une version que Renovate ne voyait pas.
+          npx --no-install wrangler pages deploy _site \
             --project-name="$PAGES_PROJECT" \
             --branch="preview-${{ github.event.pull_request.number }}"
         env:
