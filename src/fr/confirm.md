@@ -4,6 +4,8 @@ title: Confirmation de votre inscription
 description: "Confirmez votre inscription à la newsletter Fluance."
 locale: fr
 permalink: /confirm/
+robots: noindex, follow
+translationAvailable: false
 eleventyExcludeFromCollections: true
 ---
 

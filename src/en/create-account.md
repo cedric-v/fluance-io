@@ -4,6 +4,9 @@ title: Create my account
 description: Create your Fluance account to access your protected content
 locale: en
 permalink: /en/create-account/
+robots: noindex, follow
+translationAvailable: false
+eleventyExcludeFromCollections: true
 ---
 
 <div class="min-h-screen bg-[#fdfaf6] py-12 px-4 sm:px-6 lg:px-8">

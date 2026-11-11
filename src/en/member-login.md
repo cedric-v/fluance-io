@@ -4,6 +4,9 @@ title: Login - Protected content
 description: Log in to access your protected Fluance content
 locale: en
 permalink: /en/member-login/
+robots: noindex, follow
+translationAvailable: false
+eleventyExcludeFromCollections: true
 ---
 
 <div class="min-h-screen bg-[#fdfaf6] py-12 px-4 sm:px-6 lg:px-8">

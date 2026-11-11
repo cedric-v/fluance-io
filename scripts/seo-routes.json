@@ -1,0 +1,208 @@
+{
+  "version": 1,
+  "site": "https://fluance.io",
+  "routes": [
+    {
+      "path": "/a-propos/approche-fluance/",
+      "canonical": "https://fluance.io/a-propos/approche-fluance/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/a-propos/histoire-cedric/",
+      "canonical": "https://fluance.io/a-propos/histoire-cedric/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/a-propos/philosophie/",
+      "canonical": "https://fluance.io/a-propos/philosophie/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/accompagnements-individuels/entrepreneurs-independants/",
+      "canonical": "https://fluance.io/accompagnements-individuels/entrepreneurs-independants/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/cgv/",
+      "canonical": "https://fluance.io/cgv/",
+      "languages": []
+    },
+    {
+      "path": "/contact/",
+      "canonical": "https://fluance.io/contact/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/cours-en-ligne/21-jours-mouvement/",
+      "canonical": "https://fluance.io/cours-en-ligne/21-jours-mouvement/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/decouvrir-ma-pratique/",
+      "canonical": "https://fluance.io/decouvrir-ma-pratique/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/",
+      "canonical": "https://fluance.io/en/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/a-propos/approche-fluance/",
+      "canonical": "https://fluance.io/en/a-propos/approche-fluance/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/a-propos/histoire-cedric/",
+      "canonical": "https://fluance.io/en/a-propos/histoire-cedric/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/a-propos/philosophie/",
+      "canonical": "https://fluance.io/en/a-propos/philosophie/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/accompagnements-individuels/entrepreneurs-independants/",
+      "canonical": "https://fluance.io/en/accompagnements-individuels/entrepreneurs-independants/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/contact/",
+      "canonical": "https://fluance.io/en/contact/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/cours-en-ligne/21-jours-mouvement/",
+      "canonical": "https://fluance.io/en/cours-en-ligne/21-jours-mouvement/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/discover-my-practice/",
+      "canonical": "https://fluance.io/en/discover-my-practice/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/presentiel/cours-hebdomadaires/",
+      "canonical": "https://fluance.io/en/presentiel/cours-hebdomadaires/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/presentiel/en-entreprise/",
+      "canonical": "https://fluance.io/en/presentiel/en-entreprise/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/presentiel/prochains-stages/",
+      "canonical": "https://fluance.io/en/presentiel/prochains-stages/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/en/presentiel/reserver/",
+      "canonical": "https://fluance.io/en/presentiel/reserver/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/fr/",
+      "canonical": "https://fluance.io/fr/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/mentions-legales/",
+      "canonical": "https://fluance.io/mentions-legales/",
+      "languages": []
+    },
+    {
+      "path": "/presentiel/cours-hebdomadaires/",
+      "canonical": "https://fluance.io/presentiel/cours-hebdomadaires/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/presentiel/en-entreprise/",
+      "canonical": "https://fluance.io/presentiel/en-entreprise/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/presentiel/prochains-stages/",
+      "canonical": "https://fluance.io/presentiel/prochains-stages/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    },
+    {
+      "path": "/presentiel/reserver/",
+      "canonical": "https://fluance.io/presentiel/reserver/",
+      "languages": [
+        "en",
+        "fr"
+      ]
+    }
+  ]
+}

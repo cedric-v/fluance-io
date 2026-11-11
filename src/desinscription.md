@@ -4,6 +4,9 @@ title: Désinscription des e-mails promotionnels
 description: Confirmez la désinscription de vos e-mails promotionnels Fluance.
 locale: fr
 permalink: /desinscription/
+robots: noindex, follow
+translationAvailable: false
+eleventyExcludeFromCollections: true
 ---
 
 <section class="max-w-3xl mx-auto px-6 md:px-12 py-12 space-y-8">

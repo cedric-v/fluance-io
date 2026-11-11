@@ -4,6 +4,7 @@ title: Mentions légales & Politique de confidentialité
 description: Consultez les mentions légales officielles et notre politique de confidentialité détaillant le traitement de vos données personnelles par Instants Zen Sàrl.
 locale: fr
 permalink: /mentions-legales/
+translationAvailable: false
 ---
 
 <section class="max-w-4xl mx-auto px-6 md:px-12 py-12 space-y-8">

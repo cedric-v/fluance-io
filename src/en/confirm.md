@@ -4,6 +4,8 @@ title: Confirm your subscription
 description: "Confirm your subscription to the Fluance newsletter."
 locale: en
 permalink: /en/confirm/
+robots: noindex, follow
+translationAvailable: false
 eleventyExcludeFromCollections: true
 ---
 

@@ -4,6 +4,7 @@ title: Welcome Gift
 description: Refreshing moments in nature with Cédric Vonlanthen.
 locale: en
 permalink: /en/cadeau/
+robots: noindex, follow
 eleventyExcludeFromCollections: true
 ---
 

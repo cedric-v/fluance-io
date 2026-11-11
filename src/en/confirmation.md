@@ -4,6 +4,8 @@ title: Registration Confirmation
 description: Confirmation of your registration to the Fluance program.
 locale: en
 permalink: /en/confirmation/
+robots: noindex, follow
+translationAvailable: false
 eleventyExcludeFromCollections: true
 ---
 

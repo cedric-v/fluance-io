@@ -4,6 +4,8 @@ title: Registration Confirmed - In-Person Classes
 description: "Your registration for Fluance in-person classes is confirmed."
 locale: en
 permalink: /en/presentiel/confirmation/
+robots: noindex, follow
+translationAvailable: false
 eleventyExcludeFromCollections: true
 ---
 

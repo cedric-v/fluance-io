@@ -4,6 +4,7 @@ title: Choisir un nouveau cours
 description: "Choisissez un nouveau cours après votre désinscription"
 locale: fr
 permalink: /presentiel/choisir-cours/
+robots: noindex, follow
 eleventyExcludeFromCollections: true
 ---
 

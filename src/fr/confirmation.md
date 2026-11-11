@@ -4,6 +4,8 @@ title: Confirmation d'inscription
 description: Confirmation de votre inscription au parcours Fluance.
 locale: fr
 permalink: /confirmation/
+robots: noindex, follow
+translationAvailable: false
 eleventyExcludeFromCollections: true
 ---
 

@@ -4,6 +4,7 @@ title: Cadeau de bienvenue
 description: Moments ressourçants en nature avec Cédric Vonlanthen.
 locale: fr
 permalink: /cadeau/
+robots: noindex, follow
 eleventyExcludeFromCollections: true
 ---
 

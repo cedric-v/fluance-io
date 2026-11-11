@@ -109,30 +109,34 @@
     <meta name="twitter:description" content="{{ pageDescription }}">
     <meta name="twitter:image" content="{{ ogImageUrl }}">
     
-    {% if canonicalUrl.startsWith('/en/') %}
-      {% set frUrl = canonicalUrl | replace('/en/', '/fr/') %}
-      {% set enUrl = canonicalUrl %}
-    {% elif canonicalUrl.startsWith('/fr/') %}
-      {% set frUrl = canonicalUrl %}
-      {% set enUrl = canonicalUrl | replace('/fr/', '/en/') %}
+    {# Les variantes françaises vivent à la racine, sauf la page d'accueil /fr/.
+       Une page peut déclarer translationAvailable: false si elle n'a pas d'équivalent. #}
+    {% set hasTranslation = translationAvailable != false %}
+    {% set frUrl = canonicalUrl %}
+    {% set enUrl = canonicalUrl %}
+    {% if canonicalUrl == '/en/' %}
+      {% set frUrl = '/fr/' %}
+    {% elif canonicalUrl.startsWith('/en/') %}
+      {% set frUrl = canonicalUrl | replace('/en/', '/') %}
+    {% elif canonicalUrl == '/fr/' %}
+      {% set enUrl = '/en/' %}
     {% elif canonicalUrl == '/' %}
       {% set frUrl = '/fr/' %}
       {% set enUrl = '/en/' %}
-    {% else %}
-      {# Pour les pages sans préfixe de langue, ajouter le préfixe selon la locale #}
+    {% elif locale == 'fr' %}
+      {% set enUrl = '/en' + canonicalUrl %}
+    {% endif %}
+    {% if translation %}
       {% if locale == 'fr' %}
-        {% set frUrl = canonicalUrl %}
-        {% set enUrl = '/en' + canonicalUrl %}
+        {% set enUrl = translation %}
       {% else %}
-        {% set frUrl = '/fr' + canonicalUrl %}
-        {% set enUrl = canonicalUrl %}
+        {% set frUrl = translation %}
       {% endif %}
     {% endif %}
+    {% if hasTranslation %}
     <link rel="alternate" hreflang="fr" href="https://fluance.io{{ frUrl }}">
     <link rel="alternate" hreflang="en" href="https://fluance.io{{ enUrl }}">
-    {# Ajouter x-default pour la page racine et ses versions linguistiques #}
-    {% if canonicalUrl == '/' or page.url == '/' or canonicalUrl == '/fr/' or canonicalUrl == '/en/' %}
-    <link rel="alternate" hreflang="x-default" href="https://fluance.io/">
+    <link rel="alternate" hreflang="x-default" href="https://fluance.io{{ frUrl }}">
     {% endif %}
     
     <!-- IndieWeb rel="me" links for identity verification -->
