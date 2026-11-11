@@ -1,0 +1,11 @@
+
+# Scripts générés depuis tools/seo-guard (formatés à la source, empreinte
+# vérifiée par l'audit) : ne pas reformater ni linter ici — sinon l'empreinte
+# change et `node sync.mjs --check` signale une dérive.
+scripts/seo-audit.mjs
+scripts/seo-smoke.mjs
+scripts/seo-schema.mjs
+scripts/gsc-inspect.mjs
+scripts/description.cjs
+scripts/sitemap-sync.mjs
+scripts/sitemap-lastmod.mjs

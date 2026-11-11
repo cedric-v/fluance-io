@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// >>> seo-guard:vendor v1.0.0 sha256:ca02aaafd336
+// >>> seo-guard:vendor v1.0.0 sha256:419cff20d3c9
 // Source de vérité : tools/seo-guard/sitemap-sync.mjs — cette copie est générée.
 // Ne pas éditer ici : corriger l'amont puis resynchroniser (`npm run sync`).
 // <<< seo-guard:vendor
@@ -94,7 +94,7 @@ export function syncSitemapFile({ file, dist, lastmodFor, write = true }) {
     const loc = block.match(/<loc>\s*([^<]+?)\s*<\/loc>/i)?.[1]?.trim();
     if (!loc) return block;
 
-    let pathname = '/';
+    let pathname;
     try {
       pathname = new URL(decodeEntities(loc)).pathname;
     } catch {
