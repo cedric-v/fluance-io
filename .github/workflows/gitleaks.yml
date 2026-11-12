@@ -22,7 +22,10 @@ concurrency:
 
 jobs:
   scan:
-    name: Historique + arbre de travail
+    # ⚠️ Le nom de ce job est le "context" du check requis par la protection
+    # de `main` (build, smoke-test, Gitleaks, functions). Le renommer bloque
+    # toutes les pull requests : adapter d'abord la protection de branche.
+    name: Gitleaks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
