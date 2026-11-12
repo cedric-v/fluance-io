@@ -75,6 +75,17 @@ npm install
 
 ---
 
+### Contribution
+
+All changes go through a branch and a pull request — never push directly to
+`main`: the branch is protected by 4 required checks (`build`, `smoke-test`,
+`Gitleaks`, `functions`) and a direct push bypasses them.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch/commit conventions and
+the rules on personal data (GDPR).
+
+---
+
 ### Local development
 
 Start the Eleventy dev server and Tailwind watcher:
