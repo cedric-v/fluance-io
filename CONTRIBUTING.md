@@ -29,14 +29,24 @@ Exemples : `fix/hero-21-jours-pixelise`, `docs/workflow-contribution`.
 ## 2. Convention de commits
 
 [Conventional Commits](https://www.conventionalcommits.org/) :
-`type(scope): description à l'impératif`, en français ou en anglais.
+`type(scope): description à l'impératif`.
+
+**Le message de commit est toujours écrit en anglais**, sans exception. Le
+type et le scope sont des mots-clés techniques standard : ils restent en
+anglais, et la description est donc rédigée en anglais également.
 
 ```text
-feat(scripts): outil de réinitialisation de l'essai gratuit
-fix(functions): corriger le compteur de participants
-chore(deps): mettre à jour les dépendances
-ci(security): épingler les outils exécutés en CI
+feat(scripts): add trial eligibility reset tool
+fix(functions): prevent double count on booking confirmation
+chore(deps): update dependencies
+ci(security): pin CI tools to exact versions
 ```
+
+Types usuels : `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`,
+`build`, `ci`, `chore`, `revert`.
+
+Un message en français (`feat(scripts): outil de réinitialisation de l'essai
+gratuit`) n'est pas conforme : le réécrire en anglais.
 
 Un commit = un changement cohérent.
 
