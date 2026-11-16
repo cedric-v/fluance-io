@@ -366,7 +366,11 @@ export default function (eleventyConfig) {
           "url": baseUrl,
           "sameAs": baseUrl
         },
-        "courseMode": "online",
+        // `courseMode` appartient à CourseInstance, pas à Course (schema.org).
+        "hasCourseInstance": {
+          "@type": "CourseInstance",
+          "courseMode": "online"
+        },
         "inLanguage": pageLocale === 'fr' ? 'fr-FR' : 'en-US',
         "url": pageUrl,
         "teaches": pageLocale === 'fr'
@@ -437,7 +441,14 @@ export default function (eleventyConfig) {
             "availability": "https://schema.org/InStock",
             "url": pageUrl,
             "priceValidUntil": "2026-12-31",
-            "billingIncrement": "P1M"
+            // `billingIncrement` n'existe pas sur Offer (schema.org) : la
+            // périodicité se décrit dans un `UnitPriceSpecification`.
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": "14.90",
+              "priceCurrency": "CHF",
+              "billingDuration": "P1M"
+            }
           },
           {
             "@type": "Offer",
@@ -447,7 +458,12 @@ export default function (eleventyConfig) {
             "availability": "https://schema.org/InStock",
             "url": pageUrl,
             "priceValidUntil": "2026-12-31",
-            "billingIncrement": "P1Y"
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": "119.00",
+              "priceCurrency": "CHF",
+              "billingDuration": "P1Y"
+            }
           }
         ];
       }
