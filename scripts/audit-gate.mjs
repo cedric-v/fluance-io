@@ -20,7 +20,7 @@
  * Une vulnérabilité « héritée » (paquet sain qui dépend d'un paquet vulnérable)
  * n'est excusée que si TOUS ses chemins de vulnérabilité mènent à une exception.
  *
- * Usage : node scripts/audit-gate.mjs
+ * Usage : node scripts/audit-gate.mjs [--omit=dev]
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
@@ -36,9 +36,11 @@ const allowlist = existsSync(allowlistPath)
   ? JSON.parse(readFileSync(allowlistPath, "utf8"))
   : [];
 
+const extraArgs = process.argv.slice(2); // ex. --omit=dev
+
 let raw;
 try {
-  raw = execFileSync("npm", ["audit", "--json"], {
+  raw = execFileSync("npm", ["audit", "--json", ...extraArgs], {
     cwd: root,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
