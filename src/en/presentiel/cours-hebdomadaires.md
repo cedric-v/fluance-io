@@ -174,3 +174,12 @@ templateEngineOverride: njk
   </article>
 </section>
 
+<section id="google-review" class="max-w-6xl mx-auto px-6 md:px-12 pb-16" aria-labelledby="google-review-title">
+  <div class="text-center space-y-4">
+    <p class="cta-pill mx-auto bg-[#E6B84A]/20 text-fluance">Google review</p>
+    <h2 id="google-review-title" class="text-3xl md:text-4xl font-semibold text-fluance">A participant's perspective</h2>
+  </div>
+  {% set testimonialsAuthor = "Flora Berset" %}
+  {% include "testimonials.njk" %}
+</section>
+

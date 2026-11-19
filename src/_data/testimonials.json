@@ -1,6 +1,19 @@
 {
   "testimonials": [
     {
+      "author": "Flora Berset",
+      "rating": 5,
+      "google": true,
+      "source": {
+        "fr": "Avis Google",
+        "en": "Google review"
+      },
+      "text": {
+        "fr": "Fluance, c’est une jolie découverte ! Chaque séance est l’occasion de se reconnecter à soi, d’écouter son corps et de retrouver le plaisir de bouger librement, de manière intuitive. Le tout sans pression et dans une atmosphère bienveillante. Pour moi, Fluance est une parenthèse qui fait du bien dans un quotidien souvent chargé.",
+        "en": "Fluance is a lovely discovery! Each session is an opportunity to reconnect with yourself, to listen to your body and to rediscover the pleasure of moving freely, intuitively. All without pressure and in a caring atmosphere. For me, Fluance is a feel-good parenthesis in an often busy daily life."
+      }
+    },
+    {
       "author": "Sylvie Danielle",
       "source": {
         "fr": "Page d’accueil",
