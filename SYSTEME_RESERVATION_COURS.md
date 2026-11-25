@@ -32,6 +32,7 @@ Système intégré de réservation avec synchronisation Google Calendar.
   date: "2026-01-22",
   time: "20:15",
   maxCapacity: 15,        // Extrait de [max:15] dans la description GCal
+  minParticipants: 3,     // Extrait de [min:3] (défaut 1 = pas d'annulation auto)
   price: 25,              // Extrait de [price:25] ou défaut 25
   participantCount: 0,
   status: "active",       // active, cancelled, completed
@@ -232,9 +233,9 @@ console.log('Calendar ID:', myCalendar.id);
 
 | Type | Format | Exemple |
 |------|--------|---------|
-| **Calendrier personnel** | `email@gmail.com` | `cedric@gmail.com` |
+| **Calendrier personnel** | `votre-email@gmail.com` | `votre-email@gmail.com` |
 | **Calendrier partagé/groupe** | `xxx@group.calendar.google.com` | `abc123@group.calendar.google.com` |
-| **Calendrier secondaire** | `email#calendrier@group.calendar.google.com` | `cedric#travail@group.calendar.google.com` |
+| **Calendrier secondaire** | `votre-email#calendrier@group.calendar.google.com` | `votre-email#travail@group.calendar.google.com` |
 
 ### Vérifier que l'ID fonctionne
 
@@ -318,6 +319,9 @@ Si vous obtenez une erreur `404 Not Found`, vérifiez que :
 
 Dans la **description** de l'événement, ajoutez :
 - `[max:15]` - Capacité maximum (défaut: 10)
+- `[min:3]` - Nombre **minimum** d'inscrits pour que le cours ait lieu (défaut: 1 = pas de minimum).
+  En-dessous du seuil 2 h avant le cours, le cours est annulé automatiquement et
+  les inscrits sont prévenus — voir [GESTION_MINIMUM_PARTICIPANTS.md](GESTION_MINIMUM_PARTICIPANTS.md).
 - `[price:25]` - Prix en CHF (défaut: 25)
 
 Exemple :
@@ -325,6 +329,7 @@ Exemple :
 Cours de yoga Fluance - niveau tous niveaux
 
 [max:15]
+[min:3]
 [price:25]
 
 Apportez votre tapis et une bouteille d'eau.

@@ -20,8 +20,6 @@ const admin = require('firebase-admin');
 const {getFirestore, Timestamp, FieldValue} = require('firebase-admin/firestore');
 const {getAuth} = require('firebase-admin/auth');
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 // fetch est natif dans Node.js 18+ (pas besoin de node-fetch)
 
 // Définir les options globales (région par défaut)
@@ -41,6 +39,8 @@ const blogLeadHub = require('./blogLeadHub');
 
 // Import services nouveaux
 const {ensureStripePrice} = require('./services/stripePrices');
+// Rendu des templates HTML d'emails (functions/emails/*.html)
+const {loadEmailTemplate} = require('./services/emailTemplates');
 
 // ⚠️ TRANSITION MOLLIE : services utilisés uniquement pour traiter les
 // abonnements Mollie encore actifs (plus aucun nouveau paiement Mollie).
@@ -611,34 +611,6 @@ function computeSerie5joursProperties(currentProperties, dateStr) {
   return {};
 }
 
-function loadEmailTemplate(templateName, variables = {}) {
-  const templatePath = path.join(__dirname, 'emails', `${templateName}.html`);
-
-  if (!fs.existsSync(templatePath)) {
-    throw new Error(`Email template not found: ${templateName}.html`);
-  }
-
-  let html = fs.readFileSync(templatePath, 'utf8');
-
-  // Remplacer les variables au format {{variable}}
-  Object.keys(variables).forEach((key) => {
-    const value = variables[key] || '';
-    // Remplacer {{key}} partout dans le HTML
-    // Cas 1 : Avec espace avant (ex: "Bonjour {{firstName}}," -> "Bonjour Cédric," ou "Bonjour,")
-    const regexWithSpace = new RegExp(`\\s+\\{\\{${key}\\}\\}`, 'g');
-    html = html.replace(regexWithSpace, value ? ` ${value}` : '');
-
-    // Cas 2 : Sans espace avant (ex: href="{{confirmationUrl}}" -> href="https://...")
-    const regexWithoutSpace = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-    html = html.replace(regexWithoutSpace, value);
-  });
-
-  // Nettoyer les placeholders non remplacés (optionnel, pour debug)
-  html = html.replace(/\{\{[\w]+\}\}/g, '');
-
-  return html;
-}
-
 // ============================================================
 // Désinscription des communications promotionnelles
 // ============================================================
@@ -973,6 +945,13 @@ async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) 
           <p style="margin: 5px 0;"><strong>Formule :</strong> ${booking.pricingOption || 'N/A'}</p>
           <p style="margin: 5px 0;"><strong>Montant :</strong> ${amountStr}</p>
           <p style="margin: 5px 0;"><strong>Mode de paiement :</strong> ${paymentMethodLabel}</p>
+          ${booking.refundRequired ? `
+          <p style="margin: 5px 0; color: #dc2626;">
+            <strong>⚠️ Remboursement à traiter :</strong> le cours a été annulé
+            (nombre minimum de participants non atteint) après ce paiement.
+            Traiter le remboursement depuis le dashboard Stripe (aucun
+            remboursement automatique).
+          </p>` : ''}
           ${booking.partnerCode ?
         `<p style="margin: 5px 0;"><strong>Code partenaire :</strong> ${booking.partnerCode
         } (remise: ${booking.discountPercent}%)</p>` :
@@ -993,6 +972,7 @@ async function sendBookingNotificationAdmin(booking, course, apiKey, apiSecret) 
       `Formule: ${booking.pricingOption || 'N/A'}\n` +
       `Montant: ${amountStr}\n` +
       `Mode de paiement: ${paymentMethodLabel}\n` +
+      `${booking.refundRequired ? '⚠️ Remboursement à traiter (cours annulé après paiement)\n' : ''}` +
       `${booking.partnerCode ? `Code partenaire: ${booking.partnerCode} (remise: ${booking.discountPercent}%)\n` : ''}` +
       `Date de réservation: ${dateStr}\n` +
       `Booking ID: ${booking.bookingId}`;
@@ -12450,11 +12430,13 @@ exports.registerPresentielCourse = onRequest(
 let googleService;
 let bookingService;
 let passService;
+let minParticipantsService;
 
 try {
   googleService = require('./services/googleService').googleService;
   bookingService = require('./services/bookingService');
   passService = require('./services/passService');
+  minParticipantsService = require('./services/minParticipantsService');
 } catch (e) {
   console.warn('Booking services not loaded:', e.message);
 }
@@ -12861,6 +12843,164 @@ exports.sendCourseRemindersManual = onRequest(
           success: false,
           error: error.message,
         });
+      }
+    },
+);
+
+// ============================================================
+// Annulation automatique des cours sous le minimum de participants
+// ============================================================
+
+/**
+ * Construit la fonction d'envoi d'email utilisée par minParticipantsService.
+ * @returns {Promise<Function>} async ({to, subject, html, text})
+ */
+async function buildCancellationMailer() {
+  const mailjetApiKey = process.env.MAILJET_API_KEY;
+  const mailjetApiSecret = process.env.MAILJET_API_SECRET;
+
+  if (!mailjetApiKey || !mailjetApiSecret) {
+    throw new Error('Mailjet credentials not configured');
+  }
+
+  return async ({to, subject, html, text}) => {
+    await sendMailjetEmail(
+        to,
+        subject,
+        html,
+        text,
+        mailjetApiKey,
+        mailjetApiSecret,
+        'support@actu.fluance.io',
+        'Cédric de Fluance',
+    );
+  };
+}
+
+/**
+ * Logique partagée : vérifie les cours à moins de 2 h et annule ceux qui
+ * n'atteignent pas leur minimum de participants ([min:X] dans Google Agenda).
+ * @param {Object} [options]
+ * @param {boolean} [options.dryRun] - Simule (aucune écriture, aucun email)
+ * @returns {Promise<Object>} Statistiques
+ */
+async function cancelCoursesBelowMinParticipantsLogic({dryRun = false} = {}) {
+  if (!minParticipantsService) {
+    throw new Error('minParticipantsService not available');
+  }
+
+  const sendEmail = dryRun ? async () => {} : await buildCancellationMailer();
+
+  return await minParticipantsService.runMinParticipantsCheck({
+    db,
+    sendEmail,
+    adminEmail: ADMIN_EMAIL,
+    passService,
+    // Reporting : lignes du Google Sheet passées en « Annulé » (colonnes L/W/X/Y)
+    googleService,
+    sheetId: process.env.GOOGLE_SHEET_ID,
+    dryRun,
+  });
+}
+
+/**
+ * Annule les cours qui n'atteignent pas leur nombre minimum de participants.
+ *
+ * Fréquence : toutes les 30 minutes (compromis précision / coût).
+ *
+ * Mesures réelles (docs/couts-infra.md) : un tick de fonction planifiée coûte
+ * ~7 vCPU-s (démarrage à froid + fenêtre de scale-down), pour un palier gratuit
+ * de 180 000 vCPU-s/mois et une consommation actuelle d'environ 44 000.
+ *   - toutes les 30 min → ~1 440 ticks/mois ≈ 10 000 vCPU-s (~6 % du palier) ;
+ *   - toutes les 15 min → ~2 880 ticks/mois ≈ 20 000 vCPU-s (~11 % du palier).
+ * La décision tombe donc entre 2 h et 1 h 30 avant le cours (au lieu de 2 h et
+ * 1 h 45 avec un tick de 15 min). Pour une décision plus fine, passer
+ * `schedule` à une expression cron de 15 minutes.
+ * Le travail réel par tick est minuscule : 1 requête Firestore sur une fenêtre
+ * de 2 h, et aucun email la plupart du temps.
+ *
+ * Voir GESTION_MINIMUM_PARTICIPANTS.md.
+ */
+exports.cancelCoursesBelowMinParticipants = onSchedule(
+    {
+      ...SCHEDULED_FUNCTION_RUNTIME,
+      schedule: '*/30 * * * *',
+      timeZone: 'Europe/Zurich',
+      region: 'europe-west1',
+      secrets: [
+        'MAILJET_API_KEY',
+        'MAILJET_API_SECRET',
+        'ADMIN_EMAIL',
+        'GOOGLE_SERVICE_ACCOUNT',
+        'GOOGLE_SHEET_ID',
+      ],
+    },
+    async (_event) => {
+      try {
+        const result = await cancelCoursesBelowMinParticipantsLogic();
+        console.log('✅ cancelCoursesBelowMinParticipants:', JSON.stringify(result));
+      } catch (error) {
+        console.error('❌ cancelCoursesBelowMinParticipants:', error.message);
+      }
+    },
+);
+
+/**
+ * Version HTTP manuelle (test, rattrapage).
+ * Protégée par COURSE_REMINDERS_API_KEY (même clé que les rappels de cours).
+ * `?preview=1` liste les cours qui seraient annulés, sans rien modifier.
+ */
+exports.cancelCoursesBelowMinParticipantsManual = onRequest(
+    {
+      region: 'europe-west1',
+      secrets: [
+        'MAILJET_API_KEY',
+        'MAILJET_API_SECRET',
+        'ADMIN_EMAIL',
+        'GOOGLE_SERVICE_ACCOUNT',
+        'GOOGLE_SHEET_ID',
+      ],
+      cors: true,
+    },
+    async (req, res) => {
+      const dryRun = req.query.preview === '1' || req.query.preview === 'true';
+
+      // 🔒 Endpoint destructif (il annule des cours et envoie des emails) :
+      // contrairement aux autres endpoints manuels, la clé API est OBLIGATOIRE
+      // dès qu'on ne fait pas un simple aperçu. Sans clé configurée, on refuse
+      // plutôt que d'exposer un déclencheur public.
+      if (!dryRun) {
+        const expectedKey = process.env.COURSE_REMINDERS_API_KEY;
+        if (!expectedKey) {
+          return res.status(503).json({
+            success: false,
+            error: 'NOT_CONFIGURED',
+            message: 'COURSE_REMINDERS_API_KEY non configurée : exécution refusée.',
+          });
+        }
+        const apiKey = req.query.apiKey || req.headers['x-api-key'];
+        if (apiKey !== expectedKey) {
+          return res.status(403).json({success: false, error: 'Unauthorized'});
+        }
+      }
+
+      // Anti-abus (y compris pour l'aperçu, qui lit Firestore)
+      const ipLimit = await checkRateLimit(
+          `ip:${getClientIp(req)}`,
+          'cancelCoursesBelowMinParticipants',
+          20,
+          3600,
+      );
+      if (ipLimit.limited) {
+        return res.status(429).json({success: false, error: 'RATE_LIMITED'});
+      }
+
+      try {
+        const result = await cancelCoursesBelowMinParticipantsLogic({dryRun});
+        return res.json({success: true, dryRun, ...result});
+      } catch (error) {
+        console.error('Error in cancelCoursesBelowMinParticipantsManual:', error);
+        return res.status(500).json({success: false, error: error.message});
       }
     },
 );
@@ -14066,15 +14206,57 @@ exports.getAvailableCourses = onRequest(
             time: course.time,
             location: course.location,
             maxCapacity: course.maxCapacity,
+            // Nombre minimum d'inscrits pour que le cours ait lieu (affiché
+            // sur la carte et utilisé par l'annulation automatique 2 h avant).
+            minParticipants: course.minParticipants || 1,
             spotsRemaining: spotsRemaining,
             isFull: spotsRemaining <= 0,
+            isCancelled: false,
             price: course.price || 25,
           };
         });
 
+        // Cours annulés à venir (ex. minimum de participants non atteint 2 h
+        // avant) : on les renvoie pour les afficher GRISÉS avec le badge
+        // « Annulé » plutôt que de les faire disparaître silencieusement de la
+        // page — une carte qui s'évapore sans explication ressemble à un bug.
+        // Ces cartes sont inertes : aucun clic, aucun formulaire, et le
+        // serveur refuse de toute façon toute inscription (processBooking,
+        // bookCourse, getCourseAvailability).
+        let cancelledCourses = [];
+        try {
+          const cancelledSnapshot = await db.collection('courses')
+              .where('startTime', '>=', now)
+              .where('status', '==', 'cancelled')
+              .orderBy('startTime', 'asc')
+              .limit(20)
+              .get();
+
+          cancelledCourses = cancelledSnapshot.docs.map((doc) => {
+            const course = doc.data();
+            return {
+              id: doc.id,
+              title: course.title,
+              date: course.date,
+              time: course.time,
+              location: course.location,
+              maxCapacity: course.maxCapacity,
+              minParticipants: course.minParticipants || 1,
+              spotsRemaining: 0,
+              isFull: true,
+              isCancelled: true,
+              price: course.price || 25,
+            };
+          });
+        } catch (cancelledError) {
+          // Un index manquant ne doit jamais empêcher d'afficher les cours
+          // disponibles : on renvoie simplement la liste sans les annulations.
+          console.warn('⚠️ Unable to load cancelled courses:', cancelledError.message);
+        }
+
         const payload = {
           success: true,
-          courses: courses,
+          courses: [...courses, ...cancelledCourses],
         };
         writeCoursesCache('getAvailableCourses', payload);
 
@@ -14269,6 +14451,9 @@ exports.bookCourse = onRequest(
           phone: phone || '',
           ipAddress: req.ip || req.headers['x-forwarded-for'] || '',
           userAgent: req.headers['user-agent'] || '',
+          // Langue de la page de réservation : stockée sur la réservation pour
+          // envoyer les emails (annulation, rappels) dans la bonne langue.
+          locale: req.body.locale === 'en' ? 'en' : 'fr',
         };
 
         // ============================================================
@@ -14296,6 +14481,17 @@ exports.bookCourse = onRequest(
             return res.status(404).json({error: 'Course not found'});
           }
           const course = courseDoc.data();
+
+          // Cours annulé (ex. nombre minimum de participants non atteint) :
+          // aucune inscription possible, même avec un pass, même via un lien
+          // direct ou un cache périmé du navigateur.
+          if (course.status === 'cancelled') {
+            return res.status(409).json({
+              success: false,
+              error: 'COURSE_CANCELLED',
+              message: 'Ce cours a été annulé. Choisissez un autre créneau.',
+            });
+          }
 
           // Vérifier les places disponibles
           const bookingsSnapshot = await db.collection('bookings')
@@ -14378,6 +14574,8 @@ exports.bookCourse = onRequest(
             firstName: userData.firstName,
             lastName: userData.lastName,
             phone: userData.phone,
+            // Langue de la page de réservation (emails dans la bonne langue)
+            locale: userData.locale === 'en' ? 'en' : 'fr',
             paymentMethod: 'pass',
             pricingOption: activePass.passType,
             passId: targetPassId,
@@ -15461,8 +15659,12 @@ exports.getAvailableCoursesForTransfer = onRequest(
             time: course.time,
             location: course.location,
             maxCapacity: course.maxCapacity,
+            // Nombre minimum d'inscrits pour que le cours ait lieu (affiché
+            // sur la carte et utilisé par l'annulation automatique 2 h avant).
+            minParticipants: course.minParticipants || 1,
             spotsRemaining: spotsRemaining,
             isFull: spotsRemaining <= 0,
+            isCancelled: false,
             price: course.price || 25,
           };
         });

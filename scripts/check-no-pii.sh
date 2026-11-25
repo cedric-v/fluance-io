@@ -25,6 +25,10 @@ ALLOWED_PATTERNS=(
   # Comptes de service Google Cloud (adresses de robots, pas des personnes):
   # le compte de service de deploiement CI est documente dans le runbook.
   '@[A-Za-z0-9-]+\.iam\.gserviceaccount\.com'
+  # IDs de calendriers Google partages/secondaires (identifiants publics, pas
+  # des adresses de personnes) : documentes comme placeholders dans
+  # SYSTEME_RESERVATION_COURS.md (format xxx@group.calendar.google.com).
+  '@group\.calendar\.google\.com'
 )
 
 EMAIL_REGEX='[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'

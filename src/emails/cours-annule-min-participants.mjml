@@ -1,0 +1,75 @@
+---
+layout: false
+permalink: /emails/cours-annule-min-participants.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold">
+          Votre cours est annulé
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Bonjour {{firstName}},
+        </mj-text>
+        <mj-text>
+          Je suis désolé : le cours <strong>{{courseName}}</strong> du
+          <strong>{{courseDate}}</strong> à <strong>{{courseTime}}</strong>
+          n'aura malheureusement <strong>pas lieu</strong>, faute d'un nombre
+          suffisant d'inscrits.
+        </mj-text>
+        <mj-text>
+          Rien à faire de votre côté : si vous aviez utilisé une séance de votre
+          pass (Flow Pass ou Pass Semestriel) ou votre cours d'essai gratuit,
+          elle a été <strong>entièrement recréditée</strong>.
+        </mj-text>
+        <mj-text>
+          Je vous invite à choisir un autre créneau — je me réjouis de vous
+          retrouver très bientôt dans le cadre d'un prochain cours :
+        </mj-text>
+        <mj-button
+          href="{{rebookingUrl}}"
+          background-color="#E6B84A"
+          color="#0f172a"
+          font-weight="bold"
+          padding="15px 30px"
+          border-radius="5px"
+        >
+          Choisir un autre cours
+        </mj-button>
+        <mj-text>
+          Si le bouton ne fonctionne pas, vous pouvez copier et coller ce lien dans votre navigateur :
+        </mj-text>
+        <mj-text>
+          <a href="{{rebookingUrl}}" style="color: #648ED8; word-break: break-all;">
+            {{rebookingUrl}}
+          </a>
+        </mj-text>
+        <mj-text font-size="14" color="#666666" padding-top="20px">
+          Une question, ou vous préférez être remboursé plutôt que de reporter
+          votre réservation sur un autre cours ? Répondez simplement à cet email.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" color="#666666">
+          À très bientôt en cours !<br><br>
+          Cédric<br>
+          Fluance : le mouvement qui éveille et apaise<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

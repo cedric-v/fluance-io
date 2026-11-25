@@ -133,3 +133,100 @@ test('syncCalendarToFirestore supprime un cours annulé récemment', async () =>
   assert.equal(requests[1].pageToken, 'next-page');
   assert.equal(requests[1].showDeleted, true);
 });
+
+// ============================================================
+// Nombre minimum de participants ([min:X])
+// ============================================================
+
+test('parseCalendarEvent lit [min:X] et le retire de la description', () => {
+  const svc = new GoogleService();
+  const event = makeEvent({
+    description: 'Cours de test [max:12] [price:30] [min:3]',
+  });
+  const course = svc.parseCalendarEvent(event);
+
+  assert.equal(course.minParticipants, 3);
+  assert.equal(course.maxCapacity, 12);
+  assert.equal(course.price, 30);
+  assert.doesNotMatch(course.description, /\[min:/);
+  assert.doesNotMatch(course.description, /\[max:/);
+  assert.doesNotMatch(course.description, /\[price:/);
+});
+
+test('parseCalendarEvent : absence de [min:X] => minParticipants = 1 (aucune annulation auto)', () => {
+  const svc = new GoogleService();
+  const course = svc.parseCalendarEvent(makeEvent({description: 'Un cours [max:12]'}));
+  assert.equal(course.minParticipants, 1);
+});
+
+test('parseCalendarEvent : [min:0] ou valeur invalide => 1', () => {
+  const svc = new GoogleService();
+  assert.equal(svc.parseCalendarEvent(makeEvent({description: '[min:0]'})).minParticipants, 1);
+  assert.equal(svc.parseCalendarEvent(makeEvent({description: '[min:-2]'})).minParticipants, 1);
+  assert.equal(svc.parseCalendarEvent(makeEvent({description: '[min:abc]'})).minParticipants, 1);
+});
+
+test('parseCalendarEvent : [min:X] supérieur à [max:Y] est ignoré (saisie incohérente)', () => {
+  const svc = new GoogleService();
+  const course = svc.parseCalendarEvent(
+      makeEvent({description: 'Cours [max:4] [min:9]'}),
+  );
+  assert.equal(course.maxCapacity, 4);
+  assert.equal(course.minParticipants, 1, 'un minimum > capacité annulerait tous les cours');
+});
+
+test('parseCalendarEvent : le tag [min:X] est insensible à la casse', () => {
+  const svc = new GoogleService();
+  const course = svc.parseCalendarEvent(makeEvent({description: '[MIN:2] [MAX:8]'}));
+  assert.equal(course.minParticipants, 2);
+  assert.equal(course.maxCapacity, 8);
+});
+
+test('applyCancellationPolicy conserve une annulation système lors de la synchronisation', () => {
+  const svc = new GoogleService();
+  const courseData = svc.parseCalendarEvent(makeEvent({description: '[min:2]'}));
+  const previous = {
+    status: 'cancelled',
+    cancelledReason: 'min_participants',
+    cancelledAt: 'date-annulation',
+    cancelledByOrganizer: true,
+    minParticipants: 2,
+  };
+
+  const result = svc.applyCancellationPolicy(courseData, previous);
+
+  assert.equal(result.status, 'cancelled', 'la synchro ne doit pas ressusciter le cours');
+  assert.equal(result.cancelledReason, 'min_participants');
+  assert.equal(result.cancelledAt, 'date-annulation');
+  assert.equal(result.cancelledByOrganizer, true);
+});
+
+test('applyCancellationPolicy réactive le cours si le tag [min:X] est retiré', () => {
+  const svc = new GoogleService();
+  // L'organisateur a retiré [min:2] de Google Agenda : plus de minimum
+  const courseData = svc.parseCalendarEvent(makeEvent({description: 'Un cours [max:12]'}));
+  const previous = {status: 'cancelled', cancelledReason: 'min_participants'};
+
+  const result = svc.applyCancellationPolicy(courseData, previous);
+
+  assert.equal(result.status, 'active');
+  assert.ok(result.reactivatedAt, 'trace de réactivation attendue');
+});
+
+test('applyCancellationPolicy réactive le cours si [min:0] est mis dans la description', () => {
+  const svc = new GoogleService();
+  const courseData = svc.parseCalendarEvent(makeEvent({description: 'Cours [min:0]'}));
+  const result = svc.applyCancellationPolicy(courseData, {
+    status: 'cancelled',
+    cancelledReason: 'min_participants',
+  });
+  assert.equal(result.status, 'active');
+});
+
+test('applyCancellationPolicy ne touche pas un cours actif', () => {
+  const svc = new GoogleService();
+  const courseData = svc.parseCalendarEvent(makeEvent({description: '[min:2]'}));
+  const result = svc.applyCancellationPolicy(courseData, {status: 'active'});
+  assert.equal(result.status, 'active');
+  assert.equal(result.reactivatedAt, undefined);
+});

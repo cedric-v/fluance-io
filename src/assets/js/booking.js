@@ -115,6 +115,10 @@
       close: 'Fermer',
       acceptCGV: 'J\'ai pris connaissance et j\'accepte les Conditions générales de vente (CGV), y compris les dispositions relatives à l\'assurance et à la responsabilité, ainsi que le règlement du lieu d\'accueil.',
       acceptCGVError: 'Vous devez accepter les Conditions générales de vente pour continuer.',
+      cancelledTitle: 'Ce cours est annulé',
+      cancelledMessage: 'Ce cours n\'aura malheureusement pas lieu, faute d\'un nombre suffisant d\'inscrits. Choisissez un autre créneau — les personnes déjà inscrites ont été prévenues par email.',
+      cancelledBadge: 'Annulé',
+      chooseAnother: 'Choisir un autre créneau',
     },
     en: {
       step1Title: 'Enter your email',
@@ -136,6 +140,10 @@
       close: 'Close',
       acceptCGV: 'I have read and accept the Terms and Conditions (T&C), including the provisions relating to insurance and liability, as well as the venue regulations.',
       acceptCGVError: 'You must accept the Terms and Conditions to continue.',
+      cancelledTitle: 'This class is cancelled',
+      cancelledMessage: 'This class will unfortunately not take place, as there were not enough registrations. Please pick another slot — everyone registered has been notified by email.',
+      cancelledBadge: 'Cancelled',
+      chooseAnother: 'Choose another class',
     },
   };
 
@@ -451,8 +459,12 @@
     coursesByMonth = groupCoursesByMonth(courses);
     monthKeys = Object.keys(coursesByMonth).sort();
 
-    // Créer la liste plate triée pour la vue "6 prochains cours"
+    // Créer la liste plate triée pour la vue "6 prochains cours".
+    // Les cours annulés (grisés) sont poussés en fin de liste : ils informent
+    // sans prendre la place des cours encore réservables.
     allCoursesSorted = [...courses].sort((a, b) => {
+      const cancelledDelta = (a.isCancelled ? 1 : 0) - (b.isCancelled ? 1 : 0);
+      if (cancelledDelta !== 0) return cancelledDelta;
       const [aD, aM, aY] = a.date.split('/');
       const [bD, bM, bY] = b.date.split('/');
       return new Date(aY, aM - 1, aD) - new Date(bY, bM - 1, bD);
@@ -508,7 +520,9 @@
     });
 
     // Attacher les événements de clic sur les cartes
+    // (une carte annulée est inerte : pas de modale, pas de réservation)
     container.querySelectorAll('[data-course-id]').forEach(card => {
+      if (card.dataset.courseCancelled === 'true') return;
       card.addEventListener('click', () => {
         const courseId = card.dataset.courseId;
         openBookingModal(courseId, card.dataset);
@@ -687,6 +701,48 @@
    * Génère le HTML d'une carte de cours
    */
   function renderCourseCard(course) {
+    // --- Cours annulé (nombre minimum de participants non atteint) ---
+    // Bonne pratique UX : la carte reste visible mais désactivée (grisée,
+    // badge "Annulé", bouton inerte) plutôt que de disparaître brutalement,
+    // ce qui laisse croire à un bug. Aucun clic n'ouvre la modale.
+    if (course.isCancelled) {
+      const dateStrCancelled = formatDateFromDDMMYYYY(course.date);
+      const locationCancelled = formatLocation(course.location);
+      return `
+        <div class="bg-gray-50 rounded-xl shadow-sm p-6 border border-gray-200 opacity-75"
+             aria-disabled="true"
+             data-course-id="${course.id}"
+             data-course-cancelled="true"
+             data-course-title="${course.title}"
+             data-course-date="${dateStrCancelled}"
+             data-course-date-raw="${course.date}"
+             data-course-time="${course.time}"
+             data-course-location="${locationCancelled}">
+          <div class="mb-4">
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="text-lg font-semibold text-[#3E3A35]/60 line-through mb-2">${course.title}</h3>
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+                ${t.cancelledBadge}
+              </span>
+            </div>
+            <p class="text-sm text-[#3E3A35]/40">${locationCancelled}</p>
+          </div>
+          <div class="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-4">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <span class="text-base font-bold text-[#3E3A35]/50">${dateStrCancelled}</span>
+              <span class="text-base font-bold text-[#3E3A35]/50">${course.time}</span>
+            </div>
+          </div>
+          <p class="text-sm text-[#3E3A35]/60 mb-4">${t.cancelledMessage}</p>
+          <div class="flex justify-end">
+            <button class="px-4 py-2 rounded-full font-semibold text-sm bg-gray-300 text-gray-600 cursor-not-allowed" disabled>
+              ${t.cancelledBadge}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
     const availability = getAvailabilityStyle(
       course.spotsRemaining,
       course.maxCapacity,
@@ -954,6 +1010,18 @@
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
 
+    // Cours annulé (ex. cache local du navigateur ou lien direct) :
+    // on n'affiche jamais le formulaire de réservation.
+    if (courseData.isCancelled === true || courseData.isCancelled === 'true') {
+      renderCourseCancelledState();
+      return;
+    }
+
+    // Le cache local peut être périmé (cours annulé il y a quelques minutes) :
+    // on revérifie le statut en arrière-plan et on bascule sur l'écran
+    // « annulé » si nécessaire, sans bloquer l'affichage.
+    verifyCourseStillBookable(courseId);
+
     // Étape 1 : si un email a déjà été utilisé pour réserver (mémorisé sur
     // cet appareil), on saute la ressaisie et on vérifie le compte
     // automatiquement (l'utilisateur peut toujours en choisir un autre).
@@ -964,6 +1032,70 @@
     } else {
       renderStep1EmailCheck();
     }
+  }
+
+  /**
+   * Vérifie côté serveur que le cours est toujours réservable.
+   * Appelée en arrière-plan à l'ouverture de la modale : si le cours vient
+   * d'être annulé (nombre minimum de participants non atteint), l'utilisateur
+   * voit immédiatement l'écran « cours annulé » au lieu d'un formulaire qui
+   * échouerait au moment de valider.
+   * @param {string} courseId
+   */
+  async function verifyCourseStillBookable(courseId) {
+    try {
+      const response = await fetch(
+        `${CONFIG.API_BASE_URL}/getCourseStatus?courseId=${encodeURIComponent(courseId)}`
+      );
+      if (!response.ok) return;
+      const status = await response.json();
+      // Ne rien faire si l'utilisateur a fermé la modale ou changé de cours
+      if (!currentCourseId || currentCourseId !== courseId) return;
+      if (status && (status.isCancelled === true || status.error === 'COURSE_CANCELLED')) {
+        renderCourseCancelledState();
+      }
+    } catch (error) {
+      // Vérification non bloquante : le serveur refusera de toute façon
+      // l'inscription (garde-fou dans bookCourse / processBooking).
+      console.warn('[Booking] Course status check failed:', error);
+    }
+  }
+
+  /**
+   * Écran affiché lorsqu'un cours est annulé (remplace le formulaire).
+   * Aucun moyen de s'inscrire : c'est le garde-fou UX côté client
+   * (le serveur refuse de toute façon).
+   */
+  function renderCourseCancelledState() {
+    const modal = document.getElementById('booking-modal');
+    if (!modal) return;
+    const content = modal.querySelector('.modal-content') || modal.querySelector('> div > div');
+    if (!content) return;
+
+    currentStep = 0; // Aucun formulaire actif
+    content.innerHTML = `
+      <div class="p-6 text-center">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-[#3E3A35] mb-2">${t.cancelledTitle}</h3>
+        <p class="text-[#3E3A35]/70 mb-2">
+          ${currentCourseData && currentCourseData.courseTitle ? `<strong>${currentCourseData.courseTitle}</strong><br>` : ''}
+          ${currentCourseData && currentCourseData.courseDate ? `📅 ${currentCourseData.courseDate} ${currentCourseData.courseTime || ''}` : ''}
+        </p>
+        <p class="text-[#3E3A35]/70 mb-6">${t.cancelledMessage}</p>
+        <a href="${currentLocale === 'en' ? '/en/presentiel/reserver/' : '/presentiel/reserver/'}"
+           class="inline-block px-6 py-2 bg-[#E6B84A] hover:bg-[#E8C15A] text-[#7A1F3D] font-semibold rounded-full transition-colors">
+          ${t.chooseAnother}
+        </a>
+        <button onclick="window.FluanceBooking.closeBookingModal()"
+                class="block w-full mt-3 py-2 text-[#3E3A35]/60 hover:text-[#3E3A35] text-sm">
+          ${t.close}
+        </button>
+      </div>
+    `;
   }
 
   /**
@@ -1936,6 +2068,8 @@
       phone: formData.get('phone'),
       usePass: true,
       passId: formData.get('passId'),
+      // Langue de la page : utilisée pour les emails transactionnels
+      locale: currentLocale,
     };
 
     try {
@@ -1961,6 +2095,10 @@
           'Réservation confirmée !',
           result.message || 'Vous recevrez un email de confirmation.'
         );
+      } else if (result.error === 'COURSE_CANCELLED') {
+        // Le cours a été annulé entre l'ouverture de la modale et la validation
+        renderCourseCancelledState();
+        return;
       } else if (result.error === 'AUTH_REQUIRED' || result.error === 'EMAIL_MISMATCH') {
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
@@ -2028,6 +2166,8 @@
       pricingOption: formData.get('pricing') || formData.get('pricingOption') || 'single',
       partnerCode: partnerCode || undefined, // Inclure seulement si présent
       origin: window.location.origin,
+      // Langue de la page : utilisée pour les emails transactionnels
+      locale: currentLocale,
     };
 
     try {
@@ -2076,6 +2216,10 @@
             showSuccessMessage(confirmTitle, confirmMsg);
           }
         }
+      } else if (result.error === 'COURSE_CANCELLED') {
+        // Le cours a été annulé entre l'ouverture de la modale et la validation
+        renderCourseCancelledState();
+        return;
       } else {
         if (errorContainer) {
           const errorMsg = result.message || (currentLocale === 'en' ? 'An error occurred' : 'Une erreur est survenue');

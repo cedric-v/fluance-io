@@ -152,6 +152,28 @@ class GoogleService {
 
       console.log(`📋 Found ${events.length} events to sync`);
 
+      // Cours annulés automatiquement (nombre minimum de participants non
+      // atteint). La synchronisation ne doit PAS les ressusciter : sans ça,
+      // un cours annulé 2 h avant redevenait "active" au tick horaire suivant
+      // et restait réservable. Une seule requête suffit (index composite
+      // status + startTime déjà présent dans firestore.indexes.json).
+      const cancelledCourses = new Map();
+      try {
+        const cancelledSnapshot = await db.collection('courses')
+            .where('status', '==', 'cancelled')
+            .where('startTime', '>=', Timestamp.fromDate(calendarTimeMinDate))
+            .where('startTime', '<=', Timestamp.fromDate(new Date(timeMax)))
+            .get();
+        cancelledSnapshot.docs.forEach((doc) => {
+          cancelledCourses.set(doc.id, doc.data());
+        });
+      } catch (error) {
+        // Un index manquant ne doit pas empêcher la synchronisation : on
+        // continue sans protection anti-résurrection plutôt que de tout
+        // bloquer (les cours annulés seraient alors réactivés).
+        console.warn('⚠️ Unable to load cancelled courses:', error.message);
+      }
+
       let synced = 0;
       let deleted = 0;
       let errors = 0;
@@ -166,9 +188,14 @@ class GoogleService {
             continue;
           }
 
-          const courseData = this.parseCalendarEvent(event);
+          let courseData = this.parseCalendarEvent(event);
 
           if (courseData) {
+            courseData = this.applyCancellationPolicy(
+                courseData,
+                cancelledCourses.get(event.id),
+            );
+
             // Utiliser l'ID Google Calendar comme ID du document
             const docId = event.id;
             syncedIds.add(docId);
@@ -220,7 +247,9 @@ class GoogleService {
 
   /**
    * Parse un événement Google Calendar pour extraire les données du cours
-   * Cherche [max:XX] dans la description pour la capacité
+   * Cherche [max:XX] dans la description pour la capacité,
+   * [price:XX] pour le prix et [min:XX] pour le nombre minimum de participants
+   * en-dessous duquel le cours est annulé 2 h avant le début.
    * @param {Object} event - Événement Google Calendar
    * @returns {Object|null} - Données du cours ou null si invalide
    */
@@ -259,10 +288,34 @@ class GoogleService {
       price = parseInt(priceMatch[1], 10);
     }
 
+    // Extraire le nombre minimum de participants [min:XX].
+    // En-dessous de ce seuil, le cours est annulé automatiquement 2 h avant
+    // le début (voir services/minParticipantsService.js).
+    // Absence de tag = pas de minimum (1), donc aucun risque d'annulation
+    // automatique pour les cours existants.
+    let minParticipants = 1;
+    const minMatch = description.match(/\[min:(\d+)\]/i);
+    if (minMatch) {
+      minParticipants = parseInt(minMatch[1], 10);
+    }
+
+    // Un minimum incohérent (0, négatif, supérieur à la capacité) est ignoré :
+    // mieux vaut ne pas annuler un cours que l'annuler par erreur de saisie.
+    if (!Number.isFinite(minParticipants) || minParticipants < 1) {
+      minParticipants = 1;
+    }
+    if (minParticipants > maxCapacity) {
+      console.warn(
+          `⚠️ [min:${minParticipants}] > [max:${maxCapacity}] pour "${event.summary}" : minimum ignoré`,
+      );
+      minParticipants = 1;
+    }
+
     // Nettoyer la description (retirer les balises)
     const cleanDescription = description
         .replace(/\[max:\d+\]/gi, '')
         .replace(/\[price:\d+\]/gi, '')
+        .replace(/\[min:\d+\]/gi, '')
         .trim();
 
     // Convertir la date/heure en tenant compte du fuseau horaire
@@ -325,9 +378,25 @@ class GoogleService {
       const startTimestamp = Timestamp.fromDate(startTime);
       const endTimestamp = endTime ? Timestamp.fromDate(endTime) : null;
 
+      // `event.created` = date de création de l'événement dans Google Agenda.
+      // Sert à ne PAS annuler un cours créé moins de 2 h avant son début
+      // (cours ajouté tardivement, en connaissance de cause : voir
+      // minParticipantsService.shouldCancelCourse).
+      // ⚠️ Ne pas utiliser `courses.createdAt` pour ça : il est réécrit à
+      // chaque synchronisation (set + merge: true) et vaut donc l'heure du
+      // dernier sync, pas la date de création du cours.
+      let gcalCreatedAt = null;
+      if (event.created) {
+        const createdDate = new Date(event.created);
+        if (!isNaN(createdDate.getTime())) {
+          gcalCreatedAt = Timestamp.fromDate(createdDate);
+        }
+      }
+
       return {
         gcalId: event.id,
         title: event.summary,
+        gcalCreatedAt: gcalCreatedAt,
         description: cleanDescription,
         location: event.location || 'le duplex danse & bien-être, Rte de Chantemerle 58d, 1763 Granges-Paccot',
         startTime: startTimestamp,
@@ -335,6 +404,7 @@ class GoogleService {
         date: formattedDate,
         time: formattedTime,
         maxCapacity: maxCapacity,
+        minParticipants: minParticipants,
         price: price,
         participants: [], // Liste des IDs de réservations confirmées
         participantCount: 0,
@@ -350,6 +420,61 @@ class GoogleService {
       });
       return null;
     }
+  }
+
+  /**
+   * Applique la politique d'annulation à un cours fraîchement synchronisé.
+   *
+   * La synchronisation Google Calendar écrase le document Firestore
+   * (`set(..., {merge: true})`), y compris `status: 'active'`. Sans cette
+   * fonction, un cours annulé automatiquement (minimum de participants non
+   * atteint) redeviendrait réservable au tick suivant.
+   *
+   * Échappatoire documentée (GESTION_MINIMUM_PARTICIPANTS.md) : retirer le tag
+   * `[min:X]` de la description Google Agenda (ou mettre `[min:0]`/`[min:1]`)
+   * réactive le cours à la synchronisation suivante.
+   *
+   * @param {Object} courseData - Données parsées depuis Google Calendar
+   * @param {Object|null|undefined} previousCourse - Document Firestore actuel
+   * @returns {Object} Données du cours à écrire
+   */
+  applyCancellationPolicy(courseData, previousCourse) {
+    if (!previousCourse || previousCourse.status !== 'cancelled') {
+      return courseData;
+    }
+
+    // Le tag [min:X] a été retiré (ou abaissé à 1) : l'organisateur reprend
+    // la main, on réactive le cours.
+    if (!courseData.minParticipants || courseData.minParticipants <= 1) {
+      console.log(
+          `♻️ Reactivating course ${courseData.gcalId} (minimum de participants retiré de Google Agenda)`,
+      );
+      return {
+        ...courseData,
+        status: 'active',
+        // Nettoyage complet des traces d'annulation : sinon le cours
+        // réapparaîtrait comme « annulé » dans les rapports/admin.
+        cancelledReason: FieldValue.delete(),
+        cancelledAt: FieldValue.delete(),
+        cancelledByOrganizer: FieldValue.delete(),
+        cancellationNotifiedAt: FieldValue.delete(),
+        cancellationAdminNotifiedAt: FieldValue.delete(),
+        cancellationStats: FieldValue.delete(),
+        participantCountAtCancellation: FieldValue.delete(),
+        reactivatedAt: FieldValue.serverTimestamp(),
+      };
+    }
+
+    // Sinon : on conserve l'annulation (le statut ne doit pas repasser à
+    // "active" et relancer les inscriptions).
+    return {
+      ...courseData,
+      status: 'cancelled',
+      cancelledReason: previousCourse.cancelledReason || 'min_participants',
+      cancelledAt: previousCourse.cancelledAt || FieldValue.serverTimestamp(),
+      cancelledByOrganizer: previousCourse.cancelledByOrganizer || false,
+      minParticipants: previousCourse.minParticipants || courseData.minParticipants,
+    };
   }
 
   /**
@@ -523,6 +648,80 @@ class GoogleService {
       console.error('❌ Error updating sheet:', error.message);
       // Ne pas throw pour ne pas bloquer le processus principal
     }
+  }
+
+  /**
+   * Marque des réservations comme annulées dans l'onglet « Réservations »
+   * (suivi / reporting Looker Studio).
+   *
+   * Une seule lecture de la feuille (A:Z) puis **un seul** batchUpdate : pas
+   * d'appel Sheets par réservation. Les colonnes mises à jour sont celles du
+   * modèle documenté dans COLONNES_GOOGLE_SHEET.md :
+   *   L = Statut, W = Annulé, X = Date d'annulation, Y = Raison annulation.
+   *
+   * @param {string} sheetId - ID de la Google Sheet
+   * @param {Array<string>} bookingIds - IDs des réservations annulées
+   * @param {Object} [options]
+   * @param {string} [options.reason] - Raison lisible (colonne Y)
+   * @param {string} [options.statusLabel] - Statut affiché (colonne L)
+   * @param {Date} [options.cancelledAt] - Date d'annulation (colonne X)
+   * @returns {Promise<{updated: number}>}
+   */
+  async markBookingsCancelledInSheet(sheetId, bookingIds, options = {}) {
+    await this.initialize();
+
+    const {
+      reason = 'Cours annulé',
+      statusLabel = 'Annulé',
+      cancelledAt = new Date(),
+    } = options;
+
+    const wanted = new Set((bookingIds || []).filter(Boolean));
+    if (wanted.size === 0) {
+      return {updated: 0};
+    }
+
+    const sheetName = 'Réservations';
+    const cancelledAtIso = cancelledAt instanceof Date ?
+      cancelledAt.toISOString() :
+      String(cancelledAt);
+
+    const response = await this.sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: `${sheetName}!A:Z`,
+    });
+
+    const rows = response.data.values || [];
+    const data = [];
+    let updated = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const bookingId = rows[i][13]; // Colonne N
+      if (!bookingId || !wanted.has(bookingId)) continue;
+
+      const rowNumber = i + 1; // Les lignes de la feuille commencent à 1
+      data.push({range: `${sheetName}!L${rowNumber}`, values: [[statusLabel]]});
+      data.push({range: `${sheetName}!W${rowNumber}`, values: [['Oui']]});
+      data.push({range: `${sheetName}!X${rowNumber}`, values: [[cancelledAtIso]]});
+      data.push({range: `${sheetName}!Y${rowNumber}`, values: [[reason]]});
+      updated++;
+    }
+
+    if (data.length === 0) {
+      console.log(`📊 Aucune ligne à mettre à jour dans la sheet pour ${wanted.size} réservation(s)`);
+      return {updated: 0};
+    }
+
+    await this.sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: {
+        valueInputOption: 'USER_ENTERED',
+        data: data,
+      },
+    });
+
+    console.log(`📊 ${updated} réservation(s) marquée(s) « ${statusLabel} » dans la sheet`);
+    return {updated};
   }
 
   /**

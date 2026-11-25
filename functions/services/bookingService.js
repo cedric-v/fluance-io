@@ -89,6 +89,10 @@ async function getCourseAvailability(db, courseId) {
 
   const course = courseDoc.data();
 
+  // Un cours annulé (ex. nombre minimum de participants non atteint) ne peut
+  // plus accueillir d'inscription, même via un lien direct ou un cache périmé.
+  const isCancelled = course.status === 'cancelled';
+
   // Compter les réservations confirmées
   const confirmedBookings = await db.collection('bookings')
       .where('courseId', '==', courseId)
@@ -103,14 +107,38 @@ async function getCourseAvailability(db, courseId) {
   const courseDate = course.startTime?.toDate ? course.startTime.toDate() : new Date(course.startTime);
   const isPast = courseDate < now;
 
+  if (isCancelled) {
+    return {
+      available: false,
+      error: 'COURSE_CANCELLED',
+      message: 'Ce cours a été annulé',
+      isCancelled: true,
+      cancelledReason: course.cancelledReason || null,
+      courseId: courseId,
+      title: course.title,
+      date: course.date,
+      time: course.time,
+      location: course.location,
+      maxCapacity: course.maxCapacity,
+      minParticipants: course.minParticipants || 1,
+      participantCount: participantCount,
+      spotsRemaining: 0,
+      isFull: true,
+      isPast: isPast,
+      price: course.price || PRICING.SINGLE.amount / 100,
+    };
+  }
+
   return {
     available: !isPast && spotsRemaining > 0,
+    isCancelled: false,
     courseId: courseId,
     title: course.title,
     date: course.date,
     time: course.time,
     location: course.location,
     maxCapacity: course.maxCapacity,
+    minParticipants: course.minParticipants || 1,
     participantCount: participantCount,
     spotsRemaining: spotsRemaining,
     isFull: spotsRemaining <= 0,
@@ -218,6 +246,15 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
       const course = courseDoc.data();
       console.log(`📖 Course found: ${course.title}`);
 
+      // 1bis. Refuser toute inscription sur un cours annulé (nombre minimum
+      // de participants non atteint, ou annulation manuelle). Écriture
+      // atomique dans la transaction : aucune place ne peut être vendue sur
+      // un cours qui vient d'être annulé.
+      if (course.status === 'cancelled') {
+        console.warn(`❌ Course ${courseId} is cancelled (${course.cancelledReason || 'unknown'})`);
+        throw new Error('COURSE_CANCELLED');
+      }
+
       // 2. Vérifier si l'utilisateur a déjà réservé ce cours (AVANT de compter les places)
       // Cette vérification doit être faite en premier pour éviter les doublons
       const existingBookingQuery = db.collection('bookings')
@@ -293,6 +330,9 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
         phone: userData.phone || '',
+        // Langue de la page de réservation : sert aux emails (annulation,
+        // rappels) pour écrire dans la bonne langue.
+        locale: userData.locale === 'en' ? 'en' : 'fr',
         paymentMethod: paymentMethod,
         pricingOption: pricingOption,
         amount: amount,
@@ -528,6 +568,7 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
 
     const errorMessages = {
       'COURSE_NOT_FOUND': 'Ce cours n\'existe pas ou n\'est plus disponible.',
+      'COURSE_CANCELLED': 'Ce cours a été annulé. Choisissez un autre créneau.',
       'ALREADY_BOOKED': 'Vous avez déjà une réservation pour ce cours.',
     };
 
@@ -569,6 +610,28 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
         return {success: true, alreadyConfirmed: true};
       }
 
+      // Le cours a pu être annulé entre la création de la réservation et le
+      // paiement (ex. nombre minimum de participants non atteint 2 h avant).
+      // Dans ce cas on ne confirme PAS la réservation : elle est annulée et
+      // marquée « remboursement à traiter » (aucun remboursement automatique,
+      // cf. GESTION_MINIMUM_PARTICIPANTS.md).
+      const courseRef = db.collection('courses').doc(booking.courseId);
+      const courseDoc = await transaction.get(courseRef);
+      if (courseDoc.exists && courseDoc.data().status === 'cancelled') {
+        console.warn(`⚠️ Payment received for cancelled course ${booking.courseId} (booking ${bookingId})`);
+        transaction.update(bookingRef, {
+          status: BOOKING_STATUS.CANCELLED,
+          cancelledAt: new Date(),
+          cancelledReason: 'course_cancelled',
+          cancelledByOrganizer: true,
+          refundRequired: true,
+          refundAmount: booking.amount || 0,
+          refundReason: 'payment_on_cancelled_course',
+          updatedAt: new Date(),
+        });
+        return {success: false, error: 'COURSE_CANCELLED'};
+      }
+
       // Mettre à jour la réservation
       transaction.update(bookingRef, {
         status: BOOKING_STATUS.CONFIRMED,
@@ -577,8 +640,6 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
       });
 
       // Mettre à jour le compteur du cours
-      const courseRef = db.collection('courses').doc(booking.courseId);
-      const courseDoc = await transaction.get(courseRef);
       if (courseDoc.exists) {
         const course = courseDoc.data();
         transaction.update(courseRef, {
@@ -595,7 +656,6 @@ async function confirmBookingPayment(db, bookingId, paymentIntentId) {
     if (result.alreadyConfirmed) {
       return result;
     }
-
     // Ajouter au Google Sheet
     try {
       const sheetId = process.env.GOOGLE_SHEET_ID;
@@ -904,6 +964,15 @@ async function transferBooking(db, bookingId, newCourseId, email) {
     }
 
     const newCourse = newCourseDoc.data();
+
+    // Interdire le transfert vers un cours annulé
+    if (newCourse.status === 'cancelled') {
+      return {
+        success: false,
+        error: 'COURSE_CANCELLED',
+        message: 'Ce cours a été annulé. Choisissez un autre créneau.',
+      };
+    }
 
     // Vérifier la disponibilité du nouveau cours
     const availability = await getCourseAvailability(db, newCourseId);

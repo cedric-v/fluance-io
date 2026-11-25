@@ -31,9 +31,9 @@ function scheduledOptionBlocks(source) {
   return blocks;
 }
 
-test('les 14 fonctions planifiees sont detectees dans index.js', () => {
+test('les 15 fonctions planifiees sont detectees dans index.js', () => {
   const blocks = scheduledOptionBlocks(indexSource);
-  assert.strictEqual(blocks.length, 14, `attendu 14 onSchedule, trouve ${blocks.length}`);
+  assert.strictEqual(blocks.length, 15, `attendu 15 onSchedule, trouve ${blocks.length}`);
 });
 
 test('chaque fonction planifiee declare ...SCHEDULED_FUNCTION_RUNTIME', () => {

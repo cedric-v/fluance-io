@@ -1,0 +1,75 @@
+---
+layout: false
+permalink: /emails/cours-annule-min-participants-en.html
+---
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#333333" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f5f5f5">
+    <mj-section background-color="#648ED8" padding="20px">
+      <mj-column>
+        <mj-text align="center" color="#ffffff" font-size="24px" font-weight="bold">
+          Your class has been cancelled
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text>
+          Hello {{firstName}},
+        </mj-text>
+        <mj-text>
+          I am sorry: the class <strong>{{courseName}}</strong> on
+          <strong>{{courseDate}}</strong> at <strong>{{courseTime}}</strong>
+          will unfortunately <strong>not take place</strong>, as there were not
+          enough registrations.
+        </mj-text>
+        <mj-text>
+          Nothing to do on your side: if you used a session from your pass
+          (Flow Pass or Semester Pass) or your free trial class, it has been
+          <strong>fully restored</strong>.
+        </mj-text>
+        <mj-text>
+          I invite you to pick another slot — I look forward to seeing you at an
+          upcoming class very soon:
+        </mj-text>
+        <mj-button
+          href="{{rebookingUrl}}"
+          background-color="#E6B84A"
+          color="#0f172a"
+          font-weight="bold"
+          padding="15px 30px"
+          border-radius="5px"
+        >
+          Choose another class
+        </mj-button>
+        <mj-text>
+          If the button does not work, copy and paste this link into your browser:
+        </mj-text>
+        <mj-text>
+          <a href="{{rebookingUrl}}" style="color: #648ED8; word-break: break-all;">
+            {{rebookingUrl}}
+          </a>
+        </mj-text>
+        <mj-text font-size="14" color="#666666" padding-top="20px">
+          A question, or would you rather be refunded instead of moving your
+          booking to another class? Simply reply to this email.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f9f9f9" padding="20px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" color="#666666">
+          See you very soon in class!<br><br>
+          Cédric<br>
+          Fluance: the movement that awakens and soothes<br>
+          <a href="https://fluance.io" style="color: #648ED8;">fluance.io</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

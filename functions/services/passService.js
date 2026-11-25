@@ -47,12 +47,25 @@ async function checkUserPass(db, email) {
     // D'abord chercher dans les bookings (sans orderBy pour éviter besoin d'index)
     const bookingsSnapshot = await db.collection('bookings')
         .where('email', '==', normalizedEmail)
-        .limit(10) // Limiter pour performance
+        .limit(20) // Limiter pour performance
         .get();
 
-    if (!bookingsSnapshot.empty) {
+    // Une réservation annulée par l'organisation (cours annulé faute de
+    // participants) ne consomme rien : elle ne doit donc pas priver la
+    // personne de son cours d'essai gratuit ni être comptée comme un passage.
+    // En revanche, une annulation faite par l'utilisateur lui-même reste
+    // comptabilisée (évite le contournement « je réserve un essai, j'annule,
+    // je réserve un nouvel essai »).
+    const relevantBookings = bookingsSnapshot.docs.filter((doc) => {
+      const booking = doc.data();
+      const cancelledByOrganizer = booking.status === 'cancelled' &&
+        (booking.cancelledByOrganizer === true || booking.cancelledReason === 'min_participants');
+      return !cancelledByOrganizer;
+    });
+
+    if (relevantBookings.length > 0) {
       // Parcourir pour trouver le premier avec firstName/lastName
-      for (const doc of bookingsSnapshot.docs) {
+      for (const doc of relevantBookings) {
         const booking = doc.data();
         if (booking.firstName && !existingFirstName) {
           existingFirstName = booking.firstName;
@@ -93,7 +106,7 @@ async function checkUserPass(db, email) {
         .get();
 
     if (passesSnapshot.empty) {
-      const isFirstVisit = bookingsSnapshot.empty;
+      const isFirstVisit = relevantBookings.length === 0;
 
       return {
         hasActivePass: false,
@@ -444,7 +457,9 @@ async function getUserPassHistory(db, email) {
 
 /**
  * Annule une séance (remboursement d'une utilisation)
- * Utile si un cours est annulé par l'organisateur
+ * Utilisé lorsqu'un cours est annulé par l'organisateur (ex. nombre minimum de
+ * participants non atteint). L'opération est idempotente : appeler la fonction
+ * deux fois ne recrédite qu'une seule séance.
  * @param {Object} db - Instance Firestore
  * @param {string} passId - ID du pass
  * @param {string} courseId - ID du cours annulé
@@ -459,30 +474,69 @@ async function refundPassSession(db, passId, courseId) {
   }
 
   const pass = passDoc.data();
+  const history = pass.sessionsHistory || [];
+  const sessionUsed = history.find((h) => h.courseId === courseId);
 
-  // Pas de remboursement pour les pass illimités
-  if (pass.sessionsRemaining === -1) {
-    return {success: true, message: 'Unlimited pass - no refund needed'};
-  }
-
-  // Vérifier que la séance a bien été utilisée pour ce cours
-  const sessionUsed = (pass.sessionsHistory || []).find((h) => h.courseId === courseId);
   if (!sessionUsed) {
     return {success: false, error: 'Session not found in history'};
+  }
+
+  // Idempotence : une séance déjà rendue ne doit pas être recréditée.
+  if (sessionUsed.refunded) {
+    return {
+      success: true,
+      alreadyRefunded: true,
+      sessionsRemaining: pass.sessionsRemaining,
+      message: 'Session already refunded',
+    };
+  }
+
+  // Pass illimité : aucune séance à recréditer, mais on retire l'entrée
+  // d'historique pour que « nombre de séances effectuées » reste correct.
+  if (pass.sessionsRemaining === -1) {
+    await passRef.update({
+      sessionsHistory: history.filter((h) => h.courseId !== courseId),
+      lastRefund: {
+        courseId: courseId,
+        refundedAt: new Date(),
+        type: 'unlimited_session',
+      },
+      updatedAt: new Date(),
+    });
+
+    return {
+      success: true,
+      unlimited: true,
+      sessionsRemaining: -1,
+      message: 'Unlimited pass - history entry removed',
+    };
   }
 
   const newSessionsRemaining = pass.sessionsRemaining + 1;
   const newSessionsUsed = Math.max(0, pass.sessionsUsed - 1);
 
-  await passRef.update({
+  const updateData = {
     sessionsUsed: newSessionsUsed,
     sessionsRemaining: newSessionsRemaining,
     status: 'active', // Réactiver si était épuisé
-    sessionsHistory: (pass.sessionsHistory || []).map((h) =>
+    sessionsHistory: history.map((h) =>
       h.courseId === courseId ? {...h, refunded: true, refundedAt: new Date()} : h,
     ),
+    lastRefund: {
+      courseId: courseId,
+      refundedAt: new Date(),
+      sessionsRemaining: newSessionsRemaining,
+    },
     updatedAt: new Date(),
-  });
+  };
+
+  // Un pass épuisé qui récupère une séance ne doit plus porter la trace
+  // d'épuisement (sinon il reste "exhausted" dans les statistiques).
+  if (pass.status === 'exhausted') {
+    updateData.exhaustedAt = null;
+  }
+
+  await passRef.update(updateData);
 
   return {
     success: true,
