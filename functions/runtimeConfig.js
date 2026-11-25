@@ -63,6 +63,20 @@ const HTTP_FUNCTION_RUNTIME = {
     maxInstances: 20,
     minInstances: 0,
   },
+  // Endpoints HTTP qui utilisent googleapis (Google Calendar / Sheets) ou qui
+  // declenchent une synchro complete : sans 512 MiB ils depassent le defaut GCP
+  // de 256 Mi (OOM au demarrage a froid, verifie en production le 25/11/2026 :
+  // "Memory limit of 256 MiB exceeded with 262 MiB used" -> HTTP 500).
+  syncPlanningManual: {
+    memory: '512MiB',
+    maxInstances: 20,
+    minInstances: 0,
+  },
+  cancelCoursesBelowMinParticipantsManual: {
+    memory: '512MiB',
+    maxInstances: 20,
+    minInstances: 0,
+  },
   webhookStripe: {
     memory: '512MiB',
     maxInstances: 20,

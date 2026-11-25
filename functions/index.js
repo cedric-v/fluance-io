@@ -12952,6 +12952,7 @@ exports.cancelCoursesBelowMinParticipants = onSchedule(
  */
 exports.cancelCoursesBelowMinParticipantsManual = onRequest(
     {
+      ...HTTP_FUNCTION_RUNTIME.cancelCoursesBelowMinParticipantsManual,
       region: 'europe-west1',
       secrets: [
         'MAILJET_API_KEY',
@@ -14037,6 +14038,7 @@ exports.syncPlanning = onSchedule(
  */
 exports.syncPlanningManual = onRequest(
     {
+      ...HTTP_FUNCTION_RUNTIME.syncPlanningManual,
       region: 'europe-west1',
       secrets: ['GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_CALENDAR_ID'],
       cors: true,
