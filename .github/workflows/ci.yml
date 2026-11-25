@@ -57,6 +57,16 @@ jobs:
       - name: Audit des dépendances des functions
         run: npm audit --prefix functions --audit-level=high
 
+      # Les templates d'emails (functions/emails/*.html) sont des artefacts
+      # GITIGNORES (compiles depuis src/emails/*.mjml) : ils doivent etre
+      # generes avant les tests qui les rendent (minParticipantsService et
+      # les autres emails transactionnels).
+      - name: "Install dependencies (racine: templates d'emails)"
+        run: npm ci
+
+      - name: Build email templates
+        run: npm run build:email-templates
+
       - name: Lint
         run: npm --prefix functions run lint
 

@@ -75,6 +75,13 @@ jobs:
       - name: "Install dependencies (racine: scripts de build des emails)"
         run: npm ci
 
+      # Les templates d'emails (functions/emails/*.html) sont des artefacts
+      # GITIGNORES (compiles depuis src/emails/*.mjml). Sans cette etape AVANT
+      # les tests, tout test qui rend un template echoue en CI alors qu'il
+      # passe en local (ou les artefacts existent deja).
+      - name: Build email templates
+        run: npm run build:email-templates
+
       - name: Lint
         run: npm --prefix functions run lint
 
@@ -91,9 +98,6 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
           project_id: ${{ vars.GCP_PROJECT_ID }}
-
-      - name: Build email templates
-        run: npm run build:email-templates
 
       # Cible de deploiement la plus etroite possible:
       # - seul functions/blogLeadHub.js change -> les 2 fonctions HTTP du hub

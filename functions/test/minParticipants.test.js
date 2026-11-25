@@ -5,6 +5,11 @@
  * la chaîne complète : décision → annulation du cours → annulation des
  * réservations → recrédit des passes → emails (participants, liste d'attente,
  * organisateur) → reprise idempotente.
+ *
+ * ⚠️ Les templates d'emails (functions/emails/*.html) sont des artefacts
+ * gitignorés : lancer `npm run build:email-templates` (à la racine) avant
+ * `npm --prefix functions test`, sinon les tests qui rendent un email échouent
+ * avec « Email template not found ». La CI le fait automatiquement.
  */
 
 const test = require('node:test');
