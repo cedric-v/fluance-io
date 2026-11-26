@@ -233,6 +233,20 @@ curl -H "x-api-key: $COURSE_REMINDERS_API_KEY" \
 
 Les deux modes sont limités à 20 appels/h par IP.
 
+**Si un endpoint répond `Internal Server Error` (HTTP 500, texte brut, sans
+message applicatif)** : c'est presque toujours un **OOM au démarrage à froid**
+(le bundle charge firebase-admin + googleapis ≈ 260 MiB pour une limite de
+256 MiB). Vérifier avec :
+
+```bash
+gcloud logging read 'resource.type="cloud_run_revision" AND severity>=ERROR AND textPayload=~"Memory limit"' \
+  --project=fluance-protected-content --limit=20 --format="value(resource.labels.service_name,timestamp)"
+```
+
+Le remède est global depuis le 25/11/2026 : `setGlobalOptions({memory: '512MiB'})`
+dans `functions/index.js` (les entrées de `runtimeConfig.js` restent la
+référence pour `minInstances`/`maxInstances`).
+
 **Logs** : `firebase functions:log --only cancelCoursesBelowMinParticipants`
 (``✅ Min participants check: X vérifiés, Y annulés, Z emails, W séances
 recréditées, E erreurs``).

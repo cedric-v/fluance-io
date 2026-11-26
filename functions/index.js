@@ -23,8 +23,20 @@ const crypto = require('crypto');
 // fetch est natif dans Node.js 18+ (pas besoin de node-fetch)
 
 // Définir les options globales (région par défaut)
+//
+// ⚠️ `memory: '512MiB'` est GLOBAL et volontaire : ce bundle charge
+// firebase-admin + googleapis (~260 Mi des le demarrage a froid), ce qui
+// depasse le defaut GCP de 256 MiB. Consequence observee : les fonctions qui
+// n'avaient pas d'option `memory` explicite echouaient par intermittence sur
+// leur premier appel (OOM "Memory limit of 256 MiB exceeded with 257 MiB
+// used") et repondaient un HTTP 500 brut, sans log applicatif.
+// Cas concrets du 25/11/2026 : checkUserPass (etape 1 de toute reservation !),
+// getCourseStatus, syncPlanningManual, cancelCoursesBelowMinParticipantsManual.
+// Les entrees de functions/runtimeConfig.js restent la reference pour
+// minInstances / maxInstances et pour scripts/verify-functions-runtime.mjs.
 setGlobalOptions({
   region: 'europe-west1',
+  memory: '512MiB',
 });
 
 admin.initializeApp();
