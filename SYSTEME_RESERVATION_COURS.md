@@ -465,6 +465,16 @@ Le système utilise l'extension Firebase **Trigger Email**. Templates à créer 
 
 - `booking-confirmation` : Confirmation de réservation
 - `waitlist-spot-available` : Place disponible (liste d'attente)
+- `cours-annule-min-participants` : Cours annulé (minimum de participants non
+  atteint), lien de réinscription — version EN :
+  `cours-annule-min-participants-en`
+- `liste-attente-cours-annule` : Annulation pour les personnes en liste
+  d'attente — version EN : `liste-attente-cours-annule-en`
+
+Tous deux sont compilés par `npm run build:email-templates`
+(`src/emails/*.mjml` → `functions/emails/*.html`) et envoyés dans la langue de
+la réservation (`booking.locale`). Voir
+[GESTION_MINIMUM_PARTICIPANTS.md](GESTION_MINIMUM_PARTICIPANTS.md).
 
 ### Configuration extension Trigger Email
 

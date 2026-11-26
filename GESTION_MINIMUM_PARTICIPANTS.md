@@ -37,7 +37,7 @@ Les tags sont retirés de la description affichée sur le site.
 
 ## 2. Décision : 2 heures avant le cours
 
-Une fonction planifiée vérifie **toutes les 15 minutes** les cours dont le
+Une fonction planifiée vérifie **toutes les 30 minutes** les cours dont le
 début est à moins de 2 heures :
 
 > Nombre d'inscrits (`confirmed` + `pending_cash`) **< `minParticipants`**
@@ -181,7 +181,7 @@ personnes doivent se réinscrire — c'est précisément le lien envoyé par ema
 
 ---
 
-## 6. Mise en service
+## 6. Mise en service — ✅ **FAIT le 25/11/2026** (voir l'état réel ci-dessous)
 
 1. Déployer les fonctions (le workflow `.github/workflows/deploy-functions.yml`
    détecte automatiquement `cancelCoursesBelowMinParticipants`) et le site
@@ -210,6 +210,13 @@ personnes doivent se réinscrire — c'est précisément le lien envoyé par ema
    minimum » (aucune annulation).
 3. Vérifier l'aperçu :
 
+   **État réel après la mise en service (25/11/2026)** : workflows
+   `Deploy functions` et `Deploy site` verts ; sync réussie
+   (`{"success":true,"synced":26}`) ; **24 cours à venir avec
+   `minParticipants: 2`** ; Cron `*/30` **ENABLED** et tick constaté dans les
+   logs (`0 erreurs`) ; API `getAvailableCourses` / `getCourseStatus`
+   renvoient `minParticipants`.
+
    ```bash
    curl "https://europe-west1-fluance-protected-content.cloudfunctions.net/cancelCoursesBelowMinParticipantsManual?preview=1"
    ```
@@ -224,7 +231,10 @@ curl "https://europe-west1-fluance-protected-content.cloudfunctions.net/cancelCo
 ```
 
 **Exécution immédiate réelle** (rattrapage manuel). La clé API est
-**obligatoire** pour cet endpoint destructif (sinon `503 NOT_CONFIGURED`) :
+**obligatoire** pour cet endpoint destructif (sinon `503 NOT_CONFIGURED` —
+⚠️ état réel au 25/11/2026 : **`COURSE_REMINDERS_API_KEY` n'est pas configurée
+dans Firebase**, l'exécution manuelle réelle est donc bloquée tant qu'elle ne
+l'est pas. Le cron planifié, lui, n'a pas besoin de cette clé) :
 
 ```bash
 curl -H "x-api-key: $COURSE_REMINDERS_API_KEY" \
@@ -248,8 +258,9 @@ dans `functions/index.js` (les entrées de `runtimeConfig.js` restent la
 référence pour `minInstances`/`maxInstances`).
 
 **Logs** : `firebase functions:log --only cancelCoursesBelowMinParticipants`
-(``✅ Min participants check: X vérifiés, Y annulés, Z emails, W séances
-recréditées, E erreurs``).
+(une ligne par tick :
+``✅ Min participants check: X vérifiés, Y annulés, Z emails, W séances
+recréditées, S lignes de suivi mises à jour, E erreurs``).
 
 **Sur le document du cours annulé** : `status`, `cancelledReason`,
 `cancelledAt`, `participantCountAtCancellation`, `minParticipants`,
@@ -279,7 +290,7 @@ cd functions && npm test
 |---|---|
 | `functions/services/googleService.js` | parsing `[min:X]`, `applyCancellationPolicy` (anti-résurrection / réactivation), `markBookingsCancelledInSheet` (reporting) |
 | `functions/services/minParticipantsService.js` | décision, annulation, emails, recrédits |
-| `functions/index.js` | `cancelCoursesBelowMinParticipants` (cron 15 min) + variante manuelle, blocage `bookCourse`, `getAvailableCourses` |
+| `functions/index.js` | `cancelCoursesBelowMinParticipants` (cron 30 min) + variante manuelle, blocage `bookCourse`, `getAvailableCourses` |
 | `functions/services/bookingService.js` | garde-fous `processBooking`, `getCourseAvailability`, `transferBooking`, `confirmBookingPayment` |
 | `functions/services/passService.js` | `refundPassSession` (idempotent), éligibilité essai gratuit |
 | `functions/services/emailTemplates.js` | rendu des templates MJML |
