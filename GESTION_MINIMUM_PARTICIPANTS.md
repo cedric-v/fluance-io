@@ -149,7 +149,7 @@ La synchronisation Google Calendar **ne ressuscite pas** un cours annulé
 
 1. dans Google Agenda, **retirer** `[min:X]` de la description (ou mettre
    `[min:0]` / `[min:1]`) ;
-2. lancer la synchronisation (elle tourne toutes les heures, ou appeler
+2. lancer la synchronisation (elle tourne toutes les heures à :10, ou appeler
    `syncPlanningManual`) ;
 3. le cours repasse en `status: 'active'` (`reactivatedAt` est enregistré).
 
@@ -175,6 +175,10 @@ personnes doivent se réinscrire — c'est précisément le lien envoyé par ema
 | Inscrit qui avait acheté un Flow Pass avec sa réservation | pas de remboursement (le pass reste valable) |
 | Inscrit avec un pass supprimé/expiré | erreur de recrédit loguée, le reste du traitement continue |
 | Crash/timeout au milieu des envois d'emails | reprise au tick suivant (`cancellationNotifiedAt` = point de reprise, `cancellationEmailSent` = anti-doublon) |
+| Synchro Google Agenda simultanée à l'annulation | la synchro relit le cours dans une transaction avant d'écrire (et tourne à :10, le cron à :00/:30) : un cours annulé n'est jamais ressuscité |
+| Réservation par pass croisant l'annulation | `bookCourse` relit le cours après écriture : s'il est annulé, la séance est recréditée et la réservation annulée (HTTP 409) |
+| Liste d'attente déjà notifiée (`notified`) | prévenue de l'annulation comme les `waiting` |
+| Mise à jour d'une réservation en échec | `cancellationNotifiedAt` reste vide : la reprise (même tick) réessaie, sans doublon d'email |
 | Deux exécutions concurrentes | impossible (`maxInstances: 1` + `SCHEDULED_FUNCTION_RUNTIME`) et de toute façon idempotent |
 | Credentials Mailjet absents | l'annulation est **abandonnée** et retentée au tick suivant (mieux vaut prévenir les inscrits que les laisser venir à un cours annulé) |
 | Cours annulé par un autre moyen (supprimé de Google Agenda) | comportement inchangé (suppression du document) |

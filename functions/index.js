@@ -14020,7 +14020,9 @@ exports.syncPlanning = onSchedule(
       // invocation, pas par seconde de calcul. Les cours sont planifies des
       // semaines a l'avance, un delai de synchro d'1 h est indifferent.
       // Declenchement manuel disponible: syncPlanningManual.
-      schedule: 'every 1 hours',
+      // Décalé à :10 pour ne pas démarrer en même temps que
+      // cancelCoursesBelowMinParticipants (*/30, :00 et :30).
+      schedule: '10 * * * *',
       region: 'europe-west1',
       secrets: ['GOOGLE_SERVICE_ACCOUNT', 'GOOGLE_CALENDAR_ID'],
     },
@@ -14524,6 +14526,7 @@ exports.bookCourse = onRequest(
               phone: userData.phone,
               status: 'waiting',
               passId: targetPassId,
+              locale: userData.locale,
               createdAt: new Date(),
             };
             const waitlistRef = await db.collection('waitlist').add(waitlistData);
@@ -14606,6 +14609,37 @@ exports.bookCourse = onRequest(
           };
 
           await db.collection('bookings').doc(bookingId).set(bookingData);
+
+          // Re-vérification APRÈS écriture : ce chemin n'est pas transactionnel,
+          // le cours a pu être annulé (cron minimum de participants) entre le
+          // contrôle initial et maintenant. Comme le cron écrit le statut du
+          // cours AVANT de lire les réservations, relire le cours ici garantit
+          // qu'une des deux parties voit l'autre : soit le cron a vu cette
+          // réservation, soit on voit l'annulation et on la défait.
+          const recheckDoc = await db.collection('courses').doc(courseId).get();
+          if (recheckDoc.exists && recheckDoc.data().status === 'cancelled') {
+            console.warn(`⚠️ Course ${courseId} cancelled during pass booking ${bookingId}: rolling back`);
+            if (sessionResult && passService.refundPassSession) {
+              try {
+                await passService.refundPassSession(db, targetPassId, courseId);
+              } catch (refundError) {
+                console.error('❌ Rollback pass session failed:', refundError.message);
+              }
+            }
+            await db.collection('bookings').doc(bookingId).update({
+              status: 'cancelled',
+              cancelledAt: new Date(),
+              cancelledReason: 'course_cancelled',
+              cancelledByOrganizer: true,
+              passSessionRefunded: !!sessionResult,
+              updatedAt: new Date(),
+            });
+            return res.status(409).json({
+              success: false,
+              error: 'COURSE_CANCELLED',
+              message: 'Ce cours a été annulé. Choisissez un autre créneau.',
+            });
+          }
 
           // Mettre à jour le compteur de participants
           await db.collection('courses').doc(courseId).update({

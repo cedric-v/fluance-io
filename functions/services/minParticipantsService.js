@@ -479,6 +479,7 @@ async function cancelCourse(ctx, courseId, course, {participantCount, alreadyMar
     refundsRequired: 0,
     bookings: 0,
     sheetUpdated: 0,
+    updateFailures: 0,
   };
 
   if (!alreadyMarked) {
@@ -520,6 +521,7 @@ async function cancelCourse(ctx, courseId, course, {participantCount, alreadyMar
 
     const updates = alreadyCancelled ? {} : {
       status: 'cancelled',
+      statusBeforeCancellation: booking.status,
       cancelledAt: now,
       cancelledReason: CANCELLATION_REASON,
       cancelledByOrganizer: true,
@@ -543,9 +545,12 @@ async function cancelCourse(ctx, courseId, course, {participantCount, alreadyMar
       }
     }
 
-    const settlement = alreadyCancelled && booking.refundRequired ?
-      {label: `payé ${((booking.refundAmount || 0) / 100).toFixed(2)} CHF — remboursement à traiter`} :
-      classifySettlement(booking);
+    // Sur une reprise, le statut courant est déjà « cancelled » : on classe
+    // la réservation d'après son statut d'origine (conservé à l'annulation).
+    const settlement = classifySettlement({
+      ...booking,
+      status: booking.statusBeforeCancellation || booking.status,
+    });
 
     if (!alreadyCancelled) {
       // Essai gratuit : l'éligibilité est recalculée à partir des réservations
@@ -583,6 +588,10 @@ async function cancelCourse(ctx, courseId, course, {participantCount, alreadyMar
         await bookingDoc.ref.update(updates);
       } catch (updateError) {
         logger.error(`❌ Erreur mise à jour réservation ${bookingDoc.id}:`, updateError.message);
+        // La réservation resterait « active » sur un cours annulé : on
+        // n'achève pas le traitement, le tick suivant la reprend (recrédit
+        // de séance idempotent, email non redoublé grâce à cancellationEmailSent).
+        stats.updateFailures++;
       }
     }
 
@@ -646,7 +655,9 @@ async function cancelCourse(ctx, courseId, course, {participantCount, alreadyMar
 
     const waitlistEntries = waitlistSnapshot.docs.filter((doc) => {
       const entry = doc.data();
-      if (entry.status === 'waiting') return true;
+      // « notified » : une place s'était libérée et un lien de réservation a
+      // été envoyé ; la personne doit aussi savoir que le cours n'a plus lieu.
+      if (entry.status === 'waiting' || entry.status === 'notified') return true;
       return entry.status === 'cancelled' &&
         entry.cancelledReason === CANCELLATION_REASON &&
         !entry.cancellationEmailSent;
@@ -654,7 +665,7 @@ async function cancelCourse(ctx, courseId, course, {participantCount, alreadyMar
 
     waitlistCount = waitlistSnapshot.docs.filter((doc) => {
       const entry = doc.data();
-      return entry.status === 'waiting' ||
+      return entry.status === 'waiting' || entry.status === 'notified' ||
         (entry.status === 'cancelled' && entry.cancelledReason === CANCELLATION_REASON);
     }).length;
 
@@ -670,7 +681,7 @@ async function cancelCourse(ctx, courseId, course, {participantCount, alreadyMar
         rebookingUrl: getRebookingUrl(locale),
       });
 
-      if (entry.status === 'waiting') {
+      if (entry.status === 'waiting' || entry.status === 'notified') {
         await waitlistDoc.ref.update({
           status: 'cancelled',
           cancelledReason: CANCELLATION_REASON,
@@ -735,10 +746,10 @@ async function cancelCourse(ctx, courseId, course, {participantCount, alreadyMar
   // Tant que des emails n'ont pas pu partir, `cancellationNotifiedAt` reste
   // null : le tick suivant retente (les envois réussis sont marqués sur la
   // réservation, donc aucun doublon).
-  const allEmailsSent = stats.emailsFailed === 0;
+  const allEmailsSent = stats.emailsFailed === 0 && stats.updateFailures === 0;
   if (!allEmailsSent) {
     logger.warn(
-        `⚠️ ${stats.emailsFailed} email(s) d'annulation non envoyés ` +
+        `⚠️ ${stats.emailsFailed} email(s) non envoyés / ${stats.updateFailures} réservation(s) non mises à jour ` +
         `pour le cours ${courseId} : nouvelle tentative au prochain tick`,
     );
   }

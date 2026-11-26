@@ -152,28 +152,6 @@ class GoogleService {
 
       console.log(`📋 Found ${events.length} events to sync`);
 
-      // Cours annulés automatiquement (nombre minimum de participants non
-      // atteint). La synchronisation ne doit PAS les ressusciter : sans ça,
-      // un cours annulé 2 h avant redevenait "active" au tick horaire suivant
-      // et restait réservable. Une seule requête suffit (index composite
-      // status + startTime déjà présent dans firestore.indexes.json).
-      const cancelledCourses = new Map();
-      try {
-        const cancelledSnapshot = await db.collection('courses')
-            .where('status', '==', 'cancelled')
-            .where('startTime', '>=', Timestamp.fromDate(calendarTimeMinDate))
-            .where('startTime', '<=', Timestamp.fromDate(new Date(timeMax)))
-            .get();
-        cancelledSnapshot.docs.forEach((doc) => {
-          cancelledCourses.set(doc.id, doc.data());
-        });
-      } catch (error) {
-        // Un index manquant ne doit pas empêcher la synchronisation : on
-        // continue sans protection anti-résurrection plutôt que de tout
-        // bloquer (les cours annulés seraient alors réactivés).
-        console.warn('⚠️ Unable to load cancelled courses:', error.message);
-      }
-
       let synced = 0;
       let deleted = 0;
       let errors = 0;
@@ -188,19 +166,25 @@ class GoogleService {
             continue;
           }
 
-          let courseData = this.parseCalendarEvent(event);
+          const courseData = this.parseCalendarEvent(event);
 
           if (courseData) {
-            courseData = this.applyCancellationPolicy(
-                courseData,
-                cancelledCourses.get(event.id),
-            );
-
             // Utiliser l'ID Google Calendar comme ID du document
             const docId = event.id;
             syncedIds.add(docId);
 
-            await db.collection('courses').doc(docId).set(courseData, {merge: true});
+            // Lecture + écriture atomiques : la synchronisation ne doit PAS
+            // ressusciter un cours annulé automatiquement (minimum de
+            // participants non atteint), y compris s'il vient d'être annulé
+            // par le cron pendant que la synchronisation tourne (une liste
+            // lue en début de synchro serait périmée).
+            const courseRef = db.collection('courses').doc(docId);
+            await db.runTransaction(async (transaction) => {
+              const previousDoc = await transaction.get(courseRef);
+              const previous = previousDoc.exists ? previousDoc.data() : null;
+              const toWrite = this.applyCancellationPolicy(courseData, previous);
+              transaction.set(courseRef, toWrite, {merge: true});
+            });
             synced++;
             console.log(`✅ Synced: ${courseData.title} on ${courseData.date}`);
           }

@@ -97,9 +97,7 @@ test('syncCalendarToFirestore supprime un cours annulé récemment', async () =>
     },
   });
   const coursesCollection = {
-    doc: (id) => ({
-      set: async () => writtenIds.push(id),
-    }),
+    doc: (id) => ({id}),
     where: (field, operator) => {
       const clauses = [{field, operator}];
       const query = {
@@ -118,7 +116,13 @@ test('syncCalendarToFirestore supprime un cours annulé récemment', async () =>
   };
 
   const result = await svc.syncCalendarToFirestore(
-      {collection: () => coursesCollection},
+      {
+        collection: () => coursesCollection,
+        runTransaction: async (fn) => fn({
+          get: async () => ({exists: false, data: () => null}),
+          set: (ref) => writtenIds.push(ref.id),
+        }),
+      },
       'calendar@test',
   );
 
@@ -229,4 +233,35 @@ test('applyCancellationPolicy ne touche pas un cours actif', () => {
   const result = svc.applyCancellationPolicy(courseData, {status: 'active'});
   assert.equal(result.status, 'active');
   assert.equal(result.reactivatedAt, undefined);
+});
+
+test('syncCalendarToFirestore relit le statut dans la transaction : un cours annulé entre-temps reste annulé', async () => {
+  const svc = new GoogleService();
+  svc.auth = {};
+  svc.calendar = {
+    events: {list: async () => ({data: {items: [makeEvent({id: 'c1', description: '[max:10] [min:2]'})]}})},
+  };
+
+  const written = {};
+  const coursesCollection = {
+    doc: (id) => ({id}),
+    where: () => {
+      const query = {where: () => query, get: async () => ({docs: []})};
+      return query;
+    },
+  };
+  const db = {
+    collection: () => coursesCollection,
+    // Le cron vient d'annuler le cours : la transaction doit le voir.
+    runTransaction: async (fn) => fn({
+      get: async () => ({exists: true, data: () => ({status: 'cancelled', cancelledReason: 'min_participants', minParticipants: 2})}),
+      set: (ref, data) => {
+        written[ref.id] = data;
+      },
+    }),
+  };
+
+  await svc.syncCalendarToFirestore(db, 'calendar@test');
+  assert.equal(written.c1.status, 'cancelled');
+  assert.equal(written.c1.cancelledReason, 'min_participants');
 });

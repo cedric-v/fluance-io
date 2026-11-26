@@ -300,6 +300,8 @@ async function processBooking(db, stripe, courseId, userData, paymentMethod, pri
           firstName: userData.firstName || '',
           lastName: userData.lastName || '',
           phone: userData.phone || '',
+          // Langue de la page : emails (annulation du cours) dans la bonne langue
+          locale: userData.locale === 'en' ? 'en' : 'fr',
           status: BOOKING_STATUS.WAITING,
           position: participantCount - course.maxCapacity + 1,
           createdAt: new Date(),

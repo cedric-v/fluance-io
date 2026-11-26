@@ -647,3 +647,68 @@ test('un deuxième passage n\'envoie pas de doublon d\'email', async () => {
   assert.equal(emails.length, firstRunEmails);
   assert.equal(collections.courses.course1.status, 'cancelled');
 });
+
+test('prévient aussi la liste d\'attente déjà notifiée (status notified)', async () => {
+  const {db, collections} = makeFakeDb({
+    ...makeSeed({minParticipants: 2, participants: 1}),
+    waitlist: {
+      w1: {courseId: 'course1', email: 'notified@example.com', firstName: 'Nora', status: 'notified'},
+    },
+  });
+  const emails = [];
+  await runMinParticipantsCheck({
+    db,
+    now: NOW,
+    adminEmail: 'organisateur@example.com',
+    passService: fakePassService(),
+    sendEmail: async (message) => emails.push(message),
+    logger: {log() {}, warn() {}, error() {}},
+  });
+  assert.ok(emails.find((e) => e.to === 'notified@example.com'));
+  assert.equal(collections.waitlist.w1.status, 'cancelled');
+});
+
+test('une réservation dont la mise à jour échoue est reprise sans doublon d\'email', async () => {
+  const {db: baseDb, collections} = makeFakeDb(makeSeed({minParticipants: 2, participants: 1}));
+  let failOnce = true;
+  const db = {
+    collection: (name) => {
+      const api = baseDb.collection(name);
+      if (name !== 'bookings') return api;
+      const get = api.get;
+      api.get = async () => {
+        const snap = await get();
+        snap.docs.forEach((d) => {
+          const original = d.ref.update;
+          d.ref.update = async (patch) => {
+            if (failOnce && patch.status === 'cancelled') {
+              failOnce = false;
+              throw new Error('panne Firestore');
+            }
+            return original(patch);
+          };
+        });
+        return snap;
+      };
+      return api;
+    },
+  };
+  const emails = [];
+  const params = {
+    db,
+    now: NOW,
+    adminEmail: 'organisateur@example.com',
+    passService: fakePassService(),
+    sendEmail: async (message) => emails.push(message),
+    logger: {log() {}, warn() {}, error() {}},
+  };
+
+  // L'échec de mise à jour empêche de clore le traitement : la phase de
+  // reprise du même tick réessaie et annule la réservation.
+  const stats = await runMinParticipantsCheck(params);
+  assert.equal(stats.resumed, 1);
+  assert.equal(collections.bookings.b1.status, 'cancelled');
+  assert.equal(collections.bookings.b1.statusBeforeCancellation, 'confirmed');
+  assert.ok(collections.courses.course1.cancellationNotifiedAt);
+  assert.equal(emails.filter((e) => e.to === 'person1@example.com').length, 1, 'pas de doublon');
+});

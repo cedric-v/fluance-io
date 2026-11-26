@@ -47,7 +47,9 @@ async function checkUserPass(db, email) {
     // D'abord chercher dans les bookings (sans orderBy pour éviter besoin d'index)
     const bookingsSnapshot = await db.collection('bookings')
         .where('email', '==', normalizedEmail)
-        .limit(20) // Limiter pour performance
+        // Marge large : les réservations annulées par l'organisation sont
+        // écartées APRÈS la requête et ne doivent pas évincer les autres.
+        .limit(100)
         .get();
 
     // Une réservation annulée par l'organisation (cours annulé faute de
